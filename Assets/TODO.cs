@@ -9,6 +9,9 @@ Start splitting the gridgraphics into multiple textures and get that working.
 == Goal ==
 
 
+== Needs to be done ==
+Add "empty" sprite to the wall-sprites that I can use for the delete-tool, for example. Solid 64x64 should do it.
+
 
 == Known bugs ==
 The first ghost tiles when drawing a room are placed wrongly

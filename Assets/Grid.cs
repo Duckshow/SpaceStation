@@ -196,51 +196,39 @@ public class Grid : MonoBehaviour {
             // determine what kinds of neighbours we got here
             if (_yDiff == -1) {
                 if (_xDiff == 0) {
-                    if (_neighbours[i].CanConnect_T)
-                        _tile.HasConnectable_B = true;
+                    _tile.HasConnectable_B = _neighbours[i].CanConnect_T;
 
                     // must update if the tile below is diagonal (since they stretch up)
                     if (_updateNeighbours || _neighbours[i]._Type_ == Tile.TileType.Diagonal_LT || _neighbours[i]._Type_ == Tile.TileType.Diagonal_TR) {
-                        if(_tile.CanConnect_B)
-                            _neighbours[i].HasConnectable_T = true;
-
+                        _neighbours[i].HasConnectable_T = _tile.CanConnect_B;
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
                 }
             }
             else if (_yDiff == 0) {
                 if (_xDiff == -1) {
-                    if (_neighbours[i].CanConnect_R)
-                        _tile.HasConnectable_L = true;
+                    _tile.HasConnectable_L = _neighbours[i].CanConnect_R;
 
                     if (_updateNeighbours) {
-                        if(_tile.CanConnect_L)
-                            _neighbours[i].HasConnectable_R = true;
-
+                        _neighbours[i].HasConnectable_R = _tile.CanConnect_L;
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
                 }
                 else if (_xDiff == 1) {
-                    if (_neighbours[i].CanConnect_L)
-                        _tile.HasConnectable_R = true;
+                    _tile.HasConnectable_R = _neighbours[i].CanConnect_L;
 
                     if (_updateNeighbours) {
-                        if(_tile.CanConnect_R)
-                            _neighbours[i].HasConnectable_L = true;
-
+                        _neighbours[i].HasConnectable_L = _tile.CanConnect_R;
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
                 }
             }
             else if (_yDiff == 1) {
                 if (_xDiff == 0) {
-                    if (_neighbours[i].CanConnect_B)
-                        _tile.HasConnectable_T = true;
+                    _tile.HasConnectable_T = _neighbours[i].CanConnect_B;
 
                     if (_updateNeighbours) {
-                        if(_tile.CanConnect_T)
-                            _neighbours[i].HasConnectable_B = true;
-
+                        _neighbours[i].HasConnectable_B = _tile.CanConnect_T;
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
                 }
@@ -248,81 +236,8 @@ public class Grid : MonoBehaviour {
         }
         #endregion
 
-        bool _left = _tile.HasConnectable_L;
-        bool _top = _tile.HasConnectable_T;
-        bool _right = _tile.HasConnectable_R;
-        bool _bottom = _tile.HasConnectable_B;
-        Sprite _sprite = null;
-
-        #region Draw, cowboy!
-        // draw, cowboy!
-        if (_tile._Type_ == Tile.TileType.Wall) {
-            while (true) { // just so we can break out
-                if (_left) {
-                    if (_top) {
-                        if (_right) {
-                            if (_bottom)
-                                _sprite = CachedAssets.Wall_0_FourWay;
-                            else
-                                _sprite = CachedAssets.Wall_0_Tee_B;
-                        }
-                        else if (_bottom)
-                            _sprite = CachedAssets.Wall_0_Tee_R;
-                        else
-                            _sprite = CachedAssets.Wall_0_Corner_LT;
-                    }
-                    else if (_right) {
-                        if (_bottom)
-                            _sprite = CachedAssets.Wall_0_Tee_T;
-                        else
-                            _sprite = CachedAssets.Wall_0_Horizontal_M;
-                    }
-                    else if (_bottom)
-                        _sprite = CachedAssets.Wall_0_Corner_BL;
-                    else
-                        _sprite = CachedAssets.Wall_0_Horizontal_R;
-                }
-                else if (_top) {
-                    if (_right) {
-                        if (_bottom)
-                            _sprite = CachedAssets.Wall_0_Tee_L;
-                        else
-                            _sprite = CachedAssets.Wall_0_Corner_TR;
-                    }
-                    else if (_bottom)
-                        _sprite = CachedAssets.Wall_0_Vertical_M;
-                    else
-                        _sprite = CachedAssets.Wall_0_Vertical_B;
-                }
-                else if (_right) {
-                    if (_bottom)
-                        _sprite = CachedAssets.Wall_0_Corner_RB;
-                    else
-                        _sprite = CachedAssets.Wall_0_Horizontal_L;
-                }
-                else if (_bottom) {
-                    _sprite = CachedAssets.Wall_0_Vertical_T;
-                }
-                else {
-                    // nothing but a wall
-                    _sprite = CachedAssets.Wall_0_Single;
-                }
-
-                DrawTileToTexture(_tile, _sprite);
-                break;
-            }
-        }
-        else if (_tile._Type_ == Tile.TileType.Diagonal_LT)
-            DrawTileToTexture(_tile, CachedAssets.Wall_0_Diagonal_LT);
-        else if (_tile._Type_ == Tile.TileType.Diagonal_TR)
-            DrawTileToTexture(_tile, CachedAssets.Wall_0_Diagonal_TR);
-        else if (_tile._Type_ == Tile.TileType.Diagonal_RB)
-            DrawTileToTexture(_tile, CachedAssets.Wall_0_Diagonal_RB);
-        else if (_tile._Type_ == Tile.TileType.Diagonal_BL)
-            DrawTileToTexture(_tile, CachedAssets.Wall_0_Diagonal_BL);
-        else if (_tile._Type_ == Tile.TileType.Default)
-            DrawTileToTexture(_tile, null);
-        #endregion
+        // find and set correct sprite
+        DrawTileToTexture(_tile, GetSpriteForTile(_tile));
 
         // loop through relevant neighbours backwards, towards the perspective of the camera
         for (int i = _neighboursToUpdate.Count - 1; i >= 0; i--) {
@@ -354,6 +269,75 @@ public class Grid : MonoBehaviour {
                 i--;
             }
         }
+    }
+
+    public Sprite GetSpriteForTile(Tile _tile) {
+        bool _left = _tile.HasConnectable_L;
+        bool _top = _tile.HasConnectable_T;
+        bool _right = _tile.HasConnectable_R;
+        bool _bottom = _tile.HasConnectable_B;
+
+        if (_tile._Type_ == Tile.TileType.Wall) {
+            if (_left) {
+                if (_top) {
+                    if (_right) {
+                        if (_bottom)
+                            return CachedAssets.Wall_0_FourWay;
+                        else
+                            return CachedAssets.Wall_0_Tee_B;
+                    }
+                    else if (_bottom)
+                        return CachedAssets.Wall_0_Tee_R;
+                    else
+                        return CachedAssets.Wall_0_Corner_LT;
+                }
+                else if (_right) {
+                    if (_bottom)
+                        return CachedAssets.Wall_0_Tee_T;
+                    else
+                        return CachedAssets.Wall_0_Horizontal_M;
+                }
+                else if (_bottom)
+                    return CachedAssets.Wall_0_Corner_BL;
+                else
+                    return CachedAssets.Wall_0_Horizontal_R;
+            }
+            else if (_top) {
+                if (_right) {
+                    if (_bottom)
+                        return CachedAssets.Wall_0_Tee_L;
+                    else
+                        return CachedAssets.Wall_0_Corner_TR;
+                }
+                else if (_bottom)
+                    return CachedAssets.Wall_0_Vertical_M;
+                else
+                    return CachedAssets.Wall_0_Vertical_B;
+            }
+            else if (_right) {
+                if (_bottom)
+                    return CachedAssets.Wall_0_Corner_RB;
+                else
+                    return CachedAssets.Wall_0_Horizontal_L;
+            }
+            else if (_bottom) {
+                return CachedAssets.Wall_0_Vertical_T;
+            }
+            else {
+                // nothing but a wall
+                return CachedAssets.Wall_0_Single;
+            }
+        }
+        else if (_tile._Type_ == Tile.TileType.Diagonal_LT)
+            return CachedAssets.Wall_0_Diagonal_LT;
+        else if (_tile._Type_ == Tile.TileType.Diagonal_TR)
+            return CachedAssets.Wall_0_Diagonal_TR;
+        else if (_tile._Type_ == Tile.TileType.Diagonal_RB)
+            return CachedAssets.Wall_0_Diagonal_RB;
+        else if (_tile._Type_ == Tile.TileType.Diagonal_BL)
+            return CachedAssets.Wall_0_Diagonal_BL;
+        else //if (_tile._Type_ == Tile.TileType.Default)
+            return null;
     }
 
     void DrawTileToTexture(Tile _tile, Sprite _sprite) {
