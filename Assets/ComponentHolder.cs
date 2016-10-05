@@ -43,6 +43,7 @@ public class ComponentHolder : MonoBehaviour {
 
                 GameObject _obj = Instantiate(ComponentManager.Instance.GetComponentPrefab(ComponentSlots[i].SlotType, ComponentSlots[i].SlotTypeID), Vector3.zero, Quaternion.identity) as GameObject;
                 _obj.transform.parent = transform;
+                _obj.transform.localPosition = Vector3.zero;
                 _obj.GetComponent<InteractiveObject>().Hide(true);
                 ComponentSlots[i].HeldComponent = _obj.GetComponent<ComponentObject>();
                 ComponentSlots[i].CurrentEfficiency = 1;

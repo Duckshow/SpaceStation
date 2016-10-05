@@ -81,7 +81,7 @@ public class WallBuilder {
         if (ghostSpriteRend.sprite == null)
             yield break;
 
-        while (Mouse.Instance.CurrentMode == Mouse.Mode.BuildWalls) {
+        while (Mouse.Instance.Mode == Mouse.ModeEnum.BuildWalls) {
 
             isDeleting = Input.GetMouseButtonDown(1);
 
@@ -465,29 +465,33 @@ public class WallBuilder {
 
                 // color and sparkles!
                 if (isDeleting) {
-                    color = Color.red;
-                    _applyTile = true;
-                }
-                else {
-                    if (tileUnderGhost._Type_ == Tile.TileType.Default) {
-                        color = Color.white;
-                        _applyTile = true;
-
-                        if (Mode == ModeEnum.Diagonal) {
-                            if (   (usedGhostTiles[i].Type == Tile.TileType.Diagonal_LT && !(tileUnderGhost.HasConnectable_L && tileUnderGhost.HasConnectable_T))
-                                || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_TR && !(tileUnderGhost.HasConnectable_T && tileUnderGhost.HasConnectable_R))
-                                || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_RB && !(tileUnderGhost.HasConnectable_R && tileUnderGhost.HasConnectable_B))
-                                || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_BL && !(tileUnderGhost.HasConnectable_B && tileUnderGhost.HasConnectable_L))) {
-
-                                color = Color.red;
-                                _applyTile = false;
-                            }
-                        }
+                    if (tileUnderGhost.IsOccupied) {
+                        color = Color.clear;
+                        _applyTile = false;
                     }
                     else {
                         color = Color.red;
-                        _applyTile = false;
+                        _applyTile = true;
                     }
+                }
+                else if (tileUnderGhost._Type_ == Tile.TileType.Default && !tileUnderGhost.IsOccupied) {
+                    color = Color.white;
+                    _applyTile = true;
+
+                    if (Mode == ModeEnum.Diagonal) {
+                        if ((usedGhostTiles[i].Type == Tile.TileType.Diagonal_LT && !(tileUnderGhost.HasConnectable_L && tileUnderGhost.HasConnectable_T))
+                            || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_TR && !(tileUnderGhost.HasConnectable_T && tileUnderGhost.HasConnectable_R))
+                            || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_RB && !(tileUnderGhost.HasConnectable_R && tileUnderGhost.HasConnectable_B))
+                            || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_BL && !(tileUnderGhost.HasConnectable_B && tileUnderGhost.HasConnectable_L))) {
+
+                            color = Color.red;
+                            _applyTile = false;
+                        }
+                    }
+                }
+                else {
+                    color = Color.red;
+                    _applyTile = false;
                 }
 
                 // make it do something

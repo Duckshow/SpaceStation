@@ -10,8 +10,8 @@ public class Mouse : MonoBehaviour {
     private WallBuilder WallBuilding;
 
     [System.Serializable]
-    public enum Mode { InspectAndMove, BuildWalls }
-    public Mode CurrentMode = Mode.InspectAndMove;
+    public enum ModeEnum { InspectAndMove, BuildWalls }
+    public ModeEnum Mode = ModeEnum.InspectAndMove;
 
 	public InteractiveObject SelectedObject;
     public InteractiveObject PickedUpObject;
@@ -36,6 +36,8 @@ public class Mouse : MonoBehaviour {
         // if is over UI
         if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject(-1))
             return;
+        if (Mode != ModeEnum.InspectAndMove)
+            return;
 
         leftClicked = Input.GetMouseButtonUp(0);
         rightClicked = Input.GetMouseButtonUp(1);
@@ -48,8 +50,10 @@ public class Mouse : MonoBehaviour {
         InteractiveObject _io;
         for (int i = 0; i < InteractiveObject.AllInteractiveObjects.Count; i++) {
             _io = InteractiveObject.AllInteractiveObjects[i];
-            Vector2 _ioScreenPos = Camera.main.WorldToScreenPoint(_io.transform.position); // optimization: can I track the mouse's worldpos rather than each object's screenpos?
+            if (_io.CanBePickedUp && !_io.CanBePickedUpCurrently)
+                continue;
 
+            Vector2 _ioScreenPos = Camera.main.WorldToScreenPoint(_io.transform.position); // optimization: can I track the mouse's worldpos rather than each object's screenpos?
             float magnitude = (screenPos - _ioScreenPos).magnitude * (Camera.main.orthographicSize / 10);
             bool withinRange = magnitude < _io.ClickableRange;
 
@@ -208,21 +212,21 @@ public class Mouse : MonoBehaviour {
     public void ToggleMode_BuildWalls() {
         toggled = !toggled;
 
-        if (toggled && CurrentMode != Mode.BuildWalls)
-            SetMode(Mode.BuildWalls);
-        else if (!toggled && CurrentMode != Mode.InspectAndMove)
-            SetMode(Mode.InspectAndMove);
+        if (toggled && Mode != ModeEnum.BuildWalls)
+            SetMode(ModeEnum.BuildWalls);
+        else if (!toggled && Mode != ModeEnum.InspectAndMove)
+            SetMode(ModeEnum.InspectAndMove);
     }
-    void SetMode(Mode _mode) {
-        if (CurrentMode == _mode)
+    void SetMode(ModeEnum _mode) {
+        if (Mode == _mode)
             return;
 
-        CurrentMode = _mode;
+        Mode = _mode;
         switch (_mode) {
-            case Mode.InspectAndMove:
+            case ModeEnum.InspectAndMove:
                 WallBuilding.DeActivate();
                 break;
-            case Mode.BuildWalls:
+            case ModeEnum.BuildWalls:
                 WallBuilding.Activate();
                 break;
             default:
