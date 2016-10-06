@@ -39,6 +39,7 @@ public class Pathfinding : MonoBehaviour {
         if (startNode.Walkable && targetNode.Walkable) {
             Heap<Tile> openSet = new Heap<Tile>(grid.MaxSize);
             HashSet<Tile> closedSet = new HashSet<Tile>();
+
             openSet.Add(startNode);
 
             while (openSet.Count > 0) {
@@ -53,7 +54,11 @@ public class Pathfinding : MonoBehaviour {
                 }
 
                 foreach (Tile neighbour in grid.GetNeighbours(currentNode.GridX, currentNode.GridY)) {
-                    if (!neighbour.Walkable || closedSet.Contains(neighbour))
+                    if (!neighbour.Walkable)
+                        continue;
+                    if (neighbour.IsOccupied && neighbour != targetNode) // todo: maybe fix the latter part?
+                        continue;
+                    if (closedSet.Contains(neighbour))
                         continue;
                     if (Grid.Instance.IsNeighbourBlockedDiagonally(currentNode, neighbour))
                         continue;

@@ -123,7 +123,7 @@ public class Grid : MonoBehaviour {
                 Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + NodeRadius) + Vector3.forward * (y * nodeDiameter + NodeRadius + 0.5f); // +0.5f for diagonals
 
                 int movementPenalty = 0; // todo: use this for something
-                if (Random.value < 0.95f)
+                if (Random.value < 0.75f)
                     grid[x, y] = new Tile(Tile.TileType.Default, worldPoint, x, y, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y), movementPenalty);
                 else // for testing-purposes
                     grid[x, y] = new Tile(Tile.TileType.Wall, worldPoint, x, y, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y), movementPenalty);
@@ -511,7 +511,8 @@ public class Grid : MonoBehaviour {
 
         return node;
     }
-
+    
+    // checks if two normal walls are diagonally aligned, because you shouldn't be able to walk though there
     public bool IsNeighbourBlockedDiagonally(Tile _tile, Tile _neighbour) {
         int _xDiff = _neighbour.GridX - _tile.GridX;
         int _yDiff = _neighbour.GridY - _tile.GridY;
@@ -548,6 +549,32 @@ public class Grid : MonoBehaviour {
 
         return false;
     }
+
+    //// checks if the path between two tiles is blocked because either one is a diagonal tile and the rotation of said tile is such as that it blocks the path.
+    //public bool IsPathToNeighbourBlockedByTileRotation(Tile _tile, Tile _neighbour) {
+    //    int _xDiff = _neighbour.GridX - _tile.GridX;
+    //    int _yDiff = _neighbour.GridY - _tile.GridY;
+
+    //    // top or below
+    //    if (_xDiff == 0 && _yDiff != 0)
+    //        return _tile.CanConnect_T || _neighbour.CanConnect_B;
+        
+    //    // left or right
+    //    else if (_xDiff != 0 && _yDiff == 0)
+    //        return _tile.CanConnect_L || _tile.CanConnect_R;
+        
+    //    // top left or bottom right
+    //    else if (_xDiff != 0 && _yDiff == _xDiff * -1)
+    //        return (_tile.CanConnect_L && _tile.CanConnect_T) || (_neighbour.CanConnect_B && _tile.CanConnect_R);
+
+    //    // top right or bottom left
+    //    else if (_xDiff != 0 && _yDiff == _xDiff)
+    //        return (_tile.CanConnect_T && _tile.CanConnect_R) || (_neighbour.CanConnect_B && _tile.CanConnect_L);
+
+
+    //    return false;
+    //}
+
 
     void OnDrawGizmos() {
         Gizmos.DrawWireCube(transform.position, new Vector3(GridWorldSize.x, 1, GridWorldSize.y));

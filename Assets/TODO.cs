@@ -2,9 +2,9 @@
 
 == Last time ==
 
-
 == Next time ==
-Add proper functionality to diagonal tiles! A diagonal-BL should be walkable when going across T/R, but not B/L.
+Make sure diagonal tiles are auto-destroyed when the wall they're connected to is destroyed
+
 
 == Goal ==
 
