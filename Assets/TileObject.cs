@@ -10,7 +10,7 @@ public class TileObject : MonoBehaviour {
             return;
 
         myTile = Grid.Instance.GetClosestFreeNode(transform.position);
-        transform.position = myTile.WorldPosition + myTile.CenterPosition;
+        transform.position = myTile.CenterPositionWorld;
         myTile.IsOccupied = true;
 	}
 }

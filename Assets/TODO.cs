@@ -4,7 +4,7 @@
 
 
 == Next time ==
-Start splitting the gridgraphics into multiple textures and get that working.
+Add proper functionality to diagonal tiles! A diagonal-BL should be walkable when going across T/R, but not B/L.
 
 == Goal ==
 

@@ -458,8 +458,8 @@ public class Grid : MonoBehaviour {
         }
         return null;
     }
-    public Tile GetClosestFreeNode(Tile _tile) {
-        if (_tile.Walkable && !_tile.IsOccupied)
+    public Tile GetClosestFreeNode(Tile _tile) { // todo: diagonals can be seen as "free" depending on the usage - fix that! Removed diagonals from consideration for now.
+        if (_tile._Type_ == Tile.TileType.Default && !_tile.IsOccupied)
             return _tile;
 
         List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
@@ -469,7 +469,7 @@ public class Grid : MonoBehaviour {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
-                if (!_neighbours[i].Walkable || _neighbours[i].IsOccupied)
+                if (_neighbours[i]._Type_ != Tile.TileType.Default || _neighbours[i].IsOccupied)
                     continue;
 
                 return _neighbours[i];

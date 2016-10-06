@@ -151,15 +151,13 @@ public class Mouse : MonoBehaviour {
             }
             // else if clicked ground, try putting object there
             else if(PickedUpObject != null) {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                RaycastHit rayHit;
-                int layerMask = 1 << 9; // walkable layer
-                if (Physics.Raycast(ray, out rayHit, 1000, layerMask)) {
-                    PutDownPickedUp(rayHit.point);
-                }
-                else {
+                Tile _tile = Grid.Instance.GetNodeFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+                if (_tile._Type_ != Tile.TileType.Default)
                     return;
-                }
+                if (_tile.IsOccupied)
+                    return;
+
+                PutDownPickedUp(_tile);
 
                 // de-select SelectedObject, as it should only be a comp using the secondary comp-window, and this'll do stuff with PickedUpObject anyway
                 if (SelectedObject != null) {
@@ -317,11 +315,11 @@ public class Mouse : MonoBehaviour {
     //    else
     //        _io.PreviousComponentSlotIndex = -1;
     //}
-    public void PutDownPickedUp(Vector3 newPos) {
+    public void PutDownPickedUp(Tile _tile) {
         if (PickedUpObject == null)
             return;
 
-        PickedUpObject.transform.position = newPos;
+        PickedUpObject.transform.position = _tile.CenterPositionWorld;
         PickedUpObject.transform.parent = null;
         GUIManager.Instance.CloseInfoWindow(PickedUpObject);
         PickedUpObject.Hide(false);
