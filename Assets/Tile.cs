@@ -31,6 +31,10 @@ public class Tile : IHeapItem<Tile> {
     //[HideInInspector] public bool HasConnectable_TR = false;
     //[HideInInspector] public bool HasConnectable_RB = false;
     //[HideInInspector] public bool HasConnectable_BL = false;
+	[HideInInspector] public Tile ConnectedDiagonal_L;
+	[HideInInspector] public Tile ConnectedDiagonal_T;
+	[HideInInspector] public Tile ConnectedDiagonal_R;
+	[HideInInspector] public Tile ConnectedDiagonal_B;
 
     [HideInInspector] public Tile ParentTile;
     [HideInInspector] public int GCost;

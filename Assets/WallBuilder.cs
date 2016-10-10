@@ -460,11 +460,13 @@ public class WallBuilder {
             }
 
             bool _applyTile = false;
+			List<Tile> _foundDiagonals;
             for (int i = 0; i < usedGhostTiles.Count; i++) {
                 tileUnderGhost = Grid.Instance.grid[(int)usedGhostTiles[i].GridPosition.x, (int)usedGhostTiles[i].GridPosition.y];
 
                 // color and sparkles!
                 if (isDeleting) {
+
                     if (tileUnderGhost.IsOccupied) {
                         color = Color.clear;
                         _applyTile = false;
@@ -472,14 +474,26 @@ public class WallBuilder {
                     else {
                         color = Color.red;
                         _applyTile = true;
+
+						// add connected diagonal neighbors to be deleted
+						_foundDiagonals = InformNeighboursAboutDiagonal(tileUnderGhost);
+						for (int j = 0; j < _foundDiagonals.Count; j++){
+							Vector2 _gridPos = new Vector2(_foundDiagonals[j].GridX, _foundDiagonals[j].GridY);
+							if(usedGhostTiles.Find(x => x.GridPosition == _gridPos) != null)
+								continue;
+
+							usedGhostTiles.Add(new GhostInfo(allGhostSprites[usedGhostTiles.Count], _gridPos, _foundDiagonals[j]._Type_));
+						}
                     }
+
                 }
                 else if (tileUnderGhost._Type_ == Tile.TileType.Default && !tileUnderGhost.IsOccupied) {
                     color = Color.white;
                     _applyTile = true;
 
+					// mark diagonals as unapplicable if not able to connect to neighbors
                     if (Mode == ModeEnum.Diagonal) {
-                        if ((usedGhostTiles[i].Type == Tile.TileType.Diagonal_LT && !(tileUnderGhost.HasConnectable_L && tileUnderGhost.HasConnectable_T))
+                        if (   (usedGhostTiles[i].Type == Tile.TileType.Diagonal_LT && !(tileUnderGhost.HasConnectable_L && tileUnderGhost.HasConnectable_T))
                             || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_TR && !(tileUnderGhost.HasConnectable_T && tileUnderGhost.HasConnectable_R))
                             || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_RB && !(tileUnderGhost.HasConnectable_R && tileUnderGhost.HasConnectable_B))
                             || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_BL && !(tileUnderGhost.HasConnectable_B && tileUnderGhost.HasConnectable_L))) {
@@ -495,7 +509,7 @@ public class WallBuilder {
                 }
 
                 // make it do something
-                if (_applyTile) {
+				if (_applyTile) {
                     selectedTiles.Add(tileUnderGhost);
                     selectedTilesType.Add(usedGhostTiles[i].Type);
                 }
@@ -518,6 +532,23 @@ public class WallBuilder {
         }
 
         for (int i = 0; i < selectedTiles.Count; i++) {
+			if (selectedTiles[i].ConnectedDiagonal_L != null) {
+				selectedTiles.Add(selectedTiles[i].ConnectedDiagonal_L);
+				selectedTiles[i].ConnectedDiagonal_L = null;
+			}
+			if (selectedTiles[i].ConnectedDiagonal_T != null) {
+				selectedTiles.Add(selectedTiles[i].ConnectedDiagonal_T);
+				selectedTiles[i].ConnectedDiagonal_T = null;
+			}
+			if (selectedTiles[i].ConnectedDiagonal_R != null) {
+				selectedTiles.Add(selectedTiles[i].ConnectedDiagonal_R);
+				selectedTiles[i].ConnectedDiagonal_R = null;
+			}
+			if (selectedTiles[i].ConnectedDiagonal_B != null) {
+				selectedTiles.Add(selectedTiles[i].ConnectedDiagonal_B);
+				selectedTiles[i].ConnectedDiagonal_B = null;
+			}
+
             // set tile info
             selectedTiles[i].SetTileType(isDeleting ? Tile.TileType.Default : selectedTilesType[i]);
 
@@ -526,4 +557,49 @@ public class WallBuilder {
             Grid.Instance.ApplyGraphics(selectedTiles[i].GridSliceIndex);
         }
     }
+
+	List<Tile> InformNeighboursAboutDiagonal(Tile _tile){
+		List<Tile> _neighbours = Grid.Instance.GetNeighbours(_tile.GridX, _tile.GridY);
+		List<Tile> _foundDiagonals = new List<Tile>();
+		int _diffX = 0;
+		int _diffY = 0;
+		Tile.TileType _type;
+		for (int i = 0; i < _neighbours.Count; i++) {
+			_type = _neighbours[i]._Type_;
+			_diffX = _neighbours[i].GridX - _tile.GridX;
+			_diffY = _neighbours[i].GridY - _tile.GridY;
+			if(_diffX == -1 && _diffY == 0){
+				if(_type == Tile.TileType.Diagonal_RB || _type == Tile.TileType.Diagonal_TR){
+					_tile.ConnectedDiagonal_L = _neighbours[i];
+					_foundDiagonals.Add(_neighbours[i]);
+					continue;
+				}
+			}
+			if(_diffX == 0 && _diffY == 1){
+				if(_type == Tile.TileType.Diagonal_BL || _type == Tile.TileType.Diagonal_RB){
+					_tile.ConnectedDiagonal_T = _neighbours[i];
+					_foundDiagonals.Add(_neighbours[i]);
+					continue;
+				}
+			}
+
+			if(_diffX == 1 && _diffY == 0){
+				if (_type == Tile.TileType.Diagonal_BL || _type == Tile.TileType.Diagonal_LT) {
+					_tile.ConnectedDiagonal_R = _neighbours[i];
+					_foundDiagonals.Add(_neighbours[i]);
+					continue;
+				}
+			}
+			
+			if(_diffX == 0 && _diffY == -1){
+				if (_type == Tile.TileType.Diagonal_LT || _type == Tile.TileType.Diagonal_TR) {
+					_tile.ConnectedDiagonal_B = _neighbours[i];
+					_foundDiagonals.Add(_neighbours[i]);
+					continue;
+				}
+			}
+		}
+
+		return _foundDiagonals;
+	}
 }
