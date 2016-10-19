@@ -88,7 +88,7 @@ public class Tile : IHeapItem<Tile> {
                 break;
             case TileType.Diagonal_LT:
                 Walkable = true;
-                CenterPositionWorld = WorldPosition + new Vector3(0.25f, 0, -0.25f);
+                CenterPositionWorld = WorldPosition + new Vector3(0.25f, -0.25f, 0);
                 CanConnect_L = true;
                 CanConnect_T = true;
                 CanConnect_R = false;
@@ -96,7 +96,7 @@ public class Tile : IHeapItem<Tile> {
                 break;
             case TileType.Diagonal_TR:
                 Walkable = true;
-                CenterPositionWorld = WorldPosition + new Vector3(-0.25f, 0, -0.25f);
+                CenterPositionWorld = WorldPosition + new Vector3(-0.25f, -0.25f, 0);
                 CanConnect_L = false;
                 CanConnect_T = true;
                 CanConnect_R = true;
@@ -104,7 +104,7 @@ public class Tile : IHeapItem<Tile> {
                 break;
             case TileType.Diagonal_RB:
                 Walkable = true;
-                CenterPositionWorld = WorldPosition + new Vector3(-0.25f, 0, 0.25f);
+                CenterPositionWorld = WorldPosition + new Vector3(-0.25f, 0.25f, 0);
                 CanConnect_L = false;
                 CanConnect_T = false;
                 CanConnect_R = true;
@@ -112,7 +112,7 @@ public class Tile : IHeapItem<Tile> {
                 break;
             case TileType.Diagonal_BL:
                 Walkable = true;
-                CenterPositionWorld = WorldPosition + new Vector3(0.25f, 0, 0.25f);
+                CenterPositionWorld = WorldPosition + new Vector3(0.25f, 0.25f, 0);
                 CanConnect_L = true;
                 CanConnect_T = false;
                 CanConnect_R = false;

@@ -182,7 +182,7 @@ public class Task {
             while (toContainer._Current_ < toContainer.Max) {
                 yield return new WaitForSeconds(1);
 
-                float _received = Mathf.Min(Unit.RATE_CONSUME, heldResourceAmount); 
+                float _received = Mathf.Min(Actor.RATE_CONSUME, heldResourceAmount); 
                 heldResourceAmount -= _received;
                 toContainer.SetResourceCurrent(toContainer._Current_ + _received);
 

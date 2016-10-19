@@ -18,7 +18,7 @@ public class ResourceContainer : MonoBehaviour {
     [SerializeField] private float DecreaseRate;
 
     [HideInInspector]
-    public Unit OwnerPawn = null;
+    public Actor OwnerPawn = null;
     [HideInInspector]
     public int AmountUsingThis = 0;
 
@@ -120,7 +120,7 @@ public class ResourceContainer : MonoBehaviour {
             _to.SetResourceCurrent(_to._Current_ + received);
     }
 
-    public static ResourceContainer GetClosestAvailableResource(Unit unit, ResourceManager.ResourceType type) {
+    public static ResourceContainer GetClosestAvailableResource(Actor unit, ResourceManager.ResourceType type) {
         ResourceContainer _closest = null;
         float _shortestDist = Mathf.Infinity;
 
@@ -141,7 +141,7 @@ public class ResourceContainer : MonoBehaviour {
         return _closest;
     }
 
-    public static ResourceContainer GetClosestSeatByTV(Unit unit, TV _tv) {
+    public static ResourceContainer GetClosestSeatByTV(Actor unit, TV _tv) {
         ResourceContainer _closest = null;
         float _shortestDist = Mathf.Infinity;
 

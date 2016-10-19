@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class Unit : MonoBehaviour {
+public class Actor : MonoBehaviour {
 
     public const float SPEED_STROLL = 4;
     public const float SPEED_WALK = 8;
@@ -9,6 +9,11 @@ public class Unit : MonoBehaviour {
 
     Sector currentSector;
     TaskHandler taskHandler = new TaskHandler();
+
+    public int HairStyleIndex = 0;
+    public int HeadIndex = 0;
+    public int EyeIndex = 0;
+    public int BeardIndex = 0;
 
     [SerializeField] private ResourceContainer thirst;
     [SerializeField] private ResourceContainer hunger;

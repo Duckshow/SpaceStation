@@ -113,14 +113,14 @@ public class Grid : MonoBehaviour {
                 _slicePosX = ((sliceSizeX * 0.5f) + (sliceSizeX * x) - (gridSizeX * 0.5f));
 
                 gridGraphicsRenderers[_currentIndex].transform.localScale = new Vector3(sliceSizeX, sliceSizeY + 1 /*+1 for diagonals*/, 1);
-                gridGraphicsRenderers[_currentIndex].transform.position = new Vector3(_slicePosX, WORLD_HEIGHT - (_currentIndex * 0.01f), _slicePosY); // the minus is to combat z-fighting
+                gridGraphicsRenderers[_currentIndex].transform.position = new Vector3(_slicePosX, _slicePosY, WORLD_HEIGHT + (_currentIndex * 0.01f)); // the minus is to combat z-fighting
             }
         }
 
-        Vector3 worldBottomLeft = transform.position - (Vector3.right * GridWorldSize.x / 2) - (Vector3.forward * GridWorldSize.y / 2) - new Vector3(0, 0, 0.5f); // 0.5f because of the +1 for diagonals
+        Vector3 worldBottomLeft = transform.position - (Vector3.right * GridWorldSize.x / 2) - (Vector3.up * GridWorldSize.y / 2) - new Vector3(0, 0.5f, 0); // 0.5f because of the +1 for diagonals
         for (int y = 0; y < gridSizeY; y++) {
             for (int x = 0; x < gridSizeX; x++) {
-                Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + NodeRadius) + Vector3.forward * (y * nodeDiameter + NodeRadius + 0.5f); // +0.5f for diagonals
+                Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + NodeRadius) + Vector3.up * (y * nodeDiameter + NodeRadius + 0.5f); // +0.5f for diagonals
 
                 int movementPenalty = 0; // todo: use this for something
                 if (Random.value < 0.75f)
@@ -412,7 +412,7 @@ public class Grid : MonoBehaviour {
 
     public Tile GetNodeFromWorldPoint(Vector3 _worldPosition) {
         float percentX = (_worldPosition.x - NodeRadius + GridWorldSize.x * 0.5f) / GridWorldSize.x;
-        float percentY = (_worldPosition.z - NodeRadius + GridWorldSize.y * 0.5f) / GridWorldSize.y;
+        float percentY = (_worldPosition.y - NodeRadius + GridWorldSize.y * 0.5f) / GridWorldSize.y;
         percentX = Mathf.Clamp01(percentX);
         percentY = Mathf.Clamp01(percentY);
 
@@ -578,7 +578,7 @@ public class Grid : MonoBehaviour {
 
 
     void OnDrawGizmos() {
-        Gizmos.DrawWireCube(transform.position, new Vector3(GridWorldSize.x, 1, GridWorldSize.y));
+        Gizmos.DrawWireCube(transform.position, new Vector3(GridWorldSize.x, GridWorldSize.y, 1));
 
         if (grid != null && DisplayGridGizmos) {
             foreach (Tile n in grid) {

@@ -2,7 +2,7 @@
 
 public class TaskHandler {
 
-    public Unit Owner;
+    public Actor Owner;
 
     public List<ResourceManager.ResourceType> ResourcesPendingFetch = new List<ResourceManager.ResourceType>();
     public Heap<MetaTask> PendingTasks = new Heap<MetaTask>(50); // arbitrary number (can't exceed)

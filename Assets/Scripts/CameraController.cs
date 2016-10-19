@@ -52,7 +52,7 @@ public class CameraController : MonoBehaviour {
         if (mousePos.y < 0 + Boundary)
             move.y = ((Boundary - mousePos.y) / Boundary) * -adjustedSpeed * Time.deltaTime; // move on -Z axis
 
-        transform.position = new Vector3(transform.position.x + move.x, transform.position.y, transform.position.z + move.y);
+        transform.position = new Vector3(transform.position.x + move.x, transform.position.y + move.y, transform.position.z);
     }
     void Scroll() {
         zoomDelta = Input.mouseScrollDelta.y;
