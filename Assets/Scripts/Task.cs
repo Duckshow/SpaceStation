@@ -79,7 +79,7 @@ public class Task {
                     
                     // force actor to lie down if the next tile is not adjacent to a wall (looks better)
                     _currentWaypointTile = Grid.Instance.GetTileFromWorldPoint(_currentWaypoint);
-                    ForceActorLieDown(_currentWaypointTile._Type_ == Tile.TileType.Default && !_currentWaypointTile.HasConnectable_B && !_currentWaypointTile.HasConnectable_L && !_currentWaypointTile.HasConnectable_R && !_currentWaypointTile.HasConnectable_T);
+                    ForceActorLieDown(_currentWaypointTile._Type_ == Tile.TileType.Empty && !_currentWaypointTile.HasConnectable_B && !_currentWaypointTile.HasConnectable_L && !_currentWaypointTile.HasConnectable_R && !_currentWaypointTile.HasConnectable_T);
 
                     // update orientation
                     SendActorNewOrientation((_currentWaypoint - _previousWaypoint).normalized);

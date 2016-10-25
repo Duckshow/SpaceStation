@@ -205,7 +205,7 @@ public class WallBuilder {
                 _newColor = Color.white;
             }
 
-            if (mouseTile._Type_ != Tile.TileType.Default)
+            if (mouseTile._Type_ != Tile.TileType.Empty)
                 _newColor = Color.red;
 
             allGhostSprites[0].enabled = true;
@@ -487,7 +487,7 @@ public class WallBuilder {
                     }
 
                 }
-                else if (tileUnderGhost._Type_ == Tile.TileType.Default && !tileUnderGhost.IsOccupied) {
+                else if (tileUnderGhost._Type_ == Tile.TileType.Empty && !tileUnderGhost.IsOccupied) {
                     color = Color.white;
                     _applyTile = true;
 
@@ -550,10 +550,10 @@ public class WallBuilder {
 			}
 
             // set tile info
-            selectedTiles[i].SetTileType(isDeleting ? Tile.TileType.Default : selectedTilesType[i]);
+            selectedTiles[i].SetTileType(isDeleting ? Tile.TileType.Empty : selectedTilesType[i]);
 
             // apply graphics
-            Grid.Instance.UpdateTileGraphics(selectedTiles[i], true, true);
+            Grid.Instance.UpdateTile(selectedTiles[i], true, true);
             Grid.Instance.ApplyGraphics(selectedTiles[i].GridSliceIndex);
         }
     }

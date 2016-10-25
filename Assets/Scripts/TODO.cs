@@ -1,9 +1,10 @@
 ﻿/*
 
 == Last time ==
+Added two tiletypes (DoorEntrance, MiscBlocker) to be used for creating functioning doors.
 
 == Next time ==
-Make sure diagonal tiles are auto-destroyed when the wall they're connected to is destroyed
+Get the pathfinding to detect DoorEntrance-tiles and if the path is going through a door, and add a waiting time to those waypoints.
 
 
 == Goal ==
@@ -14,8 +15,6 @@ Add "empty" sprite to the wall-sprites that I can use for the delete-tool, for e
 
 
 == Known bugs ==
-The first ghost tiles when drawing a room are placed wrongly
-
 The Idling-task is completely broken and can't find any paths.
 
 Stuff can be selected despite not being in Select-mode.

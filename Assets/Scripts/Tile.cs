@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 public class Tile : IHeapItem<Tile> {
 
-    public enum TileType { Default, Wall, Diagonal_LT, Diagonal_TR, Diagonal_RB, Diagonal_BL }
-    private TileType type = TileType.Default;
+    public enum TileType { Empty, Wall, Diagonal_LT, Diagonal_TR, Diagonal_RB, Diagonal_BL, MiscBlocker, DoorEntrance }
+    private TileType type = TileType.Empty;
     public TileType _Type_ { get { return type; } }
 
     public bool Walkable { get; private set; }
@@ -19,10 +19,10 @@ public class Tile : IHeapItem<Tile> {
     public Vector3 DefaultPositionWorld { get; private set; }
     public Vector3 CharacterPositionWorld { // the position a character should stand on (exists to better simulate zero-g)
         get {
-            if (type == TileType.Default) {
+            if (type == TileType.Empty || type == TileType.DoorEntrance) {
                 Vector3 _offset = Vector3.zero;
-                _offset.x = HasConnectable_L ? -0.25f : HasConnectable_R ? 0.25f : 0;
-                _offset.y = HasConnectable_B ? -0.25f : HasConnectable_T ? 0.25f : 0;
+                _offset.x = IsBlocked_L ? -0.25f : IsBlocked_R ? 0.25f : 0;
+                _offset.y = IsBlocked_B ? -0.25f : IsBlocked_T ? 0.25f : 0;
                 return DefaultPositionWorld + _offset;
             }
             else
@@ -41,11 +41,13 @@ public class Tile : IHeapItem<Tile> {
     [HideInInspector] public bool HasConnectable_T = false;
     [HideInInspector] public bool HasConnectable_R = false;
     [HideInInspector] public bool HasConnectable_B = false;
-    //[HideInInspector] public bool HasConnectable_LT = false;
-    //[HideInInspector] public bool HasConnectable_TR = false;
-    //[HideInInspector] public bool HasConnectable_RB = false;
-    //[HideInInspector] public bool HasConnectable_BL = false;
-	[HideInInspector] public Tile ConnectedDiagonal_L;
+
+    [HideInInspector] public bool IsBlocked_L = false;
+    [HideInInspector] public bool IsBlocked_T = false;
+    [HideInInspector] public bool IsBlocked_R = false;
+    [HideInInspector] public bool IsBlocked_B = false;
+
+    [HideInInspector] public Tile ConnectedDiagonal_L;
 	[HideInInspector] public Tile ConnectedDiagonal_T;
 	[HideInInspector] public Tile ConnectedDiagonal_R;
 	[HideInInspector] public Tile ConnectedDiagonal_B;
@@ -86,7 +88,7 @@ public class Tile : IHeapItem<Tile> {
         type = _type;
 
         switch (_type) {
-            case TileType.Default:
+            case TileType.Empty:
                 Walkable = true;
                 DefaultPositionWorld = WorldPosition;
                 CanConnect_L = false;

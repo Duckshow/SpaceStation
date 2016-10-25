@@ -125,7 +125,7 @@ public class Grid : MonoBehaviour {
 
                 int movementPenalty = 0; // todo: use this for something
                 if (Random.value < 0.75f)
-                    grid[x, y] = new Tile(Tile.TileType.Default, worldPoint, x, y, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y), movementPenalty);
+                    grid[x, y] = new Tile(Tile.TileType.Empty, worldPoint, x, y, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y), movementPenalty);
                 else // for testing-purposes
                     grid[x, y] = new Tile(Tile.TileType.Wall, worldPoint, x, y, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y), movementPenalty);
             }
@@ -163,7 +163,7 @@ public class Grid : MonoBehaviour {
 
         for (int y = gridSizeY - 1; y >= 0; y--) {
             for (int x = gridSizeX - 1; x >= 0; x--) { // loop backwards so we draw towards, not away from the perspective of the camera
-                UpdateTileGraphics(grid[x, y], _individualUpdate: false, _updateNeighbours: false);
+                UpdateTile(grid[x, y], _individualUpdate: false, _updateNeighbours: false);
             }
         }
 
@@ -179,7 +179,7 @@ public class Grid : MonoBehaviour {
         return (_sliceAmountY * (gridSizeX / sliceSizeX))  + _sliceAmountX;
     }
 
-    public void UpdateTileGraphics(Tile _tile, bool _individualUpdate, bool _updateNeighbours) {
+    public void UpdateTile(Tile _tile, bool _individualUpdate, bool _updateNeighbours) {
         List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
         List<Tile> _neighboursToUpdate = new List<Tile>();
         List<int> _affectedGridSlices = new List<int>();
@@ -198,10 +198,13 @@ public class Grid : MonoBehaviour {
             if (_yDiff == -1) {
                 if (_xDiff == 0) {
                     _tile.HasConnectable_B = _neighbours[i].CanConnect_T;
+                    _tile.IsBlocked_B = TileIsBlockingOtherTile(_neighbours[i]._Type_, ActorOrientation.OrientationEnum.Down);
 
                     // must update if the tile below is diagonal (since they stretch up)
                     if (_updateNeighbours || _neighbours[i]._Type_ == Tile.TileType.Diagonal_LT || _neighbours[i]._Type_ == Tile.TileType.Diagonal_TR) {
                         _neighbours[i].HasConnectable_T = _tile.CanConnect_B;
+                        _neighbours[i].IsBlocked_T = TileIsBlockingOtherTile(_tile._Type_, ActorOrientation.OrientationEnum.Up);
+
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
                 }
@@ -209,17 +212,23 @@ public class Grid : MonoBehaviour {
             else if (_yDiff == 0) {
                 if (_xDiff == -1) {
                     _tile.HasConnectable_L = _neighbours[i].CanConnect_R;
+                    _tile.IsBlocked_L = TileIsBlockingOtherTile(_neighbours[i]._Type_, ActorOrientation.OrientationEnum.Left);
 
                     if (_updateNeighbours) {
                         _neighbours[i].HasConnectable_R = _tile.CanConnect_L;
+                        _neighbours[i].IsBlocked_R = TileIsBlockingOtherTile(_tile._Type_, ActorOrientation.OrientationEnum.Right);
+
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
                 }
                 else if (_xDiff == 1) {
                     _tile.HasConnectable_R = _neighbours[i].CanConnect_L;
+                    _tile.IsBlocked_R = TileIsBlockingOtherTile(_neighbours[i]._Type_, ActorOrientation.OrientationEnum.Right);
 
                     if (_updateNeighbours) {
                         _neighbours[i].HasConnectable_L = _tile.CanConnect_R;
+                        _neighbours[i].IsBlocked_L = TileIsBlockingOtherTile(_tile._Type_, ActorOrientation.OrientationEnum.Left);
+
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
                 }
@@ -227,9 +236,12 @@ public class Grid : MonoBehaviour {
             else if (_yDiff == 1) {
                 if (_xDiff == 0) {
                     _tile.HasConnectable_T = _neighbours[i].CanConnect_B;
+                    _tile.IsBlocked_T = TileIsBlockingOtherTile(_neighbours[i]._Type_, ActorOrientation.OrientationEnum.Up);
 
                     if (_updateNeighbours) {
                         _neighbours[i].HasConnectable_B = _tile.CanConnect_T;
+                        _neighbours[i].IsBlocked_B = TileIsBlockingOtherTile(_tile._Type_, ActorOrientation.OrientationEnum.Down);
+
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
                 }
@@ -245,14 +257,32 @@ public class Grid : MonoBehaviour {
             if (_neighboursToUpdate[i]._Type_ == Tile.TileType.Diagonal_LT || _neighboursToUpdate[i]._Type_ == Tile.TileType.Diagonal_TR)
                 continue; // skip diagonals and do them later
 
-            UpdateTileGraphics(_neighboursToUpdate[i], _individualUpdate: false, _updateNeighbours: false);
+            UpdateTile(_neighboursToUpdate[i], _individualUpdate: false, _updateNeighbours: false);
             _neighboursToUpdate.RemoveAt(i);
         }
         for (int i = _neighboursToUpdate.Count - 1; i >= 0; i--) {
-            UpdateTileGraphics(_neighboursToUpdate[i], _individualUpdate: false, _updateNeighbours: false);
+            UpdateTile(_neighboursToUpdate[i], _individualUpdate: false, _updateNeighbours: false);
         }
 
         ApplyGraphics(_tile.GridSliceIndex);
+    }
+
+    bool TileIsBlockingOtherTile(Tile.TileType _otherTileType, ActorOrientation.OrientationEnum _otherTileDirection) {
+        if (_otherTileType == Tile.TileType.Wall || _otherTileType == Tile.TileType.MiscBlocker)
+            return true;
+
+        switch (_otherTileDirection) {
+            case ActorOrientation.OrientationEnum.Down:
+                return _otherTileType == Tile.TileType.Diagonal_LT || _otherTileType == Tile.TileType.Diagonal_TR;
+            case ActorOrientation.OrientationEnum.Left:
+                return _otherTileType == Tile.TileType.Diagonal_TR || _otherTileType == Tile.TileType.Diagonal_RB;
+            case ActorOrientation.OrientationEnum.Up:
+                return _otherTileType == Tile.TileType.Diagonal_RB || _otherTileType == Tile.TileType.Diagonal_BL;
+            case ActorOrientation.OrientationEnum.Right:
+                return _otherTileType == Tile.TileType.Diagonal_BL || _otherTileType == Tile.TileType.Diagonal_LT;
+        }
+
+        return false;
     }
 
     public void ApplyGraphics(int _sliceIndex) {
@@ -337,7 +367,7 @@ public class Grid : MonoBehaviour {
             return CachedAssets.Wall_0_Diagonal_RB;
         else if (_tile._Type_ == Tile.TileType.Diagonal_BL)
             return CachedAssets.Wall_0_Diagonal_BL;
-        else //if (_tile._Type_ == Tile.TileType.Default)
+        else // empty hopefully
             return null;
     }
 
@@ -461,7 +491,7 @@ public class Grid : MonoBehaviour {
         return null;
     }
     public Tile GetClosestFreeNode(Tile _tile) { // todo: diagonals can be seen as "free" depending on the usage - fix that! Removed diagonals from consideration for now.
-        if (_tile._Type_ == Tile.TileType.Default && !_tile.IsOccupied)
+        if (_tile._Type_ == Tile.TileType.Empty && !_tile.IsOccupied)
             return _tile;
 
         List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
@@ -471,7 +501,7 @@ public class Grid : MonoBehaviour {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
-                if (_neighbours[i]._Type_ != Tile.TileType.Default || _neighbours[i].IsOccupied)
+                if (_neighbours[i]._Type_ != Tile.TileType.Empty || _neighbours[i].IsOccupied)
                     continue;
 
                 return _neighbours[i];
