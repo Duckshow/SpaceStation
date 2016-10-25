@@ -55,6 +55,7 @@ public class Grid : MonoBehaviour {
     public const float WORLD_HEIGHT = -1;
 
     public bool DisplayGridGizmos;
+    public bool DisplayPaths;
     public LayerMask UnwalkableMask;
     public Vector2 GridWorldSize;
     public float NodeRadius;
@@ -410,7 +411,7 @@ public class Grid : MonoBehaviour {
         return neighbours;
     }
 
-    public Tile GetNodeFromWorldPoint(Vector3 _worldPosition) {
+    public Tile GetTileFromWorldPoint(Vector3 _worldPosition) {
         float percentX = (_worldPosition.x - NodeRadius + GridWorldSize.x * 0.5f) / GridWorldSize.x;
         float percentY = (_worldPosition.y - NodeRadius + GridWorldSize.y * 0.5f) / GridWorldSize.y;
         percentX = Mathf.Clamp01(percentX);
@@ -425,7 +426,7 @@ public class Grid : MonoBehaviour {
     }
 
     public Tile GetClosestFreeNode(Vector3 _worldPosition) {
-        Tile _tile = GetNodeFromWorldPoint(_worldPosition);
+        Tile _tile = GetTileFromWorldPoint(_worldPosition);
         if (_tile.Walkable && !_tile.IsOccupied)
             return _tile;
 
@@ -545,7 +546,7 @@ public class Grid : MonoBehaviour {
             return false;
         }
 
-        if (!_nonDiagonalNeighbour1.Walkable && !_nonDiagonalNeighbour2.Walkable)
+        if (!_nonDiagonalNeighbour1.Walkable || !_nonDiagonalNeighbour2.Walkable)
             return true;
 
         return false;

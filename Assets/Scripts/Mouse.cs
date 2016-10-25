@@ -151,7 +151,7 @@ public class Mouse : MonoBehaviour {
             }
             // else if clicked ground, try putting object there
             else if(PickedUpObject != null) {
-                Tile _tile = Grid.Instance.GetNodeFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+                Tile _tile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
                 if (_tile._Type_ != Tile.TileType.Default)
                     return;
                 if (_tile.IsOccupied)
@@ -319,7 +319,7 @@ public class Mouse : MonoBehaviour {
         if (PickedUpObject == null)
             return;
 
-        PickedUpObject.transform.position = _tile.CenterPositionWorld;
+        PickedUpObject.transform.position = _tile.DefaultPositionWorld;
         PickedUpObject.transform.parent = null;
         GUIManager.Instance.CloseInfoWindow(PickedUpObject);
         PickedUpObject.Hide(false);

@@ -58,17 +58,43 @@ public class Task {
         IEnumerator _PerformTask() {
             meta.Handler.Owner.CurrentTask = "Moving to " + target;
 
-            Vector3 currentWaypoint = path[0];
+            Vector3 _currentWaypoint = path[0];
+            Vector3 _previousWaypoint = meta.Handler.Owner.transform.position;
+            Vector3 _newPosition;
+            Vector3 _diff;
+            Tile _currentWaypointTile;
+            float _distance = Vector3.Distance(_previousWaypoint, _currentWaypoint);
+            float _timeAtPrevWaypoint = Time.time;
+
+            SendActorNewOrientation((_currentWaypoint - meta.Handler.Owner.transform.position).normalized);
             while (true) {
-                if (meta.Handler.Owner.transform.position == currentWaypoint) {
+                if (Mathf.Abs(_currentWaypoint.x - meta.Handler.Owner.transform.position.x) < 0.01f && Mathf.Abs(_currentWaypoint.y - meta.Handler.Owner.transform.position.y) < 0.01f) {
                     targetIndex++;
                     if (targetIndex >= path.Length)
                         break;
 
-                    currentWaypoint = path[targetIndex];
+                    _previousWaypoint = _currentWaypoint;
+                    _currentWaypoint = path[targetIndex];
+                    _distance = Vector3.Distance(_previousWaypoint, _currentWaypoint);
+                    
+                    // force actor to lie down if the next tile is not adjacent to a wall (looks better)
+                    _currentWaypointTile = Grid.Instance.GetTileFromWorldPoint(_currentWaypoint);
+                    ForceActorLieDown(_currentWaypointTile._Type_ == Tile.TileType.Default && !_currentWaypointTile.HasConnectable_B && !_currentWaypointTile.HasConnectable_L && !_currentWaypointTile.HasConnectable_R && !_currentWaypointTile.HasConnectable_T);
+
+                    // update orientation
+                    SendActorNewOrientation((_currentWaypoint - _previousWaypoint).normalized);
+
+                    // set time so movement is kept at a good pace
+                    _timeAtPrevWaypoint = Time.time;
                 }
 
-                meta.Handler.Owner.transform.position = Vector3.MoveTowards(meta.Handler.Owner.transform.position, currentWaypoint, speed * Time.deltaTime);
+                // create a slowdown-effect when approaching currentwaypoint
+                _newPosition = Vector3.Lerp(_previousWaypoint, _currentWaypoint, Mathf.Clamp01((Time.time - _timeAtPrevWaypoint) / (_distance / speed)));
+                _diff = _newPosition - meta.Handler.Owner.transform.position; 
+                if (Vector3.Distance(_newPosition, _currentWaypoint) < Grid.Instance.NodeRadius)
+                    _diff *= Mathf.Max(0.1f, Vector3.Distance(_newPosition, _currentWaypoint) / Grid.Instance.NodeRadius);
+
+                meta.Handler.Owner.transform.position += _diff;
                 yield return null;
             }
 
@@ -80,6 +106,27 @@ public class Task {
             if(cachedRoutine != null) // not sure if the "if" is dangerous...
                 meta.Handler.Owner.StopCoroutine(cachedRoutine);
             base.Stop();
+        }
+
+        float directionAngle;
+        void SendActorNewOrientation(Vector3 _newDirection) {
+            directionAngle = (Mathf.Rad2Deg * Mathf.Atan2(-_newDirection.x, -_newDirection.y)) + 180;
+            
+            // up
+            if (directionAngle > 315 || directionAngle < 45)
+                meta.Handler.Owner.Orienter.SetOrientation(ActorOrientation.OrientationEnum.Up);
+            // right
+            else if (directionAngle > 45 && directionAngle < 135)
+                meta.Handler.Owner.Orienter.SetOrientation(ActorOrientation.OrientationEnum.Right);
+            // down
+            else if (directionAngle > 135 && directionAngle < 225)
+                meta.Handler.Owner.Orienter.SetOrientation(ActorOrientation.OrientationEnum.Down);
+            // left
+            else if (directionAngle > 225 && directionAngle < 315)
+                meta.Handler.Owner.Orienter.SetOrientation(ActorOrientation.OrientationEnum.Left);
+        }
+        void ForceActorLieDown(bool _b) {
+            meta.Handler.Owner.Orienter.ForceLieDown(_b);
         }
     }
 

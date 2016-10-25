@@ -27,8 +27,8 @@ public class Pathfinding : MonoBehaviour {
         Vector3[] waypoints = new Vector3[0];
         bool pathSuccess = false;
 
-        Tile startNode = grid.GetNodeFromWorldPoint(_startPos);
-        Tile targetNode = grid.GetNodeFromWorldPoint(_targetPos);
+        Tile startNode = grid.GetTileFromWorldPoint(_startPos);
+        Tile targetNode = grid.GetTileFromWorldPoint(_targetPos);
 
         if (startNode == targetNode) {
             UnityEngine.Debug.Log("Something tried to walk to where it already was! Skip!");
@@ -95,6 +95,12 @@ public class Pathfinding : MonoBehaviour {
 
         Vector3[] waypoints = SimplifyPath(path);
         Array.Reverse(waypoints);
+
+        if (grid.DisplayPaths) {
+            for (int i = 1; i < waypoints.Length; i++)
+                UnityEngine.Debug.DrawLine(waypoints[i - 1], waypoints[i], Color.yellow, 30);
+        }
+
         return waypoints;
     }
 
@@ -103,9 +109,10 @@ public class Pathfinding : MonoBehaviour {
         Vector2 directionOld = Vector2.zero;
 
         for (int i = 1; i < path.Count; i++) {
-            Vector2 directionNew = new Vector2(path[i - 1].GridX - path[i].GridX, path[i - 1].GridY - path[i].GridY);
+            Vector2 directionNew = new Vector2(path[i - 1].DefaultPositionWorld.x - path[i].DefaultPositionWorld.x, path[i - 1].DefaultPositionWorld.y - path[i].DefaultPositionWorld.y);
             if (directionNew != directionOld)
-                waypoints.Add(path[i - 1].CenterPositionWorld);
+                waypoints.Add(path[i - 1].CharacterPositionWorld);
+            
             directionOld = directionNew;
         }
 

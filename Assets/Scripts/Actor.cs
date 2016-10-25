@@ -2,9 +2,9 @@
 
 public class Actor : MonoBehaviour {
 
-    public const float SPEED_STROLL = 4;
-    public const float SPEED_WALK = 8;
-    public const float SPEED_RUN = 16;
+    public const float SPEED_STROLL = 1f;
+    public const float SPEED_WALK = 2f;
+    public const float SPEED_RUN = 4f;
     public const float RATE_CONSUME = 2;
 
     Sector currentSector;
@@ -26,7 +26,12 @@ public class Actor : MonoBehaviour {
     public float HeldWater;
     public float HeldFood;
 
+    [HideInInspector] public ActorOrientation Orienter;
 
+
+    void Awake() {
+        Orienter = GetComponent<ActorOrientation>();
+    }
     void Start() {
         taskHandler.Owner = this;
         //currentSector = Sector.GetSectorFromPos(transform.position);

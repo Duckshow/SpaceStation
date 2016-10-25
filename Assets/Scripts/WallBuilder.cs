@@ -106,7 +106,7 @@ public class WallBuilder {
                 mouseGhostIsDirty = true;
 
                 // find start tile
-                startTile = Grid.Instance.GetNodeFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+                startTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
                 startPos = new Vector2(startTile.WorldPosition.x, startTile.WorldPosition.y);
             }
 
@@ -134,7 +134,7 @@ public class WallBuilder {
     void GhostFollowMouse() {
         // find current tile
         oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridX, mouseTile.GridY);
-        mouseTile = Grid.Instance.GetNodeFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
         mousePos = new Vector2(mouseTile.WorldPosition.x, mouseTile.WorldPosition.y);
 
         mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridX || oldMouseGridPos.y != mouseTile.GridY;
@@ -218,7 +218,7 @@ public class WallBuilder {
         hasUsedGhosts = true;
 
         // find current tile
-        mouseTile = Grid.Instance.GetNodeFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
         mousePos = new Vector2(mouseTile.WorldPosition.x, mouseTile.WorldPosition.y);
 
         // get tile distance

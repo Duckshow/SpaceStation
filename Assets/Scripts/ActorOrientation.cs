@@ -45,4 +45,8 @@ public class ActorOrientation : MonoBehaviour {
         EyeRenderer.sprite = ActorAssets.Instance.Eyes[actor.EyeIndex].GetOrientedAsset(_orientation);
         BeardRenderer.sprite = ActorAssets.Instance.Beards[actor.BeardIndex].GetOrientedAsset(_orientation);
     }
+
+    public void ForceLieDown(bool _b) {
+        body.ForceTargetRotation = _b;
+    }
 }

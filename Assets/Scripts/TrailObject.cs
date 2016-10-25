@@ -7,11 +7,11 @@ public class TrailObject : MonoBehaviour {
     [SerializeField] private float RotateSpeed;
 
     [HideInInspector] public ActorOrientation.OrientationEnum Orientation;
+    [HideInInspector] public bool ForceTargetRotation = false;
 
-    private const float VERTICAL_TARGETROTATION_MOVEDOWN = 175;
-    private const float VERTICAL_TARGETROTATION_MOVEUP = -1.1f;
+    private const float VERTICAL_TARGETROTATION_MOVEDOWN = 180;
     private const float HORIZONTAL_TARGETROTATION = 90;
-    private const float HORIZONTAL_TARGETPOSITION = 0.25f;
+    private const float HORIZONTAL_TARGETPOSITION = 0.3f;
 
     private Vector3 targetPosition;
     private Vector3 targetRotation;
@@ -24,6 +24,7 @@ public class TrailObject : MonoBehaviour {
     private Quaternion targetAngle;
     private float targetEulerX;
     private float targetEulerZ;
+    private float currentTargetRotation;
 
     private float eulerZ;
 
@@ -45,46 +46,18 @@ public class TrailObject : MonoBehaviour {
         CurrentVelocity = transform.position - previousPosition;
         transform.position = previousPosition;
 
-        switch (Orientation) {
-            case ActorOrientation.OrientationEnum.Down:
-            case ActorOrientation.OrientationEnum.Up:
-                if (CurrentVelocity.x == 0)
-                    targetEulerZ = 0;
-                else if (CurrentVelocity.x > 0)
-                    targetEulerZ = -HORIZONTAL_TARGETROTATION * 0.5f;
-                else if (CurrentVelocity.x < 0)
-                    targetEulerZ = HORIZONTAL_TARGETROTATION * 0.5f;
+        float _angle = (Mathf.Rad2Deg * Mathf.Atan2(-CurrentVelocity.normalized.x, CurrentVelocity.normalized.y));
+        if (ForceTargetRotation)
+            targetEulerZ = _angle;
+        else
+            targetEulerZ = Mathf.Lerp(0, _angle, CurrentVelocity.magnitude * 10);
+        targetAngle = Quaternion.Euler(targetEulerX, 0, targetEulerZ);
 
-                if (CurrentVelocity.y == 0)
-                    targetEulerX = 0;
-                else if (CurrentVelocity.y > 0)
-                    targetEulerX = VERTICAL_TARGETROTATION_MOVEUP;
-                else if (CurrentVelocity.y < 0)
-                    targetEulerX = VERTICAL_TARGETROTATION_MOVEDOWN;
-
-                targetAngle = Quaternion.Euler(targetEulerX, 0, targetEulerZ);
-
-                useRotation = true;
-                usePosition = true;
-                break;
-            case ActorOrientation.OrientationEnum.Left:
-            case ActorOrientation.OrientationEnum.Right:
-                if (CurrentVelocity.x == 0)
-                    targetEulerZ = 0;
-                else if (CurrentVelocity.x > 0)
-                    targetEulerZ = -HORIZONTAL_TARGETROTATION;
-                else if (CurrentVelocity.x < 0)
-                    targetEulerZ = HORIZONTAL_TARGETROTATION;
-
-                targetAngle = Quaternion.Euler(targetEulerX, 0, targetEulerZ);
-
-                useRotation = true;
-                usePosition = true;
-                break;
-        }
+        useRotation = true;
+        usePosition = true;
 
         if (useRotation) {
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetAngle, Mathf.Clamp01(Time.deltaTime * RotateSpeed * Mathf.Max(0.01f, Mathf.Abs(CurrentVelocity.x))));
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetAngle, Mathf.Clamp01(Time.smoothDeltaTime * RotateSpeed * Mathf.Max(0.01f, Mathf.Abs(CurrentVelocity.magnitude))));
         }
 
         if (usePosition) {
@@ -94,12 +67,12 @@ public class TrailObject : MonoBehaviour {
                 eulerZ -= 360;
 
             targetPosition = new Vector3(0, HORIZONTAL_TARGETPOSITION, 0);
-            targetPosition = transform.parent.position + Vector3.Slerp(originalPositionLocal, targetPosition, Mathf.Abs(eulerZ) / Mathf.Abs(HORIZONTAL_TARGETROTATION));
-            transform.position += (targetPosition - transform.position) * Time.deltaTime * FollowSpeed;
+            targetPosition = transform.parent.position + Vector3.Lerp(originalPositionLocal, targetPosition, Mathf.Clamp01(Mathf.Abs(eulerZ) / 90) + Mathf.Max(0, CurrentVelocity.y * 10));
+            transform.position += (targetPosition - transform.position) * Time.smoothDeltaTime * FollowSpeed;
         }
         else {
             // just follow the original local position
-            transform.position += ((transform.parent.position + originalPositionLocal) - transform.position) * Time.deltaTime * FollowSpeed;
+            transform.position += ((transform.parent.position + originalPositionLocal) - transform.position) * Time.smoothDeltaTime * FollowSpeed;
         }
 
         // save position for reset
