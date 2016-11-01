@@ -5,11 +5,14 @@ using System.Collections.Generic;
 [System.Serializable]
 public class WallBuilder {
 
-    private enum ModeEnum { Default, Room, RoomFull, Diagonal }
+    private enum ModeEnum { Default, Room, Diagonal }
     private ModeEnum Mode = ModeEnum.Default;
 
-    [SerializeField]
-    private SpriteRenderer ghostSpriteRend;
+    [SerializeField] private SpriteRenderer GhostSpriteRend;
+    [SerializeField] private Color Color_NewWall = Color.white;
+    [SerializeField] private Color Color_RemoveWall = Color.red;
+    [SerializeField] private Color Color_AlreadyExistingWall = Color.grey;
+    [SerializeField] private Color Color_BlockedWall = (Color.yellow + Color.red) * 0.5f;
 
     private IEnumerator ghostRoutine;
     private SpriteRenderer[] allGhostSprites;
@@ -17,11 +20,13 @@ public class WallBuilder {
         public SpriteRenderer Renderer;
         public Vector2 GridPosition;
         public Tile.TileType Type;
+        public Tile.TileOrientation Orientation;
 
-        public GhostInfo(SpriteRenderer _rend, Vector2 _gridPos, Tile.TileType _type) {
+        public GhostInfo(SpriteRenderer _rend, Vector2 _gridPos, Tile.TileType _type, Tile.TileOrientation _orientation) {
             Renderer = _rend;
             GridPosition = _gridPos;
             Type = _type;
+            Orientation = _orientation;
         }
     }
     private List<GhostInfo> usedGhostTiles = new List<GhostInfo>();
@@ -31,10 +36,11 @@ public class WallBuilder {
     private Vector2 oldMouseGridPos;
 
     private Tile startTile;
-    private Tile mouseTile;
+    // TODO: can't I just reuse these two? -.-
+    private Tile tileUnderMouse;
     private Tile tileUnderGhost;
 
-    private Color color;
+    private Color ghostColor;
 
     private bool isDeleting = false;
     private bool modeWasChanged = false;
@@ -42,16 +48,17 @@ public class WallBuilder {
     private bool hasUsedGhosts = false; // used because of a yield
     private bool mouseIsDown = false; // used because of a yield
     private bool mouseGhostIsDirty = true;
-    private int mouseGhostRotation = 0;
+    private Tile.TileOrientation mouseGhostOrientation = Tile.TileOrientation.None;
     private Tile.TileType mouseGhostType = Tile.TileType.Wall;
 
     private int distX;
     private int distY;
     private int distXAbs;
     private int distYAbs;
-    private int highestAxisValue;
     private int ghostTile_GridX;
     private int ghostTile_GridY;
+    private int highestAxisValue;
+    private const int MAX_TILES_AXIS = 40;
 
     private bool isGoingDiagonal;
 
@@ -60,11 +67,12 @@ public class WallBuilder {
     private int oldDistY;
 
     private List<Tile> selectedTiles = new List<Tile>();
-    private List<Tile.TileType> selectedTilesType = new List<Tile.TileType>();
+    private List<Tile.TileType> selectedTilesNewType = new List<Tile.TileType>();
+    private List<Tile.TileOrientation> selectedTilesNewOrientation = new List<Tile.TileOrientation>();
 
 
     public void Setup(Transform _transform) {
-        allGhostSprites = _transform.GetComponentsInChildren<SpriteRenderer>();
+        allGhostSprites = _transform.GetComponentsInChildren<SpriteRenderer>(true);
     }
 
     public void Activate() {
@@ -73,12 +81,12 @@ public class WallBuilder {
     }
     public void DeActivate() {
         for (int i = 0; i < allGhostSprites.Length; i++)
-            allGhostSprites[i].enabled = false;
+            allGhostSprites[i].gameObject.SetActive(false);
         Mouse.Instance.StopCoroutine(ghostRoutine);
     }
 
     IEnumerator _BuildRoutine() {
-        if (ghostSpriteRend.sprite == null)
+        if (GhostSpriteRend.sprite == null)
             yield break;
 
         while (Mouse.Instance.Mode == Mouse.ModeEnum.BuildWalls) {
@@ -93,8 +101,8 @@ public class WallBuilder {
                 Mode = ModeEnum.Room;
             if (Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftControl) && !isDeleting)
                 Mode = ModeEnum.Diagonal;
-            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && isDeleting)
-                Mode = ModeEnum.RoomFull;
+            //if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && isDeleting)
+            //    Mode = ModeEnum.RoomFull;
             if (Mode != _oldMode) {
                 modeWasChanged = true;
                 mouseGhostIsDirty = true;
@@ -133,35 +141,60 @@ public class WallBuilder {
 
     void GhostFollowMouse() {
         // find current tile
-        oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridX, mouseTile.GridY);
-        mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
-        mousePos = new Vector2(mouseTile.WorldPosition.x, mouseTile.WorldPosition.y);
+        oldMouseGridPos = tileUnderMouse == null ? Vector2.zero : new Vector2(tileUnderMouse.GridX, tileUnderMouse.GridY);
+        tileUnderMouse = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        mousePos = new Vector2(tileUnderMouse.WorldPosition.x, tileUnderMouse.WorldPosition.y);
 
-        mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridX || oldMouseGridPos.y != mouseTile.GridY;
+        mouseGhostHasNewTile = oldMouseGridPos.x != tileUnderMouse.GridX || oldMouseGridPos.y != tileUnderMouse.GridY;
         if (modeWasChanged)
             mouseGhostHasNewTile = true; // have to force my way into the sprite-update stuff below
         if (mouseGhostHasNewTile)
             mouseGhostIsDirty = true;
 
         // set position
-        allGhostSprites[0].transform.position = mouseTile.WorldPosition;
+        allGhostSprites[0].transform.position = tileUnderMouse.WorldPosition;
 
         // rotate diagonals with Q&E
-        if (Mode == ModeEnum.Diagonal) {
-            if (Input.GetKeyUp(KeyCode.E)) {
-                mouseGhostRotation++;
-                if (mouseGhostRotation > 3)
-                    mouseGhostRotation = 0;
-
-                mouseGhostIsDirty = true;
+        int _rotateDirection = 0;
+        _rotateDirection += Input.GetKeyUp(KeyCode.E) ? -1 : 0;
+        _rotateDirection += Input.GetKeyUp(KeyCode.Q) ? 1 : 0;
+        if (_rotateDirection != 0) {
+            if (mouseGhostType == Tile.TileType.Diagonal) {
+                switch (mouseGhostOrientation) {
+                    case Tile.TileOrientation.None:
+                    case Tile.TileOrientation.BottomLeft:
+                        mouseGhostOrientation = _rotateDirection > 0 ? Tile.TileOrientation.BottomRight : Tile.TileOrientation.TopLeft;
+                        break;
+                    case Tile.TileOrientation.TopLeft:
+                        mouseGhostOrientation = _rotateDirection > 0 ? Tile.TileOrientation.BottomLeft : Tile.TileOrientation.TopRight;
+                        break;
+                    case Tile.TileOrientation.TopRight:
+                        mouseGhostOrientation = _rotateDirection > 0 ? Tile.TileOrientation.TopLeft : Tile.TileOrientation.BottomRight;
+                        break;
+                    case Tile.TileOrientation.BottomRight:
+                        mouseGhostOrientation = _rotateDirection > 0 ? Tile.TileOrientation.TopRight : Tile.TileOrientation.BottomLeft;
+                        break;
+                }
             }
-            if (Input.GetKeyUp(KeyCode.Q)) {
-                mouseGhostRotation--;
-                if (mouseGhostRotation < 0)
-                    mouseGhostRotation = 3;
-
-                mouseGhostIsDirty = true;
+            else {
+                switch (mouseGhostOrientation) {
+                    case Tile.TileOrientation.None:
+                    case Tile.TileOrientation.Bottom:
+                        mouseGhostOrientation = _rotateDirection > 0 ? Tile.TileOrientation.Right : Tile.TileOrientation.Left;
+                        break;
+                    case Tile.TileOrientation.Left:
+                        mouseGhostOrientation = _rotateDirection > 0 ? Tile.TileOrientation.Bottom : Tile.TileOrientation.Top;
+                        break;
+                    case Tile.TileOrientation.Top:
+                        mouseGhostOrientation = _rotateDirection > 0 ? Tile.TileOrientation.Left : Tile.TileOrientation.Right;
+                        break;
+                    case Tile.TileOrientation.Right:
+                        mouseGhostOrientation = _rotateDirection > 0 ? Tile.TileOrientation.Top : Tile.TileOrientation.Bottom;
+                        break;
+                }
             }
+
+            mouseGhostIsDirty = true;
         }
 
         if (mouseGhostIsDirty) {
@@ -169,47 +202,52 @@ public class WallBuilder {
 
             Color _newColor = Color.white;
             if (Mode == ModeEnum.Diagonal) {
-                allGhostSprites[0].sprite = Grid.Instance.CachedAssets.Wall_0_Diagonal_LT; // just as a default value kind of thing
+
+                // default value stuff
+                if (mouseGhostType != Tile.TileType.Diagonal) {
+                    mouseGhostType = Tile.TileType.Diagonal;
+                    allGhostSprites[0].sprite = CachedAssets.Instance.WallSets[0].Diagonal_TopLeft;
+                }
 
                 bool _ghostFitsTiles = false;
-                if ((mouseGhostHasNewTile && mouseTile.HasConnectable_L && mouseTile.HasConnectable_T) || (!mouseGhostHasNewTile && mouseGhostRotation == 0)) {
-                    mouseGhostRotation = 0;
-                    mouseGhostType = Tile.TileType.Diagonal_LT;
-                    allGhostSprites[0].sprite = Grid.Instance.CachedAssets.Wall_0_Diagonal_LT;
-                    _ghostFitsTiles = mouseTile.HasConnectable_L && mouseTile.HasConnectable_T;
+                if ((mouseGhostHasNewTile && tileUnderMouse.HasConnectable_L && tileUnderMouse.HasConnectable_T) || (!mouseGhostHasNewTile && mouseGhostOrientation == Tile.TileOrientation.TopLeft)) {
+                    mouseGhostOrientation = Tile.TileOrientation.TopLeft;
+                    allGhostSprites[0].sprite = CachedAssets.Instance.WallSets[0].Diagonal_TopLeft;
+                    _ghostFitsTiles = tileUnderMouse.HasConnectable_L && tileUnderMouse.HasConnectable_T;
                 }
-                else if ((mouseGhostHasNewTile && mouseTile.HasConnectable_T && mouseTile.HasConnectable_R) || (!mouseGhostHasNewTile && mouseGhostRotation == 1)) {
-                    mouseGhostRotation = 1;
-                    mouseGhostType = Tile.TileType.Diagonal_TR;
-                    allGhostSprites[0].sprite = Grid.Instance.CachedAssets.Wall_0_Diagonal_TR;
-                    _ghostFitsTiles = mouseTile.HasConnectable_T && mouseTile.HasConnectable_R;
+                else if ((mouseGhostHasNewTile && tileUnderMouse.HasConnectable_T && tileUnderMouse.HasConnectable_R) || (!mouseGhostHasNewTile && mouseGhostOrientation == Tile.TileOrientation.TopRight)) {
+                    mouseGhostOrientation = Tile.TileOrientation.TopRight;
+                    allGhostSprites[0].sprite = CachedAssets.Instance.WallSets[0].Diagonal_TopRight;
+                    _ghostFitsTiles = tileUnderMouse.HasConnectable_T && tileUnderMouse.HasConnectable_R;
                 }
-                else if ((mouseGhostHasNewTile && mouseTile.HasConnectable_R && mouseTile.HasConnectable_B) || (!mouseGhostHasNewTile && mouseGhostRotation == 2)) {
-                    mouseGhostRotation = 2;
-                    mouseGhostType = Tile.TileType.Diagonal_RB;
-                    allGhostSprites[0].sprite = Grid.Instance.CachedAssets.Wall_0_Diagonal_RB;
-                    _ghostFitsTiles = mouseTile.HasConnectable_R && mouseTile.HasConnectable_B;
+                else if ((mouseGhostHasNewTile && tileUnderMouse.HasConnectable_R && tileUnderMouse.HasConnectable_B) || (!mouseGhostHasNewTile && mouseGhostOrientation == Tile.TileOrientation.BottomRight)) {
+                    mouseGhostOrientation = Tile.TileOrientation.BottomRight;
+                    allGhostSprites[0].sprite = CachedAssets.Instance.WallSets[0].Diagonal_BottomRight;
+                    _ghostFitsTiles = tileUnderMouse.HasConnectable_R && tileUnderMouse.HasConnectable_B;
                 }
-                else if ((mouseGhostHasNewTile && mouseTile.HasConnectable_B && mouseTile.HasConnectable_L) || (!mouseGhostHasNewTile && mouseGhostRotation == 3)) {
-                    mouseGhostRotation = 3;
-                    mouseGhostType = Tile.TileType.Diagonal_BL;
-                    allGhostSprites[0].sprite = Grid.Instance.CachedAssets.Wall_0_Diagonal_BL;
-                    _ghostFitsTiles = mouseTile.HasConnectable_B && mouseTile.HasConnectable_L;
+                else if ((mouseGhostHasNewTile && tileUnderMouse.HasConnectable_B && tileUnderMouse.HasConnectable_L) || (!mouseGhostHasNewTile && mouseGhostOrientation == Tile.TileOrientation.BottomLeft)) {
+                    mouseGhostOrientation = Tile.TileOrientation.BottomLeft;
+                    allGhostSprites[0].sprite = CachedAssets.Instance.WallSets[0].Diagonal_BottomLeft;
+                    _ghostFitsTiles = tileUnderMouse.HasConnectable_B && tileUnderMouse.HasConnectable_L;
                 }
 
-                _newColor = _ghostFitsTiles ? Color.white : Color.red;
+                _newColor = _ghostFitsTiles ? Color_NewWall : Color_BlockedWall;
             }
             else {
                 mouseGhostType = Tile.TileType.Wall;
-                allGhostSprites[0].sprite = Grid.Instance.CachedAssets.Wall_0_Single;
-                _newColor = Color.white;
+                mouseGhostOrientation = Tile.TileOrientation.None;
+                allGhostSprites[0].sprite = CachedAssets.Instance.WallSets[0].Single;
+                _newColor = Color_NewWall;
+            }
+            
+            if (tileUnderMouse._Type_ != Tile.TileType.Empty) {
+                if (Mode == ModeEnum.Diagonal && (tileUnderMouse._Type_ != Tile.TileType.Diagonal || tileUnderMouse._Orientation_ != mouseGhostOrientation))
+                    _newColor = Color_BlockedWall;
+                else
+                    _newColor = Color_AlreadyExistingWall;
             }
 
-            if (mouseTile._Type_ != Tile.TileType.Empty)
-                _newColor = Color.red;
-
-            allGhostSprites[0].enabled = true;
-            _newColor.a = 0.5f;
+            allGhostSprites[0].gameObject.SetActive(true);
             allGhostSprites[0].color = _newColor;
         }
     }
@@ -218,100 +256,90 @@ public class WallBuilder {
         hasUsedGhosts = true;
 
         // find current tile
-        mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
-        mousePos = new Vector2(mouseTile.WorldPosition.x, mouseTile.WorldPosition.y);
+        tileUnderMouse = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        mousePos = new Vector2(tileUnderMouse.WorldPosition.x, tileUnderMouse.WorldPosition.y);
 
         // get tile distance
         oldDistX = distX;
         oldDistY = distY;
-        distX = mouseTile.GridX - startTile.GridX;
-        distY = mouseTile.GridY - startTile.GridY;
+        distX = tileUnderMouse.GridX - startTile.GridX;
+        distY = tileUnderMouse.GridY - startTile.GridY;
 
         // check if it's worth continuing
         hasMoved = !(oldDistX == distX && oldDistY == distY);
-        if (hasMoved || mouseTile == startTile) {
+        if (hasMoved || tileUnderMouse == startTile) {
 
             // get the rest of the tile distance and shit
-            distXAbs = Mathf.Abs(distX);
-            distYAbs = Mathf.Abs(distY);
+            distXAbs = Mathf.Min(Mathf.Abs(distX), MAX_TILES_AXIS);
+            distYAbs = Mathf.Min(Mathf.Abs(distY), MAX_TILES_AXIS);
 
             ghostTile_GridX = startTile.GridX;
             ghostTile_GridY = startTile.GridY;
             tileUnderGhost = null;
 
             selectedTiles.Clear();
-            selectedTilesType.Clear();
+            selectedTilesNewType.Clear();
+            selectedTilesNewOrientation.Clear();
             usedGhostTiles = new List<GhostInfo>();
             for (int i = 0; i < allGhostSprites.Length; i++)
-                allGhostSprites[i].enabled = false;
+                allGhostSprites[i].gameObject.SetActive(false);
 
-            bool _break = false; // used for breaking out from double for-loops
             switch (Mode) {
                 case ModeEnum.Default:
                     #region Default
                     // determine if we're going to force diagonal ghosting
-                    highestAxisValue = Mathf.Clamp(Mathf.Max(distXAbs, distYAbs), 0, allGhostSprites.Length);
-                    isGoingDiagonal = Mathf.Abs(distXAbs - distYAbs) <= Mathf.RoundToInt(highestAxisValue * 0.5f);
+                    highestAxisValue = Mathf.Max(distXAbs, distYAbs);
+                    isGoingDiagonal = Mathf.Abs(distXAbs - distYAbs) <= highestAxisValue * 0.5f;
 
-                    for (int i = 0; i < allGhostSprites.Length; i++) {
-                        if (i <= highestAxisValue) {
-                            // determine the offset from the _startTile
-                            if (distXAbs >= distYAbs || isGoingDiagonal)
-                                ghostTile_GridX = distX < 0 ? startTile.GridX - i : startTile.GridX + i;
-                            if (distYAbs >= distXAbs || isGoingDiagonal)
-                                ghostTile_GridY = distY < 0 ? startTile.GridY - i : startTile.GridY + i;
+                    for (int i = 0; i <= highestAxisValue; i++) {
+                        // determine the offset from the _startTile
+                        if (distXAbs >= distYAbs || isGoingDiagonal)
+                            ghostTile_GridX = distX < 0 ? startTile.GridX - i : startTile.GridX + i;
+                        if (distYAbs >= distXAbs || isGoingDiagonal)
+                            ghostTile_GridY = distY < 0 ? startTile.GridY - i : startTile.GridY + i;
 
-                            // if outside grid, break
-                            if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridWorldSize.x)
-                                break;
-                            if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridWorldSize.y)
-                                break;
+                        // if outside grid, break
+                        if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridWorldSize.x)
+                            break;
+                        if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridWorldSize.y)
+                            break;
 
-                            // determine which sprite to use
-                            Sprite _thisSprite = null;
-                            if (isGoingDiagonal)
-                                _thisSprite = Grid.Instance.CachedAssets.Wall_0_Single;
-                            else if (distXAbs > distYAbs) {
-                                if (i == 0 || i == highestAxisValue) {
-                                    if ((distX > 0) == (i == 0))
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Horizontal_L;
-                                    else if ((distX < 0) == (i == 0))
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Horizontal_R;
-                                }
-                                else
-                                    _thisSprite = Grid.Instance.CachedAssets.Wall_0_Horizontal_M;
+                        // determine which sprite to use
+                        Sprite _thisSprite = null;
+                        if (isGoingDiagonal)
+                            _thisSprite = CachedAssets.Instance.WallSets[0].Single;
+                        else if (distXAbs > distYAbs) {
+                            if (i == 0 || i == highestAxisValue) {
+                                if ((distX > 0) == (i == 0))
+                                    _thisSprite = CachedAssets.Instance.WallSets[0].Horizontal_L;
+                                else if ((distX < 0) == (i == 0))
+                                    _thisSprite = CachedAssets.Instance.WallSets[0].Horizontal_R;
                             }
-                            else if (distYAbs > distXAbs) {
-                                if (i == 0 || i == highestAxisValue) {
-                                    if ((distY > 0) == (i == 0))
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Vertical_B;
-                                    else if ((distY < 0) == (i == 0))
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Vertical_T;
-                                }
-                                else
-                                    _thisSprite = Grid.Instance.CachedAssets.Wall_0_Vertical_M;
-                            }
-
-                            allGhostSprites[i].sprite = _thisSprite;
-                            usedGhostTiles.Add(new GhostInfo(allGhostSprites[i], new Vector2(ghostTile_GridX, ghostTile_GridY), mouseGhostType));
+                            else
+                                _thisSprite = CachedAssets.Instance.WallSets[0].Horizontal_M;
                         }
+                        else if (distYAbs > distXAbs) {
+                            if (i == 0 || i == highestAxisValue) {
+                                if ((distY > 0) == (i == 0))
+                                    _thisSprite = CachedAssets.Instance.WallSets[0].Vertical_B;
+                                else if ((distY < 0) == (i == 0))
+                                    _thisSprite = CachedAssets.Instance.WallSets[0].Vertical_T;
+                            }
+                            else
+                                _thisSprite = CachedAssets.Instance.WallSets[0].Vertical_M;
+                        }
+
+                        allGhostSprites[i].sprite = _thisSprite;
+                        usedGhostTiles.Add(new GhostInfo(allGhostSprites[i], new Vector2(ghostTile_GridX, ghostTile_GridY), mouseGhostType, mouseGhostOrientation));
                     }
                     #endregion
                     break;
                 case ModeEnum.Room:
                     #region Room
-                    highestAxisValue = Mathf.Clamp(distXAbs * 2 + distYAbs * 2, 1, allGhostSprites.Length);
-
-                    _break = false;
                     for (int y = 0; y <= distYAbs; y++) {
                         for (int x = 0; x <= distXAbs; x++) {
                             if ((y > 0 && y < distYAbs) && (x > 0 && x < distXAbs))
                                 continue;
-
-                            if (usedGhostTiles.Count >= highestAxisValue) {
-                                _break = true;
-                                break;
-                            }
 
                             ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
                             ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
@@ -327,132 +355,83 @@ public class WallBuilder {
                             }
 
                             // determine which sprite to use
-                            Sprite _thisSprite = Grid.Instance.CachedAssets.Wall_0_Single;
+                            Sprite _thisSprite = CachedAssets.Instance.WallSets[0].Single;
 
                             // 1D horizontal
                             if (distXAbs > 0 && distYAbs == 0) {
                                 if (x == 0)
-                                    _thisSprite = distX > 0 ? Grid.Instance.CachedAssets.Wall_0_Horizontal_L : Grid.Instance.CachedAssets.Wall_0_Horizontal_R;
+                                    _thisSprite = distX > 0 ? CachedAssets.Instance.WallSets[0].Horizontal_L : CachedAssets.Instance.WallSets[0].Horizontal_R;
                                 else if (x == distXAbs)
-                                    _thisSprite = distX > 0 ? Grid.Instance.CachedAssets.Wall_0_Horizontal_R : Grid.Instance.CachedAssets.Wall_0_Horizontal_L;
+                                    _thisSprite = distX > 0 ? CachedAssets.Instance.WallSets[0].Horizontal_R : CachedAssets.Instance.WallSets[0].Horizontal_L;
                                 else if (x > 0)
-                                    _thisSprite = Grid.Instance.CachedAssets.Wall_0_Horizontal_M;
+                                    _thisSprite = CachedAssets.Instance.WallSets[0].Horizontal_M;
                             }
                             // 1D vertical
                             else if (distXAbs == 0 && distYAbs > 0) {
                                 if (y == 0)
-                                    _thisSprite = distY > 0 ? Grid.Instance.CachedAssets.Wall_0_Vertical_B : Grid.Instance.CachedAssets.Wall_0_Vertical_T;
+                                    _thisSprite = distY > 0 ? CachedAssets.Instance.WallSets[0].Vertical_B : CachedAssets.Instance.WallSets[0].Vertical_T;
                                 else if (y == distYAbs)
-                                    _thisSprite = distY > 0 ? Grid.Instance.CachedAssets.Wall_0_Vertical_T : Grid.Instance.CachedAssets.Wall_0_Vertical_B;
+                                    _thisSprite = distY > 0 ? CachedAssets.Instance.WallSets[0].Vertical_T : CachedAssets.Instance.WallSets[0].Vertical_B;
                                 else if (y > 0)
-                                    _thisSprite = Grid.Instance.CachedAssets.Wall_0_Vertical_M;
+                                    _thisSprite = CachedAssets.Instance.WallSets[0].Vertical_M;
                             }
                             // 2D both
                             else {
                                 if ((x > 0 && y == 0) || (x > 0 && y == distYAbs))
-                                    _thisSprite = Grid.Instance.CachedAssets.Wall_0_Horizontal_M;
+                                    _thisSprite = CachedAssets.Instance.WallSets[0].Horizontal_M;
                                 else if ((x == 0 && y > 0) || (x == distXAbs && y > 0))
-                                    _thisSprite = Grid.Instance.CachedAssets.Wall_0_Vertical_M;
+                                    _thisSprite = CachedAssets.Instance.WallSets[0].Vertical_M;
 
                                 if (distX > 0 && distY > 0) {
                                     if (x == 0 && y == 0)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_TR;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_TopRight;
                                     else if (x == distXAbs && y == 0)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_LT;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_TopLeft;
                                     else if (x == distXAbs && y == distYAbs)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_BL;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_BottomLeft;
                                     else if (x == 0 && y == distYAbs)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_RB;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_BottomRight;
                                 }
                                 else if (distX > 0 && distY < 0) {
                                     if (x == 0 && y == 0)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_RB;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_BottomRight;
                                     else if (x == distXAbs && y == 0)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_BL;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_BottomLeft;
                                     else if (x == distXAbs && y == distYAbs)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_LT;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_TopLeft;
                                     else if (x == 0 && y == distYAbs)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_TR;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_TopRight;
                                 }
                                 else if (distX < 0 && distY > 0) {
                                     if (x == 0 && y == 0)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_LT;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_TopLeft;
                                     else if (x == distXAbs && y == 0)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_TR;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_TopRight;
                                     else if (x == distXAbs && y == distYAbs)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_RB;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_BottomRight;
                                     else if (x == 0 && y == distYAbs)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_BL;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_BottomLeft;
                                 }
                                 else if (distX < 0 && distY < 0) {
                                     if (x == 0 && y == 0)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_BL;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_BottomLeft;
                                     else if (x == distXAbs && y == 0)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_RB;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_BottomRight;
                                     else if (x == distXAbs && y == distYAbs)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_TR;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_TopRight;
                                     else if (x == 0 && y == distYAbs)
-                                        _thisSprite = Grid.Instance.CachedAssets.Wall_0_Corner_LT;
+                                        _thisSprite = CachedAssets.Instance.WallSets[0].Corner_TopLeft;
                                 }
                             }
 
                             allGhostSprites[usedGhostTiles.Count].sprite = _thisSprite;
-                            usedGhostTiles.Add(new GhostInfo(allGhostSprites[usedGhostTiles.Count], new Vector2(ghostTile_GridX, ghostTile_GridY), mouseGhostType));
+                            usedGhostTiles.Add(new GhostInfo(allGhostSprites[usedGhostTiles.Count], new Vector2(ghostTile_GridX, ghostTile_GridY), mouseGhostType, mouseGhostOrientation));
                         }
-
-                        if (_break)
-                            break;
-                    }
-                    #endregion
-                    break;
-                case ModeEnum.RoomFull: // only for deleting
-                    #region RoomFull
-                    highestAxisValue = Mathf.Clamp((distXAbs + 1) * (distYAbs + 1), 1, allGhostSprites.Length);
-                    _break = false;
-                    for (int y = 0; y <= distYAbs; y++) {
-                        // make sure the drawn room is only quad and not half-finished
-                        if (((y + 1) * (distXAbs + 1)) > highestAxisValue) // TODO: implement this in other tools as well!
-                            break;
-
-                        for (int x = 0; x <= distXAbs; x++) {
-                            if (usedGhostTiles.Count >= highestAxisValue) {
-                                _break = true;
-                                break;
-                            }
-
-                            ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
-                            ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
-
-                            // if outside grid, continue
-                            if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridWorldSize.x) {
-                                //_break = true;
-                                continue;
-                            }
-                            if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridWorldSize.y) {
-                                //_break = true;
-                                continue;
-                            }
-
-                            tileUnderGhost = Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY];
-                            Sprite _thisSprite = Grid.Instance.GetSpriteForTile(tileUnderGhost);
-
-
-                            // DEBUG SHIT
-                            if (_thisSprite == null)
-                                _thisSprite = Grid.Instance.CachedAssets.Wall_0_Single;
-
-
-                            allGhostSprites[usedGhostTiles.Count].sprite = _thisSprite;
-                            usedGhostTiles.Add(new GhostInfo(allGhostSprites[usedGhostTiles.Count], new Vector2(ghostTile_GridX, ghostTile_GridY), mouseGhostType));
-                        }
-
-                        if (_break)
-                            break;
                     }
                     #endregion
                     break;
                 case ModeEnum.Diagonal:
-                    usedGhostTiles.Add(new GhostInfo(allGhostSprites[0], new Vector2(mouseTile.GridX, mouseTile.GridY), mouseGhostType));
+                    usedGhostTiles.Add(new GhostInfo(allGhostSprites[0], new Vector2(tileUnderMouse.GridX, tileUnderMouse.GridY), mouseGhostType, mouseGhostOrientation));
                     break;
                 default:
                     Debug.LogError(Mode.ToString() + " hasn't been implemented!");
@@ -468,56 +447,56 @@ public class WallBuilder {
                 if (isDeleting) {
 
                     if (tileUnderGhost.IsOccupied) {
-                        color = Color.clear;
+                        ghostColor = Color_BlockedWall;
                         _applyTile = false;
                     }
                     else {
-                        color = Color.red;
+                        ghostColor = Color_RemoveWall;
                         _applyTile = true;
 
 						// add connected diagonal neighbors to be deleted
-						_foundDiagonals = InformNeighboursAboutDiagonal(tileUnderGhost);
+						_foundDiagonals = GetDiagonalNeighbourTiles(tileUnderGhost);
 						for (int j = 0; j < _foundDiagonals.Count; j++){
 							Vector2 _gridPos = new Vector2(_foundDiagonals[j].GridX, _foundDiagonals[j].GridY);
 							if(usedGhostTiles.Find(x => x.GridPosition == _gridPos) != null)
 								continue;
 
-							usedGhostTiles.Add(new GhostInfo(allGhostSprites[usedGhostTiles.Count], _gridPos, _foundDiagonals[j]._Type_));
+							usedGhostTiles.Add(new GhostInfo(allGhostSprites[usedGhostTiles.Count], _gridPos, _foundDiagonals[j]._Type_, _foundDiagonals[j]._Orientation_));
 						}
                     }
 
                 }
                 else if (tileUnderGhost._Type_ == Tile.TileType.Empty && !tileUnderGhost.IsOccupied) {
-                    color = Color.white;
+                    ghostColor = Color_NewWall;
                     _applyTile = true;
 
 					// mark diagonals as unapplicable if not able to connect to neighbors
-                    if (Mode == ModeEnum.Diagonal) {
-                        if (   (usedGhostTiles[i].Type == Tile.TileType.Diagonal_LT && !(tileUnderGhost.HasConnectable_L && tileUnderGhost.HasConnectable_T))
-                            || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_TR && !(tileUnderGhost.HasConnectable_T && tileUnderGhost.HasConnectable_R))
-                            || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_RB && !(tileUnderGhost.HasConnectable_R && tileUnderGhost.HasConnectable_B))
-                            || (usedGhostTiles[i].Type == Tile.TileType.Diagonal_BL && !(tileUnderGhost.HasConnectable_B && tileUnderGhost.HasConnectable_L))) {
+                    if (Mode == ModeEnum.Diagonal) { // TODO: this should probably be removed as Diagonal isn't really a hold-click-tool
+                        if (   (usedGhostTiles[i].Orientation == Tile.TileOrientation.TopLeft && !(tileUnderGhost.HasConnectable_L && tileUnderGhost.HasConnectable_T))
+                            || (usedGhostTiles[i].Orientation == Tile.TileOrientation.TopRight && !(tileUnderGhost.HasConnectable_T && tileUnderGhost.HasConnectable_R))
+                            || (usedGhostTiles[i].Orientation == Tile.TileOrientation.BottomRight && !(tileUnderGhost.HasConnectable_R && tileUnderGhost.HasConnectable_B))
+                            || (usedGhostTiles[i].Orientation == Tile.TileOrientation.BottomLeft && !(tileUnderGhost.HasConnectable_B && tileUnderGhost.HasConnectable_L))) {
 
-                            color = Color.red;
+                            ghostColor = Color_BlockedWall;
                             _applyTile = false;
                         }
                     }
                 }
                 else {
-                    color = Color.red;
+                    ghostColor = Color_AlreadyExistingWall;
                     _applyTile = false;
                 }
 
                 // make it do something
 				if (_applyTile) {
                     selectedTiles.Add(tileUnderGhost);
-                    selectedTilesType.Add(usedGhostTiles[i].Type);
+                    selectedTilesNewType.Add(usedGhostTiles[i].Type);
+                    selectedTilesNewOrientation.Add(usedGhostTiles[i].Orientation);
                 }
 
                 // apply stuff
-                color.a = 0.5f;
-                usedGhostTiles[i].Renderer.enabled = true;
-                usedGhostTiles[i].Renderer.color = color;
+                usedGhostTiles[i].Renderer.gameObject.SetActive(true);
+                usedGhostTiles[i].Renderer.color = ghostColor;
                 usedGhostTiles[i].Renderer.transform.position = tileUnderGhost.WorldPosition;
             }
         }
@@ -526,7 +505,7 @@ public class WallBuilder {
     void ApplyCurrentTool() {
         if (hasUsedGhosts) {
             for (int i = 1; i < allGhostSprites.Length; i++) // start on 1 to skip the mouseGhost
-                allGhostSprites[i].enabled = false;
+                allGhostSprites[i].gameObject.SetActive(false);
 
             hasUsedGhosts = false;
         }
@@ -550,7 +529,7 @@ public class WallBuilder {
 			}
 
             // set tile info
-            selectedTiles[i].SetTileType(isDeleting ? Tile.TileType.Empty : selectedTilesType[i]);
+            selectedTiles[i].SetTileType(isDeleting ? Tile.TileType.Empty : selectedTilesNewType[i], isDeleting ? Tile.TileOrientation.None : selectedTilesNewOrientation[i]);
 
             // apply graphics
             Grid.Instance.UpdateTile(selectedTiles[i], true, true);
@@ -558,25 +537,28 @@ public class WallBuilder {
         }
     }
 
-	List<Tile> InformNeighboursAboutDiagonal(Tile _tile){
+	List<Tile> GetDiagonalNeighbourTiles(Tile _tile){
 		List<Tile> _neighbours = Grid.Instance.GetNeighbours(_tile.GridX, _tile.GridY);
 		List<Tile> _foundDiagonals = new List<Tile>();
 		int _diffX = 0;
 		int _diffY = 0;
-		Tile.TileType _type;
+		Tile.TileOrientation _orientation;
 		for (int i = 0; i < _neighbours.Count; i++) {
-			_type = _neighbours[i]._Type_;
+            if (_neighbours[i]._Type_ != Tile.TileType.Diagonal)
+                continue;
+
+			_orientation = _neighbours[i]._Orientation_;
 			_diffX = _neighbours[i].GridX - _tile.GridX;
 			_diffY = _neighbours[i].GridY - _tile.GridY;
-			if(_diffX == -1 && _diffY == 0){
-				if(_type == Tile.TileType.Diagonal_RB || _type == Tile.TileType.Diagonal_TR){
+			if(_diffX == -1 && _diffY == 0) {
+				if(_orientation == Tile.TileOrientation.BottomRight || _orientation == Tile.TileOrientation.TopRight){
 					_tile.ConnectedDiagonal_L = _neighbours[i];
 					_foundDiagonals.Add(_neighbours[i]);
 					continue;
 				}
 			}
 			if(_diffX == 0 && _diffY == 1){
-				if(_type == Tile.TileType.Diagonal_BL || _type == Tile.TileType.Diagonal_RB){
+				if(_orientation == Tile.TileOrientation.BottomLeft || _orientation == Tile.TileOrientation.BottomRight){
 					_tile.ConnectedDiagonal_T = _neighbours[i];
 					_foundDiagonals.Add(_neighbours[i]);
 					continue;
@@ -584,7 +566,7 @@ public class WallBuilder {
 			}
 
 			if(_diffX == 1 && _diffY == 0){
-				if (_type == Tile.TileType.Diagonal_BL || _type == Tile.TileType.Diagonal_LT) {
+				if (_orientation == Tile.TileOrientation.BottomLeft || _orientation == Tile.TileOrientation.TopLeft) {
 					_tile.ConnectedDiagonal_R = _neighbours[i];
 					_foundDiagonals.Add(_neighbours[i]);
 					continue;
@@ -592,7 +574,7 @@ public class WallBuilder {
 			}
 			
 			if(_diffX == 0 && _diffY == -1){
-				if (_type == Tile.TileType.Diagonal_LT || _type == Tile.TileType.Diagonal_TR) {
+				if (_orientation == Tile.TileOrientation.TopLeft || _orientation == Tile.TileOrientation.TopRight) {
 					_tile.ConnectedDiagonal_B = _neighbours[i];
 					_foundDiagonals.Add(_neighbours[i]);
 					continue;

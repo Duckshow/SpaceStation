@@ -3,9 +3,12 @@ using System.Collections.Generic;
 
 public class Tile : IHeapItem<Tile> {
 
-    public enum TileType { Empty, Wall, Diagonal_LT, Diagonal_TR, Diagonal_RB, Diagonal_BL, MiscBlocker, DoorEntrance }
+    public enum TileType { Empty, Wall, Diagonal, Door, DoorEntrance }
     private TileType type = TileType.Empty;
     public TileType _Type_ { get { return type; } }
+    public enum TileOrientation { None, Bottom, BottomLeft, Left, TopLeft, Top, TopRight, Right, BottomRight }
+    private TileOrientation orientation = TileOrientation.None;
+    public TileOrientation _Orientation_ { get { return orientation; } }
 
     public bool Walkable { get; private set; }
     public bool IsOccupied = false;
@@ -64,9 +67,9 @@ public class Tile : IHeapItem<Tile> {
     }
 
 
-    public Tile(TileType _type, Vector3 _worldPos, int _gridX, int _gridY, int _localGridX, int _localGridY, int _gridSliceIndex, int _penalty) {
+    public Tile(TileType _type, TileOrientation _orientation, Vector3 _worldPos, int _gridX, int _gridY, int _localGridX, int _localGridY, int _gridSliceIndex, int _penalty) {
         WorldPosition = _worldPos;
-        SetTileType(_type);
+        SetTileType(_type, _orientation);
         GridX = _gridX;
         GridY = _gridY;
         LocalGridX = _localGridX;
@@ -84,8 +87,9 @@ public class Tile : IHeapItem<Tile> {
     }
 
 
-    public void SetTileType(TileType _type) {
+    public void SetTileType(TileType _type, TileOrientation _orientation) {
         type = _type;
+        orientation = _orientation;
 
         switch (_type) {
             case TileType.Empty:
@@ -103,37 +107,41 @@ public class Tile : IHeapItem<Tile> {
                 CanConnect_R = true;
                 CanConnect_B = true;
                 break;
-            case TileType.Diagonal_LT:
-                Walkable = true;
-                DefaultPositionWorld = WorldPosition + new Vector3(0.25f, -0.25f, 0);
-                CanConnect_L = true;
-                CanConnect_T = true;
-                CanConnect_R = false;
-                CanConnect_B = false;
-                break;
-            case TileType.Diagonal_TR:
-                Walkable = true;
-                DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, -0.25f, 0);
-                CanConnect_L = false;
-                CanConnect_T = true;
-                CanConnect_R = true;
-                CanConnect_B = false;
-                break;
-            case TileType.Diagonal_RB:
-                Walkable = true;
-                DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, 0.25f, 0);
-                CanConnect_L = false;
-                CanConnect_T = false;
-                CanConnect_R = true;
-                CanConnect_B = true;
-                break;
-            case TileType.Diagonal_BL:
-                Walkable = true;
-                DefaultPositionWorld = WorldPosition + new Vector3(0.25f, 0.25f, 0);
-                CanConnect_L = true;
-                CanConnect_T = false;
-                CanConnect_R = false;
-                CanConnect_B = true;
+            case TileType.Diagonal:
+                switch (_orientation) {
+                    case TileOrientation.BottomLeft:
+                        Walkable = true;
+                        DefaultPositionWorld = WorldPosition + new Vector3(0.25f, 0.25f, 0);
+                        CanConnect_L = true;
+                        CanConnect_T = false;
+                        CanConnect_R = false;
+                        CanConnect_B = true;
+                        break;
+                    case TileOrientation.TopLeft:
+                        Walkable = true;
+                        DefaultPositionWorld = WorldPosition + new Vector3(0.25f, -0.25f, 0);
+                        CanConnect_L = true;
+                        CanConnect_T = true;
+                        CanConnect_R = false;
+                        CanConnect_B = false;
+                        break;
+                    case TileOrientation.TopRight:
+                        Walkable = true;
+                        DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, -0.25f, 0);
+                        CanConnect_L = false;
+                        CanConnect_T = true;
+                        CanConnect_R = true;
+                        CanConnect_B = false;
+                        break;
+                    case TileOrientation.BottomRight:
+                        Walkable = true;
+                        DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, 0.25f, 0);
+                        CanConnect_L = false;
+                        CanConnect_T = false;
+                        CanConnect_R = true;
+                        CanConnect_B = true;
+                        break;
+                }
                 break;
             default:
                 throw new System.Exception(_type.ToString() + " has not been implemented yet!");

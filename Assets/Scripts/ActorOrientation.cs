@@ -6,7 +6,6 @@ public class ActorOrientation : MonoBehaviour {
     public enum OrientationEnum { Down, Left, Up, Right }
     public OrientationEnum Orientation = OrientationEnum.Down;
 
-
     [SerializeField] private SpriteRenderer HairRenderer;
     [SerializeField] private SpriteRenderer HeadRenderer;
     [SerializeField] private SpriteRenderer EyeRenderer;
@@ -40,10 +39,10 @@ public class ActorOrientation : MonoBehaviour {
         Orientation = _orientation;
         body.Orientation = _orientation;
 
-        HairRenderer.sprite = ActorAssets.Instance.HairStyles[actor.HairStyleIndex].GetOrientedAsset(_orientation);
-        HeadRenderer.sprite = ActorAssets.Instance.Heads[actor.HeadIndex].GetOrientedAsset(_orientation);
-        EyeRenderer.sprite = ActorAssets.Instance.Eyes[actor.EyeIndex].GetOrientedAsset(_orientation);
-        BeardRenderer.sprite = ActorAssets.Instance.Beards[actor.BeardIndex].GetOrientedAsset(_orientation);
+        HairRenderer.sprite = CachedAssets.Instance.HairStyles[actor.HairStyleIndex].GetOrientedAsset(_orientation);
+        HeadRenderer.sprite = CachedAssets.Instance.Heads[actor.HeadIndex].GetOrientedAsset(_orientation);
+        EyeRenderer.sprite = CachedAssets.Instance.Eyes[actor.EyeIndex].GetOrientedAsset(_orientation);
+        BeardRenderer.sprite = CachedAssets.Instance.Beards[actor.BeardIndex].GetOrientedAsset(_orientation);
     }
 
     public void ForceLieDown(bool _b) {

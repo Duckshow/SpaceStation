@@ -6,53 +6,11 @@ public class Grid : MonoBehaviour {
 
     public static Grid Instance;
 
-    [System.Serializable]
-    public class Assets {
-        //--singles--
-        public Sprite Wall_0_Single;
-        
-        //--verticals--
-        public Sprite Wall_0_Vertical_T;
-        public Sprite Wall_0_Vertical_M;
-        public Sprite Wall_0_Vertical_B;
-
-        //--horizontals--
-        public Sprite Wall_0_Horizontal_L;
-        public Sprite Wall_0_Horizontal_M;
-        public Sprite Wall_0_Horizontal_R;
-
-        //--corners--
-        public Sprite Wall_0_Corner_LT;
-        public Sprite Wall_0_Corner_TR;
-        public Sprite Wall_0_Corner_RB;
-        public Sprite Wall_0_Corner_BL;
-
-        //--tees--
-        public Sprite Wall_0_Tee_L;
-        public Sprite Wall_0_Tee_T;
-        public Sprite Wall_0_Tee_R;
-        public Sprite Wall_0_Tee_B;
-
-        //--4ways--
-        public Sprite Wall_0_FourWay;
-
-        //--diagonals--
-        public Sprite Wall_0_Diagonal_LT;
-        public Sprite Wall_0_Diagonal_TR;
-        public Sprite Wall_0_Diagonal_RB;
-        public Sprite Wall_0_Diagonal_BL;
-
-        public Color[] GetCachedAssetPixels(Sprite _asset) {
-            return _asset.texture.GetPixels(Mathf.RoundToInt(_asset.rect.xMin), Mathf.RoundToInt(_asset.rect.yMin), Mathf.RoundToInt(_asset.rect.width), Mathf.RoundToInt(_asset.rect.height)); // eeehh, will this work?
-        }
-    }
-    public Assets CachedAssets;
-
-    private MeshRenderer[] gridGraphicsRenderers;
+    [SerializeField] private MeshRenderer[] GridGraphicsRenderers;
     private Texture2D[] gridGraphics;
     private List<int> gridSlicesPendingApply = new List<int>();
-    private const int TILE_RESOLUTION = 64;
-    public const float WORLD_HEIGHT = -1;
+    public const int TILE_RESOLUTION = 64;
+    public const float WORLD_HEIGHT = 1;
 
     public bool DisplayGridGizmos;
     public bool DisplayPaths;
@@ -74,8 +32,7 @@ public class Grid : MonoBehaviour {
     void Awake() {
         Instance = this;
 
-        gridGraphicsRenderers = GetComponentsInChildren<MeshRenderer>();
-        gridGraphics = new Texture2D[gridGraphicsRenderers.Length];
+        gridGraphics = new Texture2D[GridGraphicsRenderers.Length];
 
         nodeDiameter = NodeRadius * 2;
         gridSizeX = Mathf.RoundToInt(GridWorldSize.x / nodeDiameter);
@@ -109,12 +66,12 @@ public class Grid : MonoBehaviour {
                 gridGraphics[_currentIndex] = new Texture2D(sliceSizeX * TILE_RESOLUTION, (sliceSizeY + 1 /*+1 for diagonals*/) * TILE_RESOLUTION, TextureFormat.RGBA32, true);
                 gridGraphics[_currentIndex].filterMode = FilterMode.Point;
                 gridGraphics[_currentIndex].wrapMode = TextureWrapMode.Clamp;
-                gridGraphicsRenderers[_currentIndex].material.mainTexture = gridGraphics[_currentIndex];
+                GridGraphicsRenderers[_currentIndex].material.mainTexture = gridGraphics[_currentIndex];
 
                 _slicePosX = ((sliceSizeX * 0.5f) + (sliceSizeX * x) - (gridSizeX * 0.5f));
 
-                gridGraphicsRenderers[_currentIndex].transform.localScale = new Vector3(sliceSizeX, sliceSizeY + 1 /*+1 for diagonals*/, 1);
-                gridGraphicsRenderers[_currentIndex].transform.position = new Vector3(_slicePosX, _slicePosY, WORLD_HEIGHT + (_currentIndex * 0.01f)); // the minus is to combat z-fighting
+                GridGraphicsRenderers[_currentIndex].transform.localScale = new Vector3(sliceSizeX, sliceSizeY + 1 /*+1 for diagonals*/, 1);
+                GridGraphicsRenderers[_currentIndex].transform.position = new Vector3(_slicePosX, _slicePosY, WORLD_HEIGHT + (_currentIndex * 0.01f)); // the height-thing is to combat z-fighting
             }
         }
 
@@ -125,9 +82,9 @@ public class Grid : MonoBehaviour {
 
                 int movementPenalty = 0; // todo: use this for something
                 if (Random.value < 0.75f)
-                    grid[x, y] = new Tile(Tile.TileType.Empty, worldPoint, x, y, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y), movementPenalty);
+                    grid[x, y] = new Tile(Tile.TileType.Empty, Tile.TileOrientation.None, worldPoint, x, y, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y), movementPenalty);
                 else // for testing-purposes
-                    grid[x, y] = new Tile(Tile.TileType.Wall, worldPoint, x, y, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y), movementPenalty);
+                    grid[x, y] = new Tile(Tile.TileType.Wall, Tile.TileOrientation.None, worldPoint, x, y, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y), movementPenalty);
             }
         }
         // for testing-purposes
@@ -140,22 +97,22 @@ public class Grid : MonoBehaviour {
 
                 // LT
                 if (x > 0 && grid[x - 1, y]._Type_ == Tile.TileType.Wall && y < gridSizeY - 1 && grid[x, y + 1]._Type_ == Tile.TileType.Wall) {
-                    grid[x, y].SetTileType(Tile.TileType.Diagonal_LT);
+                    grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.TopLeft);
                     continue;
                 }
                 // TR
                 if (y < gridSizeY - 1 && grid[x, y + 1]._Type_ == Tile.TileType.Wall && x < gridSizeX - 1 && grid[x + 1, y]._Type_ == Tile.TileType.Wall) {
-                    grid[x, y].SetTileType(Tile.TileType.Diagonal_TR);
+                    grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.TopRight);
                     continue;
                 }
                 // RB
                 if (x < gridSizeX - 1 && grid[x + 1, y]._Type_ == Tile.TileType.Wall && y > 0 && grid[x, y - 1]._Type_ == Tile.TileType.Wall) {
-                    grid[x, y].SetTileType(Tile.TileType.Diagonal_RB);
+                    grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.BottomRight);
                     continue;
                 }
                 // BL
                 if (y > 0 && grid[x, y - 1]._Type_ == Tile.TileType.Wall && x > 0 && grid[x - 1, y]._Type_ == Tile.TileType.Wall) {
-                    grid[x, y].SetTileType(Tile.TileType.Diagonal_BL);
+                    grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.BottomLeft);
                     continue;
                 }
             }
@@ -198,12 +155,12 @@ public class Grid : MonoBehaviour {
             if (_yDiff == -1) {
                 if (_xDiff == 0) {
                     _tile.HasConnectable_B = _neighbours[i].CanConnect_T;
-                    _tile.IsBlocked_B = TileIsBlockingOtherTile(_neighbours[i]._Type_, ActorOrientation.OrientationEnum.Down);
+                    _tile.IsBlocked_B = TileIsBlockingOtherTile(_neighbours[i]._Type_, _neighbours[i]._Orientation_, Tile.TileOrientation.Bottom);
 
                     // must update if the tile below is diagonal (since they stretch up)
-                    if (_updateNeighbours || _neighbours[i]._Type_ == Tile.TileType.Diagonal_LT || _neighbours[i]._Type_ == Tile.TileType.Diagonal_TR) {
+                    if (_updateNeighbours || _neighbours[i]._Type_ == Tile.TileType.Diagonal && (_neighbours[i]._Orientation_ == Tile.TileOrientation.TopLeft || _neighbours[i]._Orientation_ == Tile.TileOrientation .TopRight)) {
                         _neighbours[i].HasConnectable_T = _tile.CanConnect_B;
-                        _neighbours[i].IsBlocked_T = TileIsBlockingOtherTile(_tile._Type_, ActorOrientation.OrientationEnum.Up);
+                        _neighbours[i].IsBlocked_T = TileIsBlockingOtherTile(_tile._Type_, _tile._Orientation_, Tile.TileOrientation.Top);
 
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
@@ -212,22 +169,22 @@ public class Grid : MonoBehaviour {
             else if (_yDiff == 0) {
                 if (_xDiff == -1) {
                     _tile.HasConnectable_L = _neighbours[i].CanConnect_R;
-                    _tile.IsBlocked_L = TileIsBlockingOtherTile(_neighbours[i]._Type_, ActorOrientation.OrientationEnum.Left);
+                    _tile.IsBlocked_L = TileIsBlockingOtherTile(_neighbours[i]._Type_, _neighbours[i]._Orientation_, Tile.TileOrientation.Left);
 
                     if (_updateNeighbours) {
                         _neighbours[i].HasConnectable_R = _tile.CanConnect_L;
-                        _neighbours[i].IsBlocked_R = TileIsBlockingOtherTile(_tile._Type_, ActorOrientation.OrientationEnum.Right);
+                        _neighbours[i].IsBlocked_R = TileIsBlockingOtherTile(_tile._Type_, _tile._Orientation_, Tile.TileOrientation.Right);
 
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
                 }
                 else if (_xDiff == 1) {
                     _tile.HasConnectable_R = _neighbours[i].CanConnect_L;
-                    _tile.IsBlocked_R = TileIsBlockingOtherTile(_neighbours[i]._Type_, ActorOrientation.OrientationEnum.Right);
+                    _tile.IsBlocked_R = TileIsBlockingOtherTile(_neighbours[i]._Type_, _neighbours[i]._Orientation_, Tile.TileOrientation.Right);
 
                     if (_updateNeighbours) {
                         _neighbours[i].HasConnectable_L = _tile.CanConnect_R;
-                        _neighbours[i].IsBlocked_L = TileIsBlockingOtherTile(_tile._Type_, ActorOrientation.OrientationEnum.Left);
+                        _neighbours[i].IsBlocked_L = TileIsBlockingOtherTile(_tile._Type_, _tile._Orientation_, Tile.TileOrientation.Left);
 
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
@@ -236,11 +193,11 @@ public class Grid : MonoBehaviour {
             else if (_yDiff == 1) {
                 if (_xDiff == 0) {
                     _tile.HasConnectable_T = _neighbours[i].CanConnect_B;
-                    _tile.IsBlocked_T = TileIsBlockingOtherTile(_neighbours[i]._Type_, ActorOrientation.OrientationEnum.Up);
+                    _tile.IsBlocked_T = TileIsBlockingOtherTile(_neighbours[i]._Type_, _neighbours[i]._Orientation_, Tile.TileOrientation.Top);
 
                     if (_updateNeighbours) {
                         _neighbours[i].HasConnectable_B = _tile.CanConnect_T;
-                        _neighbours[i].IsBlocked_B = TileIsBlockingOtherTile(_tile._Type_, ActorOrientation.OrientationEnum.Down);
+                        _neighbours[i].IsBlocked_B = TileIsBlockingOtherTile(_tile._Type_, _tile._Orientation_, Tile.TileOrientation.Bottom);
 
                         _neighboursToUpdate.Add(_neighbours[i]);
                     }
@@ -250,11 +207,11 @@ public class Grid : MonoBehaviour {
         #endregion
 
         // find and set correct sprite
-        DrawTileToTexture(_tile, GetSpriteForTile(_tile));
+        DrawTileToTexture(_tile, CachedAssets.Instance.GetAssetForTile(_tile, 0, _isOnGroundLevel: true));
 
         // loop through relevant neighbours backwards, towards the perspective of the camera
         for (int i = _neighboursToUpdate.Count - 1; i >= 0; i--) {
-            if (_neighboursToUpdate[i]._Type_ == Tile.TileType.Diagonal_LT || _neighboursToUpdate[i]._Type_ == Tile.TileType.Diagonal_TR)
+            if (_neighboursToUpdate[i]._Type_ == Tile.TileType.Diagonal && (_neighboursToUpdate[i]._Orientation_ == Tile.TileOrientation.TopLeft || _neighboursToUpdate[i]._Orientation_ == Tile.TileOrientation.TopRight))
                 continue; // skip diagonals and do them later
 
             UpdateTile(_neighboursToUpdate[i], _individualUpdate: false, _updateNeighbours: false);
@@ -267,19 +224,24 @@ public class Grid : MonoBehaviour {
         ApplyGraphics(_tile.GridSliceIndex);
     }
 
-    bool TileIsBlockingOtherTile(Tile.TileType _otherTileType, ActorOrientation.OrientationEnum _otherTileDirection) {
-        if (_otherTileType == Tile.TileType.Wall || _otherTileType == Tile.TileType.MiscBlocker)
+    bool TileIsBlockingOtherTile(Tile.TileType _otherTileType, Tile.TileOrientation _otherTileOrientation, Tile.TileOrientation _otherTileDirection) {
+        if (_otherTileType == Tile.TileType.Empty || _otherTileType == Tile.TileType.DoorEntrance)
+            return false;
+        if (_otherTileType == Tile.TileType.Wall || _otherTileType == Tile.TileType.Door)
             return true;
 
+        if (_otherTileType != Tile.TileType.Diagonal)
+            Debug.LogError("Wasn't expecting non-diagonals to be here! Handle it!");
+
         switch (_otherTileDirection) {
-            case ActorOrientation.OrientationEnum.Down:
-                return _otherTileType == Tile.TileType.Diagonal_LT || _otherTileType == Tile.TileType.Diagonal_TR;
-            case ActorOrientation.OrientationEnum.Left:
-                return _otherTileType == Tile.TileType.Diagonal_TR || _otherTileType == Tile.TileType.Diagonal_RB;
-            case ActorOrientation.OrientationEnum.Up:
-                return _otherTileType == Tile.TileType.Diagonal_RB || _otherTileType == Tile.TileType.Diagonal_BL;
-            case ActorOrientation.OrientationEnum.Right:
-                return _otherTileType == Tile.TileType.Diagonal_BL || _otherTileType == Tile.TileType.Diagonal_LT;
+            case Tile.TileOrientation.Bottom:
+                return _otherTileOrientation == Tile.TileOrientation.TopLeft || _otherTileOrientation == Tile.TileOrientation.TopRight;
+            case Tile.TileOrientation.Left:
+                return _otherTileOrientation == Tile.TileOrientation.TopRight || _otherTileOrientation == Tile.TileOrientation.BottomRight;
+            case Tile.TileOrientation.Top:
+                return _otherTileOrientation == Tile.TileOrientation.BottomRight || _otherTileOrientation == Tile.TileOrientation.BottomLeft;
+            case Tile.TileOrientation.Right:
+                return _otherTileOrientation == Tile.TileOrientation.BottomLeft || _otherTileOrientation == Tile.TileOrientation.TopLeft;
         }
 
         return false;
@@ -302,75 +264,6 @@ public class Grid : MonoBehaviour {
         }
     }
 
-    public Sprite GetSpriteForTile(Tile _tile) {
-        bool _left = _tile.HasConnectable_L;
-        bool _top = _tile.HasConnectable_T;
-        bool _right = _tile.HasConnectable_R;
-        bool _bottom = _tile.HasConnectable_B;
-
-        if (_tile._Type_ == Tile.TileType.Wall) {
-            if (_left) {
-                if (_top) {
-                    if (_right) {
-                        if (_bottom)
-                            return CachedAssets.Wall_0_FourWay;
-                        else
-                            return CachedAssets.Wall_0_Tee_B;
-                    }
-                    else if (_bottom)
-                        return CachedAssets.Wall_0_Tee_R;
-                    else
-                        return CachedAssets.Wall_0_Corner_LT;
-                }
-                else if (_right) {
-                    if (_bottom)
-                        return CachedAssets.Wall_0_Tee_T;
-                    else
-                        return CachedAssets.Wall_0_Horizontal_M;
-                }
-                else if (_bottom)
-                    return CachedAssets.Wall_0_Corner_BL;
-                else
-                    return CachedAssets.Wall_0_Horizontal_R;
-            }
-            else if (_top) {
-                if (_right) {
-                    if (_bottom)
-                        return CachedAssets.Wall_0_Tee_L;
-                    else
-                        return CachedAssets.Wall_0_Corner_TR;
-                }
-                else if (_bottom)
-                    return CachedAssets.Wall_0_Vertical_M;
-                else
-                    return CachedAssets.Wall_0_Vertical_B;
-            }
-            else if (_right) {
-                if (_bottom)
-                    return CachedAssets.Wall_0_Corner_RB;
-                else
-                    return CachedAssets.Wall_0_Horizontal_L;
-            }
-            else if (_bottom) {
-                return CachedAssets.Wall_0_Vertical_T;
-            }
-            else {
-                // nothing but a wall
-                return CachedAssets.Wall_0_Single;
-            }
-        }
-        else if (_tile._Type_ == Tile.TileType.Diagonal_LT)
-            return CachedAssets.Wall_0_Diagonal_LT;
-        else if (_tile._Type_ == Tile.TileType.Diagonal_TR)
-            return CachedAssets.Wall_0_Diagonal_TR;
-        else if (_tile._Type_ == Tile.TileType.Diagonal_RB)
-            return CachedAssets.Wall_0_Diagonal_RB;
-        else if (_tile._Type_ == Tile.TileType.Diagonal_BL)
-            return CachedAssets.Wall_0_Diagonal_BL;
-        else // empty hopefully
-            return null;
-    }
-
     void DrawTileToTexture(Tile _tile, Sprite _sprite) {
         Color[] _pixels = null;
         int _spriteWidth = 64;
@@ -378,7 +271,7 @@ public class Grid : MonoBehaviour {
         Vector2 _tilePosOnTexture = new Vector2(_tile.LocalGridX * TILE_RESOLUTION, _tile.LocalGridY * TILE_RESOLUTION);
 
         if (_sprite != null) {
-            _pixels = CachedAssets.GetCachedAssetPixels(_sprite);
+            _pixels = CachedAssets.Instance.GetCachedAssetPixels(_sprite);
             _spriteWidth = (int)_sprite.rect.width;
             _spriteHeight = (int)_sprite.rect.height;
         }
