@@ -24,7 +24,7 @@ public class Pathfinding : MonoBehaviour {
         Stopwatch sw = new Stopwatch();
         sw.Start();
 
-        Vector3[] waypoints = new Vector3[0];
+        Waypoint[] waypoints = new Waypoint[0];
         bool pathSuccess = false;
 
         Tile startNode = grid.GetTileFromWorldPoint(_startPos);
@@ -84,7 +84,7 @@ public class Pathfinding : MonoBehaviour {
         requestManager.FinishedProcessingPath(waypoints, pathSuccess);
     }
 
-    Vector3[] RetracePath(Tile startNode, Tile endNode) {
+    Waypoint[] RetracePath(Tile startNode, Tile endNode) {
         List<Tile> path = new List<Tile>();
         Tile currentNode = endNode;
 
@@ -93,27 +93,31 @@ public class Pathfinding : MonoBehaviour {
             currentNode = currentNode.ParentTile;
         }
 
-        Vector3[] waypoints = SimplifyPath(path);
+        Waypoint[] waypoints = SimplifyPath(path);
         Array.Reverse(waypoints);
 
         if (grid.DisplayPaths) {
             for (int i = 1; i < waypoints.Length; i++)
-                UnityEngine.Debug.DrawLine(waypoints[i - 1], waypoints[i], Color.yellow, 30);
+                UnityEngine.Debug.DrawLine(waypoints[i - 1].Position, waypoints[i].Position, Color.yellow, 30);
         }
 
         return waypoints;
     }
-
-    Vector3[] SimplifyPath(List<Tile> path) {
-        List<Vector3> waypoints = new List<Vector3>();
+    Waypoint[] SimplifyPath(List<Tile> path) {
+        List<Waypoint> waypoints = new List<Waypoint>();
         Vector2 directionOld = Vector2.zero;
 
         for (int i = 1; i < path.Count; i++) {
-            Vector2 directionNew = new Vector2(path[i - 1].DefaultPositionWorld.x - path[i].DefaultPositionWorld.x, path[i - 1].DefaultPositionWorld.y - path[i].DefaultPositionWorld.y);
-            if (directionNew != directionOld)
-                waypoints.Add(path[i - 1].CharacterPositionWorld);
-            
-            directionOld = directionNew;
+            if (i < (path.Count - 1) && path[i]._Type_ == Tile.TileType.DoorEntrance && path[i + 1]._Type_ == Tile.TileType.DoorEntrance) {
+                waypoints.Add(new Waypoint(path[i - 1].CharacterPositionWorld, 2));
+            }
+            else {
+                Vector2 directionNew = new Vector2(path[i - 1].DefaultPositionWorld.x - path[i].DefaultPositionWorld.x, path[i - 1].DefaultPositionWorld.y - path[i].DefaultPositionWorld.y);
+                if (directionNew != directionOld)
+                    waypoints.Add(new Waypoint(path[i - 1].CharacterPositionWorld, 0));
+
+                directionOld = directionNew;
+            }
         }
 
         return waypoints.ToArray();
@@ -127,5 +131,13 @@ public class Pathfinding : MonoBehaviour {
             return 14 * distY + 10 * (distX - distY);
         else
             return 14 * distX + 10 * (distY - distX);
+    }
+}
+public class Waypoint {
+    public Vector3 Position;
+    public float PassTime;
+    public Waypoint(Vector3 _pos, float _passTime) {
+        Position = _pos;
+        PassTime = _passTime;
     }
 }

@@ -26,7 +26,7 @@ public class Task {
 
         Vector3 target;
         float speed;
-        Vector3[] path;
+        Waypoint[] path;
         int targetIndex;
 
 
@@ -40,7 +40,7 @@ public class Task {
             base.Start(_meta);
         }
 
-        void OnPathFound(Vector3[] newPath, bool pathSuccessful) {
+        void OnPathFound(Waypoint[] newPath, bool pathSuccessful) {
             if (!IsRunning) // if the task was cancelled during the pathfinding
                 return;
 
@@ -58,41 +58,45 @@ public class Task {
         IEnumerator _PerformTask() {
             meta.Handler.Owner.CurrentTask = "Moving to " + target;
 
-            Vector3 _currentWaypoint = path[0];
+            Waypoint _currentWaypoint = path[0];
             Vector3 _previousWaypoint = meta.Handler.Owner.transform.position;
             Vector3 _newPosition;
             Vector3 _diff;
             Tile _currentWaypointTile;
-            float _distance = Vector3.Distance(_previousWaypoint, _currentWaypoint);
+            float _distance = Vector3.Distance(_previousWaypoint, _currentWaypoint.Position);
             float _timeAtPrevWaypoint = Time.time;
 
-            SendActorNewOrientation((_currentWaypoint - meta.Handler.Owner.transform.position).normalized);
+            SendActorNewOrientation((_currentWaypoint.Position - meta.Handler.Owner.transform.position).normalized);
             while (true) {
-                if (Mathf.Abs(_currentWaypoint.x - meta.Handler.Owner.transform.position.x) < 0.01f && Mathf.Abs(_currentWaypoint.y - meta.Handler.Owner.transform.position.y) < 0.01f) {
+                if (Mathf.Abs(_currentWaypoint.Position.x - meta.Handler.Owner.transform.position.x) < 0.01f && Mathf.Abs(_currentWaypoint.Position.y - meta.Handler.Owner.transform.position.y) < 0.01f) {
+
+                    if (_currentWaypoint.PassTime > 0)
+                        yield return new WaitForSeconds(_currentWaypoint.PassTime);
+
                     targetIndex++;
                     if (targetIndex >= path.Length)
                         break;
 
-                    _previousWaypoint = _currentWaypoint;
+                    _previousWaypoint = _currentWaypoint.Position;
                     _currentWaypoint = path[targetIndex];
-                    _distance = Vector3.Distance(_previousWaypoint, _currentWaypoint);
+                    _distance = Vector3.Distance(_previousWaypoint, _currentWaypoint.Position);
                     
                     // force actor to lie down if the next tile is not adjacent to a wall (looks better)
-                    _currentWaypointTile = Grid.Instance.GetTileFromWorldPoint(_currentWaypoint);
+                    _currentWaypointTile = Grid.Instance.GetTileFromWorldPoint(_currentWaypoint.Position);
                     ForceActorLieDown(_currentWaypointTile._Type_ == Tile.TileType.Empty && !_currentWaypointTile.HasConnectable_B && !_currentWaypointTile.HasConnectable_L && !_currentWaypointTile.HasConnectable_R && !_currentWaypointTile.HasConnectable_T);
 
                     // update orientation
-                    SendActorNewOrientation((_currentWaypoint - _previousWaypoint).normalized);
+                    SendActorNewOrientation((_currentWaypoint.Position - _previousWaypoint).normalized);
 
                     // set time so movement is kept at a good pace
                     _timeAtPrevWaypoint = Time.time;
                 }
 
                 // create a slowdown-effect when approaching currentwaypoint
-                _newPosition = Vector3.Lerp(_previousWaypoint, _currentWaypoint, Mathf.Clamp01((Time.time - _timeAtPrevWaypoint) / (_distance / speed)));
+                _newPosition = Vector3.Lerp(_previousWaypoint, _currentWaypoint.Position, Mathf.Clamp01((Time.time - _timeAtPrevWaypoint) / (_distance / speed)));
                 _diff = _newPosition - meta.Handler.Owner.transform.position; 
-                if (Vector3.Distance(_newPosition, _currentWaypoint) < Grid.Instance.NodeRadius)
-                    _diff *= Mathf.Max(0.1f, Vector3.Distance(_newPosition, _currentWaypoint) / Grid.Instance.NodeRadius);
+                if (Vector3.Distance(_newPosition, _currentWaypoint.Position) < Grid.Instance.NodeRadius)
+                    _diff *= Mathf.Max(0.1f, Vector3.Distance(_newPosition, _currentWaypoint.Position) / Grid.Instance.NodeRadius);
 
                 meta.Handler.Owner.transform.position += _diff;
                 yield return null;
