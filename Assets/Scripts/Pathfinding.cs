@@ -108,7 +108,7 @@ public class Pathfinding : MonoBehaviour {
         Vector2 directionOld = Vector2.zero;
 
         for (int i = 1; i < path.Count; i++) {
-            if (i < (path.Count - 1) && path[i]._Type_ == Tile.TileType.DoorEntrance && path[i + 1]._Type_ == Tile.TileType.DoorEntrance) {
+            if (path[i]._Type_ == Tile.TileType.Door) {
                 waypoints.Add(new Waypoint(path[i - 1].CharacterPositionWorld, 2));
             }
             else {

@@ -6,11 +6,52 @@ public class Grid : MonoBehaviour {
 
     public static Grid Instance;
 
-    [SerializeField] private MeshRenderer[] GridGraphicsRenderers;
-    private Texture2D[] gridGraphics;
+    private class GridGraphics {
+        public bool IsDirty = false;
+
+        public Texture2D Diffuse;
+        public Texture2D Normal;
+        public Texture2D Emissive;
+        public Texture2D Specular;
+
+        public GridGraphics(int _width, int _height, TextureFormat _format, bool _mipmap) {
+            ApplySettingsToAsset(out Diffuse, _width, _height, _format, _mipmap);
+            ApplySettingsToAsset(out Normal, _width, _height, _format, _mipmap);
+            ApplySettingsToAsset(out Emissive, _width, _height, _format, _mipmap);
+            ApplySettingsToAsset(out Specular, _width, _height, _format, _mipmap);
+        }
+
+        void ApplySettingsToAsset(out Texture2D _texture, int _width, int _height, TextureFormat _format, bool _mipmap) {
+            _texture = new Texture2D(_width, _height, _format, _mipmap);
+            _texture.filterMode = FilterMode.Point;
+            _texture.wrapMode = TextureWrapMode.Clamp;
+            _texture.anisoLevel = 0;
+        }
+
+        public void ApplyAll() {
+            if (!IsDirty)
+                return;
+            IsDirty = false;
+
+            Diffuse.Apply();
+            Normal.Apply();
+            Emissive.Apply();
+            Specular.Apply();
+        }
+    }
+
+    [SerializeField] private Texture2D TextureWithGoodImportSettings;
+    [SerializeField] private Texture2D NormalMapWithGoodImportSettings;
+
+    [SerializeField] private MeshRenderer[] GridGraphicsBottomRenderers;
+    [SerializeField] private MeshRenderer[] GridGraphicsTopRenderers;
+
+    private GridGraphics[] gridGraphicsBottom;
+    private GridGraphics[] gridGraphicsTop;
     private List<int> gridSlicesPendingApply = new List<int>();
     public const int TILE_RESOLUTION = 64;
-    public const float WORLD_HEIGHT = 1;
+    public const float WORLD_BOTTOM_HEIGHT = 0.01f;
+    public const float WORLD_TOP_HEIGHT = -0.01f;
 
     public bool DisplayGridGizmos;
     public bool DisplayPaths;
@@ -22,9 +63,9 @@ public class Grid : MonoBehaviour {
     public Tile[,] grid; // should make 1D
     private float nodeDiameter;
 
-    public int MaxSize { get { return gridSizeX * gridSizeY; } }
-    private int gridSizeX;
-    private int gridSizeY;
+    public int MaxSize { get { return GridSizeX * GridSizeY; } }
+    public int GridSizeX { get; private set; }
+    public int GridSizeY { get; private set; }
     private int sliceSizeX;
     private int sliceSizeY;
 
@@ -32,11 +73,12 @@ public class Grid : MonoBehaviour {
     void Awake() {
         Instance = this;
 
-        gridGraphics = new Texture2D[GridGraphicsRenderers.Length];
+        gridGraphicsBottom = new GridGraphics[GridGraphicsBottomRenderers.Length];
+        gridGraphicsTop = new GridGraphics[GridGraphicsBottomRenderers.Length];
 
         nodeDiameter = NodeRadius * 2;
-        gridSizeX = Mathf.RoundToInt(GridWorldSize.x / nodeDiameter);
-        gridSizeY = Mathf.RoundToInt(GridWorldSize.y / nodeDiameter);
+        GridSizeX = Mathf.RoundToInt(GridWorldSize.x / nodeDiameter);
+        GridSizeY = Mathf.RoundToInt(GridWorldSize.y / nodeDiameter);
 
         StartCoroutine(_ApplyPendingTextures());
         CreateGrid();
@@ -48,36 +90,49 @@ public class Grid : MonoBehaviour {
     //}
 
     void CreateGrid() {
-        grid = new Tile[gridSizeX, gridSizeY];
+        grid = new Tile[GridSizeX, GridSizeY];
 
-        sliceSizeX = (int)(gridSizeX / (Mathf.Sqrt(gridGraphics.Length)));
-        sliceSizeY = (int)(gridSizeY / (Mathf.Sqrt(gridGraphics.Length)));
+        sliceSizeX = (int)(GridSizeX / (Mathf.Sqrt(gridGraphicsBottom.Length)));
+        sliceSizeY = (int)(GridSizeY / (Mathf.Sqrt(gridGraphicsBottom.Length)));
         float _slicePosX;
         float _slicePosY;
 
         int _currentIndex = 0;
-        int _sqrtOfGridGraphics = Mathf.RoundToInt(Mathf.Sqrt(gridGraphics.Length));
+        int _sqrtOfGridGraphics = Mathf.RoundToInt(Mathf.Sqrt(gridGraphicsBottom.Length));
         for (int y = 0; y < _sqrtOfGridGraphics; y++) {
-            _slicePosY = ((sliceSizeY * 0.5f) + (sliceSizeY * y) - (gridSizeY * 0.5f)) + 0.5f; // +0.5f for diagonals
+            _slicePosY = ((sliceSizeY * 0.5f) + (sliceSizeY * y) - (GridSizeY * 0.5f)) + 0.5f; // +0.5f for diagonals
 
             for (int x = 0; x < _sqrtOfGridGraphics; x++) {
                 _currentIndex = (y * _sqrtOfGridGraphics) + x;
 
-                gridGraphics[_currentIndex] = new Texture2D(sliceSizeX * TILE_RESOLUTION, (sliceSizeY + 1 /*+1 for diagonals*/) * TILE_RESOLUTION, TextureFormat.RGBA32, true);
-                gridGraphics[_currentIndex].filterMode = FilterMode.Point;
-                gridGraphics[_currentIndex].wrapMode = TextureWrapMode.Clamp;
-                GridGraphicsRenderers[_currentIndex].material.mainTexture = gridGraphics[_currentIndex];
+                // bottom
+                gridGraphicsBottom[_currentIndex] = new GridGraphics(sliceSizeX * TILE_RESOLUTION, (sliceSizeY + 1 /*+1 for diagonals*/) * TILE_RESOLUTION, TextureFormat.RGBA32, true);
+                GridGraphicsBottomRenderers[_currentIndex].material.mainTexture = gridGraphicsBottom[_currentIndex].Diffuse;
+                GridGraphicsBottomRenderers[_currentIndex].material.SetTexture("_BumpMap", gridGraphicsBottom[_currentIndex].Normal);
+                GridGraphicsBottomRenderers[_currentIndex].material.SetTexture("_EmissionMap", gridGraphicsBottom[_currentIndex].Emissive);
+                GridGraphicsBottomRenderers[_currentIndex].material.SetTexture("_SpecGlossMap", gridGraphicsBottom[_currentIndex].Specular);
 
-                _slicePosX = ((sliceSizeX * 0.5f) + (sliceSizeX * x) - (gridSizeX * 0.5f));
+                // top
+                gridGraphicsTop[_currentIndex] = new GridGraphics(sliceSizeX * TILE_RESOLUTION, (sliceSizeY + 1 /*+1 for diagonals*/) * TILE_RESOLUTION, TextureFormat.RGBA32, true);
+                GridGraphicsTopRenderers[_currentIndex].material.mainTexture = gridGraphicsTop[_currentIndex].Diffuse;
+                GridGraphicsTopRenderers[_currentIndex].material.SetTexture("_BumpMap", gridGraphicsTop[_currentIndex].Normal);
+                GridGraphicsTopRenderers[_currentIndex].material.SetTexture("_EmissionMap", gridGraphicsTop[_currentIndex].Emissive);
+                GridGraphicsTopRenderers[_currentIndex].material.SetTexture("_SpecGlossMap", gridGraphicsTop[_currentIndex].Specular);
 
-                GridGraphicsRenderers[_currentIndex].transform.localScale = new Vector3(sliceSizeX, sliceSizeY + 1 /*+1 for diagonals*/, 1);
-                GridGraphicsRenderers[_currentIndex].transform.position = new Vector3(_slicePosX, _slicePosY, WORLD_HEIGHT + (_currentIndex * 0.01f)); // the height-thing is to combat z-fighting
+                _slicePosX = ((sliceSizeX * 0.5f) + (sliceSizeX * x) - (GridSizeX * 0.5f));
+
+                // bottom
+                GridGraphicsBottomRenderers[_currentIndex].transform.localScale = new Vector3(sliceSizeX, sliceSizeY + 1 /*+1 for diagonals*/, 1);
+                GridGraphicsBottomRenderers[_currentIndex].transform.position = new Vector3(_slicePosX, _slicePosY, (y + 1) * WORLD_BOTTOM_HEIGHT); // the height-thing is to combat z-fighting
+
+                GridGraphicsTopRenderers[_currentIndex].transform.localScale = new Vector3(sliceSizeX, sliceSizeY + 1 /*+1 for diagonals*/, 1);
+                GridGraphicsTopRenderers[_currentIndex].transform.position = new Vector3(_slicePosX, _slicePosY, (y + 1) * WORLD_TOP_HEIGHT); // the height-thing is to combat z-fighting
             }
         }
 
         Vector3 worldBottomLeft = transform.position - (Vector3.right * GridWorldSize.x / 2) - (Vector3.up * GridWorldSize.y / 2) - new Vector3(0, 0.5f, 0); // 0.5f because of the +1 for diagonals
-        for (int y = 0; y < gridSizeY; y++) {
-            for (int x = 0; x < gridSizeX; x++) {
+        for (int y = 0; y < GridSizeY; y++) {
+            for (int x = 0; x < GridSizeX; x++) {
                 Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + NodeRadius) + Vector3.up * (y * nodeDiameter + NodeRadius + 0.5f); // +0.5f for diagonals
 
                 int movementPenalty = 0; // todo: use this for something
@@ -88,25 +143,25 @@ public class Grid : MonoBehaviour {
             }
         }
         // for testing-purposes
-        for (int y = 0; y < gridSizeY; y++) {
-            for (int x = 0; x < gridSizeX; x++) {
+        for (int y = 0; y < GridSizeY; y++) {
+            for (int x = 0; x < GridSizeX; x++) {
                 if (grid[x, y]._Type_ == Tile.TileType.Wall)
                     continue;
                 if (RUL.Rul.RandBool())
                     continue;
 
                 // LT
-                if (x > 0 && grid[x - 1, y]._Type_ == Tile.TileType.Wall && y < gridSizeY - 1 && grid[x, y + 1]._Type_ == Tile.TileType.Wall) {
+                if (x > 0 && grid[x - 1, y]._Type_ == Tile.TileType.Wall && y < GridSizeY - 1 && grid[x, y + 1]._Type_ == Tile.TileType.Wall) {
                     grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.TopLeft);
                     continue;
                 }
                 // TR
-                if (y < gridSizeY - 1 && grid[x, y + 1]._Type_ == Tile.TileType.Wall && x < gridSizeX - 1 && grid[x + 1, y]._Type_ == Tile.TileType.Wall) {
+                if (y < GridSizeY - 1 && grid[x, y + 1]._Type_ == Tile.TileType.Wall && x < GridSizeX - 1 && grid[x + 1, y]._Type_ == Tile.TileType.Wall) {
                     grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.TopRight);
                     continue;
                 }
                 // RB
-                if (x < gridSizeX - 1 && grid[x + 1, y]._Type_ == Tile.TileType.Wall && y > 0 && grid[x, y - 1]._Type_ == Tile.TileType.Wall) {
+                if (x < GridSizeX - 1 && grid[x + 1, y]._Type_ == Tile.TileType.Wall && y > 0 && grid[x, y - 1]._Type_ == Tile.TileType.Wall) {
                     grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.BottomRight);
                     continue;
                 }
@@ -118,13 +173,13 @@ public class Grid : MonoBehaviour {
             }
         }
 
-        for (int y = gridSizeY - 1; y >= 0; y--) {
-            for (int x = gridSizeX - 1; x >= 0; x--) { // loop backwards so we draw towards, not away from the perspective of the camera
-                UpdateTile(grid[x, y], _individualUpdate: false, _updateNeighbours: false);
+        for (int y = GridSizeY - 1; y >= 0; y--) {
+            for (int x = GridSizeX - 1; x >= 0; x--) { // loop backwards so we draw towards, not away from, the perspective of the camera
+                UpdateTile(grid[x, y], _updateNeighbours: false, _forceUpdate: true);
             }
         }
 
-        for (int i = 0; i < gridGraphics.Length; i++) {
+        for (int i = 0; i < gridGraphicsBottom.Length; i++) { // top and bottom should have the same length, so this applies to both
             ApplyGraphics(i);
         }
     }
@@ -133,13 +188,17 @@ public class Grid : MonoBehaviour {
         int _sliceAmountX = Mathf.FloorToInt(_gridX / sliceSizeX);
         int _sliceAmountY = Mathf.FloorToInt(_gridY / sliceSizeY);
 
-        return (_sliceAmountY * (gridSizeX / sliceSizeX))  + _sliceAmountX;
+        return (_sliceAmountY * (GridSizeX / sliceSizeX))  + _sliceAmountX;
     }
 
-    public void UpdateTile(Tile _tile, bool _individualUpdate, bool _updateNeighbours) {
+    public void UpdateTile(Tile _tile, bool _updateNeighbours, bool _forceUpdate) {
+
+        // betting on this being safe enough for an early-out, to save some processing
+        if (!_forceUpdate && _tile._Type_ != Tile.TileType.Diagonal && _tile._Type_ == _tile._PrevType_)
+            return;
+
         List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
         List<Tile> _neighboursToUpdate = new List<Tile>();
-        List<int> _affectedGridSlices = new List<int>();
         int _x = _tile.GridX;
         int _y = _tile.GridY;
         int _xDiff = 0;
@@ -206,26 +265,33 @@ public class Grid : MonoBehaviour {
         }
         #endregion
 
-        // find and set correct sprite
-        DrawTileToTexture(_tile, CachedAssets.Instance.GetAssetForTile(_tile, 0, _isOnGroundLevel: true));
+
+        // get bottom asset, or null, and draw
+        CachedAssets.ShadedAsset _asset = CachedAssets.Instance.GetAssetForTile(_tile._Type_, _tile._Orientation_, 0, true, _tile.HasConnectable_L, _tile.HasConnectable_T, _tile.HasConnectable_R, _tile.HasConnectable_B);
+        DrawTileToTexture(_tile, _asset, ref gridGraphicsBottom);
+
+        // get top asset, or null, and draw
+        _asset = CachedAssets.Instance.GetAssetForTile(_tile._Type_, _tile._Orientation_, 0, false, _tile.HasConnectable_L, _tile.HasConnectable_T, _tile.HasConnectable_R, _tile.HasConnectable_B);
+        DrawTileToTexture(_tile, _asset, ref gridGraphicsTop);
+
 
         // loop through relevant neighbours backwards, towards the perspective of the camera
         for (int i = _neighboursToUpdate.Count - 1; i >= 0; i--) {
             if (_neighboursToUpdate[i]._Type_ == Tile.TileType.Diagonal && (_neighboursToUpdate[i]._Orientation_ == Tile.TileOrientation.TopLeft || _neighboursToUpdate[i]._Orientation_ == Tile.TileOrientation.TopRight))
                 continue; // skip diagonals and do them later
 
-            UpdateTile(_neighboursToUpdate[i], _individualUpdate: false, _updateNeighbours: false);
+            UpdateTile(_neighboursToUpdate[i], _updateNeighbours: false, _forceUpdate: false);
             _neighboursToUpdate.RemoveAt(i);
         }
         for (int i = _neighboursToUpdate.Count - 1; i >= 0; i--) {
-            UpdateTile(_neighboursToUpdate[i], _individualUpdate: false, _updateNeighbours: false);
+            UpdateTile(_neighboursToUpdate[i], _updateNeighbours: false, _forceUpdate: false);
         }
 
         ApplyGraphics(_tile.GridSliceIndex);
     }
 
-    bool TileIsBlockingOtherTile(Tile.TileType _otherTileType, Tile.TileOrientation _otherTileOrientation, Tile.TileOrientation _otherTileDirection) {
-        if (_otherTileType == Tile.TileType.Empty || _otherTileType == Tile.TileType.DoorEntrance)
+    bool TileIsBlockingOtherTile(Tile.TileType _otherTileType, Tile.TileOrientation _otherTileOrientation, Tile.TileOrientation _directionToOtherTile) {
+        if (_otherTileType == Tile.TileType.Empty)
             return false;
         if (_otherTileType == Tile.TileType.Wall || _otherTileType == Tile.TileType.Door)
             return true;
@@ -233,7 +299,7 @@ public class Grid : MonoBehaviour {
         if (_otherTileType != Tile.TileType.Diagonal)
             Debug.LogError("Wasn't expecting non-diagonals to be here! Handle it!");
 
-        switch (_otherTileDirection) {
+        switch (_directionToOtherTile) {
             case Tile.TileOrientation.Bottom:
                 return _otherTileOrientation == Tile.TileOrientation.TopLeft || _otherTileOrientation == Tile.TileOrientation.TopRight;
             case Tile.TileOrientation.Left:
@@ -248,6 +314,8 @@ public class Grid : MonoBehaviour {
     }
 
     public void ApplyGraphics(int _sliceIndex) {
+        if (!gridGraphicsBottom[_sliceIndex].IsDirty && !gridGraphicsTop[_sliceIndex].IsDirty)
+            return;
         if (gridSlicesPendingApply.Contains(_sliceIndex))
             return;
 
@@ -257,42 +325,75 @@ public class Grid : MonoBehaviour {
         while (true) {
             yield return new WaitForEndOfFrame();
             for (int i = 0; i < gridSlicesPendingApply.Count; i++) {
-                gridGraphics[gridSlicesPendingApply[i]].Apply();
+                gridGraphicsBottom[gridSlicesPendingApply[i]].ApplyAll();
+                gridGraphicsTop[gridSlicesPendingApply[i]].ApplyAll();
+
                 gridSlicesPendingApply.RemoveAt(i);
                 i--;
             }
         }
     }
 
-    void DrawTileToTexture(Tile _tile, Sprite _sprite) {
-        Color[] _pixels = null;
-        int _spriteWidth = 64;
-        int _spriteHeight = 64;
+    void DrawTileToTexture(Tile _tile, CachedAssets.ShadedAsset _asset, ref GridGraphics[] _gridGraphics) {
+        Color[] _pixelsDiffuse = null;
+        Color[] _pixelsNormal = null;
+        Color[] _pixelsEmissive = null;
+        Color[] _pixelsSpecular = null;
+
+        int _spriteWidth = TILE_RESOLUTION;
+        int _spriteHeight = TILE_RESOLUTION;
         Vector2 _tilePosOnTexture = new Vector2(_tile.LocalGridX * TILE_RESOLUTION, _tile.LocalGridY * TILE_RESOLUTION);
 
-        if (_sprite != null) {
-            _pixels = CachedAssets.Instance.GetCachedAssetPixels(_sprite);
-            _spriteWidth = (int)_sprite.rect.width;
-            _spriteHeight = (int)_sprite.rect.height;
+        if (_asset != null) {
+            _pixelsDiffuse = CachedAssets.Instance.GetCachedAssetPixels(_asset.Diffuse);
+            _pixelsNormal = CachedAssets.Instance.GetCachedAssetPixels(_asset.Normal);
+            _pixelsEmissive = CachedAssets.Instance.GetCachedAssetPixels(_asset.Emissive);
+            _pixelsSpecular = CachedAssets.Instance.GetCachedAssetPixels(_asset.Specular);
+
+            _spriteWidth = (int)_asset.Diffuse.rect.width;
+            _spriteHeight = (int)_asset.Diffuse.rect.height;
         }
         
         else {
-            _pixels = new Color[TILE_RESOLUTION * TILE_RESOLUTION];
-            Color _c = new Color(0, 0, 0, 0);
-            for (int i = 0; i < _pixels.Length; i++)
-                _pixels[i] = _c;
+            _pixelsDiffuse = new Color[TILE_RESOLUTION * TILE_RESOLUTION];
+            _pixelsNormal = new Color[TILE_RESOLUTION * TILE_RESOLUTION];
+            _pixelsEmissive = new Color[TILE_RESOLUTION * TILE_RESOLUTION];
+            _pixelsSpecular = new Color[TILE_RESOLUTION * TILE_RESOLUTION];
+
+            Color _c = Color.clear;
+            Color _clearNormal = new Color(0.5f, 0.5f, 1);
+            for (int i = 0; i < _pixelsDiffuse.Length; i++) {
+                _pixelsDiffuse[i] = _c;
+                _pixelsNormal[i] = _clearNormal;
+                _pixelsEmissive[i] = _c;
+                _pixelsSpecular[i] = _c;
+            }
         }
 
         // if just below the top line of your slice and you're not drawing up there anyway, draw empty space
         // note: the top line of slices is not included in sliceSize. Also, since it's size and not an index, "sliceSizeY - 1" means the top counted Y, so below the extra line
         if (_tile.LocalGridY == sliceSizeY - 1 && _spriteHeight <= TILE_RESOLUTION) {
-            List<Color> _newPixels = new List<Color>(_pixels);
-            Color _c = new Color(0, 0, 0, 0);
-            for (int i = 0, resSqrd = (int)Mathf.Pow(TILE_RESOLUTION, 2); i < resSqrd; i++) {
-                _newPixels.Add(_c);
+            List<Color> _newDiffuse = new List<Color>(_pixelsDiffuse);
+            List<Color> _newNormal = new List<Color>(_pixelsNormal);
+            List<Color> _newEmissive = new List<Color>(_pixelsEmissive);
+            List<Color> _newSpecular = new List<Color>(_pixelsSpecular);
+
+            Color _c = Color.clear;
+            Color _clearNormal = new Color(0.5f, 0.5f, 1);
+
+            int _resSqrd = (int)Mathf.Pow(TILE_RESOLUTION, 2);
+            for (int i = 0; i < _resSqrd; i++) {
+                _newDiffuse.Add(_c);
+                _newNormal.Add(_clearNormal);
+                _newEmissive.Add(_c);
+                _newSpecular.Add(_c);
             }
-            
-            _pixels = _newPixels.ToArray();
+
+            _pixelsDiffuse = _newDiffuse.ToArray();
+            _pixelsNormal = _newNormal.ToArray();
+            _pixelsEmissive = _newEmissive.ToArray();
+            _pixelsSpecular = _newSpecular.ToArray();
+
             _spriteHeight = TILE_RESOLUTION * 2;
         }
 
@@ -303,16 +404,22 @@ public class Grid : MonoBehaviour {
             for (int y = TILE_RESOLUTION; y < _spriteHeight; y++) {
                 for (int x = 0; x < _spriteWidth; x++) {
                     _index = (y * _spriteWidth) + x;
-                    if (_pixels[_index].a > 0)
+                    if (_pixelsDiffuse[_index].a > 0)
                         continue;
 
-                    _pixels[_index] = gridGraphics[_tile.GridSliceIndex].GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
+                    _pixelsDiffuse[_index] = _gridGraphics[_tile.GridSliceIndex].Diffuse.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
+                    _pixelsNormal[_index] = _gridGraphics[_tile.GridSliceIndex].Normal.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
+                    _pixelsEmissive[_index] = _gridGraphics[_tile.GridSliceIndex].Emissive.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
+                    _pixelsSpecular[_index] = _gridGraphics[_tile.GridSliceIndex].Specular.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
                 }
             }
-
         }
 
-        gridGraphics[_tile.GridSliceIndex].SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixels, 0);
+        _gridGraphics[_tile.GridSliceIndex].Diffuse.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsDiffuse, 0);
+        _gridGraphics[_tile.GridSliceIndex].Normal.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsNormal, 0);
+        _gridGraphics[_tile.GridSliceIndex].Emissive.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsEmissive, 0);
+        _gridGraphics[_tile.GridSliceIndex].Specular.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsSpecular, 0);
+        _gridGraphics[_tile.GridSliceIndex].IsDirty = true;
     }
 
     public List<Tile> GetNeighbours(int _gridX, int _gridY) {
@@ -325,7 +432,7 @@ public class Grid : MonoBehaviour {
                 int checkX = _gridX + x;
                 int checkY = _gridY + y;
 
-                if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY) {
+                if (checkX >= 0 && checkX < GridSizeX && checkY >= 0 && checkY < GridSizeY) {
                     neighbours.Add(grid[checkX, checkY]);
                 }
             }
@@ -340,8 +447,8 @@ public class Grid : MonoBehaviour {
         percentX = Mathf.Clamp01(percentX);
         percentY = Mathf.Clamp01(percentY);
 
-        int x = Mathf.RoundToInt(gridSizeX * percentX);
-        int y = Mathf.RoundToInt(gridSizeY * percentY);
+        int x = Mathf.RoundToInt(GridSizeX * percentX);
+        int y = Mathf.RoundToInt(GridSizeY * percentY);
         x = (int)Mathf.Clamp(x, 0, GridWorldSize.x - 1);
         y = (int)Mathf.Clamp(y, 0, GridWorldSize.y - 1);
 
@@ -356,7 +463,7 @@ public class Grid : MonoBehaviour {
         List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
         int _lastCount = 0;
 
-        while (_neighbours.Count < (gridSizeX * gridSizeY)) {
+        while (_neighbours.Count < (GridSizeX * GridSizeY)) {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
@@ -390,7 +497,7 @@ public class Grid : MonoBehaviour {
         List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
         int _lastCount = 0;
 
-        while (_neighbours.Count < (gridSizeX * gridSizeY)) {
+        while (_neighbours.Count < (GridSizeX * GridSizeY)) {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {

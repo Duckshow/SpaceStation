@@ -1,29 +1,41 @@
 fileFormatVersion: 2
 guid: 43a73ed43e3f82840a79fc494e34a8a1
-timeCreated: 1476312847
+timeCreated: 1478552266
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
     21300000: Horizontal_L
     21300002: Horizontal_M
     21300004: Horizontal_R
-    21300006: Corner_BR
-    21300008: Tee_T
-    21300010: Corner_BL
+    21300006: Corner_BottomRight
+    21300008: Tee_Top
+    21300010: Corner_BottomLeft
     21300012: Vertical_T
-    21300014: Diagonal_RB
-    21300016: Diagonal_BL
-    21300018: Tee_L
+    21300014: Diagonal_BottomRight
+    21300016: Diagonal_BottomLeft
+    21300018: Tee_Left
     21300020: FourWay
-    21300022: Tee_R
+    21300022: Tee_Right
     21300024: Vertical_M
-    21300026: Corner_TR
-    21300028: Tee_B
-    21300030: Corner_TL
+    21300026: Corner_TopRight
+    21300028: Tee_Bottom
+    21300030: Corner_TopLeft
     21300032: Vertical_B
-    21300034: Diagonal_TR
-    21300036: Diagonal_LT
+    21300034: Diagonal_TopRight
+    21300036: Diagonal_TopLeft
     21300038: Single
+    21300040: DoorHorizontal_Bottom_f0
+    21300042: DoorHorizontal_Bottom_f1
+    21300044: DoorHorizontal_Bottom_f2
+    21300046: DoorHorizontal_Bottom_f3
+    21300048: DoorHorizontal_Top_f0
+    21300050: DoorHorizontal_Top_f1
+    21300052: DoorHorizontal_Top_f2
+    21300054: DoorHorizontal_Top_f3
+    21300056: DoorVertical_f0
+    21300058: DoorVertical_f1
+    21300060: DoorVertical_f2
+    21300062: DoorVertical_f3
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
@@ -112,7 +124,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Corner_BR
+      name: Corner_BottomRight
       rect:
         serializedVersion: 2
         x: 0
@@ -125,7 +137,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Tee_T
+      name: Tee_Top
       rect:
         serializedVersion: 2
         x: 64
@@ -138,7 +150,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Corner_BL
+      name: Corner_BottomLeft
       rect:
         serializedVersion: 2
         x: 128
@@ -164,7 +176,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Diagonal_RB
+      name: Diagonal_BottomRight
       rect:
         serializedVersion: 2
         x: 256
@@ -177,7 +189,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Diagonal_BL
+      name: Diagonal_BottomLeft
       rect:
         serializedVersion: 2
         x: 320
@@ -190,7 +202,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Tee_L
+      name: Tee_Left
       rect:
         serializedVersion: 2
         x: 0
@@ -216,7 +228,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Tee_R
+      name: Tee_Right
       rect:
         serializedVersion: 2
         x: 128
@@ -242,7 +254,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Corner_TR
+      name: Corner_TopRight
       rect:
         serializedVersion: 2
         x: 0
@@ -255,7 +267,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Tee_B
+      name: Tee_Bottom
       rect:
         serializedVersion: 2
         x: 64
@@ -268,7 +280,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Corner_TL
+      name: Corner_TopLeft
       rect:
         serializedVersion: 2
         x: 128
@@ -294,7 +306,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Diagonal_TR
+      name: Diagonal_TopRight
       rect:
         serializedVersion: 2
         x: 256
@@ -307,7 +319,7 @@ TextureImporter:
       outline: []
       tessellationDetail: -1
     - serializedVersion: 2
-      name: Diagonal_LT
+      name: Diagonal_TopLeft
       rect:
         serializedVersion: 2
         x: 320
@@ -332,6 +344,162 @@ TextureImporter:
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: -1
+    - serializedVersion: 2
+      name: DoorHorizontal_Bottom_f0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 256
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorHorizontal_Bottom_f1
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 256
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorHorizontal_Bottom_f2
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 256
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorHorizontal_Bottom_f3
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 256
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorHorizontal_Top_f0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 320
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorHorizontal_Top_f1
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 320
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorHorizontal_Top_f2
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 320
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorHorizontal_Top_f3
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 320
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorVertical_f0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 384
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorVertical_f1
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 384
+        width: 64
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorVertical_f2
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 384
+        width: 64
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: DoorVertical_f3
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 384
+        width: 64
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
     outline: []
   spritePackingTag: Tiles
   userData: 
