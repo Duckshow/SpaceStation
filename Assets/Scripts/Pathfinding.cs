@@ -30,6 +30,11 @@ public class Pathfinding : MonoBehaviour {
         Tile startNode = grid.GetTileFromWorldPoint(_startPos);
         Tile targetNode = grid.GetTileFromWorldPoint(_targetPos);
 
+        if (grid.DisplayWaypoints) {
+            DrawDebugMarker(startNode.WorldPosition, Color.blue);
+            DrawDebugMarker(targetNode.WorldPosition, Color.blue);
+        }
+
         if (startNode == targetNode) {
             UnityEngine.Debug.Log("Something tried to walk to where it already was! Skip!");
             requestManager.FinishedProcessingPath(waypoints, false);
@@ -56,7 +61,7 @@ public class Pathfinding : MonoBehaviour {
                 foreach (Tile neighbour in grid.GetNeighbours(currentNode.GridX, currentNode.GridY)) {
                     if (!neighbour.Walkable)
                         continue;
-                    if (neighbour.IsOccupied && neighbour != targetNode) // todo: maybe fix the latter part?
+                    if (neighbour.IsOccupied && neighbour != targetNode)
                         continue;
                     if (closedSet.Contains(neighbour))
                         continue;
@@ -85,38 +90,72 @@ public class Pathfinding : MonoBehaviour {
     }
 
     Waypoint[] RetracePath(Tile startNode, Tile endNode) {
+
         List<Tile> path = new List<Tile>();
         Tile currentNode = endNode;
-
         while (currentNode != startNode) {
             path.Add(currentNode);
             currentNode = currentNode.ParentTile;
         }
+        path.Add(startNode); // added 11/18/2016 (not sure if dangerous, but might prevent problems e.g. if the path starts in front of a door?)
+
 
         Waypoint[] waypoints = SimplifyPath(path);
         Array.Reverse(waypoints);
 
-        if (grid.DisplayPaths) {
-            for (int i = 1; i < waypoints.Length; i++)
-                UnityEngine.Debug.DrawLine(waypoints[i - 1].Position, waypoints[i].Position, Color.yellow, 30);
+        if (grid.DisplayPaths || grid.DisplayWaypoints) {
+            for (int i = 1; i < waypoints.Length; i++) {
+                if(grid.DisplayPaths)
+                    UnityEngine.Debug.DrawLine(waypoints[i - 1].Position, waypoints[i].Position, Color.yellow, 30);
+                if (grid.DisplayWaypoints) {
+                    DrawDebugMarker(waypoints[i - 1].Position, Color.red);
+
+                    if(i == waypoints.Length - 1)
+                        DrawDebugMarker(waypoints[i].Position, Color.red);
+                }
+            }
         }
 
         return waypoints;
     }
+    void DrawDebugMarker(Vector3 _pos, Color _color) {
+        UnityEngine.Debug.DrawLine(_pos + new Vector3(0, 0.1f, 0), _pos + new Vector3(0.1f, 0, 0), _color, 30);
+        UnityEngine.Debug.DrawLine(_pos + new Vector3(0.1f, 0, 0), _pos + new Vector3(0, -0.1f, 0), _color, 30);
+        UnityEngine.Debug.DrawLine(_pos + new Vector3(0, -0.1f, 0), _pos + new Vector3(-0.1f, 0, 0), _color, 30);
+        UnityEngine.Debug.DrawLine(_pos + new Vector3(-0.1f, 0, 0), _pos + new Vector3(0, 0.1f, 0), _color, 30);
+    }
     Waypoint[] SimplifyPath(List<Tile> path) {
         List<Waypoint> waypoints = new List<Waypoint>();
-        Vector2 directionOld = Vector2.zero;
+        Vector2 directionFromLast = Vector2.zero;
+        Vector2 directionToNext = Vector2.zero;
 
-        for (int i = 1; i < path.Count; i++) {
-            if (path[i]._Type_ == Tile.TileType.Door) {
-                waypoints.Add(new Waypoint(path[i - 1].CharacterPositionWorld, 2));
+        for (int i = 0; i < path.Count; i++) {
+            DrawDebugMarker(path[i].WorldPosition, Color.green);
+
+            //if (path[i]._Type_ == Tile.TileType.Door)
+            //    continue;
+
+            if (i < path.Count - 1) {
+                directionFromLast = directionToNext;
+                directionToNext = new Vector2(path[i].DefaultPositionWorld.x - path[i + 1].DefaultPositionWorld.x, path[i].DefaultPositionWorld.y - path[i + 1].DefaultPositionWorld.y).normalized;
+
+                if (path[i + 1]._Type_ == Tile.TileType.Door) {
+                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, 0)); // behind door
+                    continue;
+                }
             }
-            else {
-                Vector2 directionNew = new Vector2(path[i - 1].DefaultPositionWorld.x - path[i].DefaultPositionWorld.x, path[i - 1].DefaultPositionWorld.y - path[i].DefaultPositionWorld.y);
-                if (directionNew != directionOld)
-                    waypoints.Add(new Waypoint(path[i - 1].CharacterPositionWorld, 0));
 
-                directionOld = directionNew;
+            if (i > 0) {
+                if (path[i - 1]._Type_ == Tile.TileType.Door) {
+                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, 2)); // ahead of door
+                    continue;
+                }
+            }
+
+            // if the direction is changing (or if at start/end/door), add waypoint
+            if (directionToNext != directionFromLast || i == 0 || i == path.Count - 1 || path[i]._Type_ == Tile.TileType.Door) {
+                waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, 0));
+                continue;
             }
         }
 

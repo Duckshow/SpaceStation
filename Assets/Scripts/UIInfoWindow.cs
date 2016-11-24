@@ -20,7 +20,6 @@ public class UIInfoWindow : MonoBehaviour {
     public InteractiveObject OwnerIO;
 
     private Image ui_BackgroundImage;
-    private Transform[] hierarchy;
     private ComponentObject trackedComponent;
     private Canvas myCanvas;
 
@@ -34,7 +33,6 @@ public class UIInfoWindow : MonoBehaviour {
         ui_BackgroundImage = GetComponent<Image>();
         myCanvas = FindObjectOfType<Canvas>();
 
-        hierarchy = GetComponentsInChildren<Transform>();
         images = GetComponentsInChildren<Image>();
         Buttons = GetComponentsInChildren<Button>();
         texts = GetComponentsInChildren<Text>();
@@ -75,18 +73,6 @@ public class UIInfoWindow : MonoBehaviour {
         OwnerIO = _newIO;
         trackedComponent = _trackedComponent;
 
-        //for (int i = 0; i < hierarchy.Length; i++) {
-        //    //images = hierarchy[i].GetComponents<Image>();
-        //    for (int j = 0; j < images.Length; j++)
-
-        //    //Buttons = hierarchy[i].GetComponents<Button>();
-        //    for (int j = 0; j < Buttons.Length; j++)
-        //        Buttons[j].enabled = _enable;
-
-        //    //texts = hierarchy[i].GetComponents<Text>();
-        //    for (int j = 0; j < texts.Length; j++)
-        //        texts[j].enabled = _enable;
-        //}
         for (int i = 0; i < images.Length; i++)
             images[i].enabled = _enable;
         for (int i = 0; i < Buttons.Length; i++)

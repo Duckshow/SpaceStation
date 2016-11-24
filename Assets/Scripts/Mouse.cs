@@ -20,7 +20,6 @@ public class Mouse : MonoBehaviour {
     private InteractiveObject newRightClickedObject;
 
     private Vector2 screenPos;
-    private bool inputWasReceived = false;
     private bool leftClicked = false;
     private bool rightClicked = false;
 
@@ -33,6 +32,16 @@ public class Mouse : MonoBehaviour {
      }
 	
 	void Update () {
+
+
+        if (Input.GetKeyDown(KeyCode.O)) {
+            Actor[] _actor = FindObjectsOfType<Actor>();
+            for (int i = 0; i < _actor.Length; i++) {
+                _actor[i].enabled = !_actor[i].enabled;
+            }
+        }
+
+
         // if is over UI
         if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject(-1))
             return;
@@ -43,9 +52,6 @@ public class Mouse : MonoBehaviour {
         rightClicked = Input.GetMouseButtonUp(1);
         newLeftClickedObject = null;
         newRightClickedObject = null;
-
-        //if (leftClicked)
-        //    SelectedObject = null;
 
         InteractiveObject _io;
         for (int i = 0; i < InteractiveObject.AllInteractiveObjects.Count; i++) {
@@ -84,10 +90,6 @@ public class Mouse : MonoBehaviour {
         // left click
         if (leftClicked) {
             if (newLeftClickedObject == null) { // didn't click any object
-                //if (PickedUpObject != null)
-                //    if (!TryReturnPickedUpToPreviousParent())
-                //        return;
-
                 if (SelectedObject != null) {
                     GUIManager.Instance.CloseInfoWindow(SelectedObject);
                     SelectedObject = null;
@@ -96,9 +98,6 @@ public class Mouse : MonoBehaviour {
             }
 
             if (newLeftClickedObject != null) {
-                //if (PickedUpObject != null && newLeftClickedObject.Type == GUIManager.WindowType.Component) // don't wanna drop object if we're opening a componentholder
-                //    if (!TryReturnPickedUpToPreviousParent())
-                //        return;
                 if(SelectedObject != null)
                 Debug.Log(SelectedObject.name);
                 // if already had something selected (except if it's the PickedUpObject), de-select it
@@ -135,11 +134,6 @@ public class Mouse : MonoBehaviour {
         }
         // right click
         else if (rightClicked) {
-            //if(newRightClickedObject == null && PickedUpObject == null) {
-            //    GUIManager.Instance.CloseAllWindows();
-            //    return;
-            //}
-
 
             // if clicked object, switch places
             if (newRightClickedObject != null) {
@@ -165,38 +159,6 @@ public class Mouse : MonoBehaviour {
                     SelectedObject = null;
                 }
             }
-
-
-            //if (newRightClickedObject != null) {
-            //    if (!newRightClickedObject.CanBePickedUp)
-            //        return;
-
-            //    if (PickedUpObject != null) {
-            //        if (newRightClickedObject != PickedUpObject)
-            //            TrySwitchObjects<ComponentObject>(_giveComponent: newRightClickedObject, isVisibleOnPickUp: true, isVisibleOnPutDown: true);
-            //        return;
-            //    }
-            //    else {
-            //        if (newRightClickedObject.CanBePickedUp)
-            //            PickUp(newRightClickedObject);
-
-            //        newRightClickedObject.OnRightClicked();
-            //        GUIManager.Instance.OpenNewWindow(newRightClickedObject, InteractiveObject.State.PickedUp, newRightClickedObject.Type);
-            //        PickedUpObject = newRightClickedObject;
-            //        return;
-            //    }
-            //}
-            //else {
-            //    if (PickedUpObject != null) {
-            //        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            //        RaycastHit rayHit;
-            //        int layerMask = 1 << 9; // walkable layer
-            //        if (Physics.Raycast(ray, out rayHit, 1000, layerMask)) {
-            //            PutDownPickedUp(rayHit.point);
-            //            return;
-            //        }
-            //    }
-            //}
 
             return;
         }
@@ -240,7 +202,6 @@ public class Mouse : MonoBehaviour {
 
         _receiveComponent = PickedUpObject;
         if (_receiveComponent != null) {
-            //SavePreviousTransformInfo(oldPickedUp);
 
             _receiveComponent.transform.parent = (_giveComponent == null) ? null : _giveComponent.transform.parent;
             _receiveComponent.transform.localPosition = (_giveComponent == null) ? Vector3.zero : _giveComponent.transform.localPosition;
@@ -274,47 +235,7 @@ public class Mouse : MonoBehaviour {
         PickedUpObject = _io;
         GUIManager.Instance.OpenNewWindow(_io, InteractiveObject.State.PickedUp, _io.Type);
     }
-    //public bool TryReturnPickedUpToPreviousParent() {
-    //    if (PickedUpObject == null)
-    //        return true;
 
-    //    ComponentObject _component = PickedUpObject.GetComponent<ComponentObject>();
-    //    ComponentHolder _parentCH = PickedUpObject.PreviousParent.GetComponent<ComponentHolder>();
-
-    //    //Button _parentButton = PickedUpObject.PreviousParent.GetComponent<Button>();
-    //    Debug.Log(PickedUpObject.PreviousComponentSlotIndex);
-    //    if (_parentCH.ComponentSlots[PickedUpObject.PreviousComponentSlotIndex].HeldComponent != null) {
-    //        //throw new System.Exception("Tried re-adding a component to its slot, but it was filled somehow!");
-    //        Debug.LogWarning("Can't cancel because the component's slot has already been filled!");
-    //        return false;
-    //    }
-
-    //    PickedUpObject.transform.parent = PickedUpObject.PreviousParent;
-    //    PickedUpObject.transform.localPosition = PickedUpObject.PreviousPosition;
-
-    //    if (_parentCH == null) {
-    //        GUIManager.Instance.CloseCurrentInfoWindow();
-    //        PickedUpObject = null;
-    //        return true;
-    //    }
-
-    //    _parentCH.ComponentSlots[PickedUpObject.PreviousComponentSlotIndex].HeldComponent = _component;
-    //    _parentCH.OnComponentsModified();
-    //    GUIManager.Instance.OpenNewWindow(PickedUpObject, InteractiveObject.State.Contained, PickedUpObject.Type);
-    //    PickedUpObject = null;
-
-    //    return true;
-    //}
-    //void SavePreviousTransformInfo(InteractiveObject _io) {
-    //    _io.PreviousParent = _io.transform.parent;
-    //    _io.PreviousPosition = _io.transform.localPosition;
-
-    //    ComponentHolder _holder = _io.GetComponentInParent<ComponentHolder>();
-    //    if (_holder != null)
-    //        _io.PreviousComponentSlotIndex = _holder.ComponentSlots.FindIndex(x => x.HeldComponent == _io.GetComponent<ComponentObject>());
-    //    else
-    //        _io.PreviousComponentSlotIndex = -1;
-    //}
     public void PutDownPickedUp(Tile _tile) {
         if (PickedUpObject == null)
             return;

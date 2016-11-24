@@ -13,14 +13,6 @@ public class InteractiveObject : MonoBehaviour {
     public State CurrentState { get; private set; }
 
     private const byte OUTLINE_ALPHA_SELECTED = 128;
-    private static bool trackingStarted = false;
-    private static Vector2 mousePos;
-    private static IEnumerator _TrackInput() {
-        while (true) {
-            mousePos = Input.mousePosition;
-            yield return null;
-        }
-    }
 
     public GUIManager.WindowType Type;
     public float ClickableRange = 10;
@@ -68,11 +60,6 @@ public class InteractiveObject : MonoBehaviour {
     }
 
     void Start() {
-        if (!trackingStarted) {
-            trackingStarted = true;
-            StartCoroutine(_TrackInput());
-        }
-
         Renderer.material.SetColor("_OutlineColor", new Color32(0, 0, 0, 0));
     }
 

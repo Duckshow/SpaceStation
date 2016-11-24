@@ -54,7 +54,7 @@ public class CachedAssets : MonoBehaviour {
     }
 
     [System.Serializable]
-    public struct WallSet {
+    public class WallSet {
 
         public Texture2D SpriteSheet_Diffuse;
         public Texture2D SpriteSheet_Normal;
@@ -68,23 +68,27 @@ public class CachedAssets : MonoBehaviour {
         [HideInInspector] public ShadedAsset Vertical_M;
         [HideInInspector] public ShadedAsset Vertical_B;
 
-        [HideInInspector] public ShadedAsset DoorVertical_f0;
-        [HideInInspector] public ShadedAsset DoorVertical_f1;
-        [HideInInspector] public ShadedAsset DoorVertical_f2;
-        [HideInInspector] public ShadedAsset DoorVertical_f3;
+        [HideInInspector] public ShadedAsset[] DoorVertical_Animation = new ShadedAsset[4];
+        //[HideInInspector] public ShadedAsset DoorVertical_f0;
+        //[HideInInspector] public ShadedAsset DoorVertical_f1;
+        //[HideInInspector] public ShadedAsset DoorVertical_f2;
+        //[HideInInspector] public ShadedAsset DoorVertical_f3;
 
         [HideInInspector] public ShadedAsset Horizontal_L;
         [HideInInspector] public ShadedAsset Horizontal_M;
         [HideInInspector] public ShadedAsset Horizontal_R;
 
-        [HideInInspector] public ShadedAsset DoorHorizontal_Bottom_f0;
-        [HideInInspector] public ShadedAsset DoorHorizontal_Bottom_f1;
-        [HideInInspector] public ShadedAsset DoorHorizontal_Bottom_f2;
-        [HideInInspector] public ShadedAsset DoorHorizontal_Bottom_f3;
-        [HideInInspector] public ShadedAsset DoorHorizontal_Top_f0;
-        [HideInInspector] public ShadedAsset DoorHorizontal_Top_f1;
-        [HideInInspector] public ShadedAsset DoorHorizontal_Top_f2;
-        [HideInInspector] public ShadedAsset DoorHorizontal_Top_f3;
+        [HideInInspector] public ShadedAsset[] DoorHorizontal_Bottom_Animation = new ShadedAsset[4];
+        //[HideInInspector] public ShadedAsset DoorHorizontal_Bottom_f0;
+        //[HideInInspector] public ShadedAsset DoorHorizontal_Bottom_f1;
+        //[HideInInspector] public ShadedAsset DoorHorizontal_Bottom_f2;
+        //[HideInInspector] public ShadedAsset DoorHorizontal_Bottom_f3;
+
+        [HideInInspector] public ShadedAsset[] DoorHorizontal_Top_Animation = new ShadedAsset[4];
+        //[HideInInspector] public ShadedAsset DoorHorizontal_Top_f0;
+        //[HideInInspector] public ShadedAsset DoorHorizontal_Top_f1;
+        //[HideInInspector] public ShadedAsset DoorHorizontal_Top_f2;
+        //[HideInInspector] public ShadedAsset DoorHorizontal_Top_f3;
 
         [HideInInspector] public ShadedAsset Corner_TopLeft;
         [HideInInspector] public ShadedAsset Corner_TopRight;
@@ -153,16 +157,24 @@ public class CachedAssets : MonoBehaviour {
 
                 // DoorVerticals
                 case "DoorVertical_f0":
-                    WallSets[_wallSetIndex].DoorVertical_f0.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorVertical_Animation[0].SetTexture(_type, _sprites[i]);
+
+                    //WallSets[_wallSetIndex].DoorVertical_f0.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorVertical_f1":
-                    WallSets[_wallSetIndex].DoorVertical_f1.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorVertical_Animation[1].SetTexture(_type, _sprites[i]);
+
+                    //WallSets[_wallSetIndex].DoorVertical_f1.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorVertical_f2":
-                    WallSets[_wallSetIndex].DoorVertical_f2.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorVertical_Animation[2].SetTexture(_type, _sprites[i]);
+
+                    //WallSets[_wallSetIndex].DoorVertical_f2.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorVertical_f3":
-                    WallSets[_wallSetIndex].DoorVertical_f3.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorVertical_Animation[3].SetTexture(_type, _sprites[i]);
+
+                    //WallSets[_wallSetIndex].DoorVertical_f3.SetTexture(_type, _sprites[i]);
                     break;
 
                 // Horizontals
@@ -178,28 +190,44 @@ public class CachedAssets : MonoBehaviour {
 
                 // DoorHorizontals
                 case "DoorHorizontal_Bottom_f0":
-                    WallSets[_wallSetIndex].DoorHorizontal_Bottom_f0.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorHorizontal_Bottom_Animation[0].SetTexture(_type, _sprites[i]);
+
+      //              WallSets[_wallSetIndex].DoorHorizontal_Bottom_f0.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorHorizontal_Bottom_f1":
-                    WallSets[_wallSetIndex].DoorHorizontal_Bottom_f1.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorHorizontal_Bottom_Animation[1].SetTexture(_type, _sprites[i]);
+
+    //                WallSets[_wallSetIndex].DoorHorizontal_Bottom_f1.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorHorizontal_Bottom_f2":
-                    WallSets[_wallSetIndex].DoorHorizontal_Bottom_f2.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorHorizontal_Bottom_Animation[2].SetTexture(_type, _sprites[i]);
+
+  //                  WallSets[_wallSetIndex].DoorHorizontal_Bottom_f2.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorHorizontal_Bottom_f3":
-                    WallSets[_wallSetIndex].DoorHorizontal_Bottom_f3.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorHorizontal_Bottom_Animation[3].SetTexture(_type, _sprites[i]);
+
+//                    WallSets[_wallSetIndex].DoorHorizontal_Bottom_f3.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorHorizontal_Top_f0":
-                    WallSets[_wallSetIndex].DoorHorizontal_Top_f0.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorHorizontal_Top_Animation[0].SetTexture(_type, _sprites[i]);
+
+                    //WallSets[_wallSetIndex].DoorHorizontal_Top_f0.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorHorizontal_Top_f1":
-                    WallSets[_wallSetIndex].DoorHorizontal_Top_f1.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorHorizontal_Top_Animation[1].SetTexture(_type, _sprites[i]);
+
+//                    WallSets[_wallSetIndex].DoorHorizontal_Top_f1.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorHorizontal_Top_f2":
-                    WallSets[_wallSetIndex].DoorHorizontal_Top_f2.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorHorizontal_Top_Animation[2].SetTexture(_type, _sprites[i]);
+
+//                    WallSets[_wallSetIndex].DoorHorizontal_Top_f2.SetTexture(_type, _sprites[i]);
                     break;
                 case "DoorHorizontal_Top_f3":
-                    WallSets[_wallSetIndex].DoorHorizontal_Top_f3.SetTexture(_type, _sprites[i]);
+                    WallSets[_wallSetIndex].DoorHorizontal_Top_Animation[3].SetTexture(_type, _sprites[i]);
+
+//                    WallSets[_wallSetIndex].DoorHorizontal_Top_f3.SetTexture(_type, _sprites[i]);
                     break;
 
                 // Corners
@@ -288,6 +316,8 @@ public class CachedAssets : MonoBehaviour {
 
     public ShadedAsset GetAssetForTile(Tile.TileType _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isOnGroundLevel, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
         switch (_tileType) {
+            case Tile.TileType.Empty:
+                break;
             case Tile.TileType.Wall:
                 if (!_isOnGroundLevel) // for now at least
                     return null;
@@ -343,12 +373,34 @@ public class CachedAssets : MonoBehaviour {
                     case Tile.TileOrientation.None:
                     case Tile.TileOrientation.Bottom:
                     case Tile.TileOrientation.Top:
-                        return _isOnGroundLevel ? null : WallSets[_styleIndex].DoorVertical_f0;
+                        return _isOnGroundLevel ? null : WallSets[_styleIndex].DoorVertical_Animation[0];
                     case Tile.TileOrientation.Left:
                     case Tile.TileOrientation.Right:
-                        return _isOnGroundLevel ? WallSets[_styleIndex].DoorHorizontal_Bottom_f0 : WallSets[_styleIndex].DoorHorizontal_Top_f0;
+                        return _isOnGroundLevel ? WallSets[_styleIndex].DoorHorizontal_Bottom_Animation[0] : WallSets[_styleIndex].DoorHorizontal_Top_Animation[0];
                 }
                 break;
+            default:
+                throw new System.NotImplementedException(_tileType + " hasn't been properly implemented yet!");
+        }
+
+        return null;
+    }
+
+    public ShadedAsset[] GetAnimationForTile(Tile.TileType _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _getBottomLayer) {
+        switch (_tileType) {
+            case Tile.TileType.Door:
+                switch (_tileOrientation) {
+                    case Tile.TileOrientation.None:
+                    case Tile.TileOrientation.Bottom:
+                    case Tile.TileOrientation.Top:
+                        return _getBottomLayer ? null : WallSets[_styleIndex].DoorVertical_Animation;
+                    case Tile.TileOrientation.Left:
+                    case Tile.TileOrientation.Right:
+                        return _getBottomLayer ? WallSets[_styleIndex].DoorHorizontal_Bottom_Animation : WallSets[_styleIndex].DoorHorizontal_Top_Animation;
+                }
+                break;
+            default:
+                throw new System.NotImplementedException(_tileType + " doesn't appear to have an animation!");
         }
 
         return null;

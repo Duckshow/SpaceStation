@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
+using System.Collections;
 
 public class Tile : IHeapItem<Tile> {
 
@@ -102,6 +102,8 @@ public class Tile : IHeapItem<Tile> {
         orientation = _newOrientation;
 
         if (prevType == TileType.Door) {
+            Grid.Instance.Animator.StopAnimatingTile(this);
+
             Grid.Instance.grid[GridX + 1, GridY].SetBuildingAllowed(true);
             Grid.Instance.grid[GridX - 1, GridY].SetBuildingAllowed(true);
             Grid.Instance.grid[GridX, GridY + 1].SetBuildingAllowed(true);

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class Grid : MonoBehaviour {
 
     public static Grid Instance;
+    public GridAnimator Animator;
 
     private class GridGraphics {
         public bool IsDirty = false;
@@ -48,14 +49,13 @@ public class Grid : MonoBehaviour {
 
     private GridGraphics[] gridGraphicsBottom;
     private GridGraphics[] gridGraphicsTop;
-    private List<int> gridSlicesPendingApply = new List<int>();
     public const int TILE_RESOLUTION = 64;
     public const float WORLD_BOTTOM_HEIGHT = 0.01f;
     public const float WORLD_TOP_HEIGHT = -0.01f;
 
     public bool DisplayGridGizmos;
     public bool DisplayPaths;
-    public LayerMask UnwalkableMask;
+    public bool DisplayWaypoints;
     public Vector2 GridWorldSize;
     public float NodeRadius;
 
@@ -72,6 +72,7 @@ public class Grid : MonoBehaviour {
 
     void Awake() {
         Instance = this;
+        Animator = GetComponent<GridAnimator>();
 
         gridGraphicsBottom = new GridGraphics[GridGraphicsBottomRenderers.Length];
         gridGraphicsTop = new GridGraphics[GridGraphicsBottomRenderers.Length];
@@ -81,6 +82,7 @@ public class Grid : MonoBehaviour {
         GridSizeY = Mathf.RoundToInt(GridWorldSize.y / nodeDiameter);
 
         StartCoroutine(_ApplyPendingTextures());
+        StartCoroutine(_ApplyPendingTexturesLowPrio());
         CreateGrid();
     }
 
@@ -268,11 +270,11 @@ public class Grid : MonoBehaviour {
 
         // get bottom asset, or null, and draw
         CachedAssets.ShadedAsset _asset = CachedAssets.Instance.GetAssetForTile(_tile._Type_, _tile._Orientation_, 0, true, _tile.HasConnectable_L, _tile.HasConnectable_T, _tile.HasConnectable_R, _tile.HasConnectable_B);
-        DrawTileToTexture(_tile, _asset, ref gridGraphicsBottom);
+        DrawTileToTexture(_tile, _asset, ref gridGraphicsBottom[_tile.GridSliceIndex]);
 
         // get top asset, or null, and draw
         _asset = CachedAssets.Instance.GetAssetForTile(_tile._Type_, _tile._Orientation_, 0, false, _tile.HasConnectable_L, _tile.HasConnectable_T, _tile.HasConnectable_R, _tile.HasConnectable_B);
-        DrawTileToTexture(_tile, _asset, ref gridGraphicsTop);
+        DrawTileToTexture(_tile, _asset, ref gridGraphicsTop[_tile.GridSliceIndex]);
 
 
         // loop through relevant neighbours backwards, towards the perspective of the camera
@@ -321,6 +323,7 @@ public class Grid : MonoBehaviour {
 
         gridSlicesPendingApply.Add(_sliceIndex);
     }
+    private List<int> gridSlicesPendingApply = new List<int>();
     IEnumerator _ApplyPendingTextures() {
         while (true) {
             yield return new WaitForEndOfFrame();
@@ -333,8 +336,46 @@ public class Grid : MonoBehaviour {
             }
         }
     }
+    public void ApplyGraphicsLowPrio(int _sliceIndex) {
+        if (!gridGraphicsBottom[_sliceIndex].IsDirty && !gridGraphicsTop[_sliceIndex].IsDirty)
+            return;
+        if (gridSlicesPendingApplyLowPrio.Contains(_sliceIndex))
+            return;
 
-    void DrawTileToTexture(Tile _tile, CachedAssets.ShadedAsset _asset, ref GridGraphics[] _gridGraphics) {
+        gridSlicesPendingApplyLowPrio.Add(_sliceIndex);
+    }
+    private List<int> gridSlicesPendingApplyLowPrio = new List<int>();
+    IEnumerator _ApplyPendingTexturesLowPrio() {
+        while (true) {
+            for (int i = 0; i < gridSlicesPendingApplyLowPrio.Count; i++) {
+                yield return new WaitForEndOfFrame();
+
+
+                gridGraphicsBottom[gridSlicesPendingApplyLowPrio[i]].ApplyAll();
+                gridGraphicsTop[gridSlicesPendingApplyLowPrio[i]].ApplyAll();
+
+                gridSlicesPendingApplyLowPrio.RemoveAt(i);
+                i--;
+            }
+
+            yield return null;
+        }
+    }
+
+    public void ChangeSingleTileGraphics(Tile _tile, CachedAssets.ShadedAsset _bottomAsset, CachedAssets.ShadedAsset _topAsset) {
+        if (_bottomAsset != null)
+            DrawTileToTexture(_tile, _bottomAsset, ref gridGraphicsBottom[_tile.GridSliceIndex]);
+        if(_topAsset != null)
+            DrawTileToTexture(_tile, _topAsset, ref gridGraphicsTop[_tile.GridSliceIndex]);
+
+        ApplyGraphicsLowPrio(_tile.GridSliceIndex);
+
+        // update attached diagonal
+        if (_tile.ConnectedDiagonal_B != null)
+            UpdateTile(_tile.ConnectedDiagonal_B, false, true);
+    }
+
+    void DrawTileToTexture(Tile _tile, CachedAssets.ShadedAsset _asset, ref GridGraphics _gridGraphics) {
         Color[] _pixelsDiffuse = null;
         Color[] _pixelsNormal = null;
         Color[] _pixelsEmissive = null;
@@ -407,19 +448,19 @@ public class Grid : MonoBehaviour {
                     if (_pixelsDiffuse[_index].a > 0)
                         continue;
 
-                    _pixelsDiffuse[_index] = _gridGraphics[_tile.GridSliceIndex].Diffuse.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
-                    _pixelsNormal[_index] = _gridGraphics[_tile.GridSliceIndex].Normal.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
-                    _pixelsEmissive[_index] = _gridGraphics[_tile.GridSliceIndex].Emissive.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
-                    _pixelsSpecular[_index] = _gridGraphics[_tile.GridSliceIndex].Specular.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
+                    _pixelsDiffuse[_index] = _gridGraphics.Diffuse.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
+                    _pixelsNormal[_index] = _gridGraphics.Normal.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
+                    _pixelsEmissive[_index] = _gridGraphics.Emissive.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
+                    _pixelsSpecular[_index] = _gridGraphics.Specular.GetPixel((int)_tilePosOnTexture.x + x, (int)_tilePosOnTexture.y + y);
                 }
             }
         }
 
-        _gridGraphics[_tile.GridSliceIndex].Diffuse.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsDiffuse, 0);
-        _gridGraphics[_tile.GridSliceIndex].Normal.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsNormal, 0);
-        _gridGraphics[_tile.GridSliceIndex].Emissive.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsEmissive, 0);
-        _gridGraphics[_tile.GridSliceIndex].Specular.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsSpecular, 0);
-        _gridGraphics[_tile.GridSliceIndex].IsDirty = true;
+        _gridGraphics.Diffuse.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsDiffuse, 0);
+        _gridGraphics.Normal.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsNormal, 0);
+        _gridGraphics.Emissive.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsEmissive, 0);
+        _gridGraphics.Specular.SetPixels((int)_tilePosOnTexture.x, (int)_tilePosOnTexture.y, _spriteWidth, _spriteHeight, _pixelsSpecular, 0);
+        _gridGraphics.IsDirty = true;
     }
 
     public List<Tile> GetNeighbours(int _gridX, int _gridY) {

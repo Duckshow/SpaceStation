@@ -351,23 +351,18 @@ public class WallBuilder {
                 //if (_ghost.Type == Tile.TileType.Door) {
                 _ghost.Type = Tile.TileType.Door;
                 _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.Left : _ghost.Orientation;
-                _ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_f0.Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_f0.Diffuse);
+                _ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
 
                     if ((_snapToNeighbours && (_tileUnderGhost.HasConnectable_L && _tileUnderGhost.HasConnectable_R && !_tileUnderGhost.HasConnectable_B && !_tileUnderGhost.HasConnectable_T)) 
                     || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Left || allGhosts[0].Orientation == Tile.TileOrientation.Right))) {
                         _ghost.Orientation = Tile.TileOrientation.Left; // left or right shouldn't matter...
-                        _ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_f0.Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_f0.Diffuse);
+                        _ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
                     }
                     else if ((_snapToNeighbours && (!_tileUnderGhost.HasConnectable_L && !_tileUnderGhost.HasConnectable_R && _tileUnderGhost.HasConnectable_B && _tileUnderGhost.HasConnectable_T)) 
                          || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Bottom || allGhosts[0].Orientation == Tile.TileOrientation.Top))) {
                         _ghost.Orientation = Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
-                        _ghost.SetSprites(null, CachedAssets.Instance.WallSets[0].DoorVertical_f0.Diffuse);
+                        _ghost.SetSprites(null, CachedAssets.Instance.WallSets[0].DoorVertical_Animation[0].Diffuse);
                     }
-                //}
-                //else if(_ghost.Type == Tile.TileType.Empty){ // entrances
-                //    _ghost.Orientation = Tile.TileOrientation.None;
-                //    _ghost.SetSprites(null, null);
-                //}
 
                 break;
 
@@ -423,24 +418,6 @@ public class WallBuilder {
                 ghostTile_GridX = mouseTile.GridX;
                 ghostTile_GridY = mouseTile.GridY;
                 AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-                //else {
-                //    if (allGhosts[0].Orientation == Tile.TileOrientation.Left || allGhosts[0].Orientation == Tile.TileOrientation.Right) {
-                //        for (int mod = -1; mod < 2; mod += 2) { // once -1, once +1
-                //            ghostTile_GridY = mouseTile.GridY + mod;
-
-                //            if (ghostTile_GridY >= 0 && ghostTile_GridY < Grid.Instance.GridWorldSize.y)
-                //                AddNextGhost(Tile.TileType.Empty, ghostTile_GridX, ghostTile_GridY, false);
-                //        }
-                //    }
-                //    else if (allGhosts[0].Orientation == Tile.TileOrientation.Bottom || allGhosts[0].Orientation == Tile.TileOrientation.Top) {
-                //        for (int mod = -1; mod < 2; mod += 2) { // once -1, once +1
-                //            ghostTile_GridX = mouseTile.GridX + mod;
-
-                //            if (ghostTile_GridX >= 0 && ghostTile_GridX < Grid.Instance.GridWorldSize.x)
-                //                AddNextGhost(Tile.TileType.Empty, ghostTile_GridX, ghostTile_GridY, false);
-                //        }
-                //    }
-                //}
                 break;
 
             // drag-Modes
@@ -546,17 +523,7 @@ public class WallBuilder {
         SetGhostGraphics(ref allGhosts[usedGhosts.Count], Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
         usedGhosts.Add(allGhosts[usedGhosts.Count]);
     }
-    //private List<Tile> diagonalTileNeighbours;
     void AddGhostsForConnectedDiagonals(Tile _tile) {
-        //diagonalTileNeighbours = GetDiagonalNeighbourTiles(Grid.Instance.grid[_gridX, _gridY]);
-        //for (int j = 0; j < diagonalTileNeighbours.Count; j++) {
-        //    Vector2 _gridPos = new Vector2(diagonalTileNeighbours[j].GridX, diagonalTileNeighbours[j].GridY);
-        //    if (usedGhosts.Find(x => x.GridPosition == _gridPos) != null)
-        //        continue;
-
-        //    AddNextGhost((int)_gridPos.x, (int)_gridPos.y, true);
-        //}
-
         if (_tile.ConnectedDiagonal_B != null)
             AddNextGhost(_tile.ConnectedDiagonal_B.GridX, _tile.ConnectedDiagonal_B.GridY, false);
         if (_tile.ConnectedDiagonal_L != null)
@@ -576,53 +543,6 @@ public class WallBuilder {
         if (_tile.ConnectedDoor_T != null)
             AddNextGhost(_tile.ConnectedDoor_T.GridX, _tile.ConnectedDoor_T.GridY, false);
     }
-    //List<Tile> GetDiagonalNeighbourTiles(Tile _tile) { // REMOVE THIS! :D
-    //    List<Tile> _neighbours = Grid.Instance.GetNeighbours(_tile.GridX, _tile.GridY);
-    //    List<Tile> _foundDiagonals = new List<Tile>();
-    //    int _diffX = 0;
-    //    int _diffY = 0;
-    //    Tile.TileOrientation _orientation;
-    //    for (int i = 0; i < _neighbours.Count; i++) {
-    //        if (_neighbours[i]._Type_ != Tile.TileType.Diagonal)
-    //            continue;
-
-    //        _orientation = _neighbours[i]._Orientation_;
-    //        _diffX = _neighbours[i].GridX - _tile.GridX;
-    //        _diffY = _neighbours[i].GridY - _tile.GridY;
-    //        if (_diffX == -1 && _diffY == 0) {
-    //            if (_orientation == Tile.TileOrientation.BottomRight || _orientation == Tile.TileOrientation.TopRight) {
-    //                _tile.ConnectedDiagonal_L = _neighbours[i];
-    //                _foundDiagonals.Add(_neighbours[i]);
-    //                continue;
-    //            }
-    //        }
-    //        if (_diffX == 0 && _diffY == 1) {
-    //            if (_orientation == Tile.TileOrientation.BottomLeft || _orientation == Tile.TileOrientation.BottomRight) {
-    //                _tile.ConnectedDiagonal_T = _neighbours[i];
-    //                _foundDiagonals.Add(_neighbours[i]);
-    //                continue;
-    //            }
-    //        }
-
-    //        if (_diffX == 1 && _diffY == 0) {
-    //            if (_orientation == Tile.TileOrientation.BottomLeft || _orientation == Tile.TileOrientation.TopLeft) {
-    //                _tile.ConnectedDiagonal_R = _neighbours[i];
-    //                _foundDiagonals.Add(_neighbours[i]);
-    //                continue;
-    //            }
-    //        }
-
-    //        if (_diffX == 0 && _diffY == -1) {
-    //            if (_orientation == Tile.TileOrientation.TopLeft || _orientation == Tile.TileOrientation.TopRight) {
-    //                _tile.ConnectedDiagonal_B = _neighbours[i];
-    //                _foundDiagonals.Add(_neighbours[i]);
-    //                continue;
-    //            }
-    //        }
-    //    }
-
-    //    return _foundDiagonals;
-    //}
 
     List<Tile> neighbours;
     int diffX;
@@ -632,15 +552,12 @@ public class WallBuilder {
     void EvaluateUsedGhostConditions() {
         GhostInfo _ghost;
         Tile _tileUnderGhost;
-        Tile.TileType _type;
         Tile.TileOrientation _orientation;
 
         for (int i = 0; i < usedGhosts.Count; i++) {
             _ghost = usedGhosts[i];
             _tileUnderGhost = Grid.Instance.grid[(int)usedGhosts[i].GridPosition.x, (int)usedGhosts[i].GridPosition.y];
-            _type = usedGhosts[i].Type;
             _orientation = usedGhosts[i].Orientation;
-
 
             // deleting old tiles
             if (isDeleting) {
