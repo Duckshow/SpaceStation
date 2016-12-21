@@ -9,9 +9,9 @@ public class GridAnimator : MonoBehaviour {
     private List<AnimatedTile> tilesToAnimate = new List<AnimatedTile>();
     class AnimatedTile{
         public Tile TileToAnimate { get; private set; }
-        public CachedAssets.ShadedAsset[] BottomAnimation { get; private set; }
-        public CachedAssets.ShadedAsset[] TopAnimation { get; private set; }
-        public bool IsTallerThanRegular { get; private set; }
+        public CachedAssets.DoubleInt[] BottomAnimation { get; private set; }
+        public CachedAssets.DoubleInt[] TopAnimation { get; private set; }
+        //public bool IsTallerThanRegular { get; private set; }
         public int CurrentFrame { get; private set; }
         public int StartFrame { get; private set; }
         public int EndFrame { get; private set; }
@@ -23,11 +23,11 @@ public class GridAnimator : MonoBehaviour {
         public float Iterations { get; private set; }
         public bool IsPaused = false;
 
-        public AnimatedTile(Tile _tile, CachedAssets.ShadedAsset[] _bottomAnim, CachedAssets.ShadedAsset[] _topAnim, bool _forward, bool _loop, float _secondsBeforeReverse) {
+        public AnimatedTile(Tile _tile, CachedAssets.DoubleInt[] _bottomAnim, CachedAssets.DoubleInt[] _topAnim, bool _forward, bool _loop, float _secondsBeforeReverse) {
             TileToAnimate = _tile;
             BottomAnimation = _bottomAnim;
             TopAnimation = _topAnim;
-            IsTallerThanRegular = IsTallerThanDefault();
+            //IsTallerThanRegular = IsTallerThanDefault();
             SetPlayForward(_forward);
             CurrentFrame = StartFrame;
             Loop = _loop;
@@ -35,22 +35,22 @@ public class GridAnimator : MonoBehaviour {
             
         }
 
-        bool IsTallerThanDefault() {
-            if (BottomAnimation != null) {
-                for (int i = 0; i < BottomAnimation.Length; i++) {
-                    if (BottomAnimation[i].Diffuse.rect.height > Grid.TILE_RESOLUTION)
-                        return true;
-                }
-            }
-            if (TopAnimation != null) {
-                for (int i = 0; i < TopAnimation.Length; i++) {
-                    if (TopAnimation[i].Diffuse.rect.height > Grid.TILE_RESOLUTION)
-                        return true;
-                }
-            }
+        //bool IsTallerThanDefault() {
+        //    if (BottomAnimation != null) {
+        //        for (int i = 0; i < BottomAnimation.Length; i++) {
+        //            if (BottomAnimation[i].Diffuse.rect.height > Grid.TILE_RESOLUTION)
+        //                return true;
+        //        }
+        //    }
+        //    if (TopAnimation != null) {
+        //        for (int i = 0; i < TopAnimation.Length; i++) {
+        //            if (TopAnimation[i].Diffuse.rect.height > Grid.TILE_RESOLUTION)
+        //                return true;
+        //        }
+        //    }
 
-            return false;
-        }
+        //    return false;
+        //}
 
         public void SetFrame(int _f, bool _silently = false) {
             if (_silently) {
@@ -143,18 +143,26 @@ public class GridAnimator : MonoBehaviour {
         _tile.SetBuildingAllowed(true);
     }
 
-    private CachedAssets.ShadedAsset currentFrameBottom;
-    private CachedAssets.ShadedAsset currentFrameTop;
+    private CachedAssets.DoubleInt currentFrameBottom;
+    private CachedAssets.DoubleInt currentFrameTop;
     void SwitchToNextFrame(AnimatedTile _animTile) {
 
-        // update above neighbour if have to, before any animation happens so we get rid of old pixels and stuff.
-        if (_animTile.IsTallerThanRegular && _animTile.TileToAnimate.GridY < Grid.Instance.GridSizeY - 1)
-            Grid.Instance.UpdateTile(Grid.Instance.grid[_animTile.TileToAnimate.GridX, _animTile.TileToAnimate.GridY + 1], _updateNeighbours: false, _forceUpdate: true);
+        //// update above neighbour if have to, before any animation happens so we get rid of old pixels and stuff.
+        //if (_animTile.IsTallerThanRegular && _animTile.TileToAnimate.GridY < Grid.Instance.GridSizeY - 1)
+        //    Grid.Instance.UpdateTile(Grid.Instance.grid[_animTile.TileToAnimate.GridX, _animTile.TileToAnimate.GridY + 1], _updateNeighbours: false, _forceUpdate: true);
 
         _animTile.SetFrame(_animTile.PlayForward ? _animTile.CurrentFrame + 1 : _animTile.CurrentFrame - 1);
         currentFrameBottom = (_animTile.BottomAnimation != null && _animTile.BottomAnimation.Length > _animTile.CurrentFrame) ? _animTile.BottomAnimation[_animTile.CurrentFrame] : null;
         currentFrameTop = (_animTile.TopAnimation != null && _animTile.TopAnimation.Length > _animTile.CurrentFrame) ? _animTile.TopAnimation[_animTile.CurrentFrame] : null;
 
-        Grid.Instance.ChangeSingleTileGraphics(_animTile.TileToAnimate, currentFrameBottom, currentFrameTop);
+
+        // CONTINUE HERE: Gotta add support for top-tiles in Tile
+
+
+        _animTile.TileToAnimate.ChangeGraphics(
+            (_animTile.BottomAnimation != null && _animTile.BottomAnimation.Length > _animTile.CurrentFrame) ? _animTile.BottomAnimation[_animTile.CurrentFrame] : null,
+            (_animTile.TopAnimation != null && _animTile.TopAnimation.Length > _animTile.CurrentFrame) ? _animTile.TopAnimation[_animTile.CurrentFrame] : null);
+
+        //Grid.Instance.ChangeSingleTileGraphics(_animTile.TileToAnimate, currentFrameBottom, currentFrameTop);
     }
 }
