@@ -94,7 +94,10 @@ public class Tile : IHeapItem<Tile> {
 
         bottomQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_BOTTOM_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
         topQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_TOP_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
-        bottomQuad.Setup();
+        
+		topQuad.transform.parent = bottomQuad.transform;
+
+		bottomQuad.Setup();
         topQuad.Setup();
     }
 
@@ -112,6 +115,7 @@ public class Tile : IHeapItem<Tile> {
     private static Tile cachedNeighbour_B;
     public void SetTileType(TileType _newType, TileOrientation _newOrientation) {
         Debug.Log("test");
+		bottomQuad.HaveChangedGraphics = true;
         prevType = type;
         type = _newType;
         orientation = _newOrientation;
@@ -122,8 +126,6 @@ public class Tile : IHeapItem<Tile> {
         topQuad.Orientation = _newOrientation;
         bottomQuad.IsBottom = true;
         topQuad.IsBottom = false;
-
-            bottomQuad.ChangeColor(Color.red);
 
         MovementPenalty = 0; //TODO: use this for something!
 
@@ -248,7 +250,7 @@ public class Tile : IHeapItem<Tile> {
 
         ChangeGraphics(
             CachedAssets.Instance.GetAssetForTile(type, orientation, 0, true, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
-            CachedAssets.Instance.GetAssetForTile(type, orientation, 0, true, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B));
+			CachedAssets.Instance.GetAssetForTile(type, orientation, 0, false, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B));
     }
 
     void UpdateNeighbour(Tile _neighbour, TileOrientation _directionFromThisTile) {
@@ -289,9 +291,16 @@ public class Tile : IHeapItem<Tile> {
             default:
                 throw new System.NotImplementedException("Ah! UpdateNeighbour() doesn't support " + _directionFromThisTile.ToString() + " as a direction yet!");
         }
-    }
 
-    public void ChangeGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices) {
+		_neighbour.ChangeGraphics (
+			CachedAssets.Instance.GetAssetForTile (_neighbour.type, _neighbour.orientation, 0, true, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B),
+			CachedAssets.Instance.GetAssetForTile (_neighbour.type, _neighbour.orientation, 0, false, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B));
+	}
+   	
+	public void ChangeGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices) {
+		if (type == TileType.Empty && orientation == TileOrientation.None) {
+			Debug.Log (_bottomAssetIndices);
+		}
         bottomQuad.ChangeAsset(_bottomAssetIndices);
         topQuad.ChangeAsset(_topAssetIndices);
     }

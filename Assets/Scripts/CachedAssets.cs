@@ -52,8 +52,8 @@ public class CachedAssets : MonoBehaviour {
     //        }
     //    }
     //}
-
-    public class DoubleInt {
+	[System.Serializable]
+	public class DoubleInt {
         public int X;
         public int Y;
         public DoubleInt(int _x, int _y) {

@@ -29,17 +29,21 @@ public class UVController : MonoBehaviour {
         cachedPropertyColor = Shader.PropertyToID("_Color");
     }
 
+	public bool HaveChangedGraphics = false;
+	public CachedAssets.DoubleInt Coordinates;
     public void ChangeAsset(CachedAssets.DoubleInt _assetIndices) {
         if (_assetIndices == null) {
             myRenderer.enabled = false;
             return;
         }
 
+		Coordinates = _assetIndices;
+
         myMeshUVs[0].x = (Grid.TILE_RESOLUTION * _assetIndices.X) / CachedAssets.WallSet.TEXTURE_SIZE_X;
-        myMeshUVs[0].y = (Grid.TILE_RESOLUTION * _assetIndices.Y * 2) / CachedAssets.WallSet.TEXTURE_SIZE_Y; // the 2 is because the quad is 2 units high
+        myMeshUVs[0].y = (Grid.TILE_RESOLUTION * _assetIndices.Y) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
 
         myMeshUVs[1].x = (Grid.TILE_RESOLUTION * (_assetIndices.X + 1)) / CachedAssets.WallSet.TEXTURE_SIZE_X;
-        myMeshUVs[1].y = (Grid.TILE_RESOLUTION * (_assetIndices.Y + 1) * 2) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
+        myMeshUVs[1].y = (Grid.TILE_RESOLUTION * (_assetIndices.Y + 2)) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
 
         myMeshUVs[2].x = myMeshUVs[1].x;
         myMeshUVs[2].y = myMeshUVs[0].y;
