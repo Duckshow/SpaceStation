@@ -144,10 +144,18 @@ public class Grid : MonoBehaviour {
         // for testing-purposes
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                if (Random.value > 0.5f) {
+                if (Random.value > 0.6f) {
                     grid[x, y].SetTileType(Tile.TileType.Wall, Tile.TileOrientation.None);
                     continue;
                 }
+
+				grid[x, y].SetTileType(Tile.TileType.Empty, Tile.TileOrientation.None);
+            }
+        }
+        for (int y = 0; y < GridSizeY; y++) {
+            for (int x = 0; x < GridSizeX; x++) {
+                if (grid[x, y]._Type_ == Tile.TileType.Wall || RUL.Rul.RandBool())
+                    continue;
 
                 // LT
                 if (x > 0 && grid[x - 1, y]._Type_ == Tile.TileType.Wall && y < GridSizeY - 1 && grid[x, y + 1]._Type_ == Tile.TileType.Wall) {
@@ -169,8 +177,6 @@ public class Grid : MonoBehaviour {
                     grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.BottomLeft);
                     continue;
                 }
-
-				grid[x, y].SetTileType(Tile.TileType.Empty, Tile.TileOrientation.None);
             }
         }
 

@@ -20,7 +20,7 @@ public class WallBuilder {
         //private SpriteRenderer _renderer;
         //public bool _IsActive_ { get { return _renderer.gameObject.activeSelf; } }
         private Vector3 pos;
-        public Vector2 GridPosition { get { return pos; } set { BottomQuad.transform.position = Grid.Instance.grid[0, 0].WorldPosition + (Vector3)value; pos = value; } }
+        public Vector2 _Position_ { get { return pos; } set { BottomQuad.transform.position = Grid.Instance.grid[0, 0].WorldPosition + (Vector3)value + new Vector3(0, 0.5f, 0); pos = value; } }
         public Tile.TileType Type;
         public Tile.TileOrientation Orientation;
         public bool HasNeighbourGhost_Left;
@@ -32,7 +32,7 @@ public class WallBuilder {
             BottomQuad = _bottomQuad;
             TopQuad = _topQuad;
             //_renderer = _rend;
-            GridPosition = Vector2.zero;
+            _Position_ = Vector2.zero;
             Type = Tile.TileType.Empty;
             Orientation = Tile.TileOrientation.None;
         }
@@ -41,55 +41,60 @@ public class WallBuilder {
         //private Color[] _bottomPixels;
         //private Color[] _topSpritePixels;
         //private Texture2D _mergedTexture;
-        public void SetSprites(CachedAssets.DoubleInt _assetBottom, CachedAssets.DoubleInt _assetTop, int _style) {
-            //if (_spriteBottom == null || _spriteTop == null) {
-            //    if (_spriteTop == null) {
-            //        _renderer.sprite = _spriteBottom;
-            //        return;
-            //    }
-            //    if (_spriteBottom == null) {
-            //        _renderer.sprite = _spriteTop;
-            //        return;
-            //    }
-            //}
+        //public void SetSprites(CachedAssets.DoubleInt _assetBottom, CachedAssets.DoubleInt _assetTop, int _style) {
+        //if (_spriteBottom == null || _spriteTop == null) {
+        //    if (_spriteTop == null) {
+        //        _renderer.sprite = _spriteBottom;
+        //        return;
+        //    }
+        //    if (_spriteBottom == null) {
+        //        _renderer.sprite = _spriteTop;
+        //        return;
+        //    }
+        //}
 
-            //// get pixels from sprites
-            //_bottomPixels = _spriteBottom.texture.GetPixels((int)_spriteBottom.rect.x, (int)_spriteBottom.rect.y, (int)_spriteBottom.rect.width, (int)_spriteBottom.rect.height);
-            //_topSpritePixels = _spriteTop.texture.GetPixels((int)_spriteTop.rect.x, (int)_spriteTop.rect.y, (int)_spriteTop.rect.width, (int)_spriteTop.rect.height);
-            //MergeTextures(ref _topSpritePixels, ref _bottomPixels);
+        //// get pixels from sprites
+        //_bottomPixels = _spriteBottom.texture.GetPixels((int)_spriteBottom.rect.x, (int)_spriteBottom.rect.y, (int)_spriteBottom.rect.width, (int)_spriteBottom.rect.height);
+        //_topSpritePixels = _spriteTop.texture.GetPixels((int)_spriteTop.rect.x, (int)_spriteTop.rect.y, (int)_spriteTop.rect.width, (int)_spriteTop.rect.height);
+        //MergeTextures(ref _topSpritePixels, ref _bottomPixels);
 
-            //// if no texture, create it
-            //if (_mergedTexture == null) {
-            //    _mergedTexture = new Texture2D((int)_spriteBottom.rect.width, (int)_spriteBottom.rect.height, TextureFormat.RGBA32, true);
-            //    _mergedTexture.filterMode = FilterMode.Point;
-            //}
-            //// else, resize the old one
-            //else {
-            //    _mergedTexture.Resize((int)Mathf.Max(_spriteBottom.rect.width, _spriteTop.rect.width), (int)Mathf.Max(_spriteBottom.rect.height, _spriteTop.rect.height));
-            //}
+        //// if no texture, create it
+        //if (_mergedTexture == null) {
+        //    _mergedTexture = new Texture2D((int)_spriteBottom.rect.width, (int)_spriteBottom.rect.height, TextureFormat.RGBA32, true);
+        //    _mergedTexture.filterMode = FilterMode.Point;
+        //}
+        //// else, resize the old one
+        //else {
+        //    _mergedTexture.Resize((int)Mathf.Max(_spriteBottom.rect.width, _spriteTop.rect.width), (int)Mathf.Max(_spriteBottom.rect.height, _spriteTop.rect.height));
+        //}
 
-            //// merge textures
-            //_mergedTexture.SetPixels(_bottomPixels);
-            //_mergedTexture.Apply();
+        //// merge textures
+        //_mergedTexture.SetPixels(_bottomPixels);
+        //_mergedTexture.Apply();
 
-            //// create sprite from merged texture
-            //_mergedSprite = Sprite.Create(_mergedTexture, new Rect(0, 0, _mergedTexture.width, _mergedTexture.height), new Vector2(_spriteBottom.pivot.x / _spriteBottom.rect.width, _spriteBottom.pivot.y / _spriteBottom.rect.height), _spriteBottom.pixelsPerUnit);
-            //_mergedSprite.name = _spriteBottom.name + " (Merged)";
-            //_renderer.sprite = _mergedSprite;
-        }
-        void MergeTextures(ref Color[] _from, ref Color[] _to) {
-            List<Color> _toPixels = new List<Color>();
-            for (int i = 0; i < _from.Length; i++) {
+        //// create sprite from merged texture
+        //_mergedSprite = Sprite.Create(_mergedTexture, new Rect(0, 0, _mergedTexture.width, _mergedTexture.height), new Vector2(_spriteBottom.pivot.x / _spriteBottom.rect.width, _spriteBottom.pivot.y / _spriteBottom.rect.height), _spriteBottom.pixelsPerUnit);
+        //_mergedSprite.name = _spriteBottom.name + " (Merged)";
+        //_renderer.sprite = _mergedSprite;
+        //}
+        //void MergeTextures(ref Color[] _from, ref Color[] _to) {
+        //    List<Color> _toPixels = new List<Color>();
+        //    for (int i = 0; i < _from.Length; i++) {
 
-                if (_from[i].a == 0 && i < _to.Length) {
-                     _toPixels.Add(_to[i]);
-                    continue;
-                }
+        //        if (_from[i].a == 0 && i < _to.Length) {
+        //             _toPixels.Add(_to[i]);
+        //            continue;
+        //        }
 
-                _toPixels.Add(_from[i]);
-            }
+        //        _toPixels.Add(_from[i]);
+        //    }
 
-            _to = _toPixels.ToArray();
+        //    _to = _toPixels.ToArray();
+        //}
+
+        public void ChangeAssets(CachedAssets.DoubleInt _bottomIndices, CachedAssets.DoubleInt _topIndices) {
+            BottomQuad.ChangeAsset(_bottomIndices);
+            TopQuad.ChangeAsset(_topIndices);
         }
         public void SetColor(Color _color) {
             BottomQuad.ChangeColor(_color);
@@ -141,9 +146,11 @@ public class WallBuilder {
 
     public void Setup(Transform _transform) {
         UVController[] _allQuads = _transform.GetComponentsInChildren<UVController>(true);
-        allGhosts = new GhostInfo[_allQuads.Length];
-        for (int i = 0; i < allGhosts.Length; i += 2) {
-            allGhosts[i] = new GhostInfo(_allQuads[i], _allQuads[i + 1]);
+        allGhosts = new GhostInfo[(int)(_allQuads.Length * 0.5f)];
+        for (int quadIteration = 0, ghostIteration = 0; quadIteration < _allQuads.Length; quadIteration += 2, ghostIteration++) {
+            _allQuads[quadIteration].Setup();
+            _allQuads[quadIteration + 1].Setup();
+            allGhosts[ghostIteration] = new GhostInfo(_allQuads[quadIteration], _allQuads[quadIteration + 1]);
         }
     }
 
@@ -218,7 +225,7 @@ public class WallBuilder {
             mouseGhostIsDirty = true;
 
         // set position
-        allGhosts[0].GridPosition = new Vector3(mouseTile.GridX, mouseTile.GridY, Grid.WORLD_BOTTOM_HEIGHT);
+        allGhosts[0]._Position_ = new Vector3(mouseTile.GridX, mouseTile.GridY, Grid.WORLD_BOTTOM_HEIGHT);
 
         // set rotation
         allGhosts[0].Orientation = TryRotateMouseGhost();
@@ -288,8 +295,8 @@ public class WallBuilder {
         bool _hasConnection_Right = _ghost.HasNeighbourGhost_Right;
         bool _hasConnection_Top = _ghost.HasNeighbourGhost_Top;
         bool _hasConnection_Bottom = _ghost.HasNeighbourGhost_Bottom;
-        int _ghostGridX = (int)_ghost.GridPosition.x;
-        int _ghostGridY = (int)_ghost.GridPosition.y;
+        int _ghostGridX = (int)_ghost._Position_.x;
+        int _ghostGridY = (int)_ghost._Position_.y;
 
         switch (Mode) {
 
@@ -307,8 +314,16 @@ public class WallBuilder {
                 if (!_hasConnection_Bottom && _ghostGridY > 0)
                     _hasConnection_Bottom = Grid.Instance.grid[_ghostGridX, _ghostGridY - 1]._Type_ == Tile.TileType.Wall;
 
-                _ghost.BottomQuad.ChangeAsset(CachedAssets.Instance.GetAssetForTile(_ghost.Type, _ghost.Orientation, 0, true, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom));
-                _ghost.TopQuad.ChangeAsset(CachedAssets.Instance.GetAssetForTile(_ghost.Type, _ghost.Orientation, 0, false, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom));
+                if (isDeleting && _tileUnderGhost._Type_ != Tile.TileType.Empty) { // excluding empty because otherwise it doesn't get graphics
+                    _ghost.ChangeAssets(
+                        CachedAssets.Instance.GetAssetForTile(_tileUnderGhost._Type_, _tileUnderGhost._Orientation_, 0, true, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
+                        CachedAssets.Instance.GetAssetForTile(_tileUnderGhost._Type_, _tileUnderGhost._Orientation_, 0, false, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom));
+                }
+                else {
+                    _ghost.ChangeAssets(
+                        CachedAssets.Instance.GetAssetForTile(_ghost.Type, _ghost.Orientation, 0, true, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
+                        CachedAssets.Instance.GetAssetForTile(_ghost.Type, _ghost.Orientation, 0, false, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom));
+                }
                 break;
 
             case ModeEnum.Diagonal:
@@ -316,8 +331,9 @@ public class WallBuilder {
                 // default values 
                 _ghost.Type = Tile.TileType.Diagonal;
                 _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.TopLeft : _ghost.Orientation;
-                _ghost.BottomQuad.ChangeAsset(CachedAssets.WallSet.index_Diagonal_TopLeft);
-                _ghost.TopQuad.ChangeAsset(null);
+                _ghost.ChangeAssets(
+                   CachedAssets.WallSet.index_Diagonal_TopLeft,
+                   null);
 
                 //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopLeft.Diffuse, null);
 
@@ -326,8 +342,9 @@ public class WallBuilder {
                 || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.TopLeft)) {
 
                     _ghost.Orientation = Tile.TileOrientation.TopLeft;
-                    _ghost.BottomQuad.ChangeAsset(CachedAssets.WallSet.index_Diagonal_TopLeft);
-                    _ghost.TopQuad.ChangeAsset(null);
+                    _ghost.ChangeAssets(
+                         CachedAssets.WallSet.index_Diagonal_TopLeft,
+                         null);
                     //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopLeft.Diffuse, null);
                 }
 
@@ -336,8 +353,9 @@ public class WallBuilder {
                      || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.TopRight)) {
 
                     _ghost.Orientation = Tile.TileOrientation.TopRight;
-                    _ghost.BottomQuad.ChangeAsset(CachedAssets.WallSet.index_Diagonal_TopRight);
-                    _ghost.TopQuad.ChangeAsset(null);
+                    _ghost.ChangeAssets(
+                        CachedAssets.WallSet.index_Diagonal_TopRight,
+                        null);
                     //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopRight.Diffuse, null);
                 }
 
@@ -346,8 +364,9 @@ public class WallBuilder {
                      || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.BottomRight)) {
 
                     _ghost.Orientation = Tile.TileOrientation.BottomRight;
-                    _ghost.BottomQuad.ChangeAsset(CachedAssets.WallSet.index_Diagonal_BottomRight);
-                    _ghost.TopQuad.ChangeAsset(null);
+                    _ghost.ChangeAssets(
+                        CachedAssets.WallSet.index_Diagonal_BottomRight,
+                        null);
                     //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_BottomRight.Diffuse, null);
                 }
 
@@ -356,8 +375,9 @@ public class WallBuilder {
                      || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.BottomLeft)) {
 
                     _ghost.Orientation = Tile.TileOrientation.BottomLeft;
-                    _ghost.BottomQuad.ChangeAsset(CachedAssets.WallSet.index_Diagonal_BottomLeft);
-                    _ghost.TopQuad.ChangeAsset(null);
+                    _ghost.ChangeAssets(
+                       CachedAssets.WallSet.index_Diagonal_BottomLeft,
+                       null);
                     //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_BottomLeft.Diffuse, null);
                 }
 
@@ -368,25 +388,27 @@ public class WallBuilder {
                 //if (_ghost.Type == Tile.TileType.Door) {
                 _ghost.Type = Tile.TileType.Door;
                 _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.Left : _ghost.Orientation;
-                _ghost.BottomQuad.ChangeAsset(CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0]);
-                _ghost.TopQuad.ChangeAsset(CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
+                _ghost.ChangeAssets(
+                       CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0],
+                       CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
 
                 //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
 
                     if ((_snapToNeighbours && (_tileUnderGhost.HasConnectable_L && _tileUnderGhost.HasConnectable_R && !_tileUnderGhost.HasConnectable_B && !_tileUnderGhost.HasConnectable_T)) 
                     || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Left || allGhosts[0].Orientation == Tile.TileOrientation.Right))) {
                         _ghost.Orientation = Tile.TileOrientation.Left; // left or right shouldn't matter...
-                        _ghost.BottomQuad.ChangeAsset(CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0]);
-                        _ghost.TopQuad.ChangeAsset(CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
+                        _ghost.ChangeAssets(
+                           CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0],
+                           CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
 
                         //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
                     }
                     else if ((_snapToNeighbours && (!_tileUnderGhost.HasConnectable_L && !_tileUnderGhost.HasConnectable_R && _tileUnderGhost.HasConnectable_B && _tileUnderGhost.HasConnectable_T)) 
                          || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Bottom || allGhosts[0].Orientation == Tile.TileOrientation.Top))) {
                         _ghost.Orientation = Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
-
-                        _ghost.BottomQuad.ChangeAsset(null);
-                        _ghost.TopQuad.ChangeAsset(CachedAssets.WallSet.index_DoorVertical_Animation[0]);
+                        _ghost.ChangeAssets(
+                              null,
+                              CachedAssets.WallSet.index_DoorVertical_Animation[0]);
 
                         //_ghost.SetSprites(null, CachedAssets.Instance.WallSets[0].DoorVertical_Animation[0].Diffuse);
                     }
@@ -542,10 +564,10 @@ public class WallBuilder {
     }
 
     void AddNextGhost(int _gridX, int _gridY, bool _snapToNeighbours) {
-        if (usedGhosts.Find(x => x.GridPosition.x == _gridX && x.GridPosition.y == _gridY) != null)
+        if (usedGhosts.Find(x => x._Position_.x == _gridX && x._Position_.y == _gridY) != null)
             return;
 
-        allGhosts[usedGhosts.Count].GridPosition = new Vector2(_gridX, _gridY);
+        allGhosts[usedGhosts.Count]._Position_ = new Vector2(_gridX, _gridY);
         allGhosts[usedGhosts.Count].SetActive(true);
         SetGhostGraphics(ref allGhosts[usedGhosts.Count], Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
         usedGhosts.Add(allGhosts[usedGhosts.Count]);
@@ -583,7 +605,7 @@ public class WallBuilder {
 
         for (int i = 0; i < usedGhosts.Count; i++) {
             _ghost = usedGhosts[i];
-            _tileUnderGhost = Grid.Instance.grid[(int)usedGhosts[i].GridPosition.x, (int)usedGhosts[i].GridPosition.y];
+            _tileUnderGhost = Grid.Instance.grid[(int)usedGhosts[i]._Position_.x, (int)usedGhosts[i]._Position_.y];
             _orientation = usedGhosts[i].Orientation;
 
             // deleting old tiles
@@ -725,7 +747,7 @@ public class WallBuilder {
         // apply color and position
         _ghost.SetActive(true);
         _ghost.SetColor(_newColor);
-        _ghost.GridPosition = new Vector2(_tileUnderGhost.GridX, _tileUnderGhost.GridY);
+        _ghost._Position_ = new Vector2(_tileUnderGhost.GridX, _tileUnderGhost.GridY);
 
         // mark tile for changes
         if (_applyToGrid) {

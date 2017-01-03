@@ -114,7 +114,6 @@ public class Tile : IHeapItem<Tile> {
     private static Tile cachedNeighbour_R;
     private static Tile cachedNeighbour_B;
     public void SetTileType(TileType _newType, TileOrientation _newOrientation) {
-        Debug.Log("test");
 		bottomQuad.HaveChangedGraphics = true;
         prevType = type;
         type = _newType;
@@ -298,9 +297,6 @@ public class Tile : IHeapItem<Tile> {
 	}
    	
 	public void ChangeGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices) {
-		if (type == TileType.Empty && orientation == TileOrientation.None) {
-			Debug.Log (_bottomAssetIndices);
-		}
         bottomQuad.ChangeAsset(_bottomAssetIndices);
         topQuad.ChangeAsset(_topAssetIndices);
     }

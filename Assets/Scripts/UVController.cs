@@ -20,6 +20,9 @@ public class UVController : MonoBehaviour {
     }
 
     public void Setup() {
+        if (hasStarted)
+            return;
+
         hasStarted = true;
 
         myMeshFilter = GetComponent<MeshFilter>();

@@ -365,7 +365,7 @@ public class CachedAssets : MonoBehaviour {
                             if (_hasConnection_Bottom) return WallSet.index_FourWay;
                             else return WallSet.index_Tee_Bottom;
                         }
-                        else if (_hasConnection_Bottom) return WallSet.index_Tee_Right;
+                        else if (_hasConnection_Bottom) return WallSet.index_Tee_Left;
                         else return WallSet.index_Corner_TopLeft;
                     }
                     else if (_hasConnection_Right) {
@@ -377,7 +377,7 @@ public class CachedAssets : MonoBehaviour {
                 }
                 else if (_hasConnection_Top) {
                     if (_hasConnection_Right) {
-                        if (_hasConnection_Bottom) return WallSet.index_Tee_Left;
+                        if (_hasConnection_Bottom) return WallSet.index_Tee_Right;
                         else return WallSet.index_Corner_TopRight;
                     }
                     else if (_hasConnection_Bottom) return WallSet.index_Vertical_M;
