@@ -10,6 +10,7 @@ public class Tile : IHeapItem<Tile> {
     public enum TileOrientation { None, Bottom, BottomLeft, Left, TopLeft, Top, TopRight, Right, BottomRight }
     private TileOrientation orientation = TileOrientation.None;
     public TileOrientation _Orientation_ { get { return orientation; } }
+    private TileOrientation prevOrientation = TileOrientation.None;
     public bool _IsHorizontal_ { get { return orientation == TileOrientation.Left || orientation == TileOrientation.Right; } }
     public bool _IsVertical_ { get { return orientation == TileOrientation.Bottom || orientation == TileOrientation.Top; } }
 
@@ -77,8 +78,8 @@ public class Tile : IHeapItem<Tile> {
     }
 
 
-    private UVController bottomQuad;
-    private UVController topQuad;
+    public UVController BottomQuad;
+    public UVController TopQuad;
 
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY/*, int _localGridX, int _localGridY, int _gridSliceIndex*/) {
@@ -92,13 +93,13 @@ public class Tile : IHeapItem<Tile> {
 
     public void Init() {
 
-        bottomQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_BOTTOM_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
-        topQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_TOP_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
+        BottomQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_BOTTOM_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
+        TopQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_TOP_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
         
-		topQuad.transform.parent = bottomQuad.transform;
+		TopQuad.transform.parent = BottomQuad.transform;
 
-		bottomQuad.Setup();
-        topQuad.Setup();
+		BottomQuad.Setup();
+        TopQuad.Setup();
     }
 
     public int CompareTo(Tile nodeToCompare) {
@@ -114,17 +115,23 @@ public class Tile : IHeapItem<Tile> {
     private static Tile cachedNeighbour_R;
     private static Tile cachedNeighbour_B;
     public void SetTileType(TileType _newType, TileOrientation _newOrientation) {
-		bottomQuad.HaveChangedGraphics = true;
+		BottomQuad.HaveChangedGraphics = true;
         prevType = type;
         type = _newType;
+        prevOrientation = orientation;
         orientation = _newOrientation;
 
-        bottomQuad.Type = _newType;
-        bottomQuad.Orientation = _newOrientation;
-        topQuad.Type = _newType;
-        topQuad.Orientation = _newOrientation;
-        bottomQuad.IsBottom = true;
-        topQuad.IsBottom = false;
+        BottomQuad.Type = _newType;
+        BottomQuad.Orientation = _newOrientation;
+        BottomQuad.IsBottom = true;
+        BottomQuad.Sort(GridY);
+        //bottomQuad.SortAsBottom(GridY);
+
+        TopQuad.Type = _newType;
+        TopQuad.Orientation = _newOrientation;
+        TopQuad.IsBottom = false;
+        TopQuad.Sort(GridY);
+        //topQuad.SortAsTop(GridY);
 
         MovementPenalty = 0; //TODO: use this for something!
 
@@ -207,11 +214,12 @@ public class Tile : IHeapItem<Tile> {
                 break;
             case TileType.Door:
                 Walkable = true;
-                DefaultPositionWorld = WorldPosition;
                 switch (orientation) {
                     // vertical
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
+                        DefaultPositionWorld = WorldPosition + new Vector3(0, -0.35f, 0);
+
                         CanConnect_L = false;
                         CanConnect_T = true;
                         CanConnect_R = false;
@@ -220,6 +228,8 @@ public class Tile : IHeapItem<Tile> {
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
+                        DefaultPositionWorld = WorldPosition;
+
                         CanConnect_L = true;
                         CanConnect_T = false;
                         CanConnect_R = true;
@@ -259,6 +269,8 @@ public class Tile : IHeapItem<Tile> {
                 _neighbour.IsBlocked_T = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Top);
                 _neighbour.ConnectedDiagonal_T = (type == TileType.Diagonal && (orientation == TileOrientation.BottomLeft || orientation == TileOrientation.BottomRight)) ? this : null;
                 _neighbour.ConnectedDoor_T = type == TileType.Door ? this : null;
+
+                // prevent building in front of door
                 if (type == TileType.Door && (orientation == TileOrientation.Left || orientation == TileOrientation.Right))
                     _neighbour.SetBuildingAllowed(false);
                 break;
@@ -267,6 +279,8 @@ public class Tile : IHeapItem<Tile> {
                 _neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Left);
                 _neighbour.ConnectedDiagonal_R = (type == TileType.Diagonal && (orientation == TileOrientation.TopLeft || orientation == TileOrientation.BottomLeft)) ? this : null;
                 _neighbour.ConnectedDoor_R = type == TileType.Door ? this : null;
+
+                // prevent building in front of door
                 if (type == TileType.Door && (orientation == TileOrientation.Top || orientation == TileOrientation.Bottom))
                     _neighbour.SetBuildingAllowed(false);
                 break;
@@ -275,16 +289,36 @@ public class Tile : IHeapItem<Tile> {
                 _neighbour.IsBlocked_B = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Bottom);
                 _neighbour.ConnectedDiagonal_B = (type == TileType.Diagonal && (orientation == TileOrientation.TopLeft || orientation == TileOrientation.TopRight)) ? this : null;
                 _neighbour.ConnectedDoor_B = type == TileType.Door ? this : null;
-                if (type == TileType.Door && (orientation == TileOrientation.Left || orientation == TileOrientation.Right))
-                    _neighbour.SetBuildingAllowed(false);
+
+                if (type == TileType.Door) {
+
+                    // prevent building in front of door
+                    if (orientation == TileOrientation.Left || orientation == TileOrientation.Right)
+                        _neighbour.SetBuildingAllowed(false);
+
+                    // sort connected neighbour of door on top, so as to hide actors moving through it
+                    else if (orientation == TileOrientation.Top || orientation == TileOrientation.Bottom) {
+                        _neighbour.BottomQuad.SortCustom(TopQuad.GetSortOrder() - 2);
+                        _neighbour.TopQuad.SortCustom(TopQuad.GetSortOrder() - 1);
+                    }
+                }
+                else if (prevType == TileType.Door) {
+                    // reset to ordinary sorting
+                    if (prevOrientation == TileOrientation.Top || prevOrientation == TileOrientation.Bottom) {
+                        _neighbour.BottomQuad.RemoveCustomSort();
+                        _neighbour.TopQuad.RemoveCustomSort();
+                    }
+                }
                 break;
             case TileOrientation.Right:
                 _neighbour.HasConnectable_L = CanConnect_R;
                 _neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Left);
                 _neighbour.ConnectedDiagonal_L = (type == TileType.Diagonal && (orientation == TileOrientation.BottomRight || orientation == TileOrientation.TopRight)) ? this : null;
                 _neighbour.ConnectedDoor_L = type == TileType.Door ? this : null;
+
+                // prevent building in front of door
                 if (type == TileType.Door && (orientation == TileOrientation.Top || orientation == TileOrientation.Bottom))
-                    _neighbour.SetBuildingAllowed(false);
+                   _neighbour.SetBuildingAllowed(false);
                 break;
 
             default:
@@ -297,8 +331,8 @@ public class Tile : IHeapItem<Tile> {
 	}
    	
 	public void ChangeGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices) {
-        bottomQuad.ChangeAsset(_bottomAssetIndices);
-        topQuad.ChangeAsset(_topAssetIndices);
+        BottomQuad.ChangeAsset(_bottomAssetIndices);
+        TopQuad.ChangeAsset(_topAssetIndices);
     }
 
     //public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, int _style) {

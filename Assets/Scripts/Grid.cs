@@ -144,7 +144,7 @@ public class Grid : MonoBehaviour {
         // for testing-purposes
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                if (Random.value > 0.6f) {
+                if (Random.value > 0.75f) {
                     grid[x, y].SetTileType(Tile.TileType.Wall, Tile.TileOrientation.None);
                     continue;
                 }

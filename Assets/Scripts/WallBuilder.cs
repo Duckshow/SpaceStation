@@ -19,8 +19,7 @@ public class WallBuilder {
         public UVController TopQuad;
         //private SpriteRenderer _renderer;
         //public bool _IsActive_ { get { return _renderer.gameObject.activeSelf; } }
-        private Vector3 pos;
-        public Vector2 _Position_ { get { return pos; } set { BottomQuad.transform.position = Grid.Instance.grid[0, 0].WorldPosition + (Vector3)value + new Vector3(0, 0.5f, 0); pos = value; } }
+        public Vector3 position { get; private set; }
         public Tile.TileType Type;
         public Tile.TileOrientation Orientation;
         public bool HasNeighbourGhost_Left;
@@ -32,7 +31,7 @@ public class WallBuilder {
             BottomQuad = _bottomQuad;
             TopQuad = _topQuad;
             //_renderer = _rend;
-            _Position_ = Vector2.zero;
+            SetPosition(Vector2.zero);
             Type = Tile.TileType.Empty;
             Orientation = Tile.TileOrientation.None;
         }
@@ -92,6 +91,15 @@ public class WallBuilder {
         //    _to = _toPixels.ToArray();
         //}
 
+        private const float DEFAULT_OFFSET_Y = 0.5f;
+        private Vector3 newPos;
+        public void SetPosition(Vector3 _value) {
+            newPos = new Vector3(Grid.Instance.grid[0, 0].WorldPosition.x + _value.x, Grid.Instance.grid[0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
+            BottomQuad.transform.position = newPos;
+            newPos.z -= 0.01f; // needs to be higher than the top-height, right? ( '.__.)
+            TopQuad.transform.position = newPos;
+            position = _value;
+        }
         public void ChangeAssets(CachedAssets.DoubleInt _bottomIndices, CachedAssets.DoubleInt _topIndices) {
             BottomQuad.ChangeAsset(_bottomIndices);
             TopQuad.ChangeAsset(_topIndices);
@@ -102,6 +110,7 @@ public class WallBuilder {
         }
         public void SetActive(bool _b) {
             BottomQuad.gameObject.SetActive(_b);
+            TopQuad.gameObject.SetActive(_b);
         }
         public void ResetHasNeighbours() {
             //_renderer.sprite = null;
@@ -225,7 +234,7 @@ public class WallBuilder {
             mouseGhostIsDirty = true;
 
         // set position
-        allGhosts[0]._Position_ = new Vector3(mouseTile.GridX, mouseTile.GridY, Grid.WORLD_BOTTOM_HEIGHT);
+        allGhosts[0].SetPosition(new Vector3(mouseTile.GridX, mouseTile.GridY, Grid.WORLD_BOTTOM_HEIGHT));
 
         // set rotation
         allGhosts[0].Orientation = TryRotateMouseGhost();
@@ -287,137 +296,6 @@ public class WallBuilder {
         }
 
         return allGhosts[0].Orientation;
-    }
-
-    void SetGhostGraphics(ref GhostInfo _ghost, Tile _tileUnderGhost, bool _snapToNeighbours) {
-
-        bool _hasConnection_Left = _ghost.HasNeighbourGhost_Left;
-        bool _hasConnection_Right = _ghost.HasNeighbourGhost_Right;
-        bool _hasConnection_Top = _ghost.HasNeighbourGhost_Top;
-        bool _hasConnection_Bottom = _ghost.HasNeighbourGhost_Bottom;
-        int _ghostGridX = (int)_ghost._Position_.x;
-        int _ghostGridY = (int)_ghost._Position_.y;
-
-        switch (Mode) {
-
-            case ModeEnum.Default:
-            case ModeEnum.Room:
-                _ghost.Type = Tile.TileType.Wall;
-                _ghost.Orientation = Tile.TileOrientation.None;
-
-                if (!_hasConnection_Left && _ghostGridX > 0)
-                    _hasConnection_Left = Grid.Instance.grid[_ghostGridX - 1, _ghostGridY]._Type_ == Tile.TileType.Wall;
-                if (!_hasConnection_Right && _ghostGridX < Grid.Instance.GridSizeX - 1)
-                    _hasConnection_Right = Grid.Instance.grid[_ghostGridX + 1, _ghostGridY]._Type_ == Tile.TileType.Wall;
-                if (!_hasConnection_Top && _ghostGridY < Grid.Instance.GridSizeY - 1)
-                    _hasConnection_Top = Grid.Instance.grid[_ghostGridX, _ghostGridY + 1]._Type_ == Tile.TileType.Wall;
-                if (!_hasConnection_Bottom && _ghostGridY > 0)
-                    _hasConnection_Bottom = Grid.Instance.grid[_ghostGridX, _ghostGridY - 1]._Type_ == Tile.TileType.Wall;
-
-                if (isDeleting && _tileUnderGhost._Type_ != Tile.TileType.Empty) { // excluding empty because otherwise it doesn't get graphics
-                    _ghost.ChangeAssets(
-                        CachedAssets.Instance.GetAssetForTile(_tileUnderGhost._Type_, _tileUnderGhost._Orientation_, 0, true, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
-                        CachedAssets.Instance.GetAssetForTile(_tileUnderGhost._Type_, _tileUnderGhost._Orientation_, 0, false, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom));
-                }
-                else {
-                    _ghost.ChangeAssets(
-                        CachedAssets.Instance.GetAssetForTile(_ghost.Type, _ghost.Orientation, 0, true, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
-                        CachedAssets.Instance.GetAssetForTile(_ghost.Type, _ghost.Orientation, 0, false, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom));
-                }
-                break;
-
-            case ModeEnum.Diagonal:
-
-                // default values 
-                _ghost.Type = Tile.TileType.Diagonal;
-                _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.TopLeft : _ghost.Orientation;
-                _ghost.ChangeAssets(
-                   CachedAssets.WallSet.index_Diagonal_TopLeft,
-                   null);
-
-                //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopLeft.Diffuse, null);
-
-                // diagonal top left
-                if ((_snapToNeighbours && _tileUnderGhost.HasConnectable_L && _tileUnderGhost.HasConnectable_T) 
-                || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.TopLeft)) {
-
-                    _ghost.Orientation = Tile.TileOrientation.TopLeft;
-                    _ghost.ChangeAssets(
-                         CachedAssets.WallSet.index_Diagonal_TopLeft,
-                         null);
-                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopLeft.Diffuse, null);
-                }
-
-                // diagonal top right
-                else if ((_snapToNeighbours && _tileUnderGhost.HasConnectable_T && _tileUnderGhost.HasConnectable_R) 
-                     || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.TopRight)) {
-
-                    _ghost.Orientation = Tile.TileOrientation.TopRight;
-                    _ghost.ChangeAssets(
-                        CachedAssets.WallSet.index_Diagonal_TopRight,
-                        null);
-                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopRight.Diffuse, null);
-                }
-
-                // diagonal bottom right
-                else if ((_snapToNeighbours && _tileUnderGhost.HasConnectable_R && _tileUnderGhost.HasConnectable_B) 
-                     || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.BottomRight)) {
-
-                    _ghost.Orientation = Tile.TileOrientation.BottomRight;
-                    _ghost.ChangeAssets(
-                        CachedAssets.WallSet.index_Diagonal_BottomRight,
-                        null);
-                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_BottomRight.Diffuse, null);
-                }
-
-                // diagonal bottom left
-                else if ((_snapToNeighbours && _tileUnderGhost.HasConnectable_B && _tileUnderGhost.HasConnectable_L) 
-                     || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.BottomLeft)) {
-
-                    _ghost.Orientation = Tile.TileOrientation.BottomLeft;
-                    _ghost.ChangeAssets(
-                       CachedAssets.WallSet.index_Diagonal_BottomLeft,
-                       null);
-                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_BottomLeft.Diffuse, null);
-                }
-
-                break;
-
-            case ModeEnum.Door:
-
-                //if (_ghost.Type == Tile.TileType.Door) {
-                _ghost.Type = Tile.TileType.Door;
-                _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.Left : _ghost.Orientation;
-                _ghost.ChangeAssets(
-                       CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0],
-                       CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
-
-                //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
-
-                    if ((_snapToNeighbours && (_tileUnderGhost.HasConnectable_L && _tileUnderGhost.HasConnectable_R && !_tileUnderGhost.HasConnectable_B && !_tileUnderGhost.HasConnectable_T)) 
-                    || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Left || allGhosts[0].Orientation == Tile.TileOrientation.Right))) {
-                        _ghost.Orientation = Tile.TileOrientation.Left; // left or right shouldn't matter...
-                        _ghost.ChangeAssets(
-                           CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0],
-                           CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
-
-                        //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
-                    }
-                    else if ((_snapToNeighbours && (!_tileUnderGhost.HasConnectable_L && !_tileUnderGhost.HasConnectable_R && _tileUnderGhost.HasConnectable_B && _tileUnderGhost.HasConnectable_T)) 
-                         || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Bottom || allGhosts[0].Orientation == Tile.TileOrientation.Top))) {
-                        _ghost.Orientation = Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
-                        _ghost.ChangeAssets(
-                              null,
-                              CachedAssets.WallSet.index_DoorVertical_Animation[0]);
-
-                        //_ghost.SetSprites(null, CachedAssets.Instance.WallSets[0].DoorVertical_Animation[0].Diffuse);
-                    }
-
-                break;
-
-            default:
-                throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
-        }
     }
 
     private bool hasMoved;
@@ -564,10 +442,10 @@ public class WallBuilder {
     }
 
     void AddNextGhost(int _gridX, int _gridY, bool _snapToNeighbours) {
-        if (usedGhosts.Find(x => x._Position_.x == _gridX && x._Position_.y == _gridY) != null)
+        if (usedGhosts.Find(x => x.position.x == _gridX && x.position.y == _gridY) != null)
             return;
 
-        allGhosts[usedGhosts.Count]._Position_ = new Vector2(_gridX, _gridY);
+        allGhosts[usedGhosts.Count].SetPosition(new Vector2(_gridX, _gridY));
         allGhosts[usedGhosts.Count].SetActive(true);
         SetGhostGraphics(ref allGhosts[usedGhosts.Count], Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
         usedGhosts.Add(allGhosts[usedGhosts.Count]);
@@ -593,6 +471,148 @@ public class WallBuilder {
             AddNextGhost(_tile.ConnectedDoor_T.GridX, _tile.ConnectedDoor_T.GridY, false);
     }
 
+    void SetGhostGraphics(ref GhostInfo _ghost, Tile _tileUnderGhost, bool _snapToNeighbours) {
+
+        bool _hasConnection_Left = _ghost.HasNeighbourGhost_Left || _tileUnderGhost.HasConnectable_L;
+        bool _hasConnection_Right = _ghost.HasNeighbourGhost_Right || _tileUnderGhost.HasConnectable_R;
+        bool _hasConnection_Top = _ghost.HasNeighbourGhost_Top || _tileUnderGhost.HasConnectable_T;
+        bool _hasConnection_Bottom = _ghost.HasNeighbourGhost_Bottom || _tileUnderGhost.HasConnectable_B;
+        int _ghostGridX = (int)_ghost.position.x;
+        int _ghostGridY = (int)_ghost.position.y;
+
+        switch (Mode) {
+
+            case ModeEnum.Default:
+            case ModeEnum.Room:
+                _ghost.Type = Tile.TileType.Wall;
+                _ghost.Orientation = Tile.TileOrientation.None;
+
+                //if (!_hasConnection_Left && _ghostGridX > 0)
+                //    _hasConnection_Left = Grid.Instance.grid[_ghostGridX - 1, _ghostGridY]._Type_ == Tile.TileType.Wall;
+                //if (!_hasConnection_Right && _ghostGridX < Grid.Instance.GridSizeX - 1)
+                //    _hasConnection_Right = Grid.Instance.grid[_ghostGridX + 1, _ghostGridY]._Type_ == Tile.TileType.Wall;
+                //if (!_hasConnection_Top && _ghostGridY < Grid.Instance.GridSizeY - 1)
+                //    _hasConnection_Top = Grid.Instance.grid[_ghostGridX, _ghostGridY + 1]._Type_ == Tile.TileType.Wall;
+                //if (!_hasConnection_Bottom && _ghostGridY > 0)
+                //    _hasConnection_Bottom = Grid.Instance.grid[_ghostGridX, _ghostGridY - 1]._Type_ == Tile.TileType.Wall;
+
+                if (isDeleting && _tileUnderGhost._Type_ != Tile.TileType.Empty) { // excluding empty because otherwise it doesn't get graphics
+                    _ghost.ChangeAssets(
+                        CachedAssets.Instance.GetAssetForTile(_tileUnderGhost._Type_, _tileUnderGhost._Orientation_, 0, true, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
+                        CachedAssets.Instance.GetAssetForTile(_tileUnderGhost._Type_, _tileUnderGhost._Orientation_, 0, false, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom));
+                }
+                else {
+                    _ghost.ChangeAssets(
+                        CachedAssets.Instance.GetAssetForTile(_ghost.Type, _ghost.Orientation, 0, true, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
+                        CachedAssets.Instance.GetAssetForTile(_ghost.Type, _ghost.Orientation, 0, false, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom));
+                }
+                break;
+
+            case ModeEnum.Diagonal:
+
+                // default values 
+                _ghost.Type = Tile.TileType.Diagonal;
+                _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.TopLeft : _ghost.Orientation;
+                _ghost.ChangeAssets(
+                   CachedAssets.WallSet.index_Diagonal_TopLeft,
+                   null);
+
+                //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopLeft.Diffuse, null);
+
+                // diagonal top left
+                if ((_snapToNeighbours && _tileUnderGhost.HasConnectable_L && _tileUnderGhost.HasConnectable_T)
+                || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.TopLeft)) {
+
+                    _ghost.Orientation = Tile.TileOrientation.TopLeft;
+                    _ghost.ChangeAssets(
+                         CachedAssets.WallSet.index_Diagonal_TopLeft,
+                         null);
+                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopLeft.Diffuse, null);
+                }
+
+                // diagonal top right
+                else if ((_snapToNeighbours && _tileUnderGhost.HasConnectable_T && _tileUnderGhost.HasConnectable_R)
+                     || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.TopRight)) {
+
+                    _ghost.Orientation = Tile.TileOrientation.TopRight;
+                    _ghost.ChangeAssets(
+                        CachedAssets.WallSet.index_Diagonal_TopRight,
+                        null);
+                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopRight.Diffuse, null);
+                }
+
+                // diagonal bottom right
+                else if ((_snapToNeighbours && _tileUnderGhost.HasConnectable_R && _tileUnderGhost.HasConnectable_B)
+                     || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.BottomRight)) {
+
+                    _ghost.Orientation = Tile.TileOrientation.BottomRight;
+                    _ghost.ChangeAssets(
+                        CachedAssets.WallSet.index_Diagonal_BottomRight,
+                        null);
+                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_BottomRight.Diffuse, null);
+                }
+
+                // diagonal bottom left
+                else if ((_snapToNeighbours && _tileUnderGhost.HasConnectable_B && _tileUnderGhost.HasConnectable_L)
+                     || (!_snapToNeighbours && allGhosts[0].Orientation == Tile.TileOrientation.BottomLeft)) {
+
+                    _ghost.Orientation = Tile.TileOrientation.BottomLeft;
+                    _ghost.ChangeAssets(
+                       CachedAssets.WallSet.index_Diagonal_BottomLeft,
+                       null);
+                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_BottomLeft.Diffuse, null);
+                }
+
+                break;
+
+            case ModeEnum.Door:
+
+                //if (_ghost.Type == Tile.TileType.Door) {
+                _ghost.Type = Tile.TileType.Door;
+                _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.Left : _ghost.Orientation;
+                _ghost.ChangeAssets(
+                       CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0],
+                       CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
+
+                //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
+
+                if ((_snapToNeighbours && (_tileUnderGhost.HasConnectable_L && _tileUnderGhost.HasConnectable_R && !_tileUnderGhost.HasConnectable_B && !_tileUnderGhost.HasConnectable_T))
+                || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Left || allGhosts[0].Orientation == Tile.TileOrientation.Right))) {
+                    _ghost.Orientation = Tile.TileOrientation.Left; // left or right shouldn't matter...
+                    _ghost.ChangeAssets(
+                       CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0],
+                       CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
+
+                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
+                }
+                else if ((_snapToNeighbours && (!_tileUnderGhost.HasConnectable_L && !_tileUnderGhost.HasConnectable_R && _tileUnderGhost.HasConnectable_B && _tileUnderGhost.HasConnectable_T))
+                     || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Bottom || allGhosts[0].Orientation == Tile.TileOrientation.Top))) {
+                    _ghost.Orientation = Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
+                    _ghost.ChangeAssets(
+                          null,
+                          CachedAssets.WallSet.index_DoorVertical_Animation[0]);
+
+                    //_ghost.SetSprites(null, CachedAssets.Instance.WallSets[0].DoorVertical_Animation[0].Diffuse);
+                }
+
+                break;
+
+            default:
+                throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
+        }
+
+        // if a diagonal is below, sort ghost so the diagonal covers it in a pretty way
+        if (_tileUnderGhost.ConnectedDiagonal_B != null) {
+            _ghost.BottomQuad.SortCustom(_tileUnderGhost.BottomQuad.GetSortOrder() + 1);
+            _ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
+        }
+        // otherwise just go on top
+        else {
+            _ghost.BottomQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
+            _ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 2);
+        }
+    }
+
     List<Tile> neighbours;
     int diffX;
     int diffY;
@@ -605,7 +625,7 @@ public class WallBuilder {
 
         for (int i = 0; i < usedGhosts.Count; i++) {
             _ghost = usedGhosts[i];
-            _tileUnderGhost = Grid.Instance.grid[(int)usedGhosts[i]._Position_.x, (int)usedGhosts[i]._Position_.y];
+            _tileUnderGhost = Grid.Instance.grid[(int)usedGhosts[i].position.x, (int)usedGhosts[i].position.y];
             _orientation = usedGhosts[i].Orientation;
 
             // deleting old tiles
@@ -736,8 +756,6 @@ public class WallBuilder {
                     throw new System.NotImplementedException(Mode.ToString() + " hasn't been fully implemented yet!");
             }
 
-
-
             // all's good
             ApplySettingsToGhost(_ghost, _tileUnderGhost, true, Color_NewWall);
         }
@@ -747,7 +765,7 @@ public class WallBuilder {
         // apply color and position
         _ghost.SetActive(true);
         _ghost.SetColor(_newColor);
-        _ghost._Position_ = new Vector2(_tileUnderGhost.GridX, _tileUnderGhost.GridY);
+        _ghost.SetPosition(new Vector2(_tileUnderGhost.GridX, _tileUnderGhost.GridY));
 
         // mark tile for changes
         if (_applyToGrid) {

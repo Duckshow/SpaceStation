@@ -351,12 +351,12 @@ public class CachedAssets : MonoBehaviour {
     //    return _asset.texture.GetPixels(Mathf.RoundToInt(_asset.rect.xMin), Mathf.RoundToInt(_asset.rect.yMin), Mathf.RoundToInt(_asset.rect.width), Mathf.RoundToInt(_asset.rect.height));
     //}
 
-    public DoubleInt GetAssetForTile(Tile.TileType _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isOnGroundLevel, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
+    public DoubleInt GetAssetForTile(Tile.TileType _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isBottom, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
         switch (_tileType) {
             case Tile.TileType.Empty:
                 return null;
             case Tile.TileType.Wall:
-                if (!_isOnGroundLevel) // for now at least
+                if (!_isBottom) // for now at least
                     return null;
 
                 if (_hasConnection_Left) {
@@ -391,18 +391,15 @@ public class CachedAssets : MonoBehaviour {
                 else return WallSet.index_Single;
 
             case Tile.TileType.Diagonal:
-                if (!_isOnGroundLevel) // for now at least
-                    return null;
-
                 switch (_tileOrientation) {
                     case Tile.TileOrientation.BottomLeft:
-                        return WallSet.index_Diagonal_BottomLeft;
-                    case Tile.TileOrientation.TopLeft:
-                        return WallSet.index_Diagonal_TopLeft;
-                    case Tile.TileOrientation.TopRight:
-                        return WallSet.index_Diagonal_TopRight;
+                        return (_isBottom ? null : WallSet.index_Diagonal_BottomLeft);
                     case Tile.TileOrientation.BottomRight:
-                        return WallSet.index_Diagonal_BottomRight;
+                        return (_isBottom ? null : WallSet.index_Diagonal_BottomRight);
+                    case Tile.TileOrientation.TopLeft:
+                        return (_isBottom ? WallSet.index_Diagonal_TopLeft : null);
+                    case Tile.TileOrientation.TopRight:
+                        return (_isBottom ? WallSet.index_Diagonal_TopRight : null);
                 }
                 break;
             case Tile.TileType.Door:
@@ -410,10 +407,10 @@ public class CachedAssets : MonoBehaviour {
                     case Tile.TileOrientation.None:
                     case Tile.TileOrientation.Bottom:
                     case Tile.TileOrientation.Top:
-                        return _isOnGroundLevel ? null : WallSet.index_DoorVertical_Animation[0];
+                        return _isBottom ? null : WallSet.index_DoorVertical_Animation[0];
                     case Tile.TileOrientation.Left:
                     case Tile.TileOrientation.Right:
-                        return _isOnGroundLevel ? WallSet.index_DoorHorizontal_Bottom_Animation[0] : WallSet.index_DoorHorizontal_Top_Animation[0];
+                        return _isBottom ? WallSet.index_DoorHorizontal_Bottom_Animation[0] : WallSet.index_DoorHorizontal_Top_Animation[0];
                 }
                 break;
             default:

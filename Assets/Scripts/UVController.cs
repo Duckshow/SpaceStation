@@ -5,7 +5,7 @@ public class UVController : MonoBehaviour {
 
     public Tile.TileType Type;
     public Tile.TileOrientation Orientation;
-    public bool IsBottom;
+    public bool IsBottom = true;
 
     private MeshFilter myMeshFilter;
     private MeshRenderer myRenderer;
@@ -27,6 +27,7 @@ public class UVController : MonoBehaviour {
 
         myMeshFilter = GetComponent<MeshFilter>();
         myRenderer = GetComponent<MeshRenderer>();
+        myRenderer.sortingLayerName = "TileBottom";
         myMeshUVs = myMeshFilter.mesh.uv;
 
         cachedPropertyColor = Shader.PropertyToID("_Color");
@@ -39,7 +40,7 @@ public class UVController : MonoBehaviour {
             myRenderer.enabled = false;
             return;
         }
-
+        
 		Coordinates = _assetIndices;
 
         myMeshUVs[0].x = (Grid.TILE_RESOLUTION * _assetIndices.X) / CachedAssets.WallSet.TEXTURE_SIZE_X;
@@ -67,6 +68,27 @@ public class UVController : MonoBehaviour {
 
     public void ChangeColor(Color _color) {
         myRenderer.material.SetColor(cachedPropertyColor, _color);
+    }
+
+    public static int GetSortOrderFromGridY(int _gridY) { return (Grid.Instance.GridSizeY * 10) - (_gridY * 10); }
+    public int GetSortOrder() { return (customSortOrder.HasValue ? (int)customSortOrder : regularSortOrder); }
+    private int regularSortOrder = 0;
+    public void Sort(int _gridY) {
+        regularSortOrder = GetSortOrderFromGridY(_gridY);
+        if (!IsBottom)
+            regularSortOrder += 7;
+
+        if(!customSortOrder.HasValue)
+            myRenderer.sortingOrder = regularSortOrder;
+    }
+    private int? customSortOrder = null;
+    public void SortCustom(int _customSortOrder) {
+        customSortOrder = _customSortOrder;
+        myRenderer.sortingOrder = _customSortOrder;
+    }
+    public void RemoveCustomSort() {
+        customSortOrder = null;
+        myRenderer.sortingOrder = regularSortOrder;
     }
 
     //public void ChangeAsset(Tile _tile, Vector2 _textureSize, Vector2 _coordinates, Vector2 _size) {
