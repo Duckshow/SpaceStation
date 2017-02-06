@@ -27,7 +27,7 @@ public class UVController : MonoBehaviour {
 
         myMeshFilter = GetComponent<MeshFilter>();
         myRenderer = GetComponent<MeshRenderer>();
-        myRenderer.sortingLayerName = "TileBottom";
+        myRenderer.sortingLayerName = "Grid";
         myMeshUVs = myMeshFilter.mesh.uv;
 
         cachedPropertyColor = Shader.PropertyToID("_Color");

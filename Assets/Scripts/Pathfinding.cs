@@ -139,21 +139,29 @@ public class Pathfinding : MonoBehaviour {
                 directionFromLast = directionToNext;
                 directionToNext = new Vector2(path[i].DefaultPositionWorld.x - path[i + 1].DefaultPositionWorld.x, path[i].DefaultPositionWorld.y - path[i + 1].DefaultPositionWorld.y).normalized;
 
-                if (path[i + 1]._Type_ == Tile.TileType.Door) {
-                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, 0)); // behind door
+                // stop behind previous tile
+                if (path[i + 1].StopAheadAndBehindMeWhenCrossing) {
+                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, 0));
                     continue;
                 }
             }
 
             if (i > 0) {
-                if (path[i - 1]._Type_ == Tile.TileType.Door) {
-                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, 2)); // ahead of door
+                // stop ahead of next tile
+                if (path[i - 1].StopAheadAndBehindMeWhenCrossing) {
+                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, 0));
                     continue;
                 }
             }
 
-            // if the direction is changing (or if at start/end/door), add waypoint
-            if (directionToNext != directionFromLast || i == 0 || i == path.Count - 1 || path[i]._Type_ == Tile.TileType.Door) {
+            // wait for X seconds on this tile
+            if (path[i].WaitTime > 0) {
+                waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].WaitTime));
+                continue;
+            }
+
+            // if the direction is changing (or if at start/end), add waypoint
+            if (directionToNext != directionFromLast || i == 0 || i == path.Count - 1) {
                 waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, 0));
                 continue;
             }
@@ -174,9 +182,9 @@ public class Pathfinding : MonoBehaviour {
 }
 public class Waypoint {
     public Vector3 Position;
-    public float PassTime;
+    public float WaitTime;
     public Waypoint(Vector3 _pos, float _passTime) {
         Position = _pos;
-        PassTime = _passTime;
+        WaitTime = _passTime;
     }
 }

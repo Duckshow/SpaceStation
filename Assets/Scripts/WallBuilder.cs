@@ -571,28 +571,22 @@ public class WallBuilder {
                 _ghost.Type = Tile.TileType.Door;
                 _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.Left : _ghost.Orientation;
                 _ghost.ChangeAssets(
-                       CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0],
-                       CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
-
-                //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
+                       CachedAssets.WallSet.anim_DoorHorizontal_Open.Bottom[0],
+                       CachedAssets.WallSet.anim_DoorHorizontal_Open.Top[0]);
 
                 if ((_snapToNeighbours && (_tileUnderGhost.HasConnectable_L && _tileUnderGhost.HasConnectable_R && !_tileUnderGhost.HasConnectable_B && !_tileUnderGhost.HasConnectable_T))
                 || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Left || allGhosts[0].Orientation == Tile.TileOrientation.Right))) {
                     _ghost.Orientation = Tile.TileOrientation.Left; // left or right shouldn't matter...
                     _ghost.ChangeAssets(
-                       CachedAssets.WallSet.index_DoorHorizontal_Bottom_Animation[0],
-                       CachedAssets.WallSet.index_DoorHorizontal_Top_Animation[0]);
-
-                    //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].DoorHorizontal_Bottom_Animation[0].Diffuse, CachedAssets.Instance.WallSets[0].DoorHorizontal_Top_Animation[0].Diffuse);
+                              CachedAssets.WallSet.anim_DoorHorizontal_Open.GetBottomFirstFrame(),
+                              CachedAssets.WallSet.anim_DoorHorizontal_Open.GetTopFirstFrame());
                 }
                 else if ((_snapToNeighbours && (!_tileUnderGhost.HasConnectable_L && !_tileUnderGhost.HasConnectable_R && _tileUnderGhost.HasConnectable_B && _tileUnderGhost.HasConnectable_T))
                      || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Bottom || allGhosts[0].Orientation == Tile.TileOrientation.Top))) {
                     _ghost.Orientation = Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
                     _ghost.ChangeAssets(
-                          null,
-                          CachedAssets.WallSet.index_DoorVertical_Animation[0]);
-
-                    //_ghost.SetSprites(null, CachedAssets.Instance.WallSets[0].DoorVertical_Animation[0].Diffuse);
+                          CachedAssets.WallSet.anim_DoorVertical_Open.GetBottomFirstFrame(),
+                          CachedAssets.WallSet.anim_DoorVertical_Open.GetTopFirstFrame());
                 }
 
                 break;

@@ -58,52 +58,80 @@ public class Task {
         IEnumerator _PerformTask() {
             meta.Handler.Owner.CurrentTask = "Moving to " + target;
 
-            Waypoint _currentWaypoint = path[0];
+            Waypoint _nextWaypoint = path[0];
             Waypoint _previousWaypoint = new Waypoint(meta.Handler.Owner.transform.position, 0);
             Vector3 _newPosition;
             Vector3 _diff;
-            Tile _currentWaypointTile = Grid.Instance.GetTileFromWorldPoint(_currentWaypoint.Position);
-            float _distance = Vector3.Distance(_previousWaypoint.Position, _currentWaypoint.Position);
+            Tile _nextWaypointTile = Grid.Instance.GetTileFromWorldPoint(_nextWaypoint.Position);
+            Tile _prevWaypointTile = Grid.Instance.GetTileFromWorldPoint(meta.Handler.Owner.transform.position);
+            float _distance = Vector3.Distance(_previousWaypoint.Position, _nextWaypoint.Position);
             float _timeAtPrevWaypoint = Time.time;
+            Tile.TileOrientation _direction = Tile.TileOrientation.None;
 
-            SendActorNewOrientation((_currentWaypoint.Position - meta.Handler.Owner.transform.position).normalized);
+            SendActorNewOrientation((_nextWaypoint.Position - meta.Handler.Owner.transform.position).normalized);
             while (true) {
-                if (Mathf.Abs(_currentWaypoint.Position.x - meta.Handler.Owner.transform.position.x) < 0.01f && Mathf.Abs(_currentWaypoint.Position.y - meta.Handler.Owner.transform.position.y) < 0.01f) {
+                if (Mathf.Abs(_nextWaypoint.Position.x - meta.Handler.Owner.transform.position.x) < 0.01f && Mathf.Abs(_nextWaypoint.Position.y - meta.Handler.Owner.transform.position.y) < 0.01f) {
 
                     targetIndex++;
                     if (targetIndex >= path.Length)
                         break;
 
-                    _previousWaypoint = _currentWaypoint;
-                    _currentWaypoint = path[targetIndex];
-                    _currentWaypointTile = Grid.Instance.GetTileFromWorldPoint(_currentWaypoint.Position);
+                    _previousWaypoint = _nextWaypoint;
+                    _nextWaypoint = path[targetIndex];
+                    _nextWaypointTile = Grid.Instance.GetTileFromWorldPoint(_nextWaypoint.Position);
 
-                    _distance = Vector3.Distance(_previousWaypoint.Position, _currentWaypoint.Position);
+                    _distance = Vector3.Distance(_previousWaypoint.Position, _nextWaypoint.Position);
                     
                     // update orientation
-                    SendActorNewOrientation((_currentWaypoint.Position - _previousWaypoint.Position).normalized);
+                    SendActorNewOrientation((_nextWaypoint.Position - _previousWaypoint.Position).normalized);
+                    _direction = GetDirectionFromVector3((_nextWaypoint.Position - _previousWaypoint.Position).normalized);
+
+                    // trigger next waypoint's entry animation
+                    if (_nextWaypointTile._Type_ == Tile.TileType.Door)
+                        _nextWaypointTile.Animator.Animate(_nextWaypointTile.Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Open), _forward: true, _loop: false);
+                    else if (_nextWaypointTile._Type_ == Tile.TileType.Airlock)
+                        _nextWaypointTile.Animator.Animate(_nextWaypointTile.Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Open, _direction), _forward: true, _loop: false);
 
 
-                    // if the newly reached waypoint demands waiting, wait
-                    if (_previousWaypoint.PassTime > 0) {
-                        if (_currentWaypointTile._Type_ == Tile.TileType.Door) // current is the next tile, since we haven't left the previous one yet
-                            Grid.Instance.Animator.AnimateTile(_currentWaypointTile, _forward: true, _loop: false, _secondsBeforeReverse: _previousWaypoint.PassTime * 2);
-
-                        yield return new WaitForSeconds(_previousWaypoint.PassTime);
+                    if (_prevWaypointTile._Type_ == Tile.TileType.Airlock) {
+                        TileAnimator.TileAnimation _anim = _prevWaypointTile.Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Close, _direction);
+                        _prevWaypointTile.Animator.Animate(_anim, _forward: true, _loop: false);
+                        yield return new WaitForSeconds(TileAnimator.GetAnimationLengthInSeconds(_anim));
                     }
 
+                     // TODO:  Open on approach, close when arrived, wait, open, then close when the actor has left.
+
+
+                    // wait here if there's a waittime
+                    if (_previousWaypoint.WaitTime > 0) {
+                        // trigger prevWaypoints waiting animation
+                        if (_prevWaypointTile._Type_ == Tile.TileType.Door)
+                            _prevWaypointTile.Animator.Animate(_prevWaypointTile.Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Wait), _forward: true, _loop: false);
+                        else if (_prevWaypointTile._Type_ == Tile.TileType.Airlock)
+                            _prevWaypointTile.Animator.Animate(_prevWaypointTile.Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Wait, Tile.TileOrientation.None), _forward: true, _loop: false);
+
+                        yield return new WaitForSeconds(_previousWaypoint.WaitTime);
+                    }
+
+
+                    // trigger prevWaypoints exit animation
+                    if (_prevWaypointTile._Type_ == Tile.TileType.Door)
+                        _prevWaypointTile.Animator.Animate(_prevWaypointTile.Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Close), _forward: true, _loop: false);
+                    else if (_prevWaypointTile._Type_ == Tile.TileType.Airlock)
+                        _prevWaypointTile.Animator.Animate(_prevWaypointTile.Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Close, GetReverseDirection(_direction)), _forward: true, _loop: false);
+
                     // force actor to lie down if the next tile is not adjacent to a wall (looks better)
-                    ForceActorLieDown(_currentWaypointTile._Type_ == Tile.TileType.Empty && !_currentWaypointTile.HasConnectable_B && !_currentWaypointTile.HasConnectable_L && !_currentWaypointTile.HasConnectable_R && !_currentWaypointTile.HasConnectable_T);
+                    ForceActorLieDown(_nextWaypointTile._Type_ == Tile.TileType.Empty && !_nextWaypointTile.HasConnectable_B && !_nextWaypointTile.HasConnectable_L && !_nextWaypointTile.HasConnectable_R && !_nextWaypointTile.HasConnectable_T);
 
                     // set time so movement is kept at a good pace
                     _timeAtPrevWaypoint = Time.time;
                 }
 
-                // create a slowdown-effect when approaching currentwaypoint
-                _newPosition = Vector3.Lerp(_previousWaypoint.Position, _currentWaypoint.Position, Mathf.Clamp01((Time.time - _timeAtPrevWaypoint) / (_distance / speed)));
+                // create a slowdown-effect when approaching nextwaypoint
+                _newPosition = Vector3.Lerp(_previousWaypoint.Position, _nextWaypoint.Position, Mathf.Clamp01((Time.time - _timeAtPrevWaypoint) / (_distance / speed)));
                 _diff = _newPosition - meta.Handler.Owner.transform.position; 
-                if (Vector3.Distance(_newPosition, _currentWaypoint.Position) < Grid.Instance.NodeRadius)
-                    _diff *= Mathf.Max(0.1f, Vector3.Distance(_newPosition, _currentWaypoint.Position) / Grid.Instance.NodeRadius);
+                if (Vector3.Distance(_newPosition, _nextWaypoint.Position) < Grid.Instance.NodeRadius)
+                    _diff *= Mathf.Max(0.1f, Vector3.Distance(_newPosition, _nextWaypoint.Position) / Grid.Instance.NodeRadius);
 
                 meta.Handler.Owner.transform.position += _diff;
                 yield return null;
@@ -135,6 +163,37 @@ public class Task {
             // left
             else if (directionAngle > 225 && directionAngle < 315)
                 meta.Handler.Owner.Orienter.SetOrientation(ActorOrientation.OrientationEnum.Left);
+        }
+        Tile.TileOrientation GetDirectionFromVector3(Vector3 _newDirection) {
+            directionAngle = (Mathf.Rad2Deg * Mathf.Atan2(-_newDirection.x, -_newDirection.y)) + 180;
+
+            // up
+            if (directionAngle > 315 || directionAngle < 45)
+                return Tile.TileOrientation.Top;
+            // right
+            else if (directionAngle > 45 && directionAngle < 135)
+                return Tile.TileOrientation.Right;
+            // down
+            else if (directionAngle > 135 && directionAngle < 225)
+                return Tile.TileOrientation.Bottom;
+            // left
+            else if (directionAngle > 225 && directionAngle < 315)
+                return Tile.TileOrientation.Left;
+
+            return Tile.TileOrientation.None;
+        }
+        Tile.TileOrientation GetReverseDirection(Tile.TileOrientation _direction) {
+            switch (_direction) {
+                case Tile.TileOrientation.Bottom:
+                    return Tile.TileOrientation.Top;
+                case Tile.TileOrientation.Left:
+                    return Tile.TileOrientation.Right;
+                case Tile.TileOrientation.Top:
+                    return Tile.TileOrientation.Bottom;
+                case Tile.TileOrientation.Right:
+                    return Tile.TileOrientation.Left;
+            }
+            return Tile.TileOrientation.None;
         }
         void ForceActorLieDown(bool _b) {
             meta.Handler.Owner.Orienter.ForceLieDown(_b);

@@ -2,7 +2,7 @@
 
 public class Tile : IHeapItem<Tile> {
 
-    public enum TileType { Empty, Wall, Diagonal, Door }
+    public enum TileType { Empty, Wall, Diagonal, Door, Airlock }
     private TileType type = TileType.Empty;
     public TileType _Type_ { get { return type; } }
     private TileType prevType = TileType.Empty;
@@ -20,9 +20,6 @@ public class Tile : IHeapItem<Tile> {
     public bool _BuildingAllowed_ { get { return buildingAllowed; } private set { buildingAllowed = value; } }
     public int GridX { get; private set; }
     public int GridY { get; private set; }
-    //public int LocalGridX { get; private set; }
-    //public int LocalGridY { get; private set; }
-    //public int GridSliceIndex { get; private set; }
 
     public Vector3 WorldPosition { get; private set; }
     public Vector3 DefaultPositionWorld { get; private set; }
@@ -38,8 +35,6 @@ public class Tile : IHeapItem<Tile> {
                 return DefaultPositionWorld;
         }
     }
-
-    public int MovementPenalty { get; private set; }
 
     public bool CanConnect_L { get; private set; }
     public bool CanConnect_T { get; private set; }
@@ -77,22 +72,22 @@ public class Tile : IHeapItem<Tile> {
         set { heapIndex = value; }
     }
 
-
     public UVController BottomQuad;
     public UVController TopQuad;
+    public TileAnimator Animator;
+
+    public bool StopAheadAndBehindMeWhenCrossing { get; private set; }
+    public int MovementPenalty { get; private set; }
+    public int WaitTime { get; private set; }
 
 
-    public Tile(Vector3 _worldPos, int _gridX, int _gridY/*, int _localGridX, int _localGridY, int _gridSliceIndex*/) {
+    public Tile(Vector3 _worldPos, int _gridX, int _gridY) {
         WorldPosition = _worldPos;
         GridX = _gridX;
         GridY = _gridY;
-        //LocalGridX = _localGridX;
-        //LocalGridY = _localGridY;
-        //GridSliceIndex = _gridSliceIndex;
     }
 
     public void Init() {
-
         BottomQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_BOTTOM_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
         TopQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_TOP_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
         
@@ -100,6 +95,7 @@ public class Tile : IHeapItem<Tile> {
 
 		BottomQuad.Setup();
         TopQuad.Setup();
+        Animator = new TileAnimator();
     }
 
     public int CompareTo(Tile nodeToCompare) {
@@ -115,7 +111,10 @@ public class Tile : IHeapItem<Tile> {
     private static Tile cachedNeighbour_R;
     private static Tile cachedNeighbour_B;
     public void SetTileType(TileType _newType, TileOrientation _newOrientation) {
-		BottomQuad.HaveChangedGraphics = true;
+
+        Animator.StopAnimating();
+
+        BottomQuad.HaveChangedGraphics = true;
         prevType = type;
         type = _newType;
         prevOrientation = orientation;
@@ -136,8 +135,6 @@ public class Tile : IHeapItem<Tile> {
         MovementPenalty = 0; //TODO: use this for something!
 
         if (prevType == TileType.Door) {
-            Grid.Instance.Animator.StopAnimatingTile(this);
-
             Grid.Instance.grid[GridX + 1, GridY].SetBuildingAllowed(true);
             Grid.Instance.grid[GridX - 1, GridY].SetBuildingAllowed(true);
             Grid.Instance.grid[GridX, GridY + 1].SetBuildingAllowed(true);
