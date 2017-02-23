@@ -5,7 +5,7 @@ using System.Collections.Generic;
 [System.Serializable]
 public class WallBuilder {
 
-    private enum ModeEnum { Default, Room, Diagonal, Door }
+    private enum ModeEnum { Default, Room, Diagonal, Door, Airlock }
     private ModeEnum Mode = ModeEnum.Default;
 
     [SerializeField] private Color Color_NewWall = Color.white;
@@ -35,61 +35,6 @@ public class WallBuilder {
             Type = Tile.TileType.Empty;
             Orientation = Tile.TileOrientation.None;
         }
-
-        //private Sprite _mergedSprite;
-        //private Color[] _bottomPixels;
-        //private Color[] _topSpritePixels;
-        //private Texture2D _mergedTexture;
-        //public void SetSprites(CachedAssets.DoubleInt _assetBottom, CachedAssets.DoubleInt _assetTop, int _style) {
-        //if (_spriteBottom == null || _spriteTop == null) {
-        //    if (_spriteTop == null) {
-        //        _renderer.sprite = _spriteBottom;
-        //        return;
-        //    }
-        //    if (_spriteBottom == null) {
-        //        _renderer.sprite = _spriteTop;
-        //        return;
-        //    }
-        //}
-
-        //// get pixels from sprites
-        //_bottomPixels = _spriteBottom.texture.GetPixels((int)_spriteBottom.rect.x, (int)_spriteBottom.rect.y, (int)_spriteBottom.rect.width, (int)_spriteBottom.rect.height);
-        //_topSpritePixels = _spriteTop.texture.GetPixels((int)_spriteTop.rect.x, (int)_spriteTop.rect.y, (int)_spriteTop.rect.width, (int)_spriteTop.rect.height);
-        //MergeTextures(ref _topSpritePixels, ref _bottomPixels);
-
-        //// if no texture, create it
-        //if (_mergedTexture == null) {
-        //    _mergedTexture = new Texture2D((int)_spriteBottom.rect.width, (int)_spriteBottom.rect.height, TextureFormat.RGBA32, true);
-        //    _mergedTexture.filterMode = FilterMode.Point;
-        //}
-        //// else, resize the old one
-        //else {
-        //    _mergedTexture.Resize((int)Mathf.Max(_spriteBottom.rect.width, _spriteTop.rect.width), (int)Mathf.Max(_spriteBottom.rect.height, _spriteTop.rect.height));
-        //}
-
-        //// merge textures
-        //_mergedTexture.SetPixels(_bottomPixels);
-        //_mergedTexture.Apply();
-
-        //// create sprite from merged texture
-        //_mergedSprite = Sprite.Create(_mergedTexture, new Rect(0, 0, _mergedTexture.width, _mergedTexture.height), new Vector2(_spriteBottom.pivot.x / _spriteBottom.rect.width, _spriteBottom.pivot.y / _spriteBottom.rect.height), _spriteBottom.pixelsPerUnit);
-        //_mergedSprite.name = _spriteBottom.name + " (Merged)";
-        //_renderer.sprite = _mergedSprite;
-        //}
-        //void MergeTextures(ref Color[] _from, ref Color[] _to) {
-        //    List<Color> _toPixels = new List<Color>();
-        //    for (int i = 0; i < _from.Length; i++) {
-
-        //        if (_from[i].a == 0 && i < _to.Length) {
-        //             _toPixels.Add(_to[i]);
-        //            continue;
-        //        }
-
-        //        _toPixels.Add(_from[i]);
-        //    }
-
-        //    _to = _toPixels.ToArray();
-        //}
 
         private const float DEFAULT_OFFSET_Y = 0.5f;
         private Vector3 newPos;
@@ -181,12 +126,14 @@ public class WallBuilder {
             modeWasChanged = false;
             ModeEnum _oldMode = Mode;
             Mode = ModeEnum.Default;
-            if (Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftShift))
+            if (Input.GetKey(KeyCode.Alpha1))
                 Mode = ModeEnum.Room;
-            if (Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftControl) && !isDeleting)
+            if (Input.GetKey(KeyCode.Alpha2))
                 Mode = ModeEnum.Diagonal;
-            if (Input.GetKey(KeyCode.Tab))
+            if (Input.GetKey(KeyCode.Alpha3))
                 Mode = ModeEnum.Door;
+            if (Input.GetKey(KeyCode.Alpha4))
+                Mode = ModeEnum.Airlock;
 
             if (Mode != _oldMode) {
                 modeWasChanged = true;
@@ -289,6 +236,7 @@ public class WallBuilder {
                 case ModeEnum.Diagonal:
                     return Tile.TileOrientation.TopLeft;
                 case ModeEnum.Door:
+                case ModeEnum.Airlock:
                     return Tile.TileOrientation.Bottom;
                 default:
                     throw new System.NotImplementedException(Mode + " hasn't been properly implemented yet!");
@@ -342,6 +290,7 @@ public class WallBuilder {
             // click-Modes
             case ModeEnum.Diagonal:
             case ModeEnum.Door:
+            case ModeEnum.Airlock:
                 ghostTile_GridX = mouseTile.GridX;
                 ghostTile_GridY = mouseTile.GridY;
                 AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
@@ -461,14 +410,14 @@ public class WallBuilder {
             AddNextGhost(_tile.ConnectedDiagonal_R.GridX, _tile.ConnectedDiagonal_R.GridY, false);
     }
     void AddGhostsForConnectedDoors(Tile _tile) {
-        if (_tile.ConnectedDoor_B != null)
-            AddNextGhost(_tile.ConnectedDoor_B.GridX, _tile.ConnectedDoor_B.GridY, false);
-        if (_tile.ConnectedDoor_L != null)
-            AddNextGhost(_tile.ConnectedDoor_L.GridX, _tile.ConnectedDoor_L.GridY, false);
-        if (_tile.ConnectedDoor_R != null)
-            AddNextGhost(_tile.ConnectedDoor_R.GridX, _tile.ConnectedDoor_R.GridY, false);
-        if (_tile.ConnectedDoor_T != null)
-            AddNextGhost(_tile.ConnectedDoor_T.GridX, _tile.ConnectedDoor_T.GridY, false);
+        if (_tile.ConnectedDoorOrAirlock_B != null)
+            AddNextGhost(_tile.ConnectedDoorOrAirlock_B.GridX, _tile.ConnectedDoorOrAirlock_B.GridY, false);
+        if (_tile.ConnectedDoorOrAirlock_L != null)
+            AddNextGhost(_tile.ConnectedDoorOrAirlock_L.GridX, _tile.ConnectedDoorOrAirlock_L.GridY, false);
+        if (_tile.ConnectedDoorOrAirlock_R != null)
+            AddNextGhost(_tile.ConnectedDoorOrAirlock_R.GridX, _tile.ConnectedDoorOrAirlock_R.GridY, false);
+        if (_tile.ConnectedDoorOrAirlock_T != null)
+            AddNextGhost(_tile.ConnectedDoorOrAirlock_T.GridX, _tile.ConnectedDoorOrAirlock_T.GridY, false);
     }
 
     void SetGhostGraphics(ref GhostInfo _ghost, Tile _tileUnderGhost, bool _snapToNeighbours) {
@@ -486,15 +435,6 @@ public class WallBuilder {
             case ModeEnum.Room:
                 _ghost.Type = Tile.TileType.Wall;
                 _ghost.Orientation = Tile.TileOrientation.None;
-
-                //if (!_hasConnection_Left && _ghostGridX > 0)
-                //    _hasConnection_Left = Grid.Instance.grid[_ghostGridX - 1, _ghostGridY]._Type_ == Tile.TileType.Wall;
-                //if (!_hasConnection_Right && _ghostGridX < Grid.Instance.GridSizeX - 1)
-                //    _hasConnection_Right = Grid.Instance.grid[_ghostGridX + 1, _ghostGridY]._Type_ == Tile.TileType.Wall;
-                //if (!_hasConnection_Top && _ghostGridY < Grid.Instance.GridSizeY - 1)
-                //    _hasConnection_Top = Grid.Instance.grid[_ghostGridX, _ghostGridY + 1]._Type_ == Tile.TileType.Wall;
-                //if (!_hasConnection_Bottom && _ghostGridY > 0)
-                //    _hasConnection_Bottom = Grid.Instance.grid[_ghostGridX, _ghostGridY - 1]._Type_ == Tile.TileType.Wall;
 
                 if (isDeleting && _tileUnderGhost._Type_ != Tile.TileType.Empty) { // excluding empty because otherwise it doesn't get graphics
                     _ghost.ChangeAssets(
@@ -514,7 +454,7 @@ public class WallBuilder {
                 _ghost.Type = Tile.TileType.Diagonal;
                 _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.TopLeft : _ghost.Orientation;
                 _ghost.ChangeAssets(
-                   CachedAssets.WallSet.index_Diagonal_TopLeft,
+                   CachedAssets.WallSet.wall_Diagonal_TopLeft,
                    null);
 
                 //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopLeft.Diffuse, null);
@@ -525,7 +465,7 @@ public class WallBuilder {
 
                     _ghost.Orientation = Tile.TileOrientation.TopLeft;
                     _ghost.ChangeAssets(
-                         CachedAssets.WallSet.index_Diagonal_TopLeft,
+                         CachedAssets.WallSet.wall_Diagonal_TopLeft,
                          null);
                     //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopLeft.Diffuse, null);
                 }
@@ -536,7 +476,7 @@ public class WallBuilder {
 
                     _ghost.Orientation = Tile.TileOrientation.TopRight;
                     _ghost.ChangeAssets(
-                        CachedAssets.WallSet.index_Diagonal_TopRight,
+                        CachedAssets.WallSet.wall_Diagonal_TopRight,
                         null);
                     //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_TopRight.Diffuse, null);
                 }
@@ -547,7 +487,7 @@ public class WallBuilder {
 
                     _ghost.Orientation = Tile.TileOrientation.BottomRight;
                     _ghost.ChangeAssets(
-                        CachedAssets.WallSet.index_Diagonal_BottomRight,
+                        CachedAssets.WallSet.wall_Diagonal_BottomRight,
                         null);
                     //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_BottomRight.Diffuse, null);
                 }
@@ -558,7 +498,7 @@ public class WallBuilder {
 
                     _ghost.Orientation = Tile.TileOrientation.BottomLeft;
                     _ghost.ChangeAssets(
-                       CachedAssets.WallSet.index_Diagonal_BottomLeft,
+                       CachedAssets.WallSet.wall_Diagonal_BottomLeft,
                        null);
                     //_ghost.SetSprites(CachedAssets.Instance.WallSets[0].Diagonal_BottomLeft.Diffuse, null);
                 }
@@ -587,6 +527,30 @@ public class WallBuilder {
                     _ghost.ChangeAssets(
                           CachedAssets.WallSet.anim_DoorVertical_Open.GetBottomFirstFrame(),
                           CachedAssets.WallSet.anim_DoorVertical_Open.GetTopFirstFrame());
+                }
+
+                break;
+            case ModeEnum.Airlock:
+
+                _ghost.Type = Tile.TileType.Airlock;
+                _ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.Left : _ghost.Orientation;
+                _ghost.ChangeAssets(
+                       CachedAssets.WallSet.anim_AirlockHorizontal_OpenTop.Bottom[0],
+                       CachedAssets.WallSet.anim_AirlockHorizontal_OpenTop.Top[0]);
+
+                if ((_snapToNeighbours && (_tileUnderGhost.HasConnectable_L && _tileUnderGhost.HasConnectable_R && !_tileUnderGhost.HasConnectable_B && !_tileUnderGhost.HasConnectable_T))
+                || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Left || allGhosts[0].Orientation == Tile.TileOrientation.Right))) {
+                    _ghost.Orientation = Tile.TileOrientation.Left; // left or right shouldn't matter...
+                    _ghost.ChangeAssets(
+                              CachedAssets.WallSet.anim_AirlockHorizontal_OpenTop.GetBottomFirstFrame(),
+                              CachedAssets.WallSet.anim_AirlockHorizontal_OpenTop.GetTopFirstFrame());
+                }
+                else if ((_snapToNeighbours && (!_tileUnderGhost.HasConnectable_L && !_tileUnderGhost.HasConnectable_R && _tileUnderGhost.HasConnectable_B && _tileUnderGhost.HasConnectable_T))
+                     || (!_snapToNeighbours && (allGhosts[0].Orientation == Tile.TileOrientation.Bottom || allGhosts[0].Orientation == Tile.TileOrientation.Top))) {
+                    _ghost.Orientation = Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
+                    _ghost.ChangeAssets(
+                          CachedAssets.WallSet.anim_AirlockVertical_OpenLeft.GetBottomFirstFrame(),
+                          CachedAssets.WallSet.anim_AirlockVertical_OpenLeft.GetTopFirstFrame());
                 }
 
                 break;
@@ -679,6 +643,7 @@ public class WallBuilder {
                     break;
 
                 case ModeEnum.Door:
+                case ModeEnum.Airlock:
 
                     // is the tile... living on the edge? B)
                     if (_tileUnderGhost.GridX == 0 || _tileUnderGhost.GridX == Grid.Instance.GridSizeX - 1 || _tileUnderGhost.GridY == 0 || _tileUnderGhost.GridY == Grid.Instance.GridSizeY) {

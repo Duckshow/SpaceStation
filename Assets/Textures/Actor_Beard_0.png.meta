@@ -1,10 +1,17 @@
 fileFormatVersion: 2
-guid: e295a678277d27c40b255f2e6f276ba0
-timeCreated: 1476221553
+guid: 59929fce80fc8b9469167ee1b5638a50
+timeCreated: 1487283015
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
-    21300000: CharacterBodies_0
+    21300000: CharacterBeards_0_Front
+    21300002: CharacterBeards_0_Back
+    21300004: CharacterBeards_0_Right
+    21300006: CharacterBeards_0_Left
+    21300008: Actor_Beard_0_Front
+    21300010: Actor_Beard_0_Back
+    21300012: Actor_Beard_0_Right
+    21300014: Actor_Beard_0_Left
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
@@ -54,15 +61,54 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: CharacterBodies_0
+      name: Actor_Beard_0_Front
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 48
-        height: 48
-      alignment: 9
-      pivot: {x: 0.5, y: 0.85}
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: Actor_Beard_0_Back
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: Actor_Beard_0_Right
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: Actor_Beard_0_Left
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0

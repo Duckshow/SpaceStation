@@ -1,13 +1,17 @@
 fileFormatVersion: 2
-guid: f492b4794ee9bfa4e9d7fa1741a463be
-timeCreated: 1476221284
+guid: c455800f67b5da94f875f7454c574a8d
+timeCreated: 1487283132
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
-    21300000: CharacterHeads_0_Front
-    21300002: CharacterHeads_0_Back
-    21300004: CharacterHeads_0_Right
-    21300006: CharacterHeads_0_Left
+    21300000: CharacterBeards_0_Front
+    21300002: CharacterBeards_0_Back
+    21300004: CharacterBeards_0_Right
+    21300006: CharacterBeards_0_Left
+    21300008: Actor_Eyes_0_Front
+    21300010: Actor_Eyes_0_Right
+    21300012: Actor_Eyes_0_Left
+    21300014: Actor_Eyes_0_Back
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
@@ -57,52 +61,52 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: CharacterHeads_0_Front
+      name: Actor_Eyes_0_Front
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 32
-        height: 32
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: CharacterHeads_0_Back
+      name: Actor_Eyes_0_Right
       rect:
         serializedVersion: 2
-        x: 32
+        x: 128
         y: 0
-        width: 32
-        height: 32
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: CharacterHeads_0_Right
+      name: Actor_Eyes_0_Left
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: Actor_Eyes_0_Back
       rect:
         serializedVersion: 2
         x: 64
         y: 0
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: CharacterHeads_0_Left
-      rect:
-        serializedVersion: 2
-        x: 96
-        y: 0
-        width: 32
-        height: 32
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}

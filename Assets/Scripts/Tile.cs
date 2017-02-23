@@ -13,6 +13,19 @@ public class Tile : IHeapItem<Tile> {
     private TileOrientation prevOrientation = TileOrientation.None;
     public bool _IsHorizontal_ { get { return orientation == TileOrientation.Left || orientation == TileOrientation.Right; } }
     public bool _IsVertical_ { get { return orientation == TileOrientation.Bottom || orientation == TileOrientation.Top; } }
+    Tile.TileOrientation GetReverseDirection(Tile.TileOrientation _direction) {
+        switch (_direction) {
+            case Tile.TileOrientation.Bottom:
+                return Tile.TileOrientation.Top;
+            case Tile.TileOrientation.Left:
+                return Tile.TileOrientation.Right;
+            case Tile.TileOrientation.Top:
+                return Tile.TileOrientation.Bottom;
+            case Tile.TileOrientation.Right:
+                return Tile.TileOrientation.Left;
+        }
+        return Tile.TileOrientation.None;
+    }
 
     public bool Walkable { get; private set; }
     public bool IsOccupied = false;
@@ -56,10 +69,10 @@ public class Tile : IHeapItem<Tile> {
 	[HideInInspector] public Tile ConnectedDiagonal_T;
 	[HideInInspector] public Tile ConnectedDiagonal_R;
 	[HideInInspector] public Tile ConnectedDiagonal_B;
-    [HideInInspector] public Tile ConnectedDoor_L;
-	[HideInInspector] public Tile ConnectedDoor_T;
-	[HideInInspector] public Tile ConnectedDoor_R;
-	[HideInInspector] public Tile ConnectedDoor_B;
+    [HideInInspector] public Tile ConnectedDoorOrAirlock_L;
+	[HideInInspector] public Tile ConnectedDoorOrAirlock_T;
+	[HideInInspector] public Tile ConnectedDoorOrAirlock_R;
+	[HideInInspector] public Tile ConnectedDoorOrAirlock_B;
 
     [HideInInspector] public Tile ParentTile;
     [HideInInspector] public int GCost;
@@ -78,7 +91,7 @@ public class Tile : IHeapItem<Tile> {
 
     public bool StopAheadAndBehindMeWhenCrossing { get; private set; }
     public int MovementPenalty { get; private set; }
-    public int WaitTime { get; private set; }
+    public bool ForceActorStopWhenPassingThis { get; private set; }
 
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY) {
@@ -91,11 +104,12 @@ public class Tile : IHeapItem<Tile> {
         BottomQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_BOTTOM_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
         TopQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_TOP_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
         
+        BottomQuad.name = "TileQuad " + GridX + "x" + GridY + " (" + WorldPosition.x + ", " + WorldPosition.y + ")"; 
 		TopQuad.transform.parent = BottomQuad.transform;
 
 		BottomQuad.Setup();
         TopQuad.Setup();
-        Animator = new TileAnimator();
+        Animator = new TileAnimator(this);
     }
 
     public int CompareTo(Tile nodeToCompare) {
@@ -132,6 +146,7 @@ public class Tile : IHeapItem<Tile> {
         TopQuad.Sort(GridY);
         //topQuad.SortAsTop(GridY);
 
+        ForceActorStopWhenPassingThis = false;
         MovementPenalty = 0; //TODO: use this for something!
 
         if (prevType == TileType.Door) {
@@ -140,10 +155,10 @@ public class Tile : IHeapItem<Tile> {
             Grid.Instance.grid[GridX, GridY + 1].SetBuildingAllowed(true);
             Grid.Instance.grid[GridX, GridY - 1].SetBuildingAllowed(true);
 
-            Grid.Instance.grid[GridX - 1, GridY].ConnectedDoor_R = null;
-            Grid.Instance.grid[GridX + 1, GridY].ConnectedDoor_L = null;
-            Grid.Instance.grid[GridX, GridY - 1].ConnectedDoor_T = null;
-            Grid.Instance.grid[GridX, GridY + 1].ConnectedDoor_B = null;
+            Grid.Instance.grid[GridX - 1, GridY].ConnectedDoorOrAirlock_R = null;
+            Grid.Instance.grid[GridX + 1, GridY].ConnectedDoorOrAirlock_L = null;
+            Grid.Instance.grid[GridX, GridY - 1].ConnectedDoorOrAirlock_T = null;
+            Grid.Instance.grid[GridX, GridY + 1].ConnectedDoorOrAirlock_B = null;
         }
         if (prevType == TileType.Diagonal) {
             if(GridX > 0)
@@ -211,11 +226,12 @@ public class Tile : IHeapItem<Tile> {
                 break;
             case TileType.Door:
                 Walkable = true;
+                ForceActorStopWhenPassingThis = true;
                 switch (orientation) {
                     // vertical
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
-                        DefaultPositionWorld = WorldPosition + new Vector3(0, -0.35f, 0);
+                        DefaultPositionWorld = WorldPosition + new Vector3(0, -0.15f, 0);
 
                         CanConnect_L = false;
                         CanConnect_T = true;
@@ -225,7 +241,31 @@ public class Tile : IHeapItem<Tile> {
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
-                        DefaultPositionWorld = WorldPosition;
+                        CanConnect_L = true;
+                        CanConnect_T = false;
+                        CanConnect_R = true;
+                        CanConnect_B = false;
+                        break;
+                }
+                break;
+            case TileType.Airlock:
+                Walkable = true;
+                ForceActorStopWhenPassingThis = true;
+                switch (orientation) {
+                    // vertical
+                    case TileOrientation.Bottom:
+                    case TileOrientation.Top:
+                        DefaultPositionWorld = WorldPosition + new Vector3(0, -0.25f, 0);
+
+                        CanConnect_L = false;
+                        CanConnect_T = true;
+                        CanConnect_R = false;
+                        CanConnect_B = true;
+                        break;
+                    // horizontal
+                    case TileOrientation.Left:
+                    case TileOrientation.Right:
+                        DefaultPositionWorld = WorldPosition + new Vector3(0, -0.35f, 0);
 
                         CanConnect_L = true;
                         CanConnect_T = false;
@@ -235,7 +275,7 @@ public class Tile : IHeapItem<Tile> {
                 }
                 break;
             default:
-                throw new System.Exception(_newType.ToString() + " has not been implemented yet!");
+                throw new System.Exception(_newType.ToString() + " has not been properly implemented yet!");
         }
 
         cachedNeighbour_L = GridX > 0 ? Grid.Instance.grid[GridX - 1, GridY] : null;
@@ -265,7 +305,7 @@ public class Tile : IHeapItem<Tile> {
                 _neighbour.HasConnectable_T = CanConnect_B;
                 _neighbour.IsBlocked_T = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Top);
                 _neighbour.ConnectedDiagonal_T = (type == TileType.Diagonal && (orientation == TileOrientation.BottomLeft || orientation == TileOrientation.BottomRight)) ? this : null;
-                _neighbour.ConnectedDoor_T = type == TileType.Door ? this : null;
+                _neighbour.ConnectedDoorOrAirlock_T = (type == TileType.Door || type == TileType.Airlock) ? this : null;
 
                 // prevent building in front of door
                 if (type == TileType.Door && (orientation == TileOrientation.Left || orientation == TileOrientation.Right))
@@ -275,7 +315,7 @@ public class Tile : IHeapItem<Tile> {
                 _neighbour.HasConnectable_R = CanConnect_L;
                 _neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Left);
                 _neighbour.ConnectedDiagonal_R = (type == TileType.Diagonal && (orientation == TileOrientation.TopLeft || orientation == TileOrientation.BottomLeft)) ? this : null;
-                _neighbour.ConnectedDoor_R = type == TileType.Door ? this : null;
+                _neighbour.ConnectedDoorOrAirlock_R = (type == TileType.Door || type == TileType.Airlock) ? this : null;
 
                 // prevent building in front of door
                 if (type == TileType.Door && (orientation == TileOrientation.Top || orientation == TileOrientation.Bottom))
@@ -285,7 +325,7 @@ public class Tile : IHeapItem<Tile> {
                 _neighbour.HasConnectable_B = CanConnect_T;
                 _neighbour.IsBlocked_B = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Bottom);
                 _neighbour.ConnectedDiagonal_B = (type == TileType.Diagonal && (orientation == TileOrientation.TopLeft || orientation == TileOrientation.TopRight)) ? this : null;
-                _neighbour.ConnectedDoor_B = type == TileType.Door ? this : null;
+                _neighbour.ConnectedDoorOrAirlock_B = (type == TileType.Door || type == TileType.Airlock) ? this : null;
 
                 if (type == TileType.Door) {
 
@@ -311,7 +351,7 @@ public class Tile : IHeapItem<Tile> {
                 _neighbour.HasConnectable_L = CanConnect_R;
                 _neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Left);
                 _neighbour.ConnectedDiagonal_L = (type == TileType.Diagonal && (orientation == TileOrientation.BottomRight || orientation == TileOrientation.TopRight)) ? this : null;
-                _neighbour.ConnectedDoor_L = type == TileType.Door ? this : null;
+                _neighbour.ConnectedDoorOrAirlock_L = (type == TileType.Door || type == TileType.Airlock) ? this : null;
 
                 // prevent building in front of door
                 if (type == TileType.Door && (orientation == TileOrientation.Top || orientation == TileOrientation.Bottom))
@@ -332,29 +372,47 @@ public class Tile : IHeapItem<Tile> {
         TopQuad.ChangeAsset(_topAssetIndices);
     }
 
-    //public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, int _style) {
+    public void OnActorApproachingTile(TileOrientation _direction) {
+        switch (type) {
+            case TileType.Empty:
+            case TileType.Wall:
+            case TileType.Diagonal:
+                break;
+            case TileType.Door:
+                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Open), _forward: true, _loop: false);
+                break;
+            case TileType.Airlock:
+                Animator.Animate(Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Open, _direction), _forward: true, _loop: false);
+                break;
+            default:
+                throw new System.NotImplementedException(type + " hasn't been properly implemented yet!");
+        }
+    }
+    TileAnimator.TileAnimation[] animationSequence;
+    public void OnActorEnterTile(TileOrientation _direction, out float _yieldTime) {
+        _yieldTime = 0;
+        switch (type) {
+            case TileType.Empty:
+            case TileType.Wall:
+            case TileType.Diagonal:
+                break;
+            case TileType.Door:
+                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Close), _forward: true, _loop: false);
+                break;
+            case TileType.Airlock:
+                animationSequence = new TileAnimator.TileAnimation[] {
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Close, _direction),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Wait, TileOrientation.None),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Close, GetReverseDirection(_direction)) };
 
-    //    myMeshUVs[0].x = (Grid.TILE_RESOLUTION * _assetIndices.X) / CachedAssets.Instance.WallSets[_style].TextureSize.x;
-    //    myMeshUVs[0].y = (Grid.TILE_RESOLUTION * _assetIndices.Y) / CachedAssets.Instance.WallSets[_style].TextureSize.y;
-
-    //    myMeshUVs[1].x = (Grid.TILE_RESOLUTION * (_assetIndices.X + 1)) / CachedAssets.Instance.WallSets[_style].TextureSize.x;
-    //    myMeshUVs[1].y = (Grid.TILE_RESOLUTION * (_assetIndices.Y + 1)) / CachedAssets.Instance.WallSets[_style].TextureSize.y;
-
-    //    myMeshUVs[2].x = myMeshUVs[1].x;
-    //    myMeshUVs[2].y = myMeshUVs[0].y;
-
-    //    myMeshUVs[3].x = myMeshUVs[0].x;
-    //    myMeshUVs[3].y = myMeshUVs[1].y;
-
-    //    myMeshFilter.mesh.uv = myMeshUVs;
-    //    //myMeshFilter.transform.localScale = _size.y > Grid.TILE_RESOLUTION ? SIZE_TALL : SIZE_DEFAULT;
-    //    //myMeshFilter.transform.localPosition = new Vector3(WorldPosition.x, WorldPosition.y + ((_size.y - SIZE_DEFAULT.y) * 0.25f), WorldPosition.z);
-
-    //    //Debug.DrawLine((transform.position + (Vector3)meshUVs[0] - new Vector3(0.5f, 0.5f, 0)), (transform.position + (Vector3)meshUVs[2] - new Vector3(0.5f, 0.5f, 0)), Color.red);
-    //    //Debug.DrawLine((transform.position + (Vector3)meshUVs[2] - new Vector3(0.5f, 0.5f, 0)), (transform.position + (Vector3)meshUVs[1] - new Vector3(0.5f, 0.5f, 0)), Color.red);
-    //    //Debug.DrawLine((transform.position + (Vector3)meshUVs[1] - new Vector3(0.5f, 0.5f, 0)), (transform.position + (Vector3)meshUVs[3] - new Vector3(0.5f, 0.5f, 0)), Color.red);
-    //    //Debug.DrawLine((transform.position + (Vector3)meshUVs[3] - new Vector3(0.5f, 0.5f, 0)), (transform.position + (Vector3)meshUVs[0] - new Vector3(0.5f, 0.5f, 0)), Color.red);
-    //}
+                Animator.AnimateSequence(animationSequence);
+                _yieldTime = Animator.GetProperWaitTimeForAnim(animationSequence[0]) + Animator.GetProperWaitTimeForAnim(animationSequence[1]) + (Animator.GetProperWaitTimeForAnim(animationSequence[2]) * 0.5f);
+                break;
+            default:
+                throw new System.NotImplementedException(type + " hasn't been properly implemented yet!");
+        }
+    }
 
     public void SetBuildingAllowed(bool _b) {
         Tile _neighbour;

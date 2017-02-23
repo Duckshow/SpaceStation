@@ -1,6 +1,6 @@
 fileFormatVersion: 2
-guid: c0e7e92c6d2473841a098d3e696788fa
-timeCreated: 1476221068
+guid: 5981da27991f27b45855e8002d8ff7c2
+timeCreated: 1487283077
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
@@ -8,6 +8,10 @@ TextureImporter:
     21300002: CharacterBeards_0_Back
     21300004: CharacterBeards_0_Right
     21300006: CharacterBeards_0_Left
+    21300008: Actor_Body_0_Front
+    21300010: Actor_Body_0_Back
+    21300012: Actor_Body_0_Right
+    21300014: Actor_Body_0_Left
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
@@ -57,52 +61,52 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: CharacterBeards_0_Front
+      name: Actor_Body_0_Front
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 48
-        height: 48
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: CharacterBeards_0_Back
+      name: Actor_Body_0_Back
       rect:
         serializedVersion: 2
-        x: 48
+        x: 64
         y: 0
-        width: 48
-        height: 48
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: CharacterBeards_0_Right
+      name: Actor_Body_0_Right
       rect:
         serializedVersion: 2
-        x: 96
+        x: 128
         y: 0
-        width: 48
-        height: 48
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: CharacterBeards_0_Left
+      name: Actor_Body_0_Left
       rect:
         serializedVersion: 2
-        x: 144
+        x: 192
         y: 0
-        width: 48
-        height: 48
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}

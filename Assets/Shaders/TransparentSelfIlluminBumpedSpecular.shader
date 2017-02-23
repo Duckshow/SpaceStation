@@ -4,8 +4,8 @@ Properties {
 	_SpecColor ("Specular Color", Color) = (0.5, 0.5, 0.5, 1)
 	_Shininess ("Shininess", Range (0.01, 1)) = 0.078125
 	_MainTex ("Base (RGB) Gloss (A)", 2D) = "white" {}
-	_Illum ("Illumin (A)", 2D) = "white" {}
 	_BumpMap ("Normalmap", 2D) = "bump" {}
+	_Illum("Emissive", 2D) = "white" {}
 	_Emission ("Emission (Lightmapper)", Float) = 1.0
 }
 SubShader {
@@ -25,15 +25,16 @@ fixed _Emission;
 
 struct Input {
 	float2 uv_MainTex;
-	float2 uv_Illum;
 	float2 uv_BumpMap;
+	float2 uv_Illum;
+	float2 uv_Spec;
 };
 
 void surf (Input IN, inout SurfaceOutput o) {
 	fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
 	c = tex * _Color;
 	o.Albedo = c.rgb;
-	o.Emission = c.rgb * tex2D(_Illum, IN.uv_Illum).a;
+	o.Emission = /*c.rgb * */tex2D(_Illum, IN.uv_Illum)/*.a*/;
 #if defined (UNITY_PASS_META)
 	o.Emission *= _Emission.rrr;
 #endif

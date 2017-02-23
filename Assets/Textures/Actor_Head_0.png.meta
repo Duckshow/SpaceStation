@@ -1,13 +1,17 @@
 fileFormatVersion: 2
-guid: 95ca2766f33005d4bbc447ae152bfeff
-timeCreated: 1476221152
+guid: e232971ec68cd7543bbf5bcede91658f
+timeCreated: 1487283193
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
-    21300000: CharacterEyes_0_Front
-    21300002: CharacterEyes_0_Right
-    21300004: CharacterEyes_0_Left
-    21300006: CharacterEyes_0_Back
+    21300000: CharacterBeards_0_Front
+    21300002: CharacterBeards_0_Back
+    21300004: CharacterBeards_0_Right
+    21300006: CharacterBeards_0_Left
+    21300008: Actor_Head_0_Front
+    21300010: Actor_Head_0_Back
+    21300012: Actor_Head_0_Right
+    21300014: Actor_Head_0_Left
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
@@ -57,52 +61,52 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: CharacterEyes_0_Front
+      name: Actor_Head_0_Front
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 32
-        height: 32
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: CharacterEyes_0_Right
+      name: Actor_Head_0_Back
       rect:
         serializedVersion: 2
         x: 64
         y: 0
-        width: 32
-        height: 32
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: CharacterEyes_0_Left
+      name: Actor_Head_0_Right
       rect:
         serializedVersion: 2
-        x: 96
+        x: 128
         y: 0
-        width: 32
-        height: 32
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: CharacterEyes_0_Back
+      name: Actor_Head_0_Left
       rect:
         serializedVersion: 2
-        x: 32
+        x: 192
         y: 0
-        width: 32
-        height: 32
+        width: 64
+        height: 64
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}

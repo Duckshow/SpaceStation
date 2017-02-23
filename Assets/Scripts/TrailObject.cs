@@ -11,7 +11,7 @@ public class TrailObject : MonoBehaviour {
 
     private const float VERTICAL_TARGETROTATION_MOVEDOWN = 180;
     private const float HORIZONTAL_TARGETROTATION = 90;
-    private const float HORIZONTAL_TARGETPOSITION = 0.3f;
+    private const float HORIZONTAL_TARGETPOSITION = 0.15f;
 
     private Vector3 targetPosition;
     private Vector3 targetRotation;

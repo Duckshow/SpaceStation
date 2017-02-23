@@ -68,6 +68,8 @@ public class Grid : MonoBehaviour {
     private int sliceSizeY;
 
 
+
+
     void Awake() {
         Instance = this;
 
@@ -79,6 +81,13 @@ public class Grid : MonoBehaviour {
         GridSizeY = Mathf.RoundToInt(GridWorldSize.y / nodeDiameter);
 
         CreateGrid();
+    }
+
+    public static List<TileAnimator> LateUpdateAnimators = new List<TileAnimator>();
+    void LateUpdate() {
+        for (int i = 0; i < LateUpdateAnimators.Count; i++) {
+            LateUpdateAnimators[i].LateUpdate();
+        }
     }
 
     void CreateGrid() {
@@ -136,7 +145,7 @@ public class Grid : MonoBehaviour {
     public static bool OtherTileIsBlockingPath(Tile.TileType _otherTileType, Tile.TileOrientation _otherTileOrientation, Tile.TileOrientation _directionToOtherTile) {
         if (_otherTileType == Tile.TileType.Empty)
             return false;
-        if (_otherTileType == Tile.TileType.Wall || _otherTileType == Tile.TileType.Door)
+        if (_otherTileType == Tile.TileType.Wall || _otherTileType == Tile.TileType.Door || _otherTileType == Tile.TileType.Airlock)
             return true;
 
         if (_otherTileType != Tile.TileType.Diagonal)
