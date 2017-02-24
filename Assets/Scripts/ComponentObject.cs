@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+
+#if !UNITY_EDITOR_OSX
 using RUL;
+#endif
 
 public class ComponentObject : MonoBehaviour {
 
@@ -24,8 +27,14 @@ public class ComponentObject : MonoBehaviour {
     void Start() {
         // optimization: this is pretty ugly and probably reeeaaally heavy
         // maybe I should handle deterioration through one manager instead?
-        StartQuality = Rul.RandElement<float>(new float[] { 1f, 0.9f, 0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f }, 0.9f, 0.05f, 0.025f);
-        StartQuality -= Random.Range(0.001f, 0.009f);
+
+		StartQuality = 1;
+
+		#if !UNITY_EDITOR_OSX
+		StartQuality = Rul.RandElement<float>(new float[] { 1f, 0.9f, 0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f }, 0.9f, 0.05f, 0.025f);
+		StartQuality -= Random.Range(0.001f, 0.009f);
+		#endif
+
         _Current_ = StaticInfo.HP_Max * StartQuality;
     }
 }
