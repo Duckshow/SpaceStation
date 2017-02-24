@@ -7,7 +7,6 @@ public class Actor : MonoBehaviour {
     public const float SPEED_RUN = 4f;
     public const float RATE_CONSUME = 2;
 
-    Sector currentSector;
     TaskHandler taskHandler = new TaskHandler();
 
     public int HairStyleIndex = 0;
@@ -51,7 +50,14 @@ public class Actor : MonoBehaviour {
     //    }
     //}
 
+    private Tile currentTile;
     void Update() {
+
+        // if actor is in a special tile, don't think about going somewhere else
+        currentTile = Grid.Instance.GetTileFromWorldPoint(transform.position);
+        if (currentTile._Type_ == Tile.TileType.Door || currentTile._Type_ == Tile.TileType.Airlock)
+            return;
+
         // -- Find water --
         if ((HeldWater > 0 || Knowledge.WaterContainersFilledAmount > 0) && !taskHandler.ResourcesPendingFetch.Contains(ResourceManager.ResourceType.Water) && thirst._Current_ <= thirst.Max * 0.5f) {
 

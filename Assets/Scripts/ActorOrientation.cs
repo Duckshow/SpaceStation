@@ -10,6 +10,7 @@ public class ActorOrientation : MonoBehaviour {
     [SerializeField] private SpriteRenderer HeadRenderer;
     [SerializeField] private SpriteRenderer EyeRenderer;
     [SerializeField] private SpriteRenderer BeardRenderer;
+    [SerializeField] private SpriteRenderer BodyRenderer;
 
     private Actor actor;
     private TrailObject body;
@@ -24,6 +25,9 @@ public class ActorOrientation : MonoBehaviour {
         SetOrientation(Orientation);
     }
 
+    private const float TIME_BETWEEN_POS_UPDATES = 0.1f;
+    private float timeAtLastPosUpdate = 0;
+    private int newSortOrder = 0;
 	void Update () {
         if (Input.GetKeyUp(KeyCode.KeypadEnter)) {
             Orientation++;
@@ -33,7 +37,17 @@ public class ActorOrientation : MonoBehaviour {
 
             SetOrientation(Orientation);
         }
-	}
+
+        if (Time.time - timeAtLastPosUpdate > TIME_BETWEEN_POS_UPDATES) {
+            timeAtLastPosUpdate = Time.time;
+            newSortOrder = UVController.GetSortOrderFromGridY(Grid.Instance.GetTileFromWorldPoint(transform.position).GridY);
+            BodyRenderer.sortingOrder = newSortOrder + 2;
+            HeadRenderer.sortingOrder = newSortOrder + 3;
+            BeardRenderer.sortingOrder = newSortOrder + 4;
+            EyeRenderer.sortingOrder = newSortOrder + 5;
+            HairRenderer.sortingOrder = newSortOrder + 6;
+        }
+    }
 
     public void SetOrientation(OrientationEnum _orientation) {
         Orientation = _orientation;
