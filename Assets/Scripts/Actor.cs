@@ -55,7 +55,7 @@ public class Actor : MonoBehaviour {
 
         // if actor is in a special tile, don't think about going somewhere else
         currentTile = Grid.Instance.GetTileFromWorldPoint(transform.position);
-        if (currentTile._Type_ == Tile.TileType.Door || currentTile._Type_ == Tile.TileType.Airlock)
+        if (currentTile._WallType_ == Tile.Type.Door || currentTile._WallType_ == Tile.Type.Airlock)
             return;
 
         // -- Find water --

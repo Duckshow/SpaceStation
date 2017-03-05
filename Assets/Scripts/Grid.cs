@@ -105,50 +105,86 @@ public class Grid : MonoBehaviour {
         // for testing-purposes
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                if (Random.value > 0.75f) {
-                    grid[x, y].SetTileType(Tile.TileType.Wall, Tile.TileOrientation.None);
+				if (Random.value > 0.75f) {
+                    grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
                     continue;
                 }
 
-				grid[x, y].SetTileType(Tile.TileType.Empty, Tile.TileOrientation.None);
+				grid[x, y].SetTileType(Tile.Type.Empty, Tile.TileOrientation.None);
+				grid[x, y].SetFloorType(Tile.Type.Solid, Tile.TileOrientation.None);
             }
         }
+		bool _b;
+		bool _success;
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                if (grid[x, y]._Type_ == Tile.TileType.Wall || RUL.Rul.RandBool())
+                if (grid[x, y]._WallType_ == Tile.Type.Solid)
                     continue;
+				#if !UNITY_EDITOR_OSX
+				_b = RUL.Rul.RandBool () ;
+				#endif
+				#if UNITY_EDITOR_OSX
+				_b = Random.value > 0.5f;
+				#endif
 
-                // LT
-                if (x > 0 && grid[x - 1, y]._Type_ == Tile.TileType.Wall && y < GridSizeY - 1 && grid[x, y + 1]._Type_ == Tile.TileType.Wall) {
-                    grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.TopLeft);
-                    continue;
-                }
-                // TR
-                if (y < GridSizeY - 1 && grid[x, y + 1]._Type_ == Tile.TileType.Wall && x < GridSizeX - 1 && grid[x + 1, y]._Type_ == Tile.TileType.Wall) {
-                    grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.TopRight);
-                    continue;
-                }
-                // RB
-                if (x < GridSizeX - 1 && grid[x + 1, y]._Type_ == Tile.TileType.Wall && y > 0 && grid[x, y - 1]._Type_ == Tile.TileType.Wall) {
-                    grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.BottomRight);
-                    continue;
-                }
-                // BL
-                if (y > 0 && grid[x, y - 1]._Type_ == Tile.TileType.Wall && x > 0 && grid[x - 1, y]._Type_ == Tile.TileType.Wall) {
-                    grid[x, y].SetTileType(Tile.TileType.Diagonal, Tile.TileOrientation.BottomLeft);
-                    continue;
-                }
+				if (_b) {
+					_success = false;
+
+					// LT
+					if (x > 0 && grid[x - 1, y].CanConnect_R && y < GridSizeY - 1 && grid[x, y + 1].CanConnect_B){
+						grid[x, y].SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.TopLeft);
+						_success = true;
+					}
+					// TR
+					else if (x < GridSizeX - 1 && grid[x + 1, y].CanConnect_L && y < GridSizeY - 1 && grid[x, y + 1].CanConnect_B){
+						grid[x, y].SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.TopRight);
+						_success = true;
+					}
+					// RB
+					else if (x < GridSizeX - 1 && grid[x + 1, y].CanConnect_L && y > 0 && grid[x, y - 1].CanConnect_T){
+						grid[x, y].SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.BottomRight);
+						_success = true;
+					}
+					// BL
+					else if (x > 0 && grid[x - 1, y].CanConnect_R && y > 0 && grid[x, y - 1].CanConnect_T){
+						grid[x, y].SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.BottomLeft);
+						_success = true;
+					}
+
+					if(_success)
+						grid[x, y].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None);
+				}
+
+				// floor stuff
+
+				if (grid[x, y]._FloorType_ == Tile.Type.Solid)
+					continue;
+				if (grid [x, y]._WallType_ == Tile.Type.Diagonal)
+					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.GetReverseDirection(grid[x, y]._Orientation_));
+				
+				// LT
+				if (x > 0 && grid [x - 1, y].CanConnectFloor_R && y < GridSizeY - 1 && grid [x, y + 1].CanConnectFloor_B)
+					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.TileOrientation.TopLeft);
+				// TR
+				else if (x < GridSizeX - 1 && grid [x + 1, y].CanConnectFloor_L && y < GridSizeY - 1 && grid [x, y + 1].CanConnectFloor_B)
+					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.TileOrientation.TopRight);
+				// RB
+				else if (x < GridSizeX - 1 && grid [x + 1, y].CanConnectFloor_L && y > 0 && grid [x, y - 1].CanConnectFloor_T)
+					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.TileOrientation.BottomRight);
+				// BL
+				else if (x > 0 && grid [x - 1, y].CanConnectFloor_R && y > 0 && grid [x, y - 1].CanConnectFloor_T)
+					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.TileOrientation.BottomLeft);
             }
         }
     }
 
-    public static bool OtherTileIsBlockingPath(Tile.TileType _otherTileType, Tile.TileOrientation _otherTileOrientation, Tile.TileOrientation _directionToOtherTile) {
-        if (_otherTileType == Tile.TileType.Empty)
+    public static bool OtherTileIsBlockingPath(Tile.Type _otherTileType, Tile.TileOrientation _otherTileOrientation, Tile.TileOrientation _directionToOtherTile) {
+        if (_otherTileType == Tile.Type.Empty)
             return false;
-        if (_otherTileType == Tile.TileType.Wall || _otherTileType == Tile.TileType.Door || _otherTileType == Tile.TileType.Airlock)
+        if (_otherTileType == Tile.Type.Solid || _otherTileType == Tile.Type.Door || _otherTileType == Tile.Type.Airlock)
             return true;
 
-        if (_otherTileType != Tile.TileType.Diagonal)
+        if (_otherTileType != Tile.Type.Diagonal)
             Debug.LogError("Wasn't expecting non-diagonals to be here! Handle it!");
 
         switch (_directionToOtherTile) {
@@ -234,7 +270,7 @@ public class Grid : MonoBehaviour {
         return null;
     }
     public Tile GetClosestFreeNode(Tile _tile) { // todo: diagonals can be seen as "free" depending on the usage - fix that! Removed diagonals from consideration for now.
-        if (_tile._Type_ == Tile.TileType.Empty && !_tile.IsOccupied)
+        if (_tile._WallType_ == Tile.Type.Empty && !_tile.IsOccupied)
             return _tile;
 
         List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
@@ -244,7 +280,7 @@ public class Grid : MonoBehaviour {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
-                if (_neighbours[i]._Type_ != Tile.TileType.Empty || _neighbours[i].IsOccupied)
+                if (_neighbours[i]._WallType_ != Tile.Type.Empty || _neighbours[i].IsOccupied)
                     continue;
 
                 return _neighbours[i];

@@ -3,9 +3,10 @@ using System.Collections;
 
 public class UVController : MonoBehaviour {
 
-    public Tile.TileType Type;
+    public Tile.Type Type;
     public Tile.TileOrientation Orientation;
-    public bool IsBottom = true;
+	public enum SortingLayerEnum { Floor, Bottom, Top }
+	public SortingLayerEnum SortingLayer;
 
     private MeshFilter myMeshFilter;
     private MeshRenderer myRenderer;
@@ -33,8 +34,8 @@ public class UVController : MonoBehaviour {
         cachedPropertyColor = Shader.PropertyToID("_Color");
     }
 
-	public bool HaveChangedGraphics = false;
 	public CachedAssets.DoubleInt Coordinates;
+
     public void ChangeAsset(CachedAssets.DoubleInt _assetIndices) {
         if (_assetIndices == null) {
             myRenderer.enabled = false;
@@ -75,7 +76,9 @@ public class UVController : MonoBehaviour {
     private int regularSortOrder = 0;
     public void Sort(int _gridY) {
         regularSortOrder = GetSortOrderFromGridY(_gridY);
-        if (!IsBottom)
+		if (SortingLayer == SortingLayerEnum.Floor)
+			regularSortOrder -= 1;
+		else if (SortingLayer == SortingLayerEnum.Top)
             regularSortOrder += 7;
 
         if(!customSortOrder.HasValue)

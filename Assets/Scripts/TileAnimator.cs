@@ -10,11 +10,8 @@ public class TileAnimator {
     public class TileAnimation {
         public CachedAssets.DoubleInt[] Bottom;
         public CachedAssets.DoubleInt[] Top;
-        //public TileAnimation(CachedAssets.DoubleInt[] _bottomFrames, CachedAssets.DoubleInt[] _topFrames) {
-        //    Bottom = _bottomFrames;
-        //    Top = _topFrames;
-        //}
-        private static List<CachedAssets.DoubleInt> frameList = new List<CachedAssets.DoubleInt>();
+
+		private static List<CachedAssets.DoubleInt> frameList = new List<CachedAssets.DoubleInt>();
         public TileAnimation(int bottomPosY, int topPosY, int amountOfFrames, int bottomForceFrameX = -1, int topForceFrameX = -1) {
 
             frameList.Clear();
@@ -134,9 +131,6 @@ public class TileAnimator {
         IsPaused = false;
 
         IsFinished = false;
-        timeSinceLastFrame = Time.time;
-        //animationRoutine = _Animate();
-        //Grid.Instance.StartCoroutine(animationRoutine);
     }
     public float GetProperWaitTimeForAnim(TileAnimation _anim) {
         return (Mathf.Max(_anim.Bottom.Length, _anim.Top.Length) + 1) / currentFPS;
@@ -149,36 +143,11 @@ public class TileAnimator {
     }
 
     public void StopAnimating() {
-        //if (animationRoutine == null)
-        //    return;
-
-        //Grid.Instance.StopCoroutine(animationRoutine);
-        //animationRoutine = null;
         IsFinished = true;
         owner.SetBuildingAllowed(true);
     }
 
-    //IEnumerator _Animate() {
-    //    while (!IsFinished) {
-    //        if (!IsPaused)
-    //            SwitchToNextFrame();
-
-    //        yield return new WaitForSeconds(1 / currentFPS);
-
-    //        if (IsFinished) {
-    //            // loop
-    //            if (Loop) {
-    //                CurrentFrame = StartFrame;
-    //                IsFinished = false;
-    //                continue;
-    //            }
-
-    //            owner.SetBuildingAllowed(true);
-    //        }
-    //    }
-    //}
-
-    float timeAtSwitchFrame = -1000;
+	float timeAtSwitchFrame = -1000;
     public void LateUpdate() {
         if (IsFinished)
             return;
@@ -204,10 +173,7 @@ public class TileAnimator {
 
     private CachedAssets.DoubleInt currentFrameBottom;
     private CachedAssets.DoubleInt currentFrameTop;
-    private float timeSinceLastFrame;
     void SwitchToNextFrame() {
-
-        timeSinceLastFrame = Time.time;
 
         // set new frame and get graphics
         CurrentFrame = Mathf.Clamp(PlayForward ? CurrentFrame + 1 : CurrentFrame - 1, Mathf.Min(StartFrame, EndFrame), Mathf.Max(StartFrame, EndFrame));
@@ -215,7 +181,7 @@ public class TileAnimator {
         // apply new frame
         currentFrameBottom = (Animation.Bottom != null && Animation.Bottom.Length > CurrentFrame) ? Animation.Bottom[CurrentFrame] : null;
         currentFrameTop = (Animation.Top != null && Animation.Top.Length > CurrentFrame) ? Animation.Top[CurrentFrame] : null;
-        owner.ChangeGraphics(currentFrameBottom, currentFrameTop);
+        owner.ChangeWallGraphics(currentFrameBottom, currentFrameTop);
 
         IsFinished = CurrentFrame == EndFrame;
         if (IsFinished) {

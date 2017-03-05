@@ -118,7 +118,7 @@ public class Task {
                     }
 
                     // force actor to lie down if the next tile is not adjacent to a wall (looks better)
-                    ForceActorLieDown(nextWaypointTile._Type_ == Tile.TileType.Empty && !nextWaypointTile.HasConnectable_B && !nextWaypointTile.HasConnectable_L && !nextWaypointTile.HasConnectable_R && !nextWaypointTile.HasConnectable_T);
+					ForceActorLieDown(nextWaypointTile._WallType_ == Tile.Type.Empty && !nextWaypointTile.IsBlocked_B && !nextWaypointTile.IsBlocked_L && !nextWaypointTile.IsBlocked_R && !nextWaypointTile.IsBlocked_T);
 
                     // set time so movement is kept at a good pace
                     timeAtPrevWaypoint = Time.time;

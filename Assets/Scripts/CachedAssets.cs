@@ -152,48 +152,47 @@ public class CachedAssets : MonoBehaviour {
             return AllAssetPurposes.FindIndex(x => x.Contains(id)) * 2;
         }
 
+        public static DoubleInt floor_Single = new DoubleInt(0, GetCoordY(P.Floor_Single));
+        public static DoubleInt floor_FourWay = new DoubleInt(1, GetCoordY(P.Floor_Fourway));
+        public static DoubleInt floor_FourWay2 = new DoubleInt(2, GetCoordY(P.Floor_Fourway2));
 
+        public static DoubleInt floor_Vertical_T = new DoubleInt(0, GetCoordY(P.Floor_Vertical_T));
+        public static DoubleInt floor_Vertical_M = new DoubleInt(1, GetCoordY(P.Floor_Vertical_M));
+        public static DoubleInt floor_Vertical_B = new DoubleInt(2, GetCoordY(P.Floor_Vertical_B));
+        public static DoubleInt floor_Horizontal_L = new DoubleInt(3, GetCoordY(P.Floor_Horizontal_L));
+        public static DoubleInt floor_Horizontal_M = new DoubleInt(4, GetCoordY(P.Floor_Horizontal_M));
+        public static DoubleInt floor_Horizontal_R = new DoubleInt(5, GetCoordY(P.Floor_Horizontal_R));
 
-        public static DoubleInt floor_Single = new DoubleInt(0, GetCoordY(P.Wall_Single));
-        public static DoubleInt floor_FourWay = new DoubleInt(1, GetCoordY(P.Wall_Fourway));
-        public static DoubleInt floor_FourWay2 = new DoubleInt(1, GetCoordY(P.Wall_Fourway2));
+        public static DoubleInt floor_Corner_TopRight = new DoubleInt(0, GetCoordY(P.Floor_Corner_TR));
+        public static DoubleInt floor_Corner_TopLeft = new DoubleInt(1, GetCoordY(P.Floor_Corner_TL));
+        public static DoubleInt floor_Corner_BottomRight = new DoubleInt(2, GetCoordY(P.Floor_Corner_BR));
+        public static DoubleInt floor_Corner_BottomLeft = new DoubleInt(3, GetCoordY(P.Floor_Corner_BL));
+        public static DoubleInt floor_Tee_Right = new DoubleInt(4, GetCoordY(P.Floor_Tee_R));
+        public static DoubleInt floor_Tee_Left = new DoubleInt(5, GetCoordY(P.Floor_Tee_L));
+        public static DoubleInt floor_Tee_Top = new DoubleInt(6, GetCoordY(P.Floor_Tee_T));
+        public static DoubleInt floor_Tee_Bottom = new DoubleInt(7, GetCoordY(P.Floor_Tee_B));
 
-        public static DoubleInt floor_Vertical_T = new DoubleInt(0, GetCoordY(P.Wall_Vertical_T));
-        public static DoubleInt floor_Vertical_M = new DoubleInt(1, GetCoordY(P.Wall_Vertical_M));
-        public static DoubleInt floor_Vertical_B = new DoubleInt(2, GetCoordY(P.Wall_Vertical_B));
-        public static DoubleInt floor_Horizontal_L = new DoubleInt(3, GetCoordY(P.Wall_Horizontal_L));
-        public static DoubleInt floor_Horizontal_M = new DoubleInt(4, GetCoordY(P.Wall_Horizontal_M));
-        public static DoubleInt floor_Horizontal_R = new DoubleInt(5, GetCoordY(P.Wall_Horizontal_R));
+		public static DoubleInt floor_Corner2_TopRight = new DoubleInt(0, GetCoordY(P.Floor_Corner2_TR));
+		public static DoubleInt floor_Corner2_TopLeft = new DoubleInt(1, GetCoordY(P.Floor_Corner2_TL));
+		public static DoubleInt floor_Corner2_BottomRight = new DoubleInt(2, GetCoordY(P.Floor_Corner2_BR));
+		public static DoubleInt floor_Corner2_BottomLeft = new DoubleInt(3, GetCoordY(P.Floor_Corner2_BL));
+        public static DoubleInt floor_Tee2_Right = new DoubleInt(4, GetCoordY(P.Floor_Tee2_R));
+        public static DoubleInt floor_Tee2_Left = new DoubleInt(5, GetCoordY(P.Floor_Tee2_L));
+        public static DoubleInt floor_Tee2_Top = new DoubleInt(6, GetCoordY(P.Floor_Tee2_T));
+        public static DoubleInt floor_Tee2_Bottom = new DoubleInt(7, GetCoordY(P.Floor_Tee2_B));
 
-        public static DoubleInt floor_Corner_TopRight = new DoubleInt(0, GetCoordY(P.Wall_Corner_TR));
-        public static DoubleInt floor_Corner_TopLeft = new DoubleInt(1, GetCoordY(P.Wall_Corner_TL));
-        public static DoubleInt floor_Corner_BottomRight = new DoubleInt(2, GetCoordY(P.Wall_Corner_BR));
-        public static DoubleInt floor_Corner_BottomLeft = new DoubleInt(3, GetCoordY(P.Wall_Corner_BL));
-        public static DoubleInt floor_Corner2_TopRight = new DoubleInt(0, GetCoordY(P.Wall_Corner2_TR));
-        public static DoubleInt floor_Corner2_TopLeft = new DoubleInt(1, GetCoordY(P.Wall_Corner2_TL));
-        public static DoubleInt floor_Corner2_BottomRight = new DoubleInt(2, GetCoordY(P.Wall_Corner2_BR));
-        public static DoubleInt floor_Corner2_BottomLeft = new DoubleInt(3, GetCoordY(P.Wall_Corner2_BL));
-        public static DoubleInt floor_Tee_Right = new DoubleInt(4, GetCoordY(P.Wall_Tee_R));
-        public static DoubleInt floor_Tee_Left = new DoubleInt(5, GetCoordY(P.Wall_Tee_L));
-        public static DoubleInt floor_Tee_Top = new DoubleInt(6, GetCoordY(P.Wall_Tee_T));
-        public static DoubleInt floor_Tee_Bottom = new DoubleInt(7, GetCoordY(P.Wall_Tee_B));
-        public static DoubleInt floor_Tee2_Right = new DoubleInt(4, GetCoordY(P.Wall_Tee2_R));
-        public static DoubleInt floor_Tee2_Left = new DoubleInt(5, GetCoordY(P.Wall_Tee2_L));
-        public static DoubleInt floor_Tee2_Top = new DoubleInt(6, GetCoordY(P.Wall_Tee2_T));
-        public static DoubleInt floor_Tee2_Bottom = new DoubleInt(7, GetCoordY(P.Wall_Tee2_B));
-
-        public static DoubleInt floor_Diagonal_TopRight = new DoubleInt(0, GetCoordY(P.Wall_Diagonal_TR));
-        public static DoubleInt floor_Diagonal_TopLeft = new DoubleInt(1, GetCoordY(P.Wall_Diagonal_TL));
-        public static DoubleInt floor_Diagonal_BottomRight = new DoubleInt(2, GetCoordY(P.Wall_Diagonal_BR));
-        public static DoubleInt floor_Diagonal_BottomLeft = new DoubleInt(3, GetCoordY(P.Wall_Diagonal_BL));
-        public static DoubleInt floor_Diagonal2_TopRight = new DoubleInt(0, GetCoordY(P.Wall_Diagonal2_TR));
-        public static DoubleInt floor_Diagonal2_TopLeft = new DoubleInt(1, GetCoordY(P.Wall_Diagonal2_TL));
-        public static DoubleInt floor_Diagonal2_BottomRight = new DoubleInt(2, GetCoordY(P.Wall_Diagonal2_BR));
-        public static DoubleInt floor_Diagonal2_BottomLeft = new DoubleInt(3, GetCoordY(P.Wall_Diagonal2_BL));
+        public static DoubleInt floor_Diagonal_TopRight = new DoubleInt(0, GetCoordY(P.Floor_Diagonal_TR));
+        public static DoubleInt floor_Diagonal_TopLeft = new DoubleInt(1, GetCoordY(P.Floor_Diagonal_TL));
+        public static DoubleInt floor_Diagonal_BottomRight = new DoubleInt(2, GetCoordY(P.Floor_Diagonal_BR));
+        public static DoubleInt floor_Diagonal_BottomLeft = new DoubleInt(3, GetCoordY(P.Floor_Diagonal_BL));
+        public static DoubleInt floor_Diagonal2_TopRight = new DoubleInt(4, GetCoordY(P.Floor_Diagonal2_TR));
+        public static DoubleInt floor_Diagonal2_TopLeft = new DoubleInt(5, GetCoordY(P.Floor_Diagonal2_TL));
+        public static DoubleInt floor_Diagonal2_BottomRight = new DoubleInt(6, GetCoordY(P.Floor_Diagonal2_BR));
+        public static DoubleInt floor_Diagonal2_BottomLeft = new DoubleInt(7, GetCoordY(P.Floor_Diagonal2_BL));
 
         public static DoubleInt wall_Single = new DoubleInt(0, GetCoordY(P.Wall_Single));
         public static DoubleInt wall_FourWay = new DoubleInt(1, GetCoordY(P.Wall_Fourway));
-        public static DoubleInt wall_FourWay2 = new DoubleInt(1, GetCoordY(P.Wall_Fourway2));
+        public static DoubleInt wall_FourWay2 = new DoubleInt(2, GetCoordY(P.Wall_Fourway2));
 
         public static DoubleInt wall_Vertical_T = new DoubleInt(0, GetCoordY(P.Wall_Vertical_T));
         public static DoubleInt wall_Vertical_M = new DoubleInt(1, GetCoordY(P.Wall_Vertical_M));
@@ -206,14 +205,15 @@ public class CachedAssets : MonoBehaviour {
         public static DoubleInt wall_Corner_TopLeft = new DoubleInt(1, GetCoordY(P.Wall_Corner_TL));
         public static DoubleInt wall_Corner_BottomRight = new DoubleInt(2, GetCoordY(P.Wall_Corner_BR));
         public static DoubleInt wall_Corner_BottomLeft = new DoubleInt(3, GetCoordY(P.Wall_Corner_BL));
-        public static DoubleInt wall_Corner2_TopRight = new DoubleInt(0, GetCoordY(P.Wall_Corner2_TR));
-        public static DoubleInt wall_Corner2_TopLeft = new DoubleInt(1, GetCoordY(P.Wall_Corner2_TL));
-        public static DoubleInt wall_Corner2_BottomRight = new DoubleInt(2, GetCoordY(P.Wall_Corner2_BR));
-        public static DoubleInt wall_Corner2_BottomLeft = new DoubleInt(3, GetCoordY(P.Wall_Corner2_BL));
         public static DoubleInt wall_Tee_Right = new DoubleInt(4, GetCoordY(P.Wall_Tee_R));
         public static DoubleInt wall_Tee_Left = new DoubleInt(5, GetCoordY(P.Wall_Tee_L));
         public static DoubleInt wall_Tee_Top = new DoubleInt(6, GetCoordY(P.Wall_Tee_T));
         public static DoubleInt wall_Tee_Bottom = new DoubleInt(7, GetCoordY(P.Wall_Tee_B));
+
+		public static DoubleInt wall_Corner2_TopRight = new DoubleInt(0, GetCoordY(P.Wall_Corner2_TR));
+		public static DoubleInt wall_Corner2_TopLeft = new DoubleInt(1, GetCoordY(P.Wall_Corner2_TL));
+		public static DoubleInt wall_Corner2_BottomRight = new DoubleInt(2, GetCoordY(P.Wall_Corner2_BR));
+		public static DoubleInt wall_Corner2_BottomLeft = new DoubleInt(3, GetCoordY(P.Wall_Corner2_BL));
         public static DoubleInt wall_Tee2_Right = new DoubleInt(4, GetCoordY(P.Wall_Tee2_R));
         public static DoubleInt wall_Tee2_Left = new DoubleInt(5, GetCoordY(P.Wall_Tee2_L));
         public static DoubleInt wall_Tee2_Top = new DoubleInt(6, GetCoordY(P.Wall_Tee2_T));
@@ -223,10 +223,10 @@ public class CachedAssets : MonoBehaviour {
         public static DoubleInt wall_Diagonal_TopLeft = new DoubleInt(1, GetCoordY(P.Wall_Diagonal_TL));
         public static DoubleInt wall_Diagonal_BottomRight = new DoubleInt(2, GetCoordY(P.Wall_Diagonal_BR));
         public static DoubleInt wall_Diagonal_BottomLeft = new DoubleInt(3, GetCoordY(P.Wall_Diagonal_BL));
-        public static DoubleInt wall_Diagonal2_TopRight = new DoubleInt(0, GetCoordY(P.Wall_Diagonal2_TR));
-        public static DoubleInt wall_Diagonal2_TopLeft = new DoubleInt(1, GetCoordY(P.Wall_Diagonal2_TL));
-        public static DoubleInt wall_Diagonal2_BottomRight = new DoubleInt(2, GetCoordY(P.Wall_Diagonal2_BR));
-        public static DoubleInt wall_Diagonal2_BottomLeft = new DoubleInt(3, GetCoordY(P.Wall_Diagonal2_BL));
+        public static DoubleInt wall_Diagonal2_TopRight = new DoubleInt(4, GetCoordY(P.Wall_Diagonal2_TR));
+        public static DoubleInt wall_Diagonal2_TopLeft = new DoubleInt(5, GetCoordY(P.Wall_Diagonal2_TL));
+        public static DoubleInt wall_Diagonal2_BottomRight = new DoubleInt(6, GetCoordY(P.Wall_Diagonal2_BR));
+        public static DoubleInt wall_Diagonal2_BottomLeft = new DoubleInt(7, GetCoordY(P.Wall_Diagonal2_BL));
 
         public static TileAnimator.TileAnimation anim_DoorVertical_Open = new TileAnimator.TileAnimation(GetCoordY(P.DoorVertical_BOTTOM), GetCoordY(P.DoorVertical_BOTTOM), 4);
         public static TileAnimator.TileAnimation anim_DoorVertical_Close = new TileAnimator.TileAnimation(GetCoordY(P.DoorVertical_BOTTOM), GetCoordY(P.DoorVertical_BOTTOM), 4).Reverse();
@@ -264,11 +264,11 @@ public class CachedAssets : MonoBehaviour {
         Instance = this;
     }
 
-    public DoubleInt GetAssetForTile(Tile.TileType _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isBottom, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
+    public DoubleInt GetWallAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isBottom, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
         switch (_tileType) {
-            case Tile.TileType.Empty:
+            case Tile.Type.Empty:
                 return null;
-            case Tile.TileType.Wall:
+            case Tile.Type.Solid:
                 if (!_isBottom) // for now at least
                     return null;
 
@@ -303,7 +303,7 @@ public class CachedAssets : MonoBehaviour {
                 else if (_hasConnection_Bottom) return WallSet.wall_Vertical_T;
                 else return WallSet.wall_Single;
 
-            case Tile.TileType.Diagonal:
+            case Tile.Type.Diagonal:
                 switch (_tileOrientation) {
                     case Tile.TileOrientation.BottomLeft:
                         return (_isBottom ? null : WallSet.wall_Diagonal_BottomLeft);
@@ -313,9 +313,10 @@ public class CachedAssets : MonoBehaviour {
                         return (_isBottom ? WallSet.wall_Diagonal_TopLeft : null);
                     case Tile.TileOrientation.TopRight:
                         return (_isBottom ? WallSet.wall_Diagonal_TopRight : null);
+					default:
+						throw new System.Exception (_tileOrientation + " is not supported by diagonals!");
                 }
-                break;
-            case Tile.TileType.Door:
+            case Tile.Type.Door:
                 switch (_tileOrientation) {
                     case Tile.TileOrientation.None:
                     case Tile.TileOrientation.Bottom:
@@ -326,7 +327,7 @@ public class CachedAssets : MonoBehaviour {
                         return _isBottom ? WallSet.anim_DoorHorizontal_Open.GetBottomFirstFrame() : WallSet.anim_DoorHorizontal_Open.GetTopFirstFrame();
                 }
                 break;
-            case Tile.TileType.Airlock:
+            case Tile.Type.Airlock:
                 switch (_tileOrientation) {
                     case Tile.TileOrientation.None:
                     case Tile.TileOrientation.Bottom:
@@ -343,6 +344,64 @@ public class CachedAssets : MonoBehaviour {
 
         return null;
     }
+
+	public DoubleInt GetFloorAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
+		switch (_tileType) {
+			case Tile.Type.Empty:
+				return null;
+			case Tile.Type.Solid:
+				if (_hasConnection_Left) {
+					if (_hasConnection_Top) {
+						if (_hasConnection_Right) {
+							if (_hasConnection_Bottom) return WallSet.floor_FourWay;
+							else return WallSet.floor_Tee_Top;
+						}
+						else if (_hasConnection_Bottom) return WallSet.floor_Tee_Left;
+						else return WallSet.floor_Corner_TopLeft;
+					}
+					else if (_hasConnection_Right) {
+						if (_hasConnection_Bottom) return WallSet.floor_Tee_Bottom;
+						else return WallSet.floor_Horizontal_M;
+					}
+					else if (_hasConnection_Bottom) return WallSet.floor_Corner_BottomLeft;
+					else return WallSet.floor_Horizontal_R;
+				}
+				else if (_hasConnection_Top) {
+					if (_hasConnection_Right) {
+						if (_hasConnection_Bottom) return WallSet.floor_Tee_Right;
+						else return WallSet.floor_Corner_TopRight;
+					}
+					else if (_hasConnection_Bottom) return WallSet.floor_Vertical_M;
+					else return WallSet.floor_Vertical_B;
+				}
+				else if (_hasConnection_Right) {
+					if (_hasConnection_Bottom) return WallSet.floor_Corner_BottomRight;
+					else return WallSet.floor_Horizontal_L;
+				}
+				else if (_hasConnection_Bottom) return WallSet.floor_Vertical_T;
+				else return WallSet.floor_Single;
+
+			case Tile.Type.Diagonal:
+				switch (_tileOrientation) {
+					case Tile.TileOrientation.BottomLeft:
+						return (WallSet.floor_Diagonal_BottomLeft);
+					case Tile.TileOrientation.BottomRight:
+						return (WallSet.floor_Diagonal_BottomRight);
+					case Tile.TileOrientation.TopLeft:
+						return (WallSet.floor_Diagonal_TopLeft);
+					case Tile.TileOrientation.TopRight:
+						return (WallSet.floor_Diagonal_TopRight);
+				}
+				break;
+			case Tile.Type.Door:
+			case Tile.Type.Airlock:
+				throw new System.Exception (_tileType.ToString() + " does not apply to Floor!");
+			default:
+				throw new System.NotImplementedException(_tileType + " hasn't been properly implemented yet!");
+		}
+
+		return null;
+	}
 
     //public TileAnimator.TileAnimation[] GetAnimationForTile(TileAnimator.AnimationContextEnum _context, Tile.TileType _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex) {
     //    switch (_tileType) {

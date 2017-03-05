@@ -2,27 +2,39 @@
 
 public class Tile : IHeapItem<Tile> {
 
-    public enum TileType { Empty, Wall, Diagonal, Door, Airlock }
-    private TileType type = TileType.Empty;
-    public TileType _Type_ { get { return type; } }
-    private TileType prevType = TileType.Empty;
-    public TileType _PrevType_ { get { return prevType; } }
+    public enum Type { Empty, Solid, Diagonal, Door, Airlock }
+	private Type wallType = Type.Empty;
+	public Type _WallType_ { get { return wallType; } private set { wallType = value; }}
+	private Type floorType = Type.Empty;
+	public Type _FloorType_ { get { return floorType; } private set{ floorType = value; } }
+    private Type prevType = Type.Empty;
+    public Type _PrevType_ { get { return prevType; } }
     public enum TileOrientation { None, Bottom, BottomLeft, Left, TopLeft, Top, TopRight, Right, BottomRight }
     private TileOrientation orientation = TileOrientation.None;
-    public TileOrientation _Orientation_ { get { return orientation; } }
+	public TileOrientation _Orientation_ { get { return orientation; } private set{ orientation = value; } }
+	private TileOrientation floorOrientation = TileOrientation.None;
+	public TileOrientation _FloorOrientation_ { get { return floorOrientation; } private set{ floorOrientation = value; } }
     private TileOrientation prevOrientation = TileOrientation.None;
-    public bool _IsHorizontal_ { get { return orientation == TileOrientation.Left || orientation == TileOrientation.Right; } }
-    public bool _IsVertical_ { get { return orientation == TileOrientation.Bottom || orientation == TileOrientation.Top; } }
-    Tile.TileOrientation GetReverseDirection(Tile.TileOrientation _direction) {
+	public bool _IsHorizontal_ { get { return _Orientation_ == TileOrientation.Left || _Orientation_ == TileOrientation.Right; } }
+	public bool _IsVertical_ { get { return _Orientation_ == TileOrientation.Bottom || _Orientation_ == TileOrientation.Top; } }
+    public static TileOrientation GetReverseDirection(TileOrientation _direction) {
         switch (_direction) {
-            case Tile.TileOrientation.Bottom:
-                return Tile.TileOrientation.Top;
-            case Tile.TileOrientation.Left:
-                return Tile.TileOrientation.Right;
-            case Tile.TileOrientation.Top:
-                return Tile.TileOrientation.Bottom;
-            case Tile.TileOrientation.Right:
-                return Tile.TileOrientation.Left;
+            case TileOrientation.Bottom:
+                return TileOrientation.Top;
+			case TileOrientation.BottomLeft:
+				return TileOrientation.TopRight;
+            case TileOrientation.Left:
+                return TileOrientation.Right;
+			case TileOrientation.TopLeft:
+				return TileOrientation.BottomRight;
+			case TileOrientation.Top:
+                return TileOrientation.Bottom;
+			case TileOrientation.TopRight:
+				return TileOrientation.BottomLeft;
+            case TileOrientation.Right:
+                return TileOrientation.Left;
+			case TileOrientation.BottomRight:
+				return TileOrientation.TopLeft;
         }
         return Tile.TileOrientation.None;
     }
@@ -38,10 +50,10 @@ public class Tile : IHeapItem<Tile> {
     public Vector3 DefaultPositionWorld { get; private set; }
     public Vector3 CharacterPositionWorld { // the position a character should stand on (exists to better simulate zero-g)
         get {
-            if (type == TileType.Empty) {
+			if (_WallType_ == Type.Empty) {
                 Vector3 _offset = Vector3.zero;
-                _offset.x = IsBlocked_L ? -0.25f : IsBlocked_R ? 0.25f : 0;
-                _offset.y = IsBlocked_B ? -0.25f : IsBlocked_T ? 0.25f : 0;
+                _offset.x = IsBlocked_L ? -0.4f : IsBlocked_R ? 0.4f : 0;
+                _offset.y = IsBlocked_B ? -0.4f : IsBlocked_T ? 0.4f : 0;
                 return DefaultPositionWorld + _offset;
             }
             else
@@ -53,11 +65,19 @@ public class Tile : IHeapItem<Tile> {
     public bool CanConnect_T { get; private set; }
     public bool CanConnect_R { get; private set; }
     public bool CanConnect_B { get; private set; }
+	public bool CanConnectFloor_L { get; private set; }
+	public bool CanConnectFloor_T { get; private set; }
+	public bool CanConnectFloor_R { get; private set; }
+	public bool CanConnectFloor_B { get; private set; }
 
     [HideInInspector] public bool HasConnectable_L = false;
     [HideInInspector] public bool HasConnectable_T = false;
     [HideInInspector] public bool HasConnectable_R = false;
     [HideInInspector] public bool HasConnectable_B = false;
+	[HideInInspector] public bool HasConnectableFloor_L = false;
+	[HideInInspector] public bool HasConnectableFloor_T = false;
+	[HideInInspector] public bool HasConnectableFloor_R = false;
+	[HideInInspector] public bool HasConnectableFloor_B = false;
 
     [HideInInspector] public bool IsBlocked_L = false;
     [HideInInspector] public bool IsBlocked_T = false;
@@ -69,6 +89,10 @@ public class Tile : IHeapItem<Tile> {
 	[HideInInspector] public Tile ConnectedDiagonal_T;
 	[HideInInspector] public Tile ConnectedDiagonal_R;
 	[HideInInspector] public Tile ConnectedDiagonal_B;
+	[HideInInspector] public Tile ConnectedDiagonalFloor_L;
+	[HideInInspector] public Tile ConnectedDiagonalFloor_T;
+	[HideInInspector] public Tile ConnectedDiagonalFloor_R;
+	[HideInInspector] public Tile ConnectedDiagonalFloor_B;
     [HideInInspector] public Tile ConnectedDoorOrAirlock_L;
 	[HideInInspector] public Tile ConnectedDoorOrAirlock_T;
 	[HideInInspector] public Tile ConnectedDoorOrAirlock_R;
@@ -85,6 +109,7 @@ public class Tile : IHeapItem<Tile> {
         set { heapIndex = value; }
     }
 
+	public UVController FloorQuad;
     public UVController BottomQuad;
     public UVController TopQuad;
     public TileAnimator Animator;
@@ -99,14 +124,17 @@ public class Tile : IHeapItem<Tile> {
         GridX = _gridX;
         GridY = _gridY;
     }
-
-    public void Init() {
-        BottomQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_BOTTOM_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
-        TopQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, Grid.WORLD_TOP_HEIGHT), Quaternion.identity)).GetComponent<UVController>();
+		
+	public void Init() {
+		FloorQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
+		BottomQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
+        TopQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
         
-        BottomQuad.name = "TileQuad " + GridX + "x" + GridY + " (" + WorldPosition.x + ", " + WorldPosition.y + ")"; 
+		FloorQuad.name = "TileQuad " + GridX + "x" + GridY + " (" + WorldPosition.x + ", " + WorldPosition.y + ")"; 
+		BottomQuad.transform.parent = FloorQuad.transform;
 		TopQuad.transform.parent = BottomQuad.transform;
 
+		FloorQuad.Setup ();
 		BottomQuad.Setup();
         TopQuad.Setup();
         Animator = new TileAnimator(this);
@@ -124,32 +152,30 @@ public class Tile : IHeapItem<Tile> {
     private static Tile cachedNeighbour_T;
     private static Tile cachedNeighbour_R;
     private static Tile cachedNeighbour_B;
-    public void SetTileType(TileType _newType, TileOrientation _newOrientation) {
+
+    public void SetTileType(Type _newType, TileOrientation _newOrientation) {
 
         Animator.StopAnimating();
 
-        BottomQuad.HaveChangedGraphics = true;
-        prevType = type;
-        type = _newType;
-        prevOrientation = orientation;
-        orientation = _newOrientation;
+		prevType = _WallType_;
+		_WallType_ = _newType;
+		prevOrientation = _Orientation_;
+		_Orientation_ = _newOrientation;
 
         BottomQuad.Type = _newType;
         BottomQuad.Orientation = _newOrientation;
-        BottomQuad.IsBottom = true;
+		BottomQuad.SortingLayer = UVController.SortingLayerEnum.Bottom;
         BottomQuad.Sort(GridY);
-        //bottomQuad.SortAsBottom(GridY);
 
         TopQuad.Type = _newType;
         TopQuad.Orientation = _newOrientation;
-        TopQuad.IsBottom = false;
+		TopQuad.SortingLayer = UVController.SortingLayerEnum.Top;
         TopQuad.Sort(GridY);
-        //topQuad.SortAsTop(GridY);
 
         ForceActorStopWhenPassingThis = false;
         MovementPenalty = 0; //TODO: use this for something!
 
-        if (prevType == TileType.Door) {
+		if (prevType == Type.Door || prevType == Type.Airlock) {
             Grid.Instance.grid[GridX + 1, GridY].SetBuildingAllowed(true);
             Grid.Instance.grid[GridX - 1, GridY].SetBuildingAllowed(true);
             Grid.Instance.grid[GridX, GridY + 1].SetBuildingAllowed(true);
@@ -160,7 +186,7 @@ public class Tile : IHeapItem<Tile> {
             Grid.Instance.grid[GridX, GridY - 1].ConnectedDoorOrAirlock_T = null;
             Grid.Instance.grid[GridX, GridY + 1].ConnectedDoorOrAirlock_B = null;
         }
-        if (prevType == TileType.Diagonal) {
+        if (prevType == Type.Diagonal) {
             if(GridX > 0)
                 Grid.Instance.grid[GridX - 1, GridY].ConnectedDiagonal_R = null;
             if(GridX < Grid.Instance.GridSizeX - 1)
@@ -169,97 +195,92 @@ public class Tile : IHeapItem<Tile> {
                 Grid.Instance.grid[GridX, GridY - 1].ConnectedDiagonal_T = null;
             if (GridY < Grid.Instance.GridSizeY - 1)
                 Grid.Instance.grid[GridX, GridY + 1].ConnectedDiagonal_B = null;
+
+			if ((prevOrientation == TileOrientation.BottomLeft && !CanConnectFloor_T && !CanConnectFloor_R) ||
+			   (prevOrientation == TileOrientation.TopLeft && !CanConnectFloor_B && !CanConnectFloor_R) ||
+			   (prevOrientation == TileOrientation.TopRight && !CanConnectFloor_B && !CanConnectFloor_L) ||
+			   (prevOrientation == TileOrientation.BottomRight && !CanConnectFloor_T && !CanConnectFloor_L))
+				SetFloorType (Type.Empty, _newOrientation);
         }
 
+		CanConnect_L = false;
+		CanConnect_T = false;
+		CanConnect_R = false;
+		CanConnect_B = false;
+
         switch (_newType) {
-            case TileType.Empty:
+            case Type.Empty:
                 Walkable = true;
                 DefaultPositionWorld = WorldPosition;
-
-                CanConnect_L = false;
-                CanConnect_T = false;
-                CanConnect_R = false;
-                CanConnect_B = false;
                 break;
-            case TileType.Wall:
+            case Type.Solid:
                 Walkable = false;
                 CanConnect_L = true;
                 CanConnect_T = true;
                 CanConnect_R = true;
                 CanConnect_B = true;
+
+				SetFloorType (Type.Empty, _newOrientation);
                 break;
-            case TileType.Diagonal:
+			case Type.Diagonal:
+				Walkable = true;
                 switch (_newOrientation) {
                     case TileOrientation.BottomLeft:
-                        Walkable = true;
                         DefaultPositionWorld = WorldPosition + new Vector3(0.25f, 0.25f, 0);
                         CanConnect_L = true;
-                        CanConnect_T = false;
-                        CanConnect_R = false;
                         CanConnect_B = true;
                         break;
                     case TileOrientation.TopLeft:
-                        Walkable = true;
                         DefaultPositionWorld = WorldPosition + new Vector3(0.25f, -0.25f, 0);
                         CanConnect_L = true;
                         CanConnect_T = true;
-                        CanConnect_R = false;
-                        CanConnect_B = false;
                         break;
                     case TileOrientation.TopRight:
-                        Walkable = true;
                         DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, -0.25f, 0);
-                        CanConnect_L = false;
                         CanConnect_T = true;
                         CanConnect_R = true;
-                        CanConnect_B = false;
                         break;
                     case TileOrientation.BottomRight:
-                        Walkable = true;
                         DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, 0.25f, 0);
-                        CanConnect_L = false;
-                        CanConnect_T = false;
                         CanConnect_R = true;
                         CanConnect_B = true;
                         break;
                 }
-                break;
-            case TileType.Door:
+				if (_FloorType_ != Type.Empty)
+					SetFloorType (Type.Diagonal, GetReverseDirection(_newOrientation));
+				break;
+            case Type.Door:
                 Walkable = true;
                 ForceActorStopWhenPassingThis = true;
-                switch (orientation) {
+				switch (_Orientation_) {
                     // vertical
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
                         DefaultPositionWorld = WorldPosition + new Vector3(0, -0.15f, 0);
 
-                        CanConnect_L = false;
                         CanConnect_T = true;
-                        CanConnect_R = false;
                         CanConnect_B = true;
                         break;
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
                         CanConnect_L = true;
-                        CanConnect_T = false;
                         CanConnect_R = true;
-                        CanConnect_B = false;
                         break;
                 }
+
+				SetFloorType (Type.Empty, _newOrientation);
                 break;
-            case TileType.Airlock:
+            case Type.Airlock:
                 Walkable = true;
                 ForceActorStopWhenPassingThis = true;
-                switch (orientation) {
+				switch (_Orientation_) {
                     // vertical
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
                         DefaultPositionWorld = WorldPosition + new Vector3(0, -0.25f, 0);
 
-                        CanConnect_L = false;
                         CanConnect_T = true;
-                        CanConnect_R = false;
                         CanConnect_B = true;
                         break;
                     // horizontal
@@ -268,138 +289,254 @@ public class Tile : IHeapItem<Tile> {
                         DefaultPositionWorld = WorldPosition + new Vector3(0, -0.35f, 0);
 
                         CanConnect_L = true;
-                        CanConnect_T = false;
                         CanConnect_R = true;
-                        CanConnect_B = false;
                         break;
                 }
+
+				SetFloorType (Type.Empty, _newOrientation);
                 break;
             default:
                 throw new System.Exception(_newType.ToString() + " has not been properly implemented yet!");
         }
 
-        cachedNeighbour_L = GridX > 0 ? Grid.Instance.grid[GridX - 1, GridY] : null;
-        if (cachedNeighbour_L != null)
-            UpdateNeighbour(cachedNeighbour_L, TileOrientation.Left);
+		cachedNeighbour_L = GridX > 0 ? Grid.Instance.grid[GridX - 1, GridY] : null;
+		cachedNeighbour_T = GridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[GridX, GridY + 1] : null;
+		cachedNeighbour_R = GridX < Grid.Instance.GridSizeX - 1 ? Grid.Instance.grid[GridX + 1, GridY] : null;
+		cachedNeighbour_B = GridY > 0 ? Grid.Instance.grid[GridX, GridY - 1] : null;
 
-        cachedNeighbour_T = GridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[GridX, GridY + 1] : null;
-        if (cachedNeighbour_T != null)
-            UpdateNeighbour(cachedNeighbour_T, TileOrientation.Top);
+		if (cachedNeighbour_L != null)
+			UpdateNeighbourWall(cachedNeighbour_L, TileOrientation.Left);
+		if (cachedNeighbour_T != null)
+			UpdateNeighbourWall(cachedNeighbour_T, TileOrientation.Top);
+		if (cachedNeighbour_R != null)
+			UpdateNeighbourWall(cachedNeighbour_R, TileOrientation.Right);
+		if (cachedNeighbour_B != null)
+			UpdateNeighbourWall(cachedNeighbour_B, TileOrientation.Bottom);
 
-        cachedNeighbour_R = GridX < Grid.Instance.GridSizeX - 1 ? Grid.Instance.grid[GridX + 1, GridY] : null;
-        if (cachedNeighbour_R != null)
-            UpdateNeighbour(cachedNeighbour_R, TileOrientation.Right);
-
-        cachedNeighbour_B = GridY > 0 ? Grid.Instance.grid[GridX, GridY - 1] : null;
-        if (cachedNeighbour_B != null)
-            UpdateNeighbour(cachedNeighbour_B, TileOrientation.Bottom);
-
-        ChangeGraphics(
-            CachedAssets.Instance.GetAssetForTile(type, orientation, 0, true, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
-			CachedAssets.Instance.GetAssetForTile(type, orientation, 0, false, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B));
+		ChangeWallGraphics (
+			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, true, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
+			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, false, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B));
     }
+	public void SetFloorType(Type _newType, TileOrientation _newOrientation){
 
-    void UpdateNeighbour(Tile _neighbour, TileOrientation _directionFromThisTile) {
+		if (_FloorType_ == Type.Diagonal) {
+			if(GridX > 0)
+				Grid.Instance.grid[GridX - 1, GridY].ConnectedDiagonalFloor_R = null;
+			if(GridX < Grid.Instance.GridSizeX - 1)
+				Grid.Instance.grid[GridX + 1, GridY].ConnectedDiagonalFloor_L = null;
+			if(GridY > 0)
+				Grid.Instance.grid[GridX, GridY - 1].ConnectedDiagonalFloor_T = null;
+			if (GridY < Grid.Instance.GridSizeY - 1)
+				Grid.Instance.grid[GridX, GridY + 1].ConnectedDiagonalFloor_B = null;
+		}
+
+		_FloorType_ = _newType;
+		_FloorOrientation_ = _newOrientation;
+
+		FloorQuad.Type = _newType;
+		FloorQuad.Orientation = _newOrientation;
+		FloorQuad.SortingLayer = UVController.SortingLayerEnum.Floor;
+		FloorQuad.Sort(GridY);
+
+		ForceActorStopWhenPassingThis = false;
+		MovementPenalty = 0; //TODO: use this for something!
+
+
+		CanConnectFloor_L = false;
+		CanConnectFloor_T = false;
+		CanConnectFloor_R = false;
+		CanConnectFloor_B = false;
+
+		switch (_newType) {
+			case Type.Empty:
+				break;
+			case Type.Solid:
+				CanConnectFloor_L = true;
+				CanConnectFloor_T = true;
+				CanConnectFloor_R = true;
+				CanConnectFloor_B = true;
+				break;
+			case Type.Diagonal:
+				switch (_newOrientation) {
+					case TileOrientation.BottomLeft:
+						CanConnectFloor_L = true;
+						CanConnectFloor_B = true;
+						break;
+					case TileOrientation.TopLeft:
+						CanConnectFloor_L = true;
+						CanConnectFloor_T = true;
+						break;
+					case TileOrientation.TopRight:
+						CanConnectFloor_T = true;
+						CanConnectFloor_R = true;
+						break;
+					case TileOrientation.BottomRight:
+						CanConnectFloor_R = true;
+						CanConnectFloor_B = true;
+						break;
+				}
+				break;
+			case Type.Door:
+			case Type.Airlock:
+				throw new System.Exception (_newType.ToString() + " isn't applicable to Floor!");
+			default:
+				throw new System.Exception(_newType.ToString() + " has not been properly implemented yet!");
+		}
+
+		cachedNeighbour_L = GridX > 0 ? Grid.Instance.grid[GridX - 1, GridY] : null;
+		cachedNeighbour_T = GridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[GridX, GridY + 1] : null;
+		cachedNeighbour_R = GridX < Grid.Instance.GridSizeX - 1 ? Grid.Instance.grid[GridX + 1, GridY] : null;
+		cachedNeighbour_B = GridY > 0 ? Grid.Instance.grid[GridX, GridY - 1] : null;
+		if (cachedNeighbour_L != null)
+			UpdateNeighbourFloor(cachedNeighbour_L, TileOrientation.Left);
+		if (cachedNeighbour_T != null)
+			UpdateNeighbourFloor(cachedNeighbour_T, TileOrientation.Top);
+		if (cachedNeighbour_R != null)
+			UpdateNeighbourFloor(cachedNeighbour_R, TileOrientation.Right);
+		if (cachedNeighbour_B != null)
+			UpdateNeighbourFloor(cachedNeighbour_B, TileOrientation.Bottom);
+
+		ChangeFloorGraphics (CachedAssets.Instance.GetFloorAssetForTile(_FloorType_, _FloorOrientation_, 0, HasConnectableFloor_L, HasConnectableFloor_T, HasConnectableFloor_R, HasConnectableFloor_B));
+	}
+
+	// WARNING: this doesn't support changing the type and orientation of the tile, so if you're gonna change the type of a tile
+	// you're gonna want to update its neighbours, but with something more fleshed out than this!
+    void UpdateNeighbourWall(Tile _neighbour, TileOrientation _directionFromThisTile) {
         switch (_directionFromThisTile) {
-            case TileOrientation.Bottom:
-                _neighbour.HasConnectable_T = CanConnect_B;
-                _neighbour.IsBlocked_T = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Top);
-                _neighbour.ConnectedDiagonal_T = (type == TileType.Diagonal && (orientation == TileOrientation.BottomLeft || orientation == TileOrientation.BottomRight)) ? this : null;
-                _neighbour.ConnectedDoorOrAirlock_T = (type == TileType.Door || type == TileType.Airlock) ? this : null;
+			case TileOrientation.Bottom:
+				_neighbour.HasConnectable_T = CanConnect_B;
+				_neighbour.IsBlocked_T = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Top);
+				_neighbour.ConnectedDiagonal_T = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.BottomLeft || _Orientation_ == TileOrientation.BottomRight)) ? this : null;
+				_neighbour.ConnectedDoorOrAirlock_T = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
                 // prevent building in front of door
-                if (type == TileType.Door && (orientation == TileOrientation.Left || orientation == TileOrientation.Right))
+				if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsHorizontal_)
                     _neighbour.SetBuildingAllowed(false);
                 break;
             case TileOrientation.Left:
-                _neighbour.HasConnectable_R = CanConnect_L;
-                _neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Left);
-                _neighbour.ConnectedDiagonal_R = (type == TileType.Diagonal && (orientation == TileOrientation.TopLeft || orientation == TileOrientation.BottomLeft)) ? this : null;
-                _neighbour.ConnectedDoorOrAirlock_R = (type == TileType.Door || type == TileType.Airlock) ? this : null;
+				_neighbour.HasConnectable_R = CanConnect_L;
+				_neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Left);
+				_neighbour.ConnectedDiagonal_R = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.BottomLeft)) ? this : null;
+				_neighbour.ConnectedDoorOrAirlock_R = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
                 // prevent building in front of door
-                if (type == TileType.Door && (orientation == TileOrientation.Top || orientation == TileOrientation.Bottom))
+				if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsVertical_)
                     _neighbour.SetBuildingAllowed(false);
                 break;
             case TileOrientation.Top:
-                _neighbour.HasConnectable_B = CanConnect_T;
-                _neighbour.IsBlocked_B = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Bottom);
-                _neighbour.ConnectedDiagonal_B = (type == TileType.Diagonal && (orientation == TileOrientation.TopLeft || orientation == TileOrientation.TopRight)) ? this : null;
-                _neighbour.ConnectedDoorOrAirlock_B = (type == TileType.Door || type == TileType.Airlock) ? this : null;
+				_neighbour.HasConnectable_B = CanConnect_T;
+				_neighbour.IsBlocked_B = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Bottom);
+				_neighbour.ConnectedDiagonal_B = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.TopRight)) ? this : null;
+				_neighbour.ConnectedDoorOrAirlock_B = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
-                if (type == TileType.Door) {
+				if (_WallType_ == Type.Door || _WallType_ == Type.Airlock) {
 
                     // prevent building in front of door
-                    if (orientation == TileOrientation.Left || orientation == TileOrientation.Right)
+					if (_IsHorizontal_)
                         _neighbour.SetBuildingAllowed(false);
 
                     // sort connected neighbour of door on top, so as to hide actors moving through it
-                    else if (orientation == TileOrientation.Top || orientation == TileOrientation.Bottom) {
+					else if (_IsVertical_) {
                         _neighbour.BottomQuad.SortCustom(TopQuad.GetSortOrder() - 2);
                         _neighbour.TopQuad.SortCustom(TopQuad.GetSortOrder() - 1);
                     }
                 }
-                else if (prevType == TileType.Door) {
+				else if (_PrevType_ == Type.Door || _PrevType_ == Type.Airlock) {
                     // reset to ordinary sorting
-                    if (prevOrientation == TileOrientation.Top || prevOrientation == TileOrientation.Bottom) {
+					if (_IsVertical_) {
                         _neighbour.BottomQuad.RemoveCustomSort();
                         _neighbour.TopQuad.RemoveCustomSort();
                     }
                 }
                 break;
             case TileOrientation.Right:
-                _neighbour.HasConnectable_L = CanConnect_R;
-                _neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(type, orientation, TileOrientation.Left);
-                _neighbour.ConnectedDiagonal_L = (type == TileType.Diagonal && (orientation == TileOrientation.BottomRight || orientation == TileOrientation.TopRight)) ? this : null;
-                _neighbour.ConnectedDoorOrAirlock_L = (type == TileType.Door || type == TileType.Airlock) ? this : null;
+				_neighbour.HasConnectable_L = CanConnect_R;
+				_neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Left);
+				_neighbour.ConnectedDiagonal_L = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.BottomRight || _Orientation_ == TileOrientation.TopRight)) ? this : null;
+				_neighbour.ConnectedDoorOrAirlock_L = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
                 // prevent building in front of door
-                if (type == TileType.Door && (orientation == TileOrientation.Top || orientation == TileOrientation.Bottom))
+				if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsVertical_)
                    _neighbour.SetBuildingAllowed(false);
                 break;
+			case TileOrientation.TopLeft:
+			case TileOrientation.TopRight:
+			case TileOrientation.BottomRight:
+			case TileOrientation.BottomLeft:
+				break;
 
             default:
                 throw new System.NotImplementedException("Ah! UpdateNeighbour() doesn't support " + _directionFromThisTile.ToString() + " as a direction yet!");
         }
 
-		_neighbour.ChangeGraphics (
-			CachedAssets.Instance.GetAssetForTile (_neighbour.type, _neighbour.orientation, 0, true, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B),
-			CachedAssets.Instance.GetAssetForTile (_neighbour.type, _neighbour.orientation, 0, false, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B));
+		_neighbour.ChangeWallGraphics (
+			CachedAssets.Instance.GetWallAssetForTile (_neighbour._WallType_, _neighbour._Orientation_, 0, true, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B),
+			CachedAssets.Instance.GetWallAssetForTile (_neighbour._WallType_, _neighbour._Orientation_, 0, false, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B));
+	}
+	// WARNING: this doesn't support changing the type and orientation of the tile, so if you're gonna change the type of a tile
+	// you're gonna want to update its neighbours, but with something more fleshed out than this!
+	void UpdateNeighbourFloor(Tile _neighbour, TileOrientation _directionFromThisTile) {
+		switch (_directionFromThisTile) {
+			case TileOrientation.Bottom:
+				_neighbour.HasConnectableFloor_T = CanConnectFloor_B;
+				_neighbour.ConnectedDiagonalFloor_T = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.BottomLeft || _FloorOrientation_ == TileOrientation.BottomRight)) ? this : null;
+				break;
+			case TileOrientation.Left:
+				_neighbour.HasConnectableFloor_R = CanConnectFloor_L;
+				_neighbour.ConnectedDiagonalFloor_R = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.TopLeft || _FloorOrientation_ == TileOrientation.BottomLeft)) ? this : null;
+				break;
+			case TileOrientation.Top:
+				_neighbour.HasConnectableFloor_B = CanConnectFloor_T;
+				_neighbour.ConnectedDiagonalFloor_B = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.TopLeft || _FloorOrientation_ == TileOrientation.TopRight)) ? this : null;
+				break;
+			case TileOrientation.Right:
+				_neighbour.HasConnectableFloor_L = CanConnectFloor_R;
+				_neighbour.ConnectedDiagonalFloor_L = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.BottomRight || _FloorOrientation_ == TileOrientation.TopRight)) ? this : null;
+				break;
+
+			default:
+				throw new System.NotImplementedException("Ah! UpdateNeighbour() doesn't support " + _directionFromThisTile.ToString() + " as a direction yet!");
+		}
+
+		_neighbour.ChangeFloorGraphics (CachedAssets.Instance.GetFloorAssetForTile(_neighbour._FloorType_, _neighbour._FloorOrientation_, 0, _neighbour.HasConnectableFloor_L, _neighbour.HasConnectableFloor_T, _neighbour.HasConnectableFloor_R, _neighbour.HasConnectableFloor_B));
 	}
    	
-	public void ChangeGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices) {
-        BottomQuad.ChangeAsset(_bottomAssetIndices);
+	public void ChangeWallGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices) {
+		BottomQuad.ChangeAsset(_bottomAssetIndices);
         TopQuad.ChangeAsset(_topAssetIndices);
     }
+	public void ChangeFloorGraphics(CachedAssets.DoubleInt _assetIndices) {
+		FloorQuad.ChangeAsset(_assetIndices);
+	}
 
     public void OnActorApproachingTile(TileOrientation _direction) {
-        switch (type) {
-            case TileType.Empty:
-            case TileType.Wall:
-            case TileType.Diagonal:
+		switch (_WallType_) {
+            case Type.Empty:
+            case Type.Solid:
+            case Type.Diagonal:
                 break;
-            case TileType.Door:
+            case Type.Door:
                 Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Open), _forward: true, _loop: false);
                 break;
-            case TileType.Airlock:
+            case Type.Airlock:
                 Animator.Animate(Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Open, _direction), _forward: true, _loop: false);
                 break;
             default:
-                throw new System.NotImplementedException(type + " hasn't been properly implemented yet!");
+				throw new System.NotImplementedException(_WallType_ + " hasn't been properly implemented yet!");
         }
     }
     TileAnimator.TileAnimation[] animationSequence;
     public void OnActorEnterTile(TileOrientation _direction, out float _yieldTime) {
         _yieldTime = 0;
-        switch (type) {
-            case TileType.Empty:
-            case TileType.Wall:
-            case TileType.Diagonal:
+		switch (_WallType_) {
+            case Type.Empty:
+            case Type.Solid:
+            case Type.Diagonal:
                 break;
-            case TileType.Door:
+            case Type.Door:
                 Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Close), _forward: true, _loop: false);
                 break;
-            case TileType.Airlock:
+            case Type.Airlock:
                 animationSequence = new TileAnimator.TileAnimation[] {
                     Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Close, _direction),
                     Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Wait, TileOrientation.None),
@@ -410,7 +547,7 @@ public class Tile : IHeapItem<Tile> {
                 _yieldTime = Animator.GetProperWaitTimeForAnim(animationSequence[0]) + Animator.GetProperWaitTimeForAnim(animationSequence[1]) + (Animator.GetProperWaitTimeForAnim(animationSequence[2]) * 0.5f);
                 break;
             default:
-                throw new System.NotImplementedException(type + " hasn't been properly implemented yet!");
+				throw new System.NotImplementedException(_WallType_ + " hasn't been properly implemented yet!");
         }
     }
 
@@ -418,27 +555,28 @@ public class Tile : IHeapItem<Tile> {
         Tile _neighbour;
         bool _isAdjacentHorizontally = false;
         bool _isAdjacentVertically = false;
+		_BuildingAllowed_ = false;
         if (_b) {
             int _gridX, _gridY;
             for (int y = -1; y <= 1; y++) {
                 for (int x = -1; x <= 1; x++) {
-                    if (x == 0 && y == 0)
-                        continue;
+					if (x == 0 && y == 0) // need to be able to remove the source of the non-allowance :/
+						continue;
 
-                    _gridX = GridX + x;
+					_gridX = GridX + x;
                     _gridY = GridY + y;
 
                     if (_gridX >= 0 && _gridX < Grid.Instance.GridSizeX && _gridY >= 0 && _gridY < Grid.Instance.GridSizeY) {
-                        _neighbour = Grid.Instance.grid[_gridX, _gridY];
+						_neighbour = Grid.Instance.grid[_gridX, _gridY];
 
                         _isAdjacentHorizontally = x != 0 && y == 0;
                         _isAdjacentVertically = x == 0 && y != 0;
 
-                        // is there an adjacent door? (non-diagonally)
-                        if ((_isAdjacentHorizontally || _isAdjacentVertically) &&  _neighbour._Type_ == TileType.Door) {
-                            // fail
+						// fail conditions
+                        if ((_isAdjacentHorizontally || _isAdjacentVertically) &&  _neighbour._WallType_ == Type.Door)
                             return;
-                        }
+						if ((_isAdjacentHorizontally || _isAdjacentVertically) &&  _neighbour._WallType_ == Type.Airlock)
+							return;
                     }
                 }
             }
