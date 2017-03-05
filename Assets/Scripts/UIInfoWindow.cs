@@ -4,7 +4,7 @@ using UnityEngine.UI;
 public class UIInfoWindow : MonoBehaviour {
 
     [HideInInspector]
-    public InteractiveObject.State State = InteractiveObject.State.Default;
+    public CanInspect.State State = CanInspect.State.Default;
     [SerializeField]
     private Sprite Background_Default;
     [SerializeField]
@@ -17,7 +17,7 @@ public class UIInfoWindow : MonoBehaviour {
     public Button[] UI_ComponentSlots;
 
     [HideInInspector]
-    public InteractiveObject OwnerIO;
+    public CanInspect OwnerInspectable;
 
     private Image ui_BackgroundImage;
     private ComponentObject trackedComponent;
@@ -47,12 +47,12 @@ public class UIInfoWindow : MonoBehaviour {
         UI_Health.text = ((int)((_current / _max) * 100)).ToString() + "%";
     }
 
-    public void ChangeState(InteractiveObject.State _state) {
+    public void ChangeState(CanInspect.State _state) {
         switch (_state) {
-            case InteractiveObject.State.Default:
+            case CanInspect.State.Default:
                 ui_BackgroundImage.sprite = Background_Default;
                 break;
-            case InteractiveObject.State.PickedUp:
+            case CanInspect.State.PickedUp:
                 ui_BackgroundImage.sprite = Background_PickedUp;
                 break;
         }
@@ -60,17 +60,17 @@ public class UIInfoWindow : MonoBehaviour {
         State = _state;
     }
 
-    public void ShowWindow(InteractiveObject _newIO, ComponentObject _trackedComponent = null) {
+    public void ShowWindow(CanInspect _newIO, ComponentObject _trackedComponent = null) {
         ToggleVisible(true, _newIO, _trackedComponent);
     }
     public void HideWindow() {
         ToggleVisible(false);
     }
-    void ToggleVisible (bool _enable, InteractiveObject _newIO = null, ComponentObject _trackedComponent = null) {
-        if (OwnerIO != null && _enable)
+    void ToggleVisible (bool _enable, CanInspect _newIO = null, ComponentObject _trackedComponent = null) {
+        if (OwnerInspectable != null && _enable)
             Debug.LogError(name + " already has an OwnerIO!");
 
-        OwnerIO = _newIO;
+        OwnerInspectable = _newIO;
         trackedComponent = _trackedComponent;
 
         for (int i = 0; i < images.Length; i++)
@@ -82,6 +82,6 @@ public class UIInfoWindow : MonoBehaviour {
 
         transform.SetParent(_enable ? myCanvas.transform : GUIManager.Instance.transform);
         if (!_enable)
-            OwnerIO = null;
+            OwnerInspectable = null;
     }
 }

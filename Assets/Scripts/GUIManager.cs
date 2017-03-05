@@ -27,11 +27,11 @@ public class GUIManager : MonoBehaviour {
 
     private class InfoWindowUser {
         public UIInfoWindow Window;
-        public InteractiveObject UserIO;
+        public CanInspect User;
 
-        public InfoWindowUser(UIInfoWindow _window, InteractiveObject _io) {
+        public InfoWindowUser(UIInfoWindow _window, CanInspect _inspectable) {
             Window = _window;
-            UserIO = _io;
+            User = _inspectable;
         }
     }
     private List<InfoWindowUser> currentInfoWindows = new List<InfoWindowUser>();
@@ -56,21 +56,21 @@ public class GUIManager : MonoBehaviour {
     //        OpenNewWindow(_io, _state, _type);
     //}
 
-    public void OpenNewWindow(InteractiveObject _io, InteractiveObject.State _state, WindowType _type) {
-        int _index = currentInfoWindows.FindIndex(x => x.UserIO == _io);
+    public void OpenNewWindow(CanInspect _inspectable, CanInspect.State _state, WindowType _type) {
+        int _index = currentInfoWindows.FindIndex(x => x.User == _inspectable);
         UIInfoWindow _currentWindow = null;
 
         if (_index > -1) {
             _currentWindow = currentInfoWindows[_index].Window;
 
-            if (_currentWindow.OwnerIO == _io) {
+            if (_currentWindow.OwnerInspectable == _inspectable) {
                 if (_state != _currentWindow.State)
                     _currentWindow.ChangeState(_state);
 
                 return;
             }
 
-            CloseInfoWindow(_io, _index);
+            CloseInfoWindow(_inspectable, _index);
         }
 
         //currentWindowType = _type;
@@ -99,13 +99,13 @@ public class GUIManager : MonoBehaviour {
         switch (_type) {
             case WindowType.Component:
             case WindowType.Component_SubWindow:
-                _trackedComponent = _io.GetComponent<ComponentObject>();
+                _trackedComponent = _inspectable.GetComponent<ComponentObject>();
                 break;
             case WindowType.ComponentHolder_x6:
             case WindowType.ComponentHolder_x9:
             case WindowType.ComponentHolder_15:
             case WindowType.ComponentHolder_x24:
-                currentComponentHolder = _io.GetComponent<ComponentHolder>();
+                currentComponentHolder = _inspectable.GetComponent<ComponentHolder>();
 
                 // set button-names to be the same as in the component-slots
                 ComponentObject.ComponentType _compType;
@@ -118,24 +118,24 @@ public class GUIManager : MonoBehaviour {
                 break;
         }
 
-        _currentWindow.UI_Image.sprite = _io.Selected_Sprite;
-        _currentWindow.UI_Name.text = _io.Selected_Name;
-        _currentWindow.UI_Desc.text = _io.Selected_Desc;
+        _currentWindow.UI_Image.sprite = _inspectable.Selected_Sprite;
+        _currentWindow.UI_Name.text = _inspectable.Selected_Name;
+        _currentWindow.UI_Desc.text = _inspectable.Selected_Desc;
 
         UITrackObject _tracker = _currentWindow.GetComponent<UITrackObject>();
         if (_tracker != null)
-            _tracker.trackTransform = _io.transform;
+            _tracker.trackTransform = _inspectable.transform;
 
         _currentWindow.ChangeState(_state);
-        _currentWindow.ShowWindow(_io, _trackedComponent);
-        currentInfoWindows.Add(new InfoWindowUser(_currentWindow, _io));
+        _currentWindow.ShowWindow(_inspectable, _trackedComponent);
+        currentInfoWindows.Add(new InfoWindowUser(_currentWindow, _inspectable));
 
-        UpdateButtonGraphics(_io);
+        UpdateButtonGraphics(_inspectable);
     }
 
-    public void CloseInfoWindow(InteractiveObject _io, int _index = -1) {
+    public void CloseInfoWindow(CanInspect _io, int _index = -1) {
         if (_index == -1) {
-            _index = currentInfoWindows.FindIndex(x => x.UserIO == _io);
+            _index = currentInfoWindows.FindIndex(x => x.User == _io);
             if (_index == -1)
                 return;
         }
@@ -158,11 +158,11 @@ public class GUIManager : MonoBehaviour {
     //}
 
     public void OnComponentSlotClicked(int _slotIndex) {
-        currentComponentHolder.OnComponentButtonClicked(_slotIndex);
+        currentComponentHolder.OnClickComponentSlot(_slotIndex);
     }
 
-    public void UpdateButtonGraphics(InteractiveObject _io) {
-        int _index = currentInfoWindows.FindIndex(x => x.UserIO == _io);
+    public void UpdateButtonGraphics(CanInspect _io) {
+        int _index = currentInfoWindows.FindIndex(x => x.User == _io);
         if (_index == -1 || currentInfoWindows[_index].Window.UI_ComponentSlots.Length == 0)
             return;
 

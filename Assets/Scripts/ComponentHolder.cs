@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using System.Collections;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(InteractiveObject))]
+[RequireComponent(typeof(CanInspect))]
 public class ComponentHolder : MonoBehaviour {
 
     [System.Serializable]
@@ -25,11 +25,11 @@ public class ComponentHolder : MonoBehaviour {
     [HideInInspector]
     public float CurrentEfficiency = 0;
     [HideInInspector]
-    public InteractiveObject IO;
+    public CanInspect IO;
 
 
     void Awake() {
-        IO = GetComponent<InteractiveObject>();
+        IO = GetComponent<CanInspect>();
         if (IO == null) {
             throw new System.Exception(name + " is missing required stuff!");
         }
@@ -42,9 +42,7 @@ public class ComponentHolder : MonoBehaviour {
                     continue;
 
                 GameObject _obj = Instantiate(ComponentManager.Instance.GetComponentPrefab(ComponentSlots[i].SlotType, ComponentSlots[i].SlotTypeID), Vector3.zero, Quaternion.identity) as GameObject;
-                _obj.transform.parent = transform;
-                _obj.transform.localPosition = Vector3.zero;
-                _obj.GetComponent<InteractiveObject>().Hide(true);
+				_obj.GetComponent<CanInspect> ().PutSomewhereElse (transform, Vector3.zero, true);
                 ComponentSlots[i].HeldComponent = _obj.GetComponent<ComponentObject>();
                 ComponentSlots[i].CurrentEfficiency = 1;
             }
@@ -89,54 +87,33 @@ public class ComponentHolder : MonoBehaviour {
         return true;
     }
 
-    public void OnComponentButtonClicked(int _index) {
-        // determine if the mouse's component is sufficient and what efficiency it will have
-        float _newComponentEfficiency = 0;
-        ComponentObject _cObj = null;
-        if (Mouse.Instance.PickedUpObject != null) {
-            _cObj = Mouse.Instance.PickedUpObject.GetComponent<ComponentObject>();
-            if (_cObj == null)
-                return;
-            if ((ComponentSlots[_index].SlotType != _cObj.Type && _cObj.StaticInfo.EfficiencyInOtherSlots.Find(x => x.Type == ComponentSlots[_index].SlotType) == null))
-                return; // stop if the held component doesn't match the slot and can't be jury-rigged into the slot
-
-            // determine how good a match the component is
-            if (ComponentSlots[_index].SlotTypeID == _cObj.TypeID)
-                _newComponentEfficiency = 1;
-            else {
-                int _effIndex = _cObj.StaticInfo.EfficiencyInOtherSlots.FindIndex(x => x.Type == ComponentSlots[_index].SlotType);
-                if (_effIndex > -1)
-                    _newComponentEfficiency = _cObj.StaticInfo.EfficiencyInOtherSlots[_effIndex].Efficiency;
-            }
-
-            if (_newComponentEfficiency == 0)
-                return; // stop if the held component is as good as a non-match
-        }
-
-        // detach component from slot
-        bool _changedComponents = false;
-        InteractiveObject _oldIO = null;
-        if (ComponentSlots[_index].HeldComponent != null) {
-            _changedComponents = true;
-
-            _oldIO = ComponentSlots[_index].HeldComponent.GetComponent<InteractiveObject>();
-            ComponentSlots[_index].HeldComponent = null;
-            ComponentSlots[_index].CurrentEfficiency = 0;
-        }
-
-        // switch mouse's component for slot's component
-        InteractiveObject _newIO;
-        if (Mouse.Instance.TrySwitchComponents(_oldIO, false, false, out _newIO) && _newIO != null) {
-            _changedComponents = true;
-
-            ComponentSlots[_index].HeldComponent = _newIO.GetComponent<ComponentObject>();
-            ComponentSlots[_index].CurrentEfficiency = _newComponentEfficiency;
-        }
+    public void OnClickComponentSlot(int _index) {
+		Mouse.Instance.OnClickComponentSlot (ComponentSlots[_index]);
 
         // tell everyone the great news
-        if (_changedComponents)
-            OnComponentsModified();
+        OnComponentsModified();
     }
+
+	public static bool DoesComponentFitInSlot(ComponentSlot _slot, ComponentObject _comp, out float _efficiency){
+		_efficiency = 0;
+
+		if ((_slot.SlotType != _comp.Type && _comp.StaticInfo.EfficiencyInOtherSlots.Find(x => x.Type == _slot.SlotType) == null))
+			return false; // stop if the held component doesn't match the slot and can't be jury-rigged into the slot
+
+		// determine how good a match the component is
+		if (_slot.SlotTypeID == _comp.TypeID)
+			_efficiency = 1;
+		else {
+			int _effIndex = _comp.StaticInfo.EfficiencyInOtherSlots.FindIndex(x => x.Type == _slot.SlotType);
+			if (_effIndex > -1)
+				_efficiency = _comp.StaticInfo.EfficiencyInOtherSlots[_effIndex].Efficiency;
+		}
+
+		if (_efficiency == 0)
+			return false; // stop if the held component is as good as a non-match
+
+		return true;
+	}
 
     public void OnComponentsModified() {
         CalculateEfficiency();
