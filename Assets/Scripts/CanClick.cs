@@ -10,7 +10,7 @@ public class CanClick : MonoBehaviour {
 	[HideInInspector] public bool Enabled = true;
 
 	public delegate void DefaultEvent();
-	public DefaultEvent OnWithinRange;
+	public DefaultEvent _OnWithinRange;
 	public DefaultEvent _OnLeftClickRelease;
 	public DefaultEvent _OnRightClickRelease;
 

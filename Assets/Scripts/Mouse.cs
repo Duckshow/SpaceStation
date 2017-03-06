@@ -79,8 +79,8 @@ public class Mouse : MonoBehaviour {
 			float magnitude = (screenPos - _ioScreenPos).magnitude * (Camera.main.orthographicSize / 10);
 			bool withinRange = magnitude < _clickable.ClickableRange;
 
-			if (withinRange && _clickable.OnWithinRange != null) {
-				_clickable.OnWithinRange ();
+			if (withinRange && _clickable._OnWithinRange != null) {
+				_clickable._OnWithinRange ();
 
 				if (leftClicked) {
 					_clickable.OnLeftClickRelease ();

@@ -38,10 +38,10 @@ public class CanInspect : MonoBehaviour {
     }
 
     void OnEnable() {
-		Clickable.OnWithinRange += OnWithinRange;
+		Clickable._OnWithinRange += OnWithinRange;
     }
     void OnDisable() {
-		Clickable.OnWithinRange -= OnWithinRange;
+		Clickable._OnWithinRange -= OnWithinRange;
     }
 
     void Start() {
