@@ -7,6 +7,7 @@ public class CanClick : MonoBehaviour {
 	public static List<CanClick> AllClickables = new List<CanClick>();
 
 	public float ClickableRange = 10;
+	public bool IsOnGUI = false;
 	[HideInInspector] public bool Enabled = true;
 
 	public delegate void DefaultEvent();

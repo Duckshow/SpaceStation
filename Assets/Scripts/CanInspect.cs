@@ -87,7 +87,6 @@ public class CanInspect : MonoBehaviour {
 
 		transform.parent = _transform;
 		transform.localPosition = _localPos;
-		Debug.Log ("Hide: " + _hide);
 		Hide(_hide);
 	}
 

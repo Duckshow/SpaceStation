@@ -59,12 +59,6 @@ public class Mouse : MonoBehaviour {
             }
         }
 
-        // if is over UI
-        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject(-1))
-            return;
-        if (Mode != ModeEnum.InspectAndMove)
-            return;
-
 		leftClicked = Input.GetMouseButtonUp(0);
 		rightClicked = Input.GetMouseButtonUp(1);
 		newLeftClickedInspectable = null;
@@ -74,15 +68,20 @@ public class Mouse : MonoBehaviour {
 			_clickable = CanClick.AllClickables [i];
 			if (!_clickable.Enabled)
 				continue;
-
-			Vector2 _ioScreenPos = Camera.main.WorldToScreenPoint(_clickable.transform.position); // optimization: can I track the mouse's worldpos rather than each object's screenpos?
+			if (!_clickable.IsOnGUI && Mode != ModeEnum.InspectAndMove)
+				continue;
+			if (!_clickable.IsOnGUI && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject (-1))
+				continue;
+			Vector2 _ioScreenPos = _clickable.IsOnGUI ? _clickable.transform.position : Camera.main.WorldToScreenPoint(_clickable.transform.position); // optimization: can I track the mouse's worldpos rather than each object's screenpos?
 			float magnitude = (screenPos - _ioScreenPos).magnitude * (Camera.main.orthographicSize / 10);
 			bool withinRange = magnitude < _clickable.ClickableRange;
 
-			if (withinRange && _clickable._OnWithinRange != null) {
-				_clickable._OnWithinRange ();
+			if (withinRange) {
+				if(_clickable._OnWithinRange != null)
+					_clickable._OnWithinRange ();
 
 				if (leftClicked) {
+					Debug.Log (_clickable.name);
 					_clickable.OnLeftClickRelease ();
 					newLeftClickedInspectable = _clickable.GetComponent<CanInspect>();
 					break;
