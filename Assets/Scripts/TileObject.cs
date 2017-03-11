@@ -18,6 +18,6 @@ public class TileObject : MonoBehaviour {
             transform.position = myTile.CharacterPositionWorld;
         else
             transform.position = myTile.DefaultPositionWorld;
-        myTile.IsOccupied = true;
+        myTile.IsOccupiedByObject = true;
 	}
 }

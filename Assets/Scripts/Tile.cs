@@ -40,7 +40,7 @@ public class Tile : IHeapItem<Tile> {
     }
 
     public bool Walkable { get; private set; }
-    public bool IsOccupied = false;
+    public bool IsOccupiedByObject = false;
     private bool buildingAllowed = true;
     public bool _BuildingAllowed_ { get { return buildingAllowed; } private set { buildingAllowed = value; } }
     public int GridX { get; private set; }
@@ -118,6 +118,8 @@ public class Tile : IHeapItem<Tile> {
     public int MovementPenalty { get; private set; }
     public bool ForceActorStopWhenPassingThis { get; private set; }
 
+	public int ThingsUsingThis = 0;
+
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY) {
         WorldPosition = _worldPos;
@@ -154,7 +156,6 @@ public class Tile : IHeapItem<Tile> {
     private static Tile cachedNeighbour_B;
 
     public void SetTileType(Type _newType, TileOrientation _newOrientation) {
-
         Animator.StopAnimating();
 
 		prevType = _WallType_;

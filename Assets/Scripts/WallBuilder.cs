@@ -196,7 +196,7 @@ public class WallBuilder : BuilderBase {
 			}
 
 			// is the tile occupied?
-			if (_tileUnderGhost.IsOccupied) {
+			if (_tileUnderGhost.IsOccupiedByObject) {
 				ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
 				return;
 			}
@@ -227,7 +227,7 @@ public class WallBuilder : BuilderBase {
 					return;
 				}
 				// is the tile below not cleared?
-				if (_tileUnderGhost._WallType_ != Tile.Type.Empty || _tileUnderGhost.IsOccupied) {
+				if (_tileUnderGhost._WallType_ != Tile.Type.Empty || _tileUnderGhost.IsOccupiedByObject) {
 					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
 					return;
 				}
@@ -292,7 +292,7 @@ public class WallBuilder : BuilderBase {
 				//}
 
 				// is the tile below not cleared?
-				if (_tileUnderGhost.IsOccupied) {
+				if (_tileUnderGhost.IsOccupiedByObject) {
 					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
 					return;
 				}
@@ -307,7 +307,7 @@ public class WallBuilder : BuilderBase {
 					return;
 				}
 				// is the tile below not cleared?
-				if (_tileUnderGhost._WallType_ != Tile.Type.Empty || _tileUnderGhost.IsOccupied) {
+				if (_tileUnderGhost._WallType_ != Tile.Type.Empty || _tileUnderGhost.IsOccupiedByObject) {
 					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
 					return;
 				}

@@ -163,7 +163,7 @@ public class FloorBuilder : BuilderBase {
 					return;
 				}
 				// is the tile below not cleared?
-				if (_tileUnderGhost._FloorType_ != Tile.Type.Empty || _tileUnderGhost.IsOccupied) {
+				if (_tileUnderGhost._FloorType_ != Tile.Type.Empty || _tileUnderGhost.IsOccupiedByObject) {
 					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
 					return;
 				}

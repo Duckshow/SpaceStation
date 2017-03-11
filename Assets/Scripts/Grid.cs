@@ -236,7 +236,7 @@ public class Grid : MonoBehaviour {
 
     public Tile GetClosestFreeNode(Vector3 _worldPosition) {
         Tile _tile = GetTileFromWorldPoint(_worldPosition);
-        if (_tile.Walkable && !_tile.IsOccupied)
+        if (_tile.Walkable && !_tile.IsOccupiedByObject)
             return _tile;
 
         List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
@@ -246,7 +246,7 @@ public class Grid : MonoBehaviour {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
-                if (!_neighbours[i].Walkable || _neighbours[i].IsOccupied)
+                if (!_neighbours[i].Walkable || _neighbours[i].IsOccupiedByObject)
                     continue;
 
                 return _neighbours[i];
@@ -270,7 +270,7 @@ public class Grid : MonoBehaviour {
         return null;
     }
     public Tile GetClosestFreeNode(Tile _tile) { // todo: diagonals can be seen as "free" depending on the usage - fix that! Removed diagonals from consideration for now.
-        if (_tile._WallType_ == Tile.Type.Empty && !_tile.IsOccupied)
+        if (_tile._WallType_ == Tile.Type.Empty && !_tile.IsOccupiedByObject)
             return _tile;
 
         List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
@@ -280,7 +280,7 @@ public class Grid : MonoBehaviour {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
-                if (_neighbours[i]._WallType_ != Tile.Type.Empty || _neighbours[i].IsOccupied)
+                if (_neighbours[i]._WallType_ != Tile.Type.Empty || _neighbours[i].IsOccupiedByObject)
                     continue;
 
                 return _neighbours[i];
