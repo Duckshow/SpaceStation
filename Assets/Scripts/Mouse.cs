@@ -7,23 +7,25 @@ public class Mouse : MonoBehaviour {
 
     public static Mouse Instance;
 
+	public enum MouseStateEnum { None, Click, Hold, Release }
+	public static MouseStateEnum StateLeft;
+	public static MouseStateEnum StateRight;
+	public static bool IsOverGUI { get; private set; }
+
     [SerializeField] private WallBuilder WallBuilding;
 	[SerializeField] private FloorBuilder FloorBuilding;
+	[SerializeField] private PlaceObjects ObjectPlacing;
 
 	[SerializeField] private Toggle[] ModeButtons;
 
     [System.Serializable]
-    public enum ModeEnum { InspectAndMove, BuildWalls, BuildFloor }
+    public enum ModeEnum { InspectAndMove, BuildWalls, BuildFloor, PlaceObject }
     public ModeEnum Mode = ModeEnum.InspectAndMove;
 
 	public CanInspect SelectedObject;
     public CanInspect PickedUpObject;
 
-	private bool leftClicked = false;
-	private CanInspect newLeftClickedInspectable;
-
-	private bool rightClicked = false;
-	private CanInspect newRightClickedInspectable;
+	private CanInspect inspectableInRange;
 
 	private Vector2 screenPos;
 
@@ -35,18 +37,21 @@ public class Mouse : MonoBehaviour {
 		ModeButtons [0].group.SetAllTogglesOff ();
 		ModeButtons [0].isOn = true;
 
-        WallBuilding.Setup(transform);
+		BuilderBase.Setup(transform);
+		ObjectPlacing.Setup ();
      }
 
 	void OnEnable(){
 		ModeButtons [0].onValueChanged.AddListener (OnModeButton0ValueChanged);
 		ModeButtons [1].onValueChanged.AddListener (OnModeButton1ValueChanged);
 		ModeButtons [2].onValueChanged.AddListener (OnModeButton2ValueChanged);
+		ModeButtons [3].onValueChanged.AddListener (OnModeButton3ValueChanged);
 	}
 	void OnDisable(){
 		ModeButtons [0].onValueChanged.RemoveListener (OnModeButton0ValueChanged);
 		ModeButtons [1].onValueChanged.RemoveListener (OnModeButton1ValueChanged);
 		ModeButtons [2].onValueChanged.RemoveListener (OnModeButton2ValueChanged);
+		ModeButtons [3].onValueChanged.RemoveListener (OnModeButton3ValueChanged);
 	}
 	
 	void Update () {
@@ -59,117 +64,151 @@ public class Mouse : MonoBehaviour {
             }
         }
 
-		leftClicked = Input.GetMouseButtonUp(0);
-		rightClicked = Input.GetMouseButtonUp(1);
-		newLeftClickedInspectable = null;
-		newRightClickedInspectable = null;
+		SetMouseState ();
+
+		inspectableInRange = null;
 		CanClick _clickable = null;
+		Vector2 _ioScreenPos;
+		float _magnitude;
+		bool _withinRange;
 		for (int i = 0; i < CanClick.AllClickables.Count; i++) {
 			_clickable = CanClick.AllClickables [i];
 			if (!_clickable.Enabled)
 				continue;
 			if (!_clickable.IsOnGUI && Mode != ModeEnum.InspectAndMove)
 				continue;
-			if (!_clickable.IsOnGUI && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject (-1))
+			if (!_clickable.IsOnGUI && IsOverGUI)
 				continue;
-			Vector2 _ioScreenPos = _clickable.IsOnGUI ? _clickable.transform.position : Camera.main.WorldToScreenPoint(_clickable.transform.position); // optimization: can I track the mouse's worldpos rather than each object's screenpos?
-			float magnitude = (screenPos - _ioScreenPos).magnitude * (Camera.main.orthographicSize / 10);
-			bool withinRange = magnitude < _clickable.ClickableRange;
+			
+			_ioScreenPos = _clickable.IsOnGUI ? _clickable.transform.position : Camera.main.WorldToScreenPoint(_clickable.transform.position); // optimization: can I track the mouse's worldpos rather than each object's screenpos?
+			_magnitude = (screenPos - _ioScreenPos).magnitude * (Camera.main.orthographicSize / 10);
+			_withinRange = _magnitude < _clickable.ClickableRange;
 
-			if (withinRange) {
-				if(_clickable._OnWithinRange != null)
+			if (_withinRange) {
+				if (_clickable._OnWithinRange != null)
 					_clickable._OnWithinRange ();
-
-				if (leftClicked) {
-					Debug.Log (_clickable.name);
-					_clickable.OnLeftClickRelease ();
-					newLeftClickedInspectable = _clickable.GetComponent<CanInspect>();
-					break;
-				} 
-				else if (rightClicked) {
-					_clickable.OnRightClickRelease ();
-					newRightClickedInspectable = _clickable.GetComponent<CanInspect>();
-					break;
-				}
+				
+				inspectableInRange = _clickable.GetComponent<CanInspect> ();
+				break;
 			}
 		}
 
 		// stop here if no input
-		if (!leftClicked && !rightClicked)
+		if (StateLeft == MouseStateEnum.None && StateRight == MouseStateEnum.None)
             return;
 
         // left click
-        if (leftClicked) {
-
-			// if clicked nothing, with something selected, deselect
-            if (newLeftClickedInspectable == null) {
-                if (SelectedObject != null) {
-                    GUIManager.Instance.CloseInfoWindow(SelectedObject);
-                    SelectedObject = null;
-                    return;
-                }
-            }
-
-			// else if clicked something, with something selected, switch selected object
-            else if (newLeftClickedInspectable != null) {
-                if (SelectedObject != null) {
-					if (newLeftClickedInspectable == SelectedObject)
-						return;
-
-                    GUIManager.Instance.CloseInfoWindow(SelectedObject);
-                    SelectedObject = null;
-                }
-
-				SelectedObject = newLeftClickedInspectable.GetComponent<CanInspect>();
-
-                // if something is picked up and a component was clicked, open the secondary info window
-				if(PickedUpObject != null && SelectedObject.Type == GUIManager.WindowType.Component)
-                    GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, GUIManager.WindowType.Component_SubWindow);
-                else // else just open default window
-                    GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, SelectedObject.Type);
-
-                return;
-            }
-
-            return;
-        }
-        // right click
-        else if (rightClicked) {
-
-			// if right-clicked nothing, with something picked up, try putting the thing down and de-selecting whatever else is selected
-			if (newRightClickedInspectable == null) {
-				if (PickedUpObject != null) {
-					Tile _tile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
-					if (_tile._FloorType_ == Tile.Type.Empty)
-						return;
-					if (_tile.IsOccupied)
-						return;
-
-					PutDownPickedUp(_tile);
-
-					// de-select SelectedObject
+		switch (StateLeft) {
+			case MouseStateEnum.Click:
+				return;
+			case MouseStateEnum.Hold:
+				return;
+			case MouseStateEnum.Release:
+				// if clicked nothing, with something selected, deselect
+				if (inspectableInRange == null) {
 					if (SelectedObject != null) {
 						GUIManager.Instance.CloseInfoWindow(SelectedObject);
 						SelectedObject = null;
+						return;
 					}
 				}
-			}
+				
+				// else if clicked something, with something selected, switch selected object
+				else if (inspectableInRange != null) {
+					_clickable.OnLeftClickRelease ();
 
-            // else if right-clicked something, switch places with what's held, if anything
-            else if (newRightClickedInspectable != null) {
-
-				if (SelectedObject != null) {
-					GUIManager.Instance.CloseInfoWindow (SelectedObject);
-					SelectedObject = null;
+					if (SelectedObject != null) {
+						if (inspectableInRange == SelectedObject)
+							return;
+						
+						GUIManager.Instance.CloseInfoWindow(SelectedObject);
+						SelectedObject = null;
+					}
+					
+					SelectedObject = inspectableInRange.GetComponent<CanInspect>();
+					
+					// if something is picked up and a component was clicked, open the secondary info window
+					if(PickedUpObject != null && SelectedObject.Type == GUIManager.WindowType.Component)
+						GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, GUIManager.WindowType.Component_SubWindow);
+					else // else just open default window
+						GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, SelectedObject.Type);
+					
+					return;
 				}
+				
+				return;
+		}
+		switch (StateRight) {
+			case MouseStateEnum.Click:
+				return;
+			case MouseStateEnum.Hold:
+				return;
+			case MouseStateEnum.Release:
+				// if right-clicked nothing, with something picked up, try putting the thing down and de-selecting whatever else is selected
+				if (inspectableInRange == null) {
+					if (PickedUpObject != null) {
+						Tile _tile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+						if (_tile._FloorType_ == Tile.Type.Empty)
+							return;
+						if (_tile.IsOccupiedByObject)
+							return;
+						
+						PutDownPickedUp(_tile);
+						
+						// de-select SelectedObject
+						if (SelectedObject != null) {
+							GUIManager.Instance.CloseInfoWindow(SelectedObject);
+							SelectedObject = null;
+						}
+					}
+				}
+				
+				// else if right-clicked something, switch places with what's held, if anything
+				else if (inspectableInRange != null) {
+					_clickable.OnRightClickRelease ();
 
-				CanInspect _formerlyPickedUpObject;
-				TrySwitchComponents (newRightClickedInspectable, true, false, out _formerlyPickedUpObject);
-            }
-
-            return;
-        }
+					if (SelectedObject != null) {
+						GUIManager.Instance.CloseInfoWindow (SelectedObject);
+						SelectedObject = null;
+					}
+					
+					CanInspect _formerlyPickedUpObject;
+					TrySwitchComponents (inspectableInRange, true, false, out _formerlyPickedUpObject);
+				}
+				return;
+		}
     }
+
+	bool _leftClickedOld;
+	bool _leftClicked;
+	bool _rightClickedOld;
+	bool _rightClicked;
+	private void SetMouseState(){
+		_leftClickedOld = _leftClicked;
+		_leftClicked = Input.GetMouseButton(0);
+		_rightClickedOld = _rightClicked;
+		_rightClicked = Input.GetMouseButton(1);
+
+		if (_leftClicked && !_leftClickedOld)
+			StateLeft = MouseStateEnum.Click;
+		else if (_leftClicked && _leftClickedOld)
+			StateLeft = MouseStateEnum.Hold;
+		else if (!_leftClicked && _leftClickedOld)
+			StateLeft = MouseStateEnum.Release;
+		else
+			StateLeft = MouseStateEnum.None;
+
+		if (_rightClicked && !_rightClickedOld)
+			StateRight = MouseStateEnum.Click;
+		else if (_rightClicked && _rightClickedOld)
+			StateRight = MouseStateEnum.Hold;
+		else if (!_rightClicked && _rightClickedOld)
+			StateRight = MouseStateEnum.Release;
+		else
+			StateRight = MouseStateEnum.None;
+
+		IsOverGUI = UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject (-1);
+	}
 
 	public void OnClickComponentSlot(ComponentHolder.ComponentSlot _slot){
 		float _efficiency = 0;
@@ -253,7 +292,7 @@ public class Mouse : MonoBehaviour {
 		
 		if (Input.GetKeyUp(KeyCode.Tab)) {
 			currentSelectedModeIndex++;
-			if (currentSelectedModeIndex > 2)
+			if (currentSelectedModeIndex > ModeButtons.Length - 1)
 				currentSelectedModeIndex = 0;
 
 			if (SelectedObject != null) {
@@ -264,19 +303,26 @@ public class Mouse : MonoBehaviour {
 			ModeButtons [currentSelectedModeIndex].isOn = true;
 			OnModeButtonsNewActive (currentSelectedModeIndex);
 		}
+
+		if (WallBuilding.IsActive)
+			WallBuilding.Update ();
+		if (FloorBuilding.IsActive)
+			FloorBuilding.Update ();
+		if (ObjectPlacing.IsActive)
+			ObjectPlacing.Update ();
     }
 
 	void OnModeButton0ValueChanged(bool b){
-		if(b)
-			OnModeButtonsNewActive (0);
+		if(b) OnModeButtonsNewActive (0);
 	}
 	void OnModeButton1ValueChanged(bool b){
-		if(b)
-			OnModeButtonsNewActive (1);
+		if(b) OnModeButtonsNewActive (1);
 	}
 	void OnModeButton2ValueChanged(bool b){
-		if(b)
-			OnModeButtonsNewActive (2);
+		if(b) OnModeButtonsNewActive (2);
+	}
+	void OnModeButton3ValueChanged(bool b){
+		if(b) OnModeButtonsNewActive (3);
 	}
 	int currentSelectedModeIndex = 0;
 	void OnModeButtonsNewActive(int selectedModeIndex){
@@ -290,6 +336,9 @@ public class Mouse : MonoBehaviour {
 				break;
 			case 2:
 				SetMode (ModeEnum.BuildFloor);
+				break;
+			case 3:
+				SetMode (ModeEnum.PlaceObject);
 				break;
 			default:
 				throw new System.IndexOutOfRangeException ("selectedModeIndex was out of range!");
@@ -305,14 +354,22 @@ public class Mouse : MonoBehaviour {
 			case ModeEnum.InspectAndMove:
 				WallBuilding.DeActivate ();
 				FloorBuilding.DeActivate ();
+				ObjectPlacing.DeActivate ();
 				break;
 			case ModeEnum.BuildWalls:
 				FloorBuilding.DeActivate ();
+				ObjectPlacing.DeActivate ();
 				WallBuilding.Activate();
                 break;
 			case ModeEnum.BuildFloor:
 				WallBuilding.DeActivate ();
+				ObjectPlacing.DeActivate ();
 				FloorBuilding.Activate ();
+				break;
+			case ModeEnum.PlaceObject:
+				WallBuilding.DeActivate ();
+				FloorBuilding.DeActivate ();
+				ObjectPlacing.Activate ();
 				break;
             default:
                 throw new System.NotImplementedException(_mode.ToString() + " hasn't been implemented yet!");

@@ -17,6 +17,8 @@ public class BuilderBase {
 	[UnityEngine.Serialization.FormerlySerializedAs("Color_BlockedWall")]
 	[SerializeField] protected Color Color_Blocked = (Color.yellow + Color.red) * 0.5f;
 
+	[System.NonSerialized] public bool IsActive = false;
+
 	private IEnumerator ghostRoutine;
 	public class GhostInfo {
 		public UVController BottomQuad;
@@ -98,7 +100,7 @@ public class BuilderBase {
 	protected List<Tile.TileOrientation> selectedTilesNewOrientation = new List<Tile.TileOrientation>();
 
 
-	public void Setup(Transform _transform) {
+	public static void Setup(Transform _transform) {
 		UVController[] _allQuads = _transform.GetComponentsInChildren<UVController>(true);
 		ALL_GHOSTS = new GhostInfo[(int)(_allQuads.Length * 0.5f)];
 		for (int quadIteration = 0, ghostIteration = 0; quadIteration < _allQuads.Length; quadIteration += 2, ghostIteration++) {
@@ -107,30 +109,30 @@ public class BuilderBase {
 			ALL_GHOSTS[ghostIteration] = new GhostInfo(_allQuads[quadIteration], _allQuads[quadIteration + 1]);
 		}
 	}
+	public virtual void Setup(){
+	}
 
-	private bool isActive = false;
 	public void Activate() {
-		if (isActive)
+		if (IsActive)
 			return;
-		isActive = true;
+		IsActive = true;
 
 		modeWasChanged = true; // enables mouseghost to "hotload" when tabbing between builders
-		ghostRoutine = _Update();
-		Mouse.Instance.StartCoroutine(ghostRoutine);
 	}
 	public void DeActivate() {
-		if (!isActive)
+		if (!IsActive)
 			return;
-		isActive = false;
+		IsActive = false;
 
 		for (int i = 0; i < ALL_GHOSTS.Length; i++)
 			ALL_GHOSTS[i].SetActive(false);
-		Mouse.Instance.StopCoroutine(ghostRoutine);
 	}
 		
-	IEnumerator _Update() {
-		while (true) {
-			isDeleting = Input.GetMouseButtonDown(1);
+	float timeLastGhostUpdate = -1;
+	public void Update() {
+		isDeleting = Mouse.StateRight != Mouse.MouseStateEnum.None;
+		if ((Mouse.StateLeft == Mouse.MouseStateEnum.None || Mouse.StateLeft == Mouse.MouseStateEnum.Click) && (Mouse.StateRight == Mouse.MouseStateEnum.None || Mouse.StateRight == Mouse.MouseStateEnum.Click)) {
+			InheritedUpdate ();
 
 			// determine Mode
 			ModeEnum _oldMode = Mode;
@@ -140,36 +142,41 @@ public class BuilderBase {
 				modeWasChanged = true;
 				mouseGhostIsDirty = true;
 			}
-
+			
 			// click
-			if (Input.GetMouseButtonDown(0) || isDeleting) {
+			if (Mouse.StateLeft == Mouse.MouseStateEnum.Click || isDeleting) {
 				mouseIsDown = true;
 				mouseGhostIsDirty = true;
 			}
-
+			
 			// no click
-			if (!mouseIsDown || mouseGhostIsDirty) {
+			if (!mouseIsDown || mouseGhostIsDirty)
 				ControlMouseGhost();
-			}
-
-			// click held
-			while (Input.GetMouseButton(0) || Input.GetMouseButton(1)) {
-				DetermineGhostPositions(_hasClicked: true, _snapToNeighbours: false);
-				yield return new WaitForSeconds(0.01f);
-			}
-
-			// click released
-			if (((!Input.GetMouseButton(0) && !isDeleting) || (!Input.GetMouseButton(1) && isDeleting)) && mouseIsDown) { // replacement for GetMouseUp, which failed due to the yield above
-				mouseIsDown = false;
-				ApplyCurrentTool();
-
-				mouseGhostIsDirty = true;
-			}
-
-			yield return null;
-			modeWasChanged = false;
 		}
+
+
+		bool skip = (!isDeleting && Mouse.StateLeft == Mouse.MouseStateEnum.Release) || (isDeleting && Mouse.StateRight == Mouse.MouseStateEnum.Release);
+		if (!skip && Time.time - timeLastGhostUpdate < 0.01f)
+			return;
+		if (Mouse.StateLeft == Mouse.MouseStateEnum.Hold || Mouse.StateRight == Mouse.MouseStateEnum.Hold) {
+			DetermineGhostPositions(_hasClicked: true, _snapToNeighbours: false);
+			timeLastGhostUpdate = Time.time;
+		}
+
+		// click released
+		if((Mouse.StateLeft == Mouse.MouseStateEnum.Release && !isDeleting) || (Mouse.StateRight == Mouse.MouseStateEnum.Release && isDeleting)){ // TODO: will fail because of yield!!
+		mouseIsDown = false;
+			ApplyCurrentTool();
+
+			mouseGhostIsDirty = true;
+		}
+
+		//yield return null;
+		modeWasChanged = false;
 	}
+	protected virtual void InheritedUpdate(){
+	}
+
 	protected virtual void TryChangeMode(){
 	}
 
