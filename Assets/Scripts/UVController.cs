@@ -29,7 +29,7 @@ public class UVController : MonoBehaviour {
         myMeshFilter = GetComponent<MeshFilter>();
         myRenderer = GetComponent<MeshRenderer>();
         myRenderer.sortingLayerName = "Grid";
-        myMeshUVs = myMeshFilter.mesh.uv;
+		myMeshUVs = myMeshFilter.sharedMesh.uv;
 
         cachedPropertyColor = Shader.PropertyToID("_Color");
     }
@@ -58,13 +58,6 @@ public class UVController : MonoBehaviour {
 
         myMeshFilter.mesh.uv = myMeshUVs;
         myRenderer.enabled = true;
-        //myMeshFilter.transform.localScale = _size.y > Grid.TILE_RESOLUTION ? SIZE_TALL : SIZE_DEFAULT;
-        //myMeshFilter.transform.localPosition = new Vector3(WorldPosition.x, WorldPosition.y + ((_size.y - SIZE_DEFAULT.y) * 0.25f), WorldPosition.z);
-
-        //Debug.DrawLine((transform.position + (Vector3)meshUVs[0] - new Vector3(0.5f, 0.5f, 0)), (transform.position + (Vector3)meshUVs[2] - new Vector3(0.5f, 0.5f, 0)), Color.red);
-        //Debug.DrawLine((transform.position + (Vector3)meshUVs[2] - new Vector3(0.5f, 0.5f, 0)), (transform.position + (Vector3)meshUVs[1] - new Vector3(0.5f, 0.5f, 0)), Color.red);
-        //Debug.DrawLine((transform.position + (Vector3)meshUVs[1] - new Vector3(0.5f, 0.5f, 0)), (transform.position + (Vector3)meshUVs[3] - new Vector3(0.5f, 0.5f, 0)), Color.red);
-        //Debug.DrawLine((transform.position + (Vector3)meshUVs[3] - new Vector3(0.5f, 0.5f, 0)), (transform.position + (Vector3)meshUVs[0] - new Vector3(0.5f, 0.5f, 0)), Color.red);
     }
 
     public void ChangeColor(Color _color) {
