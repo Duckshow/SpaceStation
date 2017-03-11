@@ -5,7 +5,7 @@ using System.Collections;
 public class CanMove : MonoBehaviour {
 
 	[SerializeField] private Toggle ConnectedToggle;
-	[SerializeField] private RectTransform Transform;
+	[SerializeField] private Transform Transform;
 	[SerializeField] private float MoveY;
 	[SerializeField] private float Speed;
 	private float returnToY;
@@ -18,8 +18,8 @@ public class CanMove : MonoBehaviour {
 
 	void Awake() {
 		// Clickable = GetComponent<CanClick> ();
-		returnToY = Transform.localPosition.y + Transform.pivot.y;
-		//MoveY += returnToY;
+		returnToY = Transform.localPosition.y;
+		MoveY += returnToY;
 	}
 
 	void OnEnable() {
@@ -31,8 +31,13 @@ public class CanMove : MonoBehaviour {
 		// Clickable._OnLeftClickRelease -= Move;
 	}
 
+    bool oldValue = false;
 	void OnToggleValueChanged(bool _b){
-		Move (_b);
+        if (_b == oldValue)
+            return;
+        oldValue = _b;
+
+        Move (_b);
 	}
 
 	private bool moveForward = false;
@@ -41,11 +46,8 @@ public class CanMove : MonoBehaviour {
 		//Clickable.Enabled = false;
 		pleaseMove = true;
 		moveForward = !moveForward;
-		yAtStartMove = Transform.localPosition.y + Transform.pivot.y;
+		yAtStartMove = Transform.localPosition.y;
 		timeAtMoveStart = Time.time;
-
-		Debug.Log (returnToY + ", " + MoveY);
-		Debug.Log (moveForward + ": " + yAtStartMove + " -> " + MoveY);
 	}
 
 	float _t;
