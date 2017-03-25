@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class GUIManager : MonoBehaviour {
 
     public static GUIManager Instance;
-    public enum WindowType { Component, Component_SubWindow, ComponentHolder_x6, ComponentHolder_x9, ComponentHolder_15, ComponentHolder_x24 }
+    public enum WindowType { Basic, Basic_SecondWindow, ComponentHolder_x6, ComponentHolder_x9, ComponentHolder_15, ComponentHolder_x24 }
 
     [SerializeField]
     private UIInfoWindow ComponentWindow_Main;
@@ -75,10 +75,10 @@ public class GUIManager : MonoBehaviour {
 
         //currentWindowType = _type;
         switch (_type) {
-            case WindowType.Component:
+            case WindowType.Basic:
                 _currentWindow = ComponentWindow_Main;
                 break;
-            case WindowType.Component_SubWindow:
+            case WindowType.Basic_SecondWindow:
                 _currentWindow = ComponentWindow_Sub;
                 break;
             case WindowType.ComponentHolder_x6:
@@ -97,8 +97,8 @@ public class GUIManager : MonoBehaviour {
 
         ComponentObject _trackedComponent = null;
         switch (_type) {
-            case WindowType.Component:
-            case WindowType.Component_SubWindow:
+            case WindowType.Basic:
+            case WindowType.Basic_SecondWindow:
                 _trackedComponent = _inspectable.GetComponent<ComponentObject>();
                 break;
             case WindowType.ComponentHolder_x6:

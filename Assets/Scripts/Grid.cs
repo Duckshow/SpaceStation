@@ -98,8 +98,7 @@ public class Grid : MonoBehaviour {
             for (int x = 0; x < GridSizeX; x++) {
                 Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + NodeRadius) + Vector3.up * (y * nodeDiameter + NodeRadius + 0.5f); // +0.5f for diagonals
 
-                grid[x, y] = new Tile(worldPoint, x, y/*, x % sliceSizeX, y % sliceSizeY, GetGridSliceIndex(x, y)*/);
-                grid[x, y].Init();
+                grid[x, y] = new Tile(worldPoint, x, y);
             }
         }
         // for testing-purposes
@@ -270,6 +269,7 @@ public class Grid : MonoBehaviour {
         return null;
     }
     public Tile GetClosestFreeNode(Tile _tile) { // todo: diagonals can be seen as "free" depending on the usage - fix that! Removed diagonals from consideration for now.
+        Debug.Log("Hello!");
         if (_tile._WallType_ == Tile.Type.Empty && !_tile.IsOccupiedByObject)
             return _tile;
 

@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using System.Collections;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(CanInspect))]
+[RequireComponent(typeof(CanInspect))] [RequireComponent(typeof(TileObject))]
 public class ComponentHolder : MonoBehaviour {
 
     [System.Serializable]
@@ -22,17 +22,14 @@ public class ComponentHolder : MonoBehaviour {
     private bool FillSlotsOnStart = true;
     public List<ComponentSlot> ComponentSlots;
 
-    [HideInInspector]
-    public float CurrentEfficiency = 0;
-    [HideInInspector]
-    public CanInspect IO;
+    [HideInInspector] public float CurrentEfficiency = 0;
+    [HideInInspector] public CanInspect Inspectable;
+    [HideInInspector] public TileObject MyTileObject;
 
 
     void Awake() {
-        IO = GetComponent<CanInspect>();
-        if (IO == null) {
-            throw new System.Exception(name + " is missing required stuff!");
-        }
+        Inspectable = GetComponent<CanInspect>();
+        MyTileObject = GetComponent<TileObject>();
     }
 
     void Start() {
@@ -42,7 +39,8 @@ public class ComponentHolder : MonoBehaviour {
                     continue;
 
                 GameObject _obj = Instantiate(ComponentManager.Instance.GetComponentPrefab(ComponentSlots[i].SlotType, ComponentSlots[i].SlotTypeID), Vector3.zero, Quaternion.identity) as GameObject;
-				_obj.GetComponent<CanInspect> ().PutSomewhereElse (transform, Vector3.zero, true);
+                _obj.GetComponent<CanInspect>().Setup();
+                _obj.GetComponent<CanInspect> ().PutOffGrid (MyTileObject, Vector3.zero, true);
                 ComponentSlots[i].HeldComponent = _obj.GetComponent<ComponentObject>();
                 ComponentSlots[i].CurrentEfficiency = 1;
             }
@@ -117,7 +115,7 @@ public class ComponentHolder : MonoBehaviour {
 
     public void OnComponentsModified() {
         CalculateEfficiency();
-        GUIManager.Instance.UpdateButtonGraphics(IO);
+        GUIManager.Instance.UpdateButtonGraphics(Inspectable);
     }
     void CalculateEfficiency() {
         float _efficiency = 0;

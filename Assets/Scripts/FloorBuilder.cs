@@ -106,6 +106,7 @@ public class FloorBuilder : BuilderBase {
 
 			case ModeEnum.Door:
 			case ModeEnum.Airlock:
+            case ModeEnum.ObjectPlacing:
 				throw new System.Exception (Mode.ToString() + " does not apply to Floor!");
 			default:
 				throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
@@ -199,6 +200,7 @@ public class FloorBuilder : BuilderBase {
 				break;
 			case ModeEnum.Door:
 			case ModeEnum.Airlock:
+            case ModeEnum.ObjectPlacing:
 				throw new System.Exception (Mode.ToString() + " is not applicable to Floor!");
 
 			default:

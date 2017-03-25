@@ -172,7 +172,8 @@ public class WallBuilder : BuilderBase {
                 }
 
                 break;
-
+            case ModeEnum.ObjectPlacing:
+                throw new System.Exception(Mode.ToString() + " doesn't apply to Wallbuilding!");
             default:
                 throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
         }
@@ -313,6 +314,8 @@ public class WallBuilder : BuilderBase {
 				}
 				break;
 
+            case ModeEnum.ObjectPlacing:
+                throw new System.Exception(Mode.ToString() + "doesn't apply to Wallbuilding!");
 			default:
 				throw new System.NotImplementedException(Mode.ToString() + " hasn't been fully implemented yet!");
 		}

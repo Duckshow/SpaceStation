@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
-using System.Linq;
+using UnityEngine.EventSystems;
 
 public class Mouse : MonoBehaviour {
 
@@ -14,20 +13,20 @@ public class Mouse : MonoBehaviour {
 
     [SerializeField] private WallBuilder WallBuilding;
 	[SerializeField] private FloorBuilder FloorBuilding;
-	[SerializeField] private PlaceObjects ObjectPlacing;
+	[SerializeField] private ObjectPlacer ObjectPlacing;
 
 	[SerializeField] private Toggle[] ModeButtons;
 
     [System.Serializable]
-    public enum ModeEnum { InspectAndMove, BuildWalls, BuildFloor, PlaceObject }
-    public ModeEnum Mode = ModeEnum.InspectAndMove;
+    public enum BuildModeEnum { None, BuildWalls, BuildFloor, PlaceObject }
+    public BuildModeEnum BuildMode = BuildModeEnum.None;
 
 	public CanInspect SelectedObject;
-    public CanInspect PickedUpObject;
 
 	private CanInspect inspectableInRange;
 
-	private Vector2 screenPos;
+	private Vector2 mouseScreenPos;
+    private Vector2 mouseWorldPos;
 
 
     void Awake() {
@@ -68,23 +67,18 @@ public class Mouse : MonoBehaviour {
 
 		inspectableInRange = null;
 		CanClick _clickable = null;
-		Vector2 _ioScreenPos;
-		float _magnitude;
-		bool _withinRange;
 		for (int i = 0; i < CanClick.AllClickables.Count; i++) {
 			_clickable = CanClick.AllClickables [i];
 			if (!_clickable.Enabled)
 				continue;
-			if (!_clickable.IsOnGUI && Mode != ModeEnum.InspectAndMove)
+			if (!_clickable.IsOnGUI && BuildMode != BuildModeEnum.None && BuildMode != BuildModeEnum.PlaceObject)
 				continue;
 			if (!_clickable.IsOnGUI && IsOverGUI)
 				continue;
-			
-			_ioScreenPos = _clickable.IsOnGUI ? _clickable.transform.position : Camera.main.WorldToScreenPoint(_clickable.transform.position); // optimization: can I track the mouse's worldpos rather than each object's screenpos?
-			_magnitude = (screenPos - _ioScreenPos).magnitude * (Camera.main.orthographicSize / 10);
-			_withinRange = _magnitude < _clickable.ClickableRange;
+            if (!_clickable.IsVisible())
+                continue;
 
-			if (_withinRange) {
+			if (_clickable.IsMouseWithinRange()) {
 				if (_clickable._OnWithinRange != null)
 					_clickable._OnWithinRange ();
 				
@@ -105,34 +99,13 @@ public class Mouse : MonoBehaviour {
 				return;
 			case MouseStateEnum.Release:
 				// if clicked nothing, with something selected, deselect
-				if (inspectableInRange == null) {
-					if (SelectedObject != null) {
-						GUIManager.Instance.CloseInfoWindow(SelectedObject);
-						SelectedObject = null;
-						return;
-					}
-				}
+				if (inspectableInRange == null)
+                    TryDeselectSelectedObject();
 				
 				// else if clicked something, with something selected, switch selected object
 				else if (inspectableInRange != null) {
 					_clickable.OnLeftClickRelease ();
-
-					if (SelectedObject != null) {
-						if (inspectableInRange == SelectedObject)
-							return;
-						
-						GUIManager.Instance.CloseInfoWindow(SelectedObject);
-						SelectedObject = null;
-					}
-					
-					SelectedObject = inspectableInRange.GetComponent<CanInspect>();
-					
-					// if something is picked up and a component was clicked, open the secondary info window
-					if(PickedUpObject != null && SelectedObject.Type == GUIManager.WindowType.Component)
-						GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, GUIManager.WindowType.Component_SubWindow);
-					else // else just open default window
-						GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, SelectedObject.Type);
-					
+                    SelectObject(inspectableInRange);
 					return;
 				}
 				
@@ -144,39 +117,38 @@ public class Mouse : MonoBehaviour {
 			case MouseStateEnum.Hold:
 				return;
 			case MouseStateEnum.Release:
-				// if right-clicked nothing, with something picked up, try putting the thing down and de-selecting whatever else is selected
-				if (inspectableInRange == null) {
-					if (PickedUpObject != null) {
-						Tile _tile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
-						if (_tile._FloorType_ == Tile.Type.Empty)
-							return;
-						if (_tile.IsOccupiedByObject)
-							return;
-						
-						PutDownPickedUp(_tile);
-						
-						// de-select SelectedObject
-						if (SelectedObject != null) {
-							GUIManager.Instance.CloseInfoWindow(SelectedObject);
-							SelectedObject = null;
-						}
-					}
-				}
-				
-				// else if right-clicked something, switch places with what's held, if anything
-				else if (inspectableInRange != null) {
+				if (inspectableInRange != null) {
 					_clickable.OnRightClickRelease ();
 
-					if (SelectedObject != null) {
-						GUIManager.Instance.CloseInfoWindow (SelectedObject);
-						SelectedObject = null;
-					}
-					
+                    TryDeselectSelectedObject();
+
 					CanInspect _formerlyPickedUpObject;
-					TrySwitchComponents (inspectableInRange, true, false, out _formerlyPickedUpObject);
+					ObjectPlacing.TrySwitchComponents (inspectableInRange, true, /*false, */out _formerlyPickedUpObject);
 				}
 				return;
 		}
+    }
+
+    public bool TryDeselectSelectedObject(CanInspect _exception = null) {
+        if (SelectedObject == null)
+            return true;
+        if (SelectedObject == _exception)
+            return false;
+        GUIManager.Instance.CloseInfoWindow(SelectedObject);
+        SelectedObject = null;
+        return true;
+    }
+    public void SelectObject(CanInspect _object) {
+        if (!TryDeselectSelectedObject())
+            return;
+
+        SelectedObject = _object.GetComponent<CanInspect>();
+
+        // if something is picked up and a component was clicked, open the secondary info window
+        if (ObjectPlacing._ObjectToPlace_ != null && ObjectPlacing._ObjectToPlace_.GetComponent<ComponentHolder>())
+            GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, GUIManager.WindowType.Basic_SecondWindow);
+        else // else just open default window
+            GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, SelectedObject.Window_Inspector);
     }
 
 	bool _leftClickedOld;
@@ -207,14 +179,14 @@ public class Mouse : MonoBehaviour {
 		else
 			StateRight = MouseStateEnum.None;
 
-		IsOverGUI = UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject (-1);
+		IsOverGUI = EventSystem.current.IsPointerOverGameObject ();
 	}
 
 	public void OnClickComponentSlot(ComponentHolder.ComponentSlot _slot){
 		float _efficiency = 0;
 		ComponentObject _pickedUpComponent = null;
-		if (PickedUpObject != null) {
-			_pickedUpComponent = PickedUpObject.GetComponent<ComponentObject> ();
+		if (ObjectPlacing._ObjectToPlace_ != null) {
+			_pickedUpComponent = ObjectPlacing._ObjectToPlace_.GetComponent<ComponentObject> ();
 			if (_pickedUpComponent == null)
 				return;
 			if (!ComponentHolder.DoesComponentFitInSlot (_slot, _pickedUpComponent, out _efficiency))
@@ -231,7 +203,7 @@ public class Mouse : MonoBehaviour {
 
 		// pick up component and put the former PickedUpObject in the slot
 		CanInspect _formerPickedUpObject;
-		if (TrySwitchComponents(_fromSlot, true, true, out _formerPickedUpObject)) {
+		if (ObjectPlacing.TrySwitchComponents(_fromSlot, true, /*true, */out _formerPickedUpObject)) {
 			if (_formerPickedUpObject == null)
 				return;
 			
@@ -240,69 +212,11 @@ public class Mouse : MonoBehaviour {
 		}
 	}
 
-	bool TrySwitchComponents(CanInspect _pickUpThis, bool _hideOnPickup, bool _hideOnPutDown, out CanInspect _putThisDown) {
-		_putThisDown = null;
-
-		// can this thing even be picked up?
-		if (_pickUpThis != null && !_pickUpThis.CanBePickedUp)
-			return false;
-
-		// where should PickedUpObject go?
-		if (PickedUpObject != null) {
-			if (_pickUpThis == null)
-				PickedUpObject.PutSomewhereElse (null, Vector3.zero, _hideOnPutDown); // used by ComponentSlots
-			else
-				PickedUpObject.PutSomewhereElse (_pickUpThis.transform.parent, _pickUpThis.transform.localPosition, _hideOnPutDown);
-
-			_putThisDown = PickedUpObject;
-			PickedUpObject = null;
-		}
-
-		if (_pickUpThis != null)
-			PickUp(_pickUpThis);
-		
-		return true;
-	}
 	
-	void PickUp(CanInspect _inspectable) {
-		if (PickedUpObject != null)
-			Debug.LogError("Mouse already has a PickedUpObject!");
-
-		PickedUpObject = _inspectable;
-		PickedUpObject.PickUp ();
-	}
-	
-	void PutDownPickedUp(Tile _tile) {
-		if (PickedUpObject == null)
-			return;
-
-		PickedUpObject.PutDown (_tile);
-		
-		if (SelectedObject != null && SelectedObject == PickedUpObject)
-			SelectedObject = null;
-
-		PickedUpObject = null;
-	}
 
     void LateUpdate() {
-        screenPos = Input.mousePosition;
-
-		if (PickedUpObject != null)
-			return;
-		
-		if (Input.GetKeyUp(KeyCode.Tab)) {
-			currentSelectedModeIndex++;
-			if (currentSelectedModeIndex > ModeButtons.Length - 1)
-				currentSelectedModeIndex = 0;
-
-			if (SelectedObject != null) {
-				GUIManager.Instance.CloseInfoWindow (SelectedObject);
-				SelectedObject = null;
-			}
-
-			ModeButtons [currentSelectedModeIndex].isOn = true;
-			OnModeButtonsNewActive (currentSelectedModeIndex);
-		}
+        mouseScreenPos = Input.mousePosition;
+        mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
 
 		if (WallBuilding.IsActive)
 			WallBuilding.Update ();
@@ -310,6 +224,26 @@ public class Mouse : MonoBehaviour {
 			FloorBuilding.Update ();
 		if (ObjectPlacing.IsActive)
 			ObjectPlacing.Update ();
+
+        // disable UI-stuff
+        for (int i = 0; i < ModeButtons.Length; i++)
+            ModeButtons[i].interactable = (ObjectPlacing.PickedUpObject == null);
+        for (int i = 0; i < ObjectPlacing.ObjectButtons.Length; i++)
+            ObjectPlacing.ObjectButtons[i].interactable = (ObjectPlacing.PickedUpObject == null);
+
+        if (ObjectPlacing.PickedUpObject != null)
+            return;
+		
+		if (Input.GetKeyUp(KeyCode.Tab)) {
+			currentSelectedModeIndex++;
+			if (currentSelectedModeIndex > ModeButtons.Length - 1)
+				currentSelectedModeIndex = 0;
+
+            TryDeselectSelectedObject();
+
+			ModeButtons [currentSelectedModeIndex].isOn = true;
+			OnModeButtonsNewActive (currentSelectedModeIndex);
+		}
     }
 
 	void OnModeButton0ValueChanged(bool b){
@@ -329,44 +263,44 @@ public class Mouse : MonoBehaviour {
 		currentSelectedModeIndex = selectedModeIndex;
 		switch (currentSelectedModeIndex) {
 			case 0:
-				SetMode (ModeEnum.InspectAndMove);
+				SetMode (BuildModeEnum.None);
 				break;
 			case 1:
-				SetMode (ModeEnum.BuildWalls);
+				SetMode (BuildModeEnum.BuildWalls);
 				break;
 			case 2:
-				SetMode (ModeEnum.BuildFloor);
+				SetMode (BuildModeEnum.BuildFloor);
 				break;
 			case 3:
-				SetMode (ModeEnum.PlaceObject);
+				SetMode (BuildModeEnum.PlaceObject);
 				break;
 			default:
 				throw new System.IndexOutOfRangeException ("selectedModeIndex was out of range!");
 		}
 	}
 
-    void SetMode(ModeEnum _mode) {
-        if (Mode == _mode)
+    void SetMode(BuildModeEnum _mode) {
+        if (BuildMode == _mode)
             return;
 
-        Mode = _mode;
+        BuildMode = _mode;
         switch (_mode) {
-			case ModeEnum.InspectAndMove:
+			case BuildModeEnum.None:
 				WallBuilding.DeActivate ();
 				FloorBuilding.DeActivate ();
 				ObjectPlacing.DeActivate ();
 				break;
-			case ModeEnum.BuildWalls:
+			case BuildModeEnum.BuildWalls:
 				FloorBuilding.DeActivate ();
 				ObjectPlacing.DeActivate ();
 				WallBuilding.Activate();
                 break;
-			case ModeEnum.BuildFloor:
+			case BuildModeEnum.BuildFloor:
 				WallBuilding.DeActivate ();
 				ObjectPlacing.DeActivate ();
 				FloorBuilding.Activate ();
 				break;
-			case ModeEnum.PlaceObject:
+			case BuildModeEnum.PlaceObject:
 				WallBuilding.DeActivate ();
 				FloorBuilding.DeActivate ();
 				ObjectPlacing.Activate ();

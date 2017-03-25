@@ -67,8 +67,10 @@ public class UIInfoWindow : MonoBehaviour {
         ToggleVisible(false);
     }
     void ToggleVisible (bool _enable, CanInspect _newIO = null, ComponentObject _trackedComponent = null) {
-        if (OwnerInspectable != null && _enable)
-            Debug.LogError(name + " already has an OwnerIO!");
+        if (OwnerInspectable != null && _enable) {
+            ToggleVisible(false);
+            // Debug.LogError(name + " already has an OwnerIO!");
+        }
 
         OwnerInspectable = _newIO;
         trackedComponent = _trackedComponent;

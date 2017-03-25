@@ -5,7 +5,7 @@ using System.Collections.Generic;
 [System.Serializable]
 public class BuilderBase {
 
-	protected enum ModeEnum { Default, Room, Fill, Diagonal, Door, Airlock }
+	protected enum ModeEnum { Default, Room, Fill, Diagonal, Door, Airlock, ObjectPlacing }
 	protected ModeEnum Mode = ModeEnum.Default;
 
 	[UnityEngine.Serialization.FormerlySerializedAs("Color_NewWall")]
@@ -81,8 +81,7 @@ public class BuilderBase {
 	protected bool isDeleting = false;
 	private bool modeWasChanged = false;
 	private bool mouseGhostHasNewTile = false;
-	private bool mouseIsDown = false; // used because of a yield
-	private bool mouseGhostIsDirty = true;
+	protected bool mouseGhostIsDirty = true;
 
 	private int distX;
 	private int distY;
@@ -118,8 +117,9 @@ public class BuilderBase {
 		IsActive = true;
 
 		modeWasChanged = true; // enables mouseghost to "hotload" when tabbing between builders
-	}
-	public void DeActivate() {
+        OnNewRound();
+    }
+	public virtual void DeActivate() {
 		if (!IsActive)
 			return;
 		IsActive = false;
@@ -127,13 +127,20 @@ public class BuilderBase {
 		for (int i = 0; i < ALL_GHOSTS.Length; i++)
 			ALL_GHOSTS[i].SetActive(false);
 	}
-		
-	float timeLastGhostUpdate = -1;
-	public void Update() {
-		isDeleting = Mouse.StateRight != Mouse.MouseStateEnum.None;
-		if ((Mouse.StateLeft == Mouse.MouseStateEnum.None || Mouse.StateLeft == Mouse.MouseStateEnum.Click) && (Mouse.StateRight == Mouse.MouseStateEnum.None || Mouse.StateRight == Mouse.MouseStateEnum.Click)) {
-			InheritedUpdate ();
 
+    protected virtual void OnNewRound() {
+
+    }
+
+    float timeLastGhostUpdate = -1;
+	public void Update() {
+        //if (Mouse.IsOverGUI)
+        //    return;
+
+        isDeleting = Mouse.StateRight != Mouse.MouseStateEnum.None;
+		InheritedUpdate ();
+
+        if ((Mouse.StateLeft == Mouse.MouseStateEnum.None || Mouse.StateLeft == Mouse.MouseStateEnum.Click) && (Mouse.StateRight == Mouse.MouseStateEnum.None || Mouse.StateRight == Mouse.MouseStateEnum.Click)) {
 			// determine Mode
 			ModeEnum _oldMode = Mode;
 			Mode = ModeEnum.Default;
@@ -141,44 +148,63 @@ public class BuilderBase {
 			if (Mode != _oldMode) {
 				modeWasChanged = true;
 				mouseGhostIsDirty = true;
+                OnNewRound();
 			}
 			
 			// click
-			if (Mouse.StateLeft == Mouse.MouseStateEnum.Click || isDeleting) {
-				mouseIsDown = true;
+			if (Mouse.StateLeft == Mouse.MouseStateEnum.Click || isDeleting)
 				mouseGhostIsDirty = true;
-			}
-			
+
 			// no click
-			if (!mouseIsDown || mouseGhostIsDirty)
+			if ((Mouse.StateLeft == Mouse.MouseStateEnum.None && Mouse.StateRight == Mouse.MouseStateEnum.None) || mouseGhostIsDirty)
 				ControlMouseGhost();
 		}
 
+        if (Mouse.IsOverGUI)
+            return;
 
 		bool skip = (!isDeleting && Mouse.StateLeft == Mouse.MouseStateEnum.Release) || (isDeleting && Mouse.StateRight == Mouse.MouseStateEnum.Release);
 		if (!skip && Time.time - timeLastGhostUpdate < 0.01f)
 			return;
-		if (Mouse.StateLeft == Mouse.MouseStateEnum.Hold || Mouse.StateRight == Mouse.MouseStateEnum.Hold) {
+		if (CanDrag() && (Mouse.StateLeft == Mouse.MouseStateEnum.Hold || Mouse.StateRight == Mouse.MouseStateEnum.Hold)) {
 			DetermineGhostPositions(_hasClicked: true, _snapToNeighbours: false);
 			timeLastGhostUpdate = Time.time;
 		}
 
 		// click released
-		if((Mouse.StateLeft == Mouse.MouseStateEnum.Release && !isDeleting) || (Mouse.StateRight == Mouse.MouseStateEnum.Release && isDeleting)){ // TODO: will fail because of yield!!
-		mouseIsDown = false;
-			ApplyCurrentTool();
-
-			mouseGhostIsDirty = true;
-		}
+		if(ShouldFinish())
+            FinishRound();
 
 		//yield return null;
 		modeWasChanged = false;
 	}
 	protected virtual void InheritedUpdate(){
 	}
-
 	protected virtual void TryChangeMode(){
 	}
+    private bool CanDrag() {
+        switch (Mode) {
+            case ModeEnum.Default:
+            case ModeEnum.Room:
+            case ModeEnum.Fill:
+                return true;
+            case ModeEnum.Diagonal:
+            case ModeEnum.Door:
+            case ModeEnum.Airlock:
+            case ModeEnum.ObjectPlacing:
+                return false;
+            default:
+                throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
+        }
+    }
+    protected virtual bool ShouldFinish() {
+        return (Mouse.StateLeft == Mouse.MouseStateEnum.Release && !isDeleting) || (Mouse.StateRight == Mouse.MouseStateEnum.Release && isDeleting);
+    }
+    protected virtual void FinishRound() {
+        ApplyCurrentTool();
+        mouseGhostIsDirty = true;
+        OnNewRound();
+    }
 
 	private void ControlMouseGhost() {
 		// find current tile
@@ -249,6 +275,7 @@ public class BuilderBase {
 					return Tile.TileOrientation.TopLeft;
 				case ModeEnum.Door:
 				case ModeEnum.Airlock:
+                case ModeEnum.ObjectPlacing:
 					return Tile.TileOrientation.Bottom;
 				default:
 					throw new System.NotImplementedException(Mode + " hasn't been properly implemented yet!");
@@ -303,6 +330,7 @@ public class BuilderBase {
 			case ModeEnum.Diagonal:
 			case ModeEnum.Door:
 			case ModeEnum.Airlock:
+            case ModeEnum.ObjectPlacing:
 				ghostTile_GridX = mouseTile.GridX;
 				ghostTile_GridY = mouseTile.GridY;
 				AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);

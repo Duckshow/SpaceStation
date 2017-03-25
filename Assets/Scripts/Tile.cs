@@ -36,11 +36,27 @@ public class Tile : IHeapItem<Tile> {
 			case TileOrientation.BottomRight:
 				return TileOrientation.TopLeft;
         }
-        return Tile.TileOrientation.None;
+        return TileOrientation.None;
     }
+    //public static Vector3 GetEulerFromOrientation(Tile.TileOrientation _orientation) {
+    //    switch (_orientation) {
+    //        case TileOrientation.None:
+    //        case TileOrientation.Bottom:
+    //            return new Vector3(0, 0, 0);
+    //        case TileOrientation.Left:
+    //            return new Vector3(0, 0, -90);
+    //        case TileOrientation.Top:
+    //            return new Vector3(0, 0, 180);
+    //        case TileOrientation.Right:
+    //            return new Vector3(0, 0, 90);
+    //        default:
+    //            throw new System.Exception(_orientation + " is an invalid orientation!");
+    //    }
+    //}
 
     public bool Walkable { get; private set; }
     public bool IsOccupiedByObject = false;
+    public CanInspect OccupyingInspectable;
     private bool buildingAllowed = true;
     public bool _BuildingAllowed_ { get { return buildingAllowed; } private set { buildingAllowed = value; } }
     public int GridX { get; private set; }
@@ -125,10 +141,8 @@ public class Tile : IHeapItem<Tile> {
         WorldPosition = _worldPos;
         GridX = _gridX;
         GridY = _gridY;
-    }
-		
-	public void Init() {
-		FloorQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
+
+        FloorQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
 		BottomQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
         TopQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
         
@@ -141,7 +155,7 @@ public class Tile : IHeapItem<Tile> {
         TopQuad.Setup();
         Animator = new TileAnimator(this);
     }
-
+		
     public int CompareTo(Tile nodeToCompare) {
         int compare = _FCost_.CompareTo(nodeToCompare._FCost_);
         if (compare == 0)
@@ -163,12 +177,10 @@ public class Tile : IHeapItem<Tile> {
 		prevOrientation = _Orientation_;
 		_Orientation_ = _newOrientation;
 
-        BottomQuad.Type = _newType;
         BottomQuad.Orientation = _newOrientation;
 		BottomQuad.SortingLayer = UVController.SortingLayerEnum.Bottom;
         BottomQuad.Sort(GridY);
 
-        TopQuad.Type = _newType;
         TopQuad.Orientation = _newOrientation;
 		TopQuad.SortingLayer = UVController.SortingLayerEnum.Top;
         TopQuad.Sort(GridY);
@@ -334,7 +346,6 @@ public class Tile : IHeapItem<Tile> {
 		_FloorType_ = _newType;
 		_FloorOrientation_ = _newOrientation;
 
-		FloorQuad.Type = _newType;
 		FloorQuad.Orientation = _newOrientation;
 		FloorQuad.SortingLayer = UVController.SortingLayerEnum.Floor;
 		FloorQuad.Sort(GridY);
