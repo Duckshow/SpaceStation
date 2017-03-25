@@ -40,8 +40,8 @@ public class ObjectPlacer : BuilderBase {
             Object.Destroy(UISelectedObject.gameObject);
             UISelectedObject = null;
         }
-        Debug.Log("Boooom!");
-        activeTemporarily = false;
+
+		activeTemporarily = false;
     }
 
     public override void Setup() {
@@ -193,7 +193,7 @@ public class ObjectPlacer : BuilderBase {
         if (selectedTiles.Count > 0) {
             if (selectedTiles[0].OccupyingInspectable != null) {
                 CanInspect _formerlyPickedUp;
-                TrySwitchComponents(selectedTiles[0].OccupyingInspectable, true, /*false, */out _formerlyPickedUp);
+				TrySwitchComponents(selectedTiles[0].OccupyingInspectable, selectedTiles[0].OccupyingInspectable.MyTileObject.Parent, true, /*false, */out _formerlyPickedUp);
             }
             else
                 PutDownPickedUp(selectedTiles[0], selectedTilesNewOrientation[0]);
@@ -210,9 +210,7 @@ public class ObjectPlacer : BuilderBase {
         Mouse.Instance.TryDeselectSelectedObject();
         _ObjectToPlace_ = null;
     }
-    private TileObject pickUpObjectsOldParent;
-    private Vector3 pickUpObjectsOldPosition;
-    public bool TrySwitchComponents(CanInspect _pickUpThis, bool _hideOnPickup, out CanInspect _putThisDown) {
+	public bool TrySwitchComponents(CanInspect _pickUpThis, TileObject _pickUpObjsParent, bool _hideOnPickup, out CanInspect _putThisDown) {
         _putThisDown = null;
 
         // can this thing even be picked up?
@@ -224,11 +222,7 @@ public class ObjectPlacer : BuilderBase {
         _ObjectToPlace_ = null;
 
         // pick up the new object
-        pickUpObjectsOldParent = null;
         if (_pickUpThis != null) {
-            pickUpObjectsOldParent = _pickUpThis.MyTileObject.Parent;
-            pickUpObjectsOldPosition = _pickUpThis.transform.localPosition;
-
             TryGetNewObjectToPlace(_pickUpThis);
             SetAssetBottomAndTop(_ObjectToPlace_);
 
@@ -243,14 +237,10 @@ public class ObjectPlacer : BuilderBase {
             if (_pickUpThis == null)
                 _putThisDown.PutOffGrid(null, Vector3.zero, _hide: true); // used by ComponentSlots
             else {
-                if (pickUpObjectsOldParent != null) { iaquwdbuw // continue here. Try switching between a component in a componentslot and a pickedup component. Sometimes the obj going into the slot doesn't get hidden.
-                    Debug.Log("Put off!");
-                    _putThisDown.PutOffGrid(pickUpObjectsOldParent, pickUpObjectsOldPosition, _hide: true);
-                }
-                else {
-                    Debug.Log("Put down!");
+				if (_pickUpObjsParent != null)
+					_putThisDown.PutOffGrid(_pickUpObjsParent, Vector3.zero, _hide: true);
+                else
                     _putThisDown.PutDown(_pickUpThis.MyTileObject.MyTile);
-                }
             }
         }
 

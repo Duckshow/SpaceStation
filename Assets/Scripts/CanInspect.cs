@@ -85,7 +85,6 @@ public class CanInspect : MonoBehaviour {
 	}
 
 	public void PickUp(){
-        Debug.Log(name + " is at " + transform.position);
         MyTileObject.SetParent(null);
 		Hide (true);
 		GUIManager.Instance.OpenNewWindow(this, State.PickedUp, Window_ObjectPlacer);
@@ -99,7 +98,7 @@ public class CanInspect : MonoBehaviour {
 		Hide (false);
 	}
 	public void PutOffGrid(TileObject _parent, Vector3 _localPos, bool _hide){
-        GUIManager.Instance.CloseInfoWindow(this);
+		GUIManager.Instance.CloseInfoWindow(this);
 
         MyTileObject.SetParent(_parent);
 		transform.localPosition = _localPos;

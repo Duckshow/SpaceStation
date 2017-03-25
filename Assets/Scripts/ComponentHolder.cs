@@ -15,8 +15,8 @@ public class ComponentHolder : MonoBehaviour {
         public Button Button;
         public ComponentObject HeldComponent;
 
-        [HideInInspector]
-        public float CurrentEfficiency = 0;
+        [HideInInspector] public float CurrentEfficiency = 0;
+		[HideInInspector] public ComponentHolder Owner;
     }
     [SerializeField]
     private bool FillSlotsOnStart = true;
@@ -41,6 +41,7 @@ public class ComponentHolder : MonoBehaviour {
                 GameObject _obj = Instantiate(ComponentManager.Instance.GetComponentPrefab(ComponentSlots[i].SlotType, ComponentSlots[i].SlotTypeID), Vector3.zero, Quaternion.identity) as GameObject;
                 _obj.GetComponent<CanInspect>().Setup();
                 _obj.GetComponent<CanInspect> ().PutOffGrid (MyTileObject, Vector3.zero, true);
+				ComponentSlots[i].Owner = this;
                 ComponentSlots[i].HeldComponent = _obj.GetComponent<ComponentObject>();
                 ComponentSlots[i].CurrentEfficiency = 1;
             }

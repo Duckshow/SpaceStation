@@ -269,7 +269,6 @@ public class Grid : MonoBehaviour {
         return null;
     }
     public Tile GetClosestFreeNode(Tile _tile) { // todo: diagonals can be seen as "free" depending on the usage - fix that! Removed diagonals from consideration for now.
-        Debug.Log("Hello!");
         if (_tile._WallType_ == Tile.Type.Empty && !_tile.IsOccupiedByObject)
             return _tile;
 

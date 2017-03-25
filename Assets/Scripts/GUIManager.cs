@@ -70,10 +70,9 @@ public class GUIManager : MonoBehaviour {
                 return;
             }
 
-            CloseInfoWindow(_inspectable, _index);
+            CloseInfoWindow(_inspectable, _index); // not sure if needed
         }
 
-        //currentWindowType = _type;
         switch (_type) {
             case WindowType.Basic:
                 _currentWindow = ComponentWindow_Main;
@@ -94,6 +93,12 @@ public class GUIManager : MonoBehaviour {
                 _currentWindow = ComponentHolderWindow_x24;
                 break;
         }
+
+		// make sure no on else is using this window
+		for (int i = 0; i < currentInfoWindows.Count; i++) {
+			if (currentInfoWindows [i].Window == _currentWindow)
+				CloseInfoWindow (currentInfoWindows[i].User, i);
+		}
 
         ComponentObject _trackedComponent = null;
         switch (_type) {
@@ -131,7 +136,7 @@ public class GUIManager : MonoBehaviour {
         currentInfoWindows.Add(new InfoWindowUser(_currentWindow, _inspectable));
 
         UpdateButtonGraphics(_inspectable);
-    }
+	}
 
     public void CloseInfoWindow(CanInspect _io, int _index = -1) {
         if (_index == -1) {

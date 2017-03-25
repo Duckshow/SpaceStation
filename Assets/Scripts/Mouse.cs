@@ -99,13 +99,15 @@ public class Mouse : MonoBehaviour {
 				return;
 			case MouseStateEnum.Release:
 				// if clicked nothing, with something selected, deselect
-				if (inspectableInRange == null)
+				if (inspectableInRange == null && !IsOverGUI)
                     TryDeselectSelectedObject();
 				
 				// else if clicked something, with something selected, switch selected object
 				else if (inspectableInRange != null) {
 					_clickable.OnLeftClickRelease ();
-                    SelectObject(inspectableInRange);
+
+					if(!IsOverGUI)
+	                    SelectObject(inspectableInRange);
 					return;
 				}
 				
@@ -120,10 +122,13 @@ public class Mouse : MonoBehaviour {
 				if (inspectableInRange != null) {
 					_clickable.OnRightClickRelease ();
 
-                    TryDeselectSelectedObject();
-
-					CanInspect _formerlyPickedUpObject;
-					ObjectPlacing.TrySwitchComponents (inspectableInRange, true, /*false, */out _formerlyPickedUpObject);
+					if (!IsOverGUI) { // picking up stuff on GUI is currently handled by GUI-buttons, so not this
+						if(!(SelectedObject != null && SelectedObject.GetComponent<ComponentHolder>() && _clickable.GetComponent<Component>()))
+							TryDeselectSelectedObject();
+						
+						CanInspect _formerlyPickedUpObject;
+						ObjectPlacing.TrySwitchComponents (inspectableInRange, inspectableInRange.MyTileObject.Parent, true, /*false, */out _formerlyPickedUpObject);
+					}
 				}
 				return;
 		}
@@ -144,9 +149,10 @@ public class Mouse : MonoBehaviour {
 
         SelectedObject = _object.GetComponent<CanInspect>();
 
-        // if something is picked up and a component was clicked, open the secondary info window
-        if (ObjectPlacing._ObjectToPlace_ != null && ObjectPlacing._ObjectToPlace_.GetComponent<ComponentHolder>())
-            GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, GUIManager.WindowType.Basic_SecondWindow);
+		// if something is picked up and a component was clicked, open the secondary info window
+		if (ObjectPlacing._ObjectToPlace_ != null && ((ObjectPlacing._ObjectToPlace_.GetComponent<ComponentObject>() && SelectedObject.GetComponent<ComponentObject>()) || ObjectPlacing._ObjectToPlace_.GetComponent<ComponentHolder>())){
+			GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, GUIManager.WindowType.Basic_SecondWindow);
+		}
         else // else just open default window
             GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, SelectedObject.Window_Inspector);
     }
@@ -203,7 +209,7 @@ public class Mouse : MonoBehaviour {
 
 		// pick up component and put the former PickedUpObject in the slot
 		CanInspect _formerPickedUpObject;
-		if (ObjectPlacing.TrySwitchComponents(_fromSlot, true, /*true, */out _formerPickedUpObject)) {
+		if (ObjectPlacing.TrySwitchComponents(_fromSlot, _slot.Owner.MyTileObject, true, /*true, */out _formerPickedUpObject)) {
 			if (_formerPickedUpObject == null)
 				return;
 			
@@ -239,8 +245,6 @@ public class Mouse : MonoBehaviour {
 			if (currentSelectedModeIndex > ModeButtons.Length - 1)
 				currentSelectedModeIndex = 0;
 
-            TryDeselectSelectedObject();
-
 			ModeButtons [currentSelectedModeIndex].isOn = true;
 			OnModeButtonsNewActive (currentSelectedModeIndex);
 		}
@@ -260,6 +264,8 @@ public class Mouse : MonoBehaviour {
 	}
 	int currentSelectedModeIndex = 0;
 	void OnModeButtonsNewActive(int selectedModeIndex){
+		TryDeselectSelectedObject();
+
 		currentSelectedModeIndex = selectedModeIndex;
 		switch (currentSelectedModeIndex) {
 			case 0:

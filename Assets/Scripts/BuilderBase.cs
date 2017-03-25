@@ -111,10 +111,12 @@ public class BuilderBase {
 	public virtual void Setup(){
 	}
 
+	private float timeActivated;
 	public void Activate() {
 		if (IsActive)
 			return;
 		IsActive = true;
+		timeActivated = Time.time;
 
 		modeWasChanged = true; // enables mouseghost to "hotload" when tabbing between builders
         OnNewRound();
@@ -134,8 +136,9 @@ public class BuilderBase {
 
     float timeLastGhostUpdate = -1;
 	public void Update() {
-        //if (Mouse.IsOverGUI)
-        //    return;
+		// don't want this running the first frame (causes at least one bug where a pickedup object is immediately put down)
+		if (Time.time == timeActivated)
+			return;
 
         isDeleting = Mouse.StateRight != Mouse.MouseStateEnum.None;
 		InheritedUpdate ();
