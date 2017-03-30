@@ -1,10 +1,8 @@
 ﻿/*
 
 == Last time ==
-Added two tiletypes (DoorEntrance, MiscBlocker) to be used for creating functioning doors.
 
 == Next time ==
-Get the pathfinding to detect DoorEntrance-tiles and if the path is going through a door, and add a waiting time to those waypoints.
 
 
 == Goal ==
@@ -13,16 +11,9 @@ Get the pathfinding to detect DoorEntrance-tiles and if the path is going throug
 == Needs to be done ==
 Doors need a higher cost in pathfinding!
 
-Add "empty" sprite to the wall-sprites that I can use for the delete-tool, for example. Solid 64x64 should do it.
-
 
 == Known bugs ==
-Diagonals can't write themselves over doors because doors have a top-layer - make the extra part of diagonals top-layer as well!
-
 The Idling-task is completely broken and can't find any paths.
-
-Picking up a component, then switching it for another component on the ground, then cancelling, will get you two components lying on the same position.
-This'll presumably be fixed later with a tile-system.
 
 Sitting down on a chair by a TV and eating, then getting bored while eating, may cause the unit to schedule a task to watch tv, but it's already sitting
 on the only tv-chair and so finds no comfort. Maybe check *who's* using a chair?
@@ -31,6 +22,22 @@ on the only tv-chair and so finds no comfort. Maybe check *who's* using a chair?
 
 
 == Ideas for the future ==
+
+__Replace TileQuads with MegaQuad!__ 
+
+Why? : Instead of >10.000 transforms I should be able to have 5. Jesus Christ that sounds nice.
+
+How? : If I had a plane with X quads, I should be able to set the UVs of those quads instead. However, this would mean I can't have depth sorting, unless
+I instead have one megaquad, 2 units high, for each Y-unit. That could get me 48 transforms at least, going by the current gridsize.
+_________________
+
+__Instead of mouseghosts, just change the grid temporarily__ 
+
+Why? : Instead of, what, 800~ additional transforms, I could have zero and possibly the ability to select a LOT more stuff at a time.
+
+How? : Add a second DoubleInt to UVController that will be used unless null, then set that using BuilderBase.
+
+_________________
 
 __Floor-windows__ 
 
