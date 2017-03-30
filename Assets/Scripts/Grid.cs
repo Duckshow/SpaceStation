@@ -175,6 +175,12 @@ public class Grid : MonoBehaviour {
 					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.TileOrientation.BottomLeft);
             }
         }
+        for (int y = 0; y < GridSizeY; y++) {
+            for (int x = 0; x < GridSizeX; x++) {
+                grid[x, y].UpdateWallCornerHider();
+                grid[x, y].UpdateFloorCornerHider();
+            }
+        }
     }
 
     public static bool OtherTileIsBlockingPath(Tile.Type _otherTileType, Tile.TileOrientation _otherTileOrientation, Tile.TileOrientation _directionToOtherTile) {

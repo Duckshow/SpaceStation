@@ -93,7 +93,7 @@ public class UVController : MonoBehaviour {
 		if (SortingLayer == SortingLayerEnum.Floor)
 			regularSortOrder -= 1;
 		else if (SortingLayer == SortingLayerEnum.Top)
-            regularSortOrder += 7;
+            regularSortOrder += 7; // hack to account for transforms in an actor
 
         if(!customSortOrder.HasValue)
             myRenderer.sortingOrder = regularSortOrder;
