@@ -47,7 +47,6 @@ public class BuilderBase {
 		public void SetPosition(Vector3 _value) {
 			newPos = new Vector3(Grid.Instance.grid[0, 0].WorldPosition.x + _value.x, Grid.Instance.grid[0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
 			BottomQuad.transform.position = newPos;
-			newPos.z -= 0.01f; // needs to be higher than the top-height, right? ( '.__.)
 			TopQuad.transform.position = newPos;
 			position = _value;
 		}
