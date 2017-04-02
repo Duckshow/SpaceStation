@@ -25,81 +25,88 @@ public class FloorBuilder : BuilderBase {
 			AddNextGhost(_tile.ConnectedDiagonalFloor_R.GridX, _tile.ConnectedDiagonalFloor_R.GridY, false);
 	}
 
-	protected override void SetGhostGraphics(ref GhostInfo _ghost, Tile _tileUnderGhost, bool _snapToNeighbours) {
+	protected override void SetGhostGraphics(Tile _tile, bool _snapToNeighbours) {
 
-		bool _hasConnection_Left = _ghost.HasNeighbourGhost_Left || _tileUnderGhost.HasConnectableFloor_L;
-		bool _hasConnection_Right = _ghost.HasNeighbourGhost_Right || _tileUnderGhost.HasConnectableFloor_R;
-		bool _hasConnection_Top = _ghost.HasNeighbourGhost_Top || _tileUnderGhost.HasConnectableFloor_T;
-		bool _hasConnection_Bottom = _ghost.HasNeighbourGhost_Bottom || _tileUnderGhost.HasConnectableFloor_B;
+        Tile.sTryTempCacheNeighbour_L(_tile.GridX, _tile.GridY);
+		bool _hasConnection_L = Tile.sCachedNeighbour_L.TempType != Tile.Type.Empty || _tile.HasConnectableFloor_L;
+
+        Tile.sTryTempCacheNeighbour_R(_tile.GridX, _tile.GridY);
+		bool _hasConnection_R = Tile.sCachedNeighbour_R.TempType != Tile.Type.Empty || _tile.HasConnectableFloor_R;
+
+        Tile.sTryTempCacheNeighbour_T(_tile.GridX, _tile.GridY);
+		bool _hasConnection_T = Tile.sCachedNeighbour_T.TempType != Tile.Type.Empty || _tile.HasConnectableFloor_T;
+
+        Tile.sTryTempCacheNeighbour_B(_tile.GridX, _tile.GridY);
+        bool _hasConnection_B = Tile.sCachedNeighbour_B.TempType != Tile.Type.Empty || _tile.HasConnectableFloor_B;
 
 		switch (Mode) {
-
 			case ModeEnum.Default:
 			case ModeEnum.Room:
 			case ModeEnum.Fill:
-				_ghost.Type = Tile.Type.Solid;
-				_ghost.Orientation = Tile.TileOrientation.None;
+				_tile.TempType = Tile.Type.Solid;
+				_tile.TempOrientation = Tile.TileOrientation.None;
 
-				if (isDeleting && _tileUnderGhost._FloorType_ != Tile.Type.Empty) { // excluding empty because otherwise it doesn't get graphics
-					_ghost.ChangeAssets(
-						CachedAssets.Instance.GetFloorAssetForTile(_tileUnderGhost._FloorType_, _tileUnderGhost._FloorOrientation_, 0, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
-						null);
-				}
-				else {
-					_ghost.ChangeAssets(
-						CachedAssets.Instance.GetFloorAssetForTile(_ghost.Type, _ghost.Orientation, 0, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
-						null);
-				}
+				//if (isDeleting && _tile._FloorType_ != Tile.Type.Empty) { // excluding empty because otherwise it doesn't get graphics
+				//	//_ghost.ChangeAssets(
+				//	//	CachedAssets.Instance.GetFloorAssetForTile(_tile._FloorType_, _tile._FloorOrientation_, 0, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
+				//	//	null);
+				//}
+				if(!isDeleting) { 
+					_tile.ChangeFloorGraphics(
+						CachedAssets.Instance.GetFloorAssetForTile(_tile.TempType, _tile.TempOrientation, 0, _hasConnection_L, _hasConnection_T, _hasConnection_R, _hasConnection_B),
+                        true);
+				} 
+                // else if deleting, don't change the graphics (use the current)
 				break;
 
 			case ModeEnum.Diagonal:
 
 				// default values 
-				_ghost.Type = Tile.Type.Diagonal;
-				_ghost.Orientation = _snapToNeighbours ? Tile.TileOrientation.TopLeft : _ghost.Orientation;
-				_ghost.ChangeAssets(
+				_tile.TempType = Tile.Type.Diagonal;
+				_tile.TempOrientation = _snapToNeighbours ? Tile.TileOrientation.TopLeft : _tile.TempOrientation;
+				_tile.ChangeFloorGraphics(
 					CachedAssets.WallSet.floor_Diagonal_TopLeft,
-					null);
+					true);
 
 
 				// diagonal top left
-				if ((_snapToNeighbours && _tileUnderGhost.HasConnectableFloor_L && _tileUnderGhost.HasConnectableFloor_T)
-					|| (!_snapToNeighbours && ALL_GHOSTS[0].Orientation == Tile.TileOrientation.TopLeft)) {
+				if ((_snapToNeighbours && _tile.HasConnectableFloor_L && _tile.HasConnectableFloor_T)
+					|| (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopLeft)) {
 
-					_ghost.Orientation = Tile.TileOrientation.TopLeft;
-					_ghost.ChangeAssets(
+					_tile.TempOrientation = Tile.TileOrientation.TopLeft;
+					_tile.ChangeFloorGraphics(
 						CachedAssets.WallSet.floor_Diagonal_TopLeft,
-						null);
+						true);
 				}
 
 				// diagonal top right
-				else if ((_snapToNeighbours && _tileUnderGhost.HasConnectableFloor_T && _tileUnderGhost.HasConnectableFloor_R)
-					|| (!_snapToNeighbours && ALL_GHOSTS[0].Orientation == Tile.TileOrientation.TopRight)) {
+				else if ((_snapToNeighbours && _tile.HasConnectableFloor_T && _tile.HasConnectableFloor_R)
+					|| (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopRight)) {
 
-					_ghost.Orientation = Tile.TileOrientation.TopRight;
-					_ghost.ChangeAssets(
+					_tile.TempOrientation = Tile.TileOrientation.TopRight;
+					_tile.ChangeFloorGraphics(
 						CachedAssets.WallSet.floor_Diagonal_TopRight,
-						null);
+						true);
 				}
 
 				// diagonal bottom right
-				else if ((_snapToNeighbours && _tileUnderGhost.HasConnectableFloor_R && _tileUnderGhost.HasConnectableFloor_B)
-					|| (!_snapToNeighbours && ALL_GHOSTS[0].Orientation == Tile.TileOrientation.BottomRight)) {
+				else if ((_snapToNeighbours && _tile.HasConnectableFloor_R && _tile.HasConnectableFloor_B)
+					|| (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomRight)) {
 
-					_ghost.Orientation = Tile.TileOrientation.BottomRight;
-					_ghost.ChangeAssets(
+					_tile.TempOrientation = Tile.TileOrientation.BottomRight;
+					_tile.ChangeFloorGraphics(
 						CachedAssets.WallSet.floor_Diagonal_BottomRight,
-						null);
+						true);
 				}
 
 				// diagonal bottom left
-				else if ((_snapToNeighbours && _tileUnderGhost.HasConnectableFloor_B && _tileUnderGhost.HasConnectableFloor_L)
-					|| (!_snapToNeighbours && ALL_GHOSTS[0].Orientation == Tile.TileOrientation.BottomLeft)) {
+				else if ((_snapToNeighbours && _tile.HasConnectableFloor_B && _tile.HasConnectableFloor_L)
+					|| (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomLeft)) {
 
-					_ghost.Orientation = Tile.TileOrientation.BottomLeft;
-					_ghost.ChangeAssets(
+				    _tile.TempOrientation = Tile.TileOrientation.BottomLeft;
+					_tile.ChangeFloorGraphics(
 						CachedAssets.WallSet.floor_Diagonal_BottomLeft,
-						null);
+						true);
 				}
 
 				break;
@@ -112,19 +119,19 @@ public class FloorBuilder : BuilderBase {
 				throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
 		}
 
-		base.SetGhostGraphics (ref _ghost, _tileUnderGhost, _snapToNeighbours);
+		base.SetGhostGraphics (_tile, _snapToNeighbours);
 	}
 
 	List<Tile> neighbours;
 	int diffX;
 	int diffY;
-	protected override void Evaluate(GhostInfo _ghost, Tile _tileUnderGhost, Tile.TileOrientation _orientation){
+	protected override void Evaluate(Tile _tile){
 
 		// deleting old tiles
 		if (isDeleting) {
 			// is building even allowed?
-			if (!_tileUnderGhost._BuildingAllowed_ && _tileUnderGhost._FloorType_ != Tile.Type.Empty) { // empty tiles allowed for deletion bc it looks better
-				ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
+			if (!_tile._BuildingAllowed_ && _tile._FloorType_ != Tile.Type.Empty) { // empty tiles allowed for deletion bc it looks better
+				ApplySettingsToGhost(_tile, false, Color_Blocked);
 				return;
 			}
 
@@ -135,10 +142,10 @@ public class FloorBuilder : BuilderBase {
 //			}
 
 			// all's good - but add connected diagonals to be deleted as well!
-			if (_tileUnderGhost._FloorType_ != Tile.Type.Empty)
-				AddGhostsForConnectedDiagonals(_tileUnderGhost);
+			if (_tile._FloorType_ != Tile.Type.Empty)
+				AddGhostsForConnectedDiagonals(_tile);
 
-			ApplySettingsToGhost(_ghost, _tileUnderGhost, true, Color_Remove);
+			ApplySettingsToGhost(_tile, true, Color_Remove);
 			return;
 		}
 
@@ -146,36 +153,36 @@ public class FloorBuilder : BuilderBase {
 		// adding new tiles
 
 		// is building even allowed?
-		if (!_tileUnderGhost._BuildingAllowed_) {
-			ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
+		if (!_tile._BuildingAllowed_) {
+			ApplySettingsToGhost(_tile, false, Color_Blocked);
 			return;
 		}
 		switch (Mode) {
 			case ModeEnum.Diagonal:
 				// is the tile below not free of walls?
-				if (_tileUnderGhost._WallType_ != Tile.Type.Empty && _tileUnderGhost._WallType_ != Tile.Type.Diagonal) {
-					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
+				if (_tile._WallType_ != Tile.Type.Empty && _tile._WallType_ != Tile.Type.Diagonal) {
+					ApplySettingsToGhost(_tile, false, Color_Blocked);
 					return;
 				}
 
 				// is the tile below already a diagonal of the same orientation?
-				if (_tileUnderGhost._FloorType_ == Tile.Type.Diagonal && _tileUnderGhost._FloorOrientation_ == _ghost.Orientation) {
-					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_AlreadyExisting);
+				if (_tile._FloorType_ == Tile.Type.Diagonal && _tile._FloorOrientation_ == _tile.TempOrientation) {
+					ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
 					return;
 				}
 				// is the tile below not cleared?
-				if (_tileUnderGhost._FloorType_ != Tile.Type.Empty || _tileUnderGhost.IsOccupiedByObject) {
-					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
+				if (_tile._FloorType_ != Tile.Type.Empty || _tile.IsOccupiedByObject) {
+					ApplySettingsToGhost(_tile, false, Color_Blocked);
 					return;
 				}
 
 				// does the ghost's orientation match the neighbouring walls below?
-				if ((_ghost.Orientation == Tile.TileOrientation.TopLeft && !(_tileUnderGhost.HasConnectableFloor_L && _tileUnderGhost.HasConnectableFloor_T))
-					|| (_ghost.Orientation == Tile.TileOrientation.TopRight && !(_tileUnderGhost.HasConnectableFloor_T && _tileUnderGhost.HasConnectableFloor_R))
-					|| (_ghost.Orientation == Tile.TileOrientation.BottomRight && !(_tileUnderGhost.HasConnectableFloor_R && _tileUnderGhost.HasConnectableFloor_B))
-					|| (_ghost.Orientation == Tile.TileOrientation.BottomLeft && !(_tileUnderGhost.HasConnectableFloor_B && _tileUnderGhost.HasConnectableFloor_L))) {
+				if (   (_tile.TempOrientation == Tile.TileOrientation.TopLeft && !(_tile.HasConnectableFloor_L && _tile.HasConnectableFloor_T))
+					|| (_tile.TempOrientation == Tile.TileOrientation.TopRight && !(_tile.HasConnectableFloor_T && _tile.HasConnectableFloor_R))
+					|| (_tile.TempOrientation == Tile.TileOrientation.BottomRight && !(_tile.HasConnectableFloor_R && _tile.HasConnectableFloor_B))
+					|| (_tile.TempOrientation == Tile.TileOrientation.BottomLeft && !(_tile.HasConnectableFloor_B && _tile.HasConnectableFloor_L))) {
 
-					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
+					ApplySettingsToGhost(_tile, false, Color_Blocked);
 					return;
 				}
 				break;
@@ -183,18 +190,18 @@ public class FloorBuilder : BuilderBase {
 			case ModeEnum.Room:
 			case ModeEnum.Fill:
 				// is the tile below covered by some kind of wall?
-				if (_tileUnderGhost._WallType_ != Tile.Type.Empty) {
-					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
+				if (_tile._WallType_ != Tile.Type.Empty) {
+					ApplySettingsToGhost(_tile, false, Color_Blocked);
 					return;
 				}
 				// is the tile below already a solid?
-				if (_tileUnderGhost._FloorType_ == Tile.Type.Solid) {
-					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_AlreadyExisting);
+				if (_tile._FloorType_ == Tile.Type.Solid) {
+					ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
 					return;
 				}
 				// is the tile below not cleared?
-				if (_tileUnderGhost._FloorType_ != Tile.Type.Empty/* || _tileUnderGhost.IsOccupied*/) {
-					ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
+				if (_tile._FloorType_ != Tile.Type.Empty/* || _tileUnderGhost.IsOccupied*/) {
+					ApplySettingsToGhost(_tile, false, Color_Blocked);
 					return;
 				}
 				break;
@@ -208,12 +215,12 @@ public class FloorBuilder : BuilderBase {
 		}
 
 		// all's good
-		ApplySettingsToGhost(_ghost, _tileUnderGhost, true, Color_New);
+		ApplySettingsToGhost(_tile, true, Color_New);
 	}
 
 	protected override void ApplyCurrentTool() {
 		for (int i = 0; i < selectedTiles.Count; i++)
-			selectedTiles [i].SetFloorType (isDeleting ? Tile.Type.Empty : selectedTilesNewType [i], isDeleting ? Tile.TileOrientation.None : selectedTilesNewOrientation [i]);
+			selectedTiles [i].SetFloorType (isDeleting ? Tile.Type.Empty : selectedTiles[i].TempType, isDeleting ? Tile.TileOrientation.None : selectedTiles[i].TempOrientation);
 		base.ApplyCurrentTool ();
 	}
 }

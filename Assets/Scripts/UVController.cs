@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 public class UVController : MonoBehaviour {
 
+	public CachedAssets.DoubleInt Coordinates;
+    public CachedAssets.DoubleInt TemporaryCoordinates;
+
     //public Tile.Type Type;
     public Tile.TileOrientation Orientation;
 	public enum SortingLayerEnum { Floor, Bottom, Top }
@@ -35,15 +38,24 @@ public class UVController : MonoBehaviour {
         ChangeAsset(Coordinates);
     }
 
-	public CachedAssets.DoubleInt Coordinates;
 
-    public void ChangeAsset(CachedAssets.DoubleInt _assetIndices) {
+    public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, bool _temporary = false) {
         if (_assetIndices == null) {
+            if (_temporary) {
+                TemporaryCoordinates = null;
+                ChangeAsset(Coordinates, false);
+                return;
+            }
+
+            Coordinates = null;
             myRenderer.enabled = false;
             return;
         }
-        
-		Coordinates = _assetIndices;
+
+        if (_temporary)
+            TemporaryCoordinates = _assetIndices;
+        else
+	    	Coordinates = _assetIndices;
 
         myMeshUVs[0].x = (Grid.TILE_RESOLUTION * _assetIndices.X) / CachedAssets.WallSet.TEXTURE_SIZE_X;
         myMeshUVs[0].y = (Grid.TILE_RESOLUTION * _assetIndices.Y) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
@@ -61,11 +73,6 @@ public class UVController : MonoBehaviour {
             myMeshFilter.mesh.uv = myMeshUVs;
         else
             myMeshFilter.sharedMesh.uv = myMeshUVs;
-
-        //if(transform.parent != null)
-        //    Debug.Log(transform.parent.name + "/" + transform.name + " was re-enabled!");
-        //else
-        //    Debug.Log(transform.name + " was re-enabled!");
 
         if(!isHidden)
             myRenderer.enabled = true;

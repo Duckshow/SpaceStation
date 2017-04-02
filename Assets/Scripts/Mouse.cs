@@ -37,7 +37,7 @@ public class Mouse : MonoBehaviour {
 		ModeButtons [0].isOn = true;
 
 		BuilderBase.Setup(transform);
-		ObjectPlacing.Setup ();
+		ObjectPlacing.Setup (transform);
      }
 
 	void OnEnable(){

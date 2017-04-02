@@ -39,6 +39,9 @@ public class Tile : IHeapItem<Tile> {
         return TileOrientation.None;
     }
 
+    public Type TempType = Type.Empty;
+    public TileOrientation TempOrientation = TileOrientation.None;
+
     public bool Walkable { get; private set; }
     public bool IsOccupiedByObject = false;
     public CanInspect OccupyingInspectable;
@@ -169,45 +172,45 @@ public class Tile : IHeapItem<Tile> {
         return -compare;
     }
 
-    private static Tile cachedNeighbour_L;
-    private static bool TryTempCacheNeighbour_L(int _gridX, int _gridY) {
-        cachedNeighbour_L = _gridX > 0 ? Grid.Instance.grid[_gridX - 1, _gridY] : null;
-        return cachedNeighbour_L != null;
+    public static Tile sCachedNeighbour_L;
+    public static bool sTryTempCacheNeighbour_L(int _gridX, int _gridY) {
+        sCachedNeighbour_L = _gridX > 0 ? Grid.Instance.grid[_gridX - 1, _gridY] : null;
+        return sCachedNeighbour_L != null;
     }
-    private static Tile cachedNeighbour_T;
-    private static bool TryTempCacheNeighbour_T(int _gridX, int _gridY) {
-        cachedNeighbour_T = _gridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[_gridX, _gridY + 1] : null;
-        return cachedNeighbour_T != null;
+    public static Tile sCachedNeighbour_T;
+    public static bool sTryTempCacheNeighbour_T(int _gridX, int _gridY) {
+        sCachedNeighbour_T = _gridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[_gridX, _gridY + 1] : null;
+        return sCachedNeighbour_T != null;
     }
-    private static Tile cachedNeighbour_R;
-    private static bool TryTempCacheNeighbour_R(int _gridX, int _gridY) {
-        cachedNeighbour_R = _gridX < Grid.Instance.GridSizeX - 1 ? Grid.Instance.grid[_gridX + 1, _gridY] : null;
-        return cachedNeighbour_R != null;
+    public static Tile sCachedNeighbour_R;
+    public static bool sTryTempCacheNeighbour_R(int _gridX, int _gridY) {
+        sCachedNeighbour_R = _gridX < Grid.Instance.GridSizeX - 1 ? Grid.Instance.grid[_gridX + 1, _gridY] : null;
+        return sCachedNeighbour_R != null;
     }
-    private static Tile cachedNeighbour_B;
-    private static bool TryTempCacheNeighbour_B(int _gridX, int _gridY) {
-        cachedNeighbour_B = _gridY > 0 ? Grid.Instance.grid[_gridX, _gridY - 1] : null;
-        return cachedNeighbour_B != null;
+    public static Tile sCachedNeighbour_B;
+    public static bool sTryTempCacheNeighbour_B(int _gridX, int _gridY) {
+        sCachedNeighbour_B = _gridY > 0 ? Grid.Instance.grid[_gridX, _gridY - 1] : null;
+        return sCachedNeighbour_B != null;
     }
-    private static Tile cachedNeighbour_TL;
-    private static bool TryTempCacheNeighbour_TL(int _gridX, int _gridY) {
-        cachedNeighbour_TL = _gridX > 0 && _gridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[_gridX - 1, _gridY + 1] : null;
-        return cachedNeighbour_TL != null;
+    public static Tile sCachedNeighbour_TL;
+    public static bool sTryTempCacheNeighbour_TL(int _gridX, int _gridY) {
+        sCachedNeighbour_TL = _gridX > 0 && _gridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[_gridX - 1, _gridY + 1] : null;
+        return sCachedNeighbour_TL != null;
     }
-    private static Tile cachedNeighbour_TR;
-    private static bool TryTempCacheNeighbour_TR(int _gridX, int _gridY) {
-        cachedNeighbour_TR = _gridX < Grid.Instance.GridSizeX - 1 && _gridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[_gridX + 1, _gridY + 1] : null;
-        return cachedNeighbour_TR != null;
+    public static Tile sCachedNeighbour_TR;
+    public static bool sTryTempCacheNeighbour_TR(int _gridX, int _gridY) {
+        sCachedNeighbour_TR = _gridX < Grid.Instance.GridSizeX - 1 && _gridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[_gridX + 1, _gridY + 1] : null;
+        return sCachedNeighbour_TR != null;
     }
-    private static Tile cachedNeighbour_BR;
-    private static bool TryTempCacheNeighbour_BR(int _gridX, int _gridY) {
-        cachedNeighbour_BR = _gridX < Grid.Instance.GridSizeX - 1 && _gridY > 0 ? Grid.Instance.grid[_gridX + 1, _gridY - 1] : null;
-        return cachedNeighbour_BR != null;
+    public static Tile sCachedNeighbour_BR;
+    public static bool sTryTempCacheNeighbour_BR(int _gridX, int _gridY) {
+        sCachedNeighbour_BR = _gridX < Grid.Instance.GridSizeX - 1 && _gridY > 0 ? Grid.Instance.grid[_gridX + 1, _gridY - 1] : null;
+        return sCachedNeighbour_BR != null;
     }
-    private static Tile cachedNeighbour_BL;
-    private static bool TryTempCacheNeighbour_BL(int _gridX, int _gridY) {
-        cachedNeighbour_BL = _gridX > 0 && _gridY > 0 ? Grid.Instance.grid[_gridX - 1, _gridY - 1] : null;
-        return cachedNeighbour_BL != null;
+    public static Tile sCachedNeighbour_BL;
+    public static bool sTryTempCacheNeighbour_BL(int _gridX, int _gridY) {
+        sCachedNeighbour_BL = _gridX > 0 && _gridY > 0 ? Grid.Instance.grid[_gridX - 1, _gridY - 1] : null;
+        return sCachedNeighbour_BL != null;
     }
 
     public void SetTileType(Type _newType, TileOrientation _newOrientation) {
@@ -356,23 +359,23 @@ public class Tile : IHeapItem<Tile> {
                 throw new System.Exception(_newType.ToString() + " has not been properly implemented yet!");
         }
 
-		if (TryTempCacheNeighbour_L(GridX, GridY))
-			UpdateNeighbourWall(cachedNeighbour_L, TileOrientation.Left);
-		if (TryTempCacheNeighbour_T(GridX, GridY))
-			UpdateNeighbourWall(cachedNeighbour_T, TileOrientation.Top);
-		if (TryTempCacheNeighbour_R(GridX, GridY))
-			UpdateNeighbourWall(cachedNeighbour_R, TileOrientation.Right);
-		if (TryTempCacheNeighbour_B(GridX, GridY))
-			UpdateNeighbourWall(cachedNeighbour_B, TileOrientation.Bottom);
+		if (sTryTempCacheNeighbour_L(GridX, GridY))
+			UpdateNeighbourWall(sCachedNeighbour_L, TileOrientation.Left);
+		if (sTryTempCacheNeighbour_T(GridX, GridY))
+			UpdateNeighbourWall(sCachedNeighbour_T, TileOrientation.Top);
+		if (sTryTempCacheNeighbour_R(GridX, GridY))
+			UpdateNeighbourWall(sCachedNeighbour_R, TileOrientation.Right);
+		if (sTryTempCacheNeighbour_B(GridX, GridY))
+			UpdateNeighbourWall(sCachedNeighbour_B, TileOrientation.Bottom);
 
-        if (TryTempCacheNeighbour_TL(GridX, GridY))
-            UpdateNeighbourWall(cachedNeighbour_TL, TileOrientation.TopLeft);
-        if (TryTempCacheNeighbour_TR(GridX, GridY))
-            UpdateNeighbourWall(cachedNeighbour_TR, TileOrientation.TopRight);
-        if (TryTempCacheNeighbour_BR(GridX, GridY))
-            UpdateNeighbourWall(cachedNeighbour_BR, TileOrientation.BottomRight);
-        if (TryTempCacheNeighbour_BL(GridX, GridY))
-            UpdateNeighbourWall(cachedNeighbour_BL, TileOrientation.BottomLeft);
+        if (sTryTempCacheNeighbour_TL(GridX, GridY))
+            UpdateNeighbourWall(sCachedNeighbour_TL, TileOrientation.TopLeft);
+        if (sTryTempCacheNeighbour_TR(GridX, GridY))
+            UpdateNeighbourWall(sCachedNeighbour_TR, TileOrientation.TopRight);
+        if (sTryTempCacheNeighbour_BR(GridX, GridY))
+            UpdateNeighbourWall(sCachedNeighbour_BR, TileOrientation.BottomRight);
+        if (sTryTempCacheNeighbour_BL(GridX, GridY))
+            UpdateNeighbourWall(sCachedNeighbour_BL, TileOrientation.BottomLeft);
 
         ChangeWallGraphics (
 			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, true, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
@@ -447,23 +450,23 @@ public class Tile : IHeapItem<Tile> {
 				throw new System.Exception(_newType.ToString() + " has not been properly implemented yet!");
 		}
 
-		if (TryTempCacheNeighbour_L(GridX, GridY))
-			UpdateNeighbourFloor(cachedNeighbour_L, TileOrientation.Left);
-		if (TryTempCacheNeighbour_T(GridX, GridY))
-			UpdateNeighbourFloor(cachedNeighbour_T, TileOrientation.Top);
-		if (TryTempCacheNeighbour_R(GridX, GridY))
-			UpdateNeighbourFloor(cachedNeighbour_R, TileOrientation.Right);
-		if (TryTempCacheNeighbour_B(GridX, GridY))
-			UpdateNeighbourFloor(cachedNeighbour_B, TileOrientation.Bottom);
+		if (sTryTempCacheNeighbour_L(GridX, GridY))
+			UpdateNeighbourFloor(sCachedNeighbour_L, TileOrientation.Left);
+		if (sTryTempCacheNeighbour_T(GridX, GridY))
+			UpdateNeighbourFloor(sCachedNeighbour_T, TileOrientation.Top);
+		if (sTryTempCacheNeighbour_R(GridX, GridY))
+			UpdateNeighbourFloor(sCachedNeighbour_R, TileOrientation.Right);
+		if (sTryTempCacheNeighbour_B(GridX, GridY))
+			UpdateNeighbourFloor(sCachedNeighbour_B, TileOrientation.Bottom);
 
-        if (TryTempCacheNeighbour_TL(GridX, GridY))
-            UpdateNeighbourFloor(cachedNeighbour_TL, TileOrientation.TopLeft);
-        if (TryTempCacheNeighbour_TR(GridX, GridY))
-            UpdateNeighbourFloor(cachedNeighbour_TR, TileOrientation.TopRight);
-        if (TryTempCacheNeighbour_BR(GridX, GridY))
-            UpdateNeighbourFloor(cachedNeighbour_BR, TileOrientation.BottomRight);
-        if (TryTempCacheNeighbour_BL(GridX, GridY))
-            UpdateNeighbourFloor(cachedNeighbour_BL, TileOrientation.BottomLeft);
+        if (sTryTempCacheNeighbour_TL(GridX, GridY))
+            UpdateNeighbourFloor(sCachedNeighbour_TL, TileOrientation.TopLeft);
+        if (sTryTempCacheNeighbour_TR(GridX, GridY))
+            UpdateNeighbourFloor(sCachedNeighbour_TR, TileOrientation.TopRight);
+        if (sTryTempCacheNeighbour_BR(GridX, GridY))
+            UpdateNeighbourFloor(sCachedNeighbour_BR, TileOrientation.BottomRight);
+        if (sTryTempCacheNeighbour_BL(GridX, GridY))
+            UpdateNeighbourFloor(sCachedNeighbour_BL, TileOrientation.BottomLeft);
 
         ChangeFloorGraphics (CachedAssets.Instance.GetFloorAssetForTile(_FloorType_, _FloorOrientation_, 0, HasConnectableFloor_L, HasConnectableFloor_T, HasConnectableFloor_R, HasConnectableFloor_B));
         UpdateFloorCornerHider();
@@ -575,39 +578,44 @@ public class Tile : IHeapItem<Tile> {
     }
 
     public void UpdateWallCornerHider() {
-        TryTempCacheNeighbour_L(GridX, GridY);
-        TryTempCacheNeighbour_T(GridX, GridY);
-        TryTempCacheNeighbour_R(GridX, GridY);
-        TryTempCacheNeighbour_B(GridX, GridY);
+        sTryTempCacheNeighbour_L(GridX, GridY);
+        sTryTempCacheNeighbour_T(GridX, GridY);
+        sTryTempCacheNeighbour_R(GridX, GridY);
+        sTryTempCacheNeighbour_B(GridX, GridY);
 
         WallCornerHider.ChangeAsset(CachedAssets.Instance.GetWallCornerAsset(
-            CanConnect_T && HasConnectable_T && cachedNeighbour_T != null && cachedNeighbour_T.CanConnect_L && cachedNeighbour_T.HasConnectable_L && CanConnect_L && HasConnectable_L && cachedNeighbour_L != null && cachedNeighbour_L.CanConnect_T && cachedNeighbour_L.HasConnectable_T,
-            CanConnect_T && HasConnectable_T && cachedNeighbour_T != null && cachedNeighbour_T.CanConnect_R && cachedNeighbour_T.HasConnectable_R && CanConnect_R && HasConnectable_R && cachedNeighbour_R != null && cachedNeighbour_R.CanConnect_T && cachedNeighbour_R.HasConnectable_T,
-            CanConnect_B && HasConnectable_B && cachedNeighbour_B != null && cachedNeighbour_B.CanConnect_R && cachedNeighbour_B.HasConnectable_R && CanConnect_R && HasConnectable_R && cachedNeighbour_R != null && cachedNeighbour_R.CanConnect_B && cachedNeighbour_R.HasConnectable_B,
-            CanConnect_B && HasConnectable_B && cachedNeighbour_B != null && cachedNeighbour_B.CanConnect_L && cachedNeighbour_B.HasConnectable_L && CanConnect_L && HasConnectable_L && cachedNeighbour_L != null && cachedNeighbour_L.CanConnect_B && cachedNeighbour_L.HasConnectable_B
+            CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_L && sCachedNeighbour_T.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_T && sCachedNeighbour_L.HasConnectable_T,
+            CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_R && sCachedNeighbour_T.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_T && sCachedNeighbour_R.HasConnectable_T,
+            CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_R && sCachedNeighbour_B.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_B && sCachedNeighbour_R.HasConnectable_B,
+            CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_L && sCachedNeighbour_B.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_B && sCachedNeighbour_L.HasConnectable_B
          ));
     }
     public void UpdateFloorCornerHider() {
-        TryTempCacheNeighbour_L(GridX, GridY);
-        TryTempCacheNeighbour_T(GridX, GridY);
-        TryTempCacheNeighbour_R(GridX, GridY);
-        TryTempCacheNeighbour_B(GridX, GridY);
+        sTryTempCacheNeighbour_L(GridX, GridY);
+        sTryTempCacheNeighbour_T(GridX, GridY);
+        sTryTempCacheNeighbour_R(GridX, GridY);
+        sTryTempCacheNeighbour_B(GridX, GridY);
 
         FloorCornerHider.ChangeAsset(CachedAssets.Instance.GetFloorCornerAsset(
-            CanConnectFloor_T && HasConnectableFloor_T && cachedNeighbour_T != null && cachedNeighbour_T.CanConnectFloor_L && cachedNeighbour_T.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && cachedNeighbour_L != null && cachedNeighbour_L.CanConnectFloor_T && cachedNeighbour_L.HasConnectableFloor_T,
-            CanConnectFloor_T && HasConnectableFloor_T && cachedNeighbour_T != null && cachedNeighbour_T.CanConnectFloor_R && cachedNeighbour_T.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && cachedNeighbour_R != null && cachedNeighbour_R.CanConnectFloor_T && cachedNeighbour_R.HasConnectableFloor_T,
-            CanConnectFloor_B && HasConnectableFloor_B && cachedNeighbour_B != null && cachedNeighbour_B.CanConnectFloor_R && cachedNeighbour_B.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && cachedNeighbour_R != null && cachedNeighbour_R.CanConnectFloor_B && cachedNeighbour_R.HasConnectableFloor_B,
-            CanConnectFloor_B && HasConnectableFloor_B && cachedNeighbour_B != null && cachedNeighbour_B.CanConnectFloor_L && cachedNeighbour_B.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && cachedNeighbour_L != null && cachedNeighbour_L.CanConnectFloor_B && cachedNeighbour_L.HasConnectableFloor_B
+            CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_L && sCachedNeighbour_T.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_T && sCachedNeighbour_L.HasConnectableFloor_T,
+            CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_R && sCachedNeighbour_T.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_T && sCachedNeighbour_R.HasConnectableFloor_T,
+            CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_R && sCachedNeighbour_B.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_B && sCachedNeighbour_R.HasConnectableFloor_B,
+            CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_L && sCachedNeighbour_B.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_B && sCachedNeighbour_L.HasConnectableFloor_B
         ));
     }
 
-    public void ChangeWallGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices) {
-		BottomQuad.ChangeAsset(_bottomAssetIndices);
-        TopQuad.ChangeAsset(_topAssetIndices);
+    public void ChangeWallGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices, bool _temporary = false) {
+		BottomQuad.ChangeAsset(_bottomAssetIndices, _temporary);
+        TopQuad.ChangeAsset(_topAssetIndices, _temporary);
     }
-	public void ChangeFloorGraphics(CachedAssets.DoubleInt _assetIndices) {
-		FloorQuad.ChangeAsset(_assetIndices);
+	public void ChangeFloorGraphics(CachedAssets.DoubleInt _assetIndices, bool _temporary = false) {
+		FloorQuad.ChangeAsset(_assetIndices, _temporary);
 	}
+    public void SetColor(Color32 _color32) {
+        FloorQuad.ChangeColor(_color32);
+        BottomQuad.ChangeColor(_color32);
+        TopQuad.ChangeColor(_color32);
+    }
 
     public void OnActorApproachingTile(TileOrientation _direction) {
 		switch (_WallType_) {

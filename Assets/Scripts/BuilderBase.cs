@@ -20,57 +20,59 @@ public class BuilderBase {
 	[System.NonSerialized] public bool IsActive = false;
 
 	private IEnumerator ghostRoutine;
-	public class GhostInfo {
-		public UVController BottomQuad;
-		public UVController TopQuad;
-		//private SpriteRenderer _renderer;
-		//public bool _IsActive_ { get { return _renderer.gameObject.activeSelf; } }
-		public Vector3 position { get; private set; }
-		public Tile.Type Type;
-		public Tile.TileOrientation Orientation;
-		public bool HasNeighbourGhost_Left;
-		public bool HasNeighbourGhost_Top;
-		public bool HasNeighbourGhost_Right;
-		public bool HasNeighbourGhost_Bottom;
+    //public class GhostInfo {
+    //	public UVController BottomQuad;
+    //	public UVController TopQuad;
+    //	//private SpriteRenderer _renderer;
+    //	//public bool _IsActive_ { get { return _renderer.gameObject.activeSelf; } }
+    //	public Vector3 position { get; private set; }
+    //	public Tile.Type Type;
+    //	public Tile.TileOrientation Orientation;
+    //	public bool HasNeighbourGhost_Left;
+    //	public bool HasNeighbourGhost_Top;
+    //	public bool HasNeighbourGhost_Right;
+    //	public bool HasNeighbourGhost_Bottom;
 
-		public GhostInfo(UVController _bottomQuad, UVController _topQuad) {
-			BottomQuad = _bottomQuad;
-			TopQuad = _topQuad;
-			//_renderer = _rend;
-			SetPosition(Vector2.zero);
-			Type = Tile.Type.Empty;
-			Orientation = Tile.TileOrientation.None;
-		}
+    //	public GhostInfo(UVController _bottomQuad, UVController _topQuad) {
+    //		BottomQuad = _bottomQuad;
+    //		TopQuad = _topQuad;
+    //		//_renderer = _rend;
+    //		SetPosition(Vector2.zero);
+    //		Type = Tile.Type.Empty;
+    //		Orientation = Tile.TileOrientation.None;
+    //	}
 
-		private const float DEFAULT_OFFSET_Y = 0.5f;
-		private Vector3 newPos;
-		public void SetPosition(Vector3 _value) {
-			newPos = new Vector3(Grid.Instance.grid[0, 0].WorldPosition.x + _value.x, Grid.Instance.grid[0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
-			BottomQuad.transform.position = newPos;
-			TopQuad.transform.position = newPos;
-			position = _value;
-		}
-		public void ChangeAssets(CachedAssets.DoubleInt _bottomIndices, CachedAssets.DoubleInt _topIndices) {
-			BottomQuad.ChangeAsset(_bottomIndices);
-			TopQuad.ChangeAsset(_topIndices);
-		}
-		public void SetColor(Color _color) {
-			BottomQuad.ChangeColor(_color);
-			TopQuad.ChangeColor(_color);
-		}
-		public void SetActive(bool _b) {
-			BottomQuad.gameObject.SetActive(_b);
-			TopQuad.gameObject.SetActive(_b);
-		}
-		public void ResetHasNeighbours() {
-			HasNeighbourGhost_Left = false;
-			HasNeighbourGhost_Top = false;
-			HasNeighbourGhost_Right = false;
-			HasNeighbourGhost_Bottom = false;
-		}
-	}
-	protected static GhostInfo[] ALL_GHOSTS;
-	private List<GhostInfo> usedGhosts = new List<GhostInfo>();
+    //	private const float DEFAULT_OFFSET_Y = 0.5f;
+    //	private Vector3 newPos;
+    //	public void SetPosition(Vector3 _value) {
+    //		newPos = new Vector3(Grid.Instance.grid[0, 0].WorldPosition.x + _value.x, Grid.Instance.grid[0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
+    //		BottomQuad.transform.position = newPos;
+    //		TopQuad.transform.position = newPos;
+    //		position = _value;
+    //	}
+    //	public void ChangeAssets(CachedAssets.DoubleInt _bottomIndices, CachedAssets.DoubleInt _topIndices) {
+    //		BottomQuad.ChangeAsset(_bottomIndices);
+    //		TopQuad.ChangeAsset(_topIndices);
+    //	}
+    //	public void SetColor(Color _color) {
+    //		BottomQuad.ChangeColor(_color);
+    //		TopQuad.ChangeColor(_color);
+    //	}
+    //	public void SetActive(bool _b) {
+    //		BottomQuad.gameObject.SetActive(_b);
+    //		TopQuad.gameObject.SetActive(_b);
+    //	}
+    //	public void ResetHasNeighbours() {
+    //		HasNeighbourGhost_Left = false;
+    //		HasNeighbourGhost_Top = false;
+    //		HasNeighbourGhost_Right = false;
+    //		HasNeighbourGhost_Bottom = false;
+    //	}
+    //}
+    //protected static GhostInfo[] ALL_GHOSTS;
+    //private List<GhostInfo> usedGhosts = new List<GhostInfo>();
+
+    private List<CachedAssets.DoubleInt> modifiedTiles = new List<CachedAssets.DoubleInt>();
 
 	private Vector2 oldMouseGridPos;
 
@@ -94,18 +96,18 @@ public class BuilderBase {
 	private bool isGoingDiagonal;
 
 	protected List<Tile> selectedTiles = new List<Tile>();
-	protected List<Tile.Type> selectedTilesNewType = new List<Tile.Type>();
-	protected List<Tile.TileOrientation> selectedTilesNewOrientation = new List<Tile.TileOrientation>();
+	//protected List<Tile.Type> selectedTilesNewType = new List<Tile.Type>();
+	//protected List<Tile.TileOrientation> selectedTilesNewOrientation = new List<Tile.TileOrientation>();
 
 
 	public static void Setup(Transform _transform) {
 		UVController[] _allQuads = _transform.GetComponentsInChildren<UVController>(true);
-		ALL_GHOSTS = new GhostInfo[(int)(_allQuads.Length * 0.5f)];
-		for (int quadIteration = 0, ghostIteration = 0; quadIteration < _allQuads.Length; quadIteration += 2, ghostIteration++) {
-			_allQuads[quadIteration].Setup();
-			_allQuads[quadIteration + 1].Setup();
-			ALL_GHOSTS[ghostIteration] = new GhostInfo(_allQuads[quadIteration], _allQuads[quadIteration + 1]);
-		}
+		//ALL_GHOSTS = new GhostInfo[(int)(_allQuads.Length * 0.5f)];
+		//for (int quadIteration = 0, ghostIteration = 0; quadIteration < _allQuads.Length; quadIteration += 2, ghostIteration++) {
+		//	_allQuads[quadIteration].Setup();
+		//	_allQuads[quadIteration + 1].Setup();
+		//	ALL_GHOSTS[ghostIteration] = new GhostInfo(_allQuads[quadIteration], _allQuads[quadIteration + 1]);
+		//}
 	}
 	public virtual void Setup(){
 	}
@@ -125,8 +127,8 @@ public class BuilderBase {
 			return;
 		IsActive = false;
 
-		for (int i = 0; i < ALL_GHOSTS.Length; i++)
-			ALL_GHOSTS[i].SetActive(false);
+		//for (int i = 0; i < ALL_GHOSTS.Length; i++)
+		//	ALL_GHOSTS[i].SetActive(false);
 	}
 
     protected virtual void OnNewRound() {
@@ -216,14 +218,21 @@ public class BuilderBase {
 		mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridX || oldMouseGridPos.y != mouseTile.GridY;
 		if (modeWasChanged)
 			mouseGhostHasNewTile = true; // have to force my way into the sprite-update stuff below
-		if (mouseGhostHasNewTile)
+        if (mouseGhostHasNewTile) {
 			mouseGhostIsDirty = true;
 
-		// set position
-		ALL_GHOSTS[0].SetPosition(new Vector3(mouseTile.GridX, mouseTile.GridY, Grid.WORLD_BOTTOM_HEIGHT));
+            //Grid.Instance.grid[(int)oldMouseGridPos.x, (int)oldMouseGridPos.y].TempType = Tile.Type.Empty;
+            //Grid.Instance.grid[(int)oldMouseGridPos.x, (int)oldMouseGridPos.y].TempOrientation = Tile.TileOrientation.None;
+            //Grid.Instance.grid[(int)oldMouseGridPos.x, (int)oldMouseGridPos.y].ChangeWallGraphics(null, null, true);
+            //Grid.Instance.grid[(int)oldMouseGridPos.x, (int)oldMouseGridPos.y].ChangeFloorGraphics(null, true);
+        }
 
-		// set rotation
-		ALL_GHOSTS[0].Orientation = TryRotateMouseGhost();
+        //// set position
+        //ALL_GHOSTS[0].SetPosition(new Vector3(mouseTile.GridX, mouseTile.GridY, Grid.WORLD_BOTTOM_HEIGHT));
+
+        // set rotation
+        //ALL_GHOSTS[0].Orientation = TryRotateMouseGhost();
+        mouseTile.TempOrientation = TryRotateMouseGhost();
 
 		if (mouseGhostIsDirty) {
 			mouseGhostIsDirty = false;
@@ -238,8 +247,8 @@ public class BuilderBase {
 		if (_rotateDirection != 0) {
 			mouseGhostIsDirty = true;
 
-			if (ALL_GHOSTS[0].Type == Tile.Type.Diagonal) {
-				switch (ALL_GHOSTS[0].Orientation) {
+			if (mouseTile.TempType == Tile.Type.Diagonal) {
+				switch (mouseTile.TempOrientation) {
 					case Tile.TileOrientation.None:
 					case Tile.TileOrientation.BottomLeft:
 						return _rotateDirection > 0 ? Tile.TileOrientation.BottomRight : Tile.TileOrientation.TopLeft;
@@ -252,7 +261,7 @@ public class BuilderBase {
 				}
 			}
 			else {
-				switch (ALL_GHOSTS[0].Orientation) {
+				switch (mouseTile.TempOrientation) {
 					case Tile.TileOrientation.None:
 					case Tile.TileOrientation.Bottom:
 						return _rotateDirection > 0 ? Tile.TileOrientation.Right : Tile.TileOrientation.Left;
@@ -266,7 +275,7 @@ public class BuilderBase {
 			}
 		}
 
-		if (ALL_GHOSTS[0].Orientation == Tile.TileOrientation.None) {
+		if (mouseTile.TempOrientation == Tile.TileOrientation.None) {
 			switch (Mode) {
 				case ModeEnum.Default:
 				case ModeEnum.Room:
@@ -284,7 +293,7 @@ public class BuilderBase {
 			}
 		}
 
-		return ALL_GHOSTS[0].Orientation;
+		return mouseTile.TempOrientation;
 	}
 
 	private bool hasMoved;
@@ -317,15 +326,25 @@ public class BuilderBase {
 			ghostTile_GridY = startTile.GridY;
 		}
 
-		// reset old stuff
+        // reset old stuff
+        for (int i = 0; i < modifiedTiles.Count; i++) {
+           // Debug.Log(mouseTile.GridX + "x" + mouseTile.GridY + " / " + modifiedTiles[i].X + "x" + modifiedTiles[i].Y);
+            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].TempType = Tile.Type.Empty;
+            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].TempOrientation = Tile.TileOrientation.None;
+            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeWallGraphics(null, null, true);
+            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeFloorGraphics(null, true);
+            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetColor(Color.white);
+        }
+
+        modifiedTiles.Clear();
 		selectedTiles.Clear();
-		selectedTilesNewType.Clear();
-		selectedTilesNewOrientation.Clear();
-		usedGhosts.Clear();
-		for (int i = 0; i < ALL_GHOSTS.Length; i++) {
-			ALL_GHOSTS[i].ResetHasNeighbours();
-			ALL_GHOSTS[i].SetActive(false);
-		}
+		//selectedTilesNewType.Clear();
+		//selectedTilesNewOrientation.Clear();
+		//usedGhosts.Clear();
+		//for (int i = 0; i < ALL_GHOSTS.Length; i++) {
+		//	ALL_GHOSTS[i].ResetHasNeighbours();
+		//	ALL_GHOSTS[i].SetActive(false);
+		//}
 
 		switch (Mode) {
 			// click-Modes
@@ -364,16 +383,16 @@ public class BuilderBase {
 						if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 							break;
 
-						if (!isGoingDiagonal) {
-							if (distYAbs > distXAbs) {
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Top = (distY > 0) ? (i < highestAxisValue) : (i > 0);
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Bottom = (distY > 0) ? (i > 0) : (i < highestAxisValue);
-							}
-							if (distXAbs > distYAbs) {
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Right = (distX > 0) ? (i < highestAxisValue) : (i > 0);
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Left = (distX > 0) ? (i > 0) : (i < highestAxisValue);
-							}
-						}
+						//if (!isGoingDiagonal) {
+						//	if (distYAbs > distXAbs) {
+      //                          ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Top = (distY > 0) ? (i < highestAxisValue) : (i > 0);
+						//		ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Bottom = (distY > 0) ? (i > 0) : (i < highestAxisValue);
+						//	}
+						//	if (distXAbs > distYAbs) {
+						//		ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Right = (distX > 0) ? (i < highestAxisValue) : (i > 0);
+						//		ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Left = (distX > 0) ? (i > 0) : (i < highestAxisValue);
+						//	}
+						//}
 
 						AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 					}
@@ -409,14 +428,14 @@ public class BuilderBase {
 							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 								continue;
 
-							if (_isOnEdgeX) {
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Top = (distY > 0) ? (y < distYAbs) : (y > 0);
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Bottom = (distY > 0) ? (y > 0) : (y < distYAbs);
-							}
-							if (_isOnEdgeY) {
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Right = (distX > 0) ? (x < distXAbs) : (x > 0);
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Left = (distX > 0) ? (x > 0) : (x < distXAbs);
-							}
+							//if (_isOnEdgeX) {
+							//	ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Top = (distY > 0) ? (y < distYAbs) : (y > 0);
+							//	ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Bottom = (distY > 0) ? (y > 0) : (y < distYAbs);
+							//}
+							//if (_isOnEdgeY) {
+							//	ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Right = (distX > 0) ? (x < distXAbs) : (x > 0);
+							//	ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Left = (distX > 0) ? (x > 0) : (x < distXAbs);
+							//}
 
 							AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 						}
@@ -444,10 +463,10 @@ public class BuilderBase {
 							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 								continue;
 
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Top = (distY > 0) ? (y < distYAbs) : (y > 0);
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Bottom = (distY > 0) ? (y > 0) : (y < distYAbs);
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Right = (distX > 0) ? (x < distXAbs) : (x > 0);
-								ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Left = (distX > 0) ? (x > 0) : (x < distXAbs);
+								//ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Top = (distY > 0) ? (y < distYAbs) : (y > 0);
+								//ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Bottom = (distY > 0) ? (y > 0) : (y < distYAbs);
+								//ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Right = (distX > 0) ? (x < distXAbs) : (x > 0);
+								//ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Left = (distX > 0) ? (x > 0) : (x < distXAbs);
 
 							AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 						}
@@ -464,75 +483,81 @@ public class BuilderBase {
 	}
 
 	protected void AddNextGhost(int _gridX, int _gridY, bool _snapToNeighbours) {
-		if (usedGhosts.Find(x => x.position.x == _gridX && x.position.y == _gridY) != null)
-			return;
+        //if (usedGhosts.Find(x => x.position.x == _gridX && x.position.y == _gridY) != null)
+        //	return;
 
-		ALL_GHOSTS[usedGhosts.Count].SetPosition(new Vector2(_gridX, _gridY));
-		ALL_GHOSTS[usedGhosts.Count].SetActive(true);
-		SetGhostGraphics(ref ALL_GHOSTS[usedGhosts.Count], Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
-		usedGhosts.Add(ALL_GHOSTS[usedGhosts.Count]);
+        //ALL_GHOSTS[usedGhosts.Count].SetPosition(new Vector2(_gridX, _gridY));
+        //ALL_GHOSTS[usedGhosts.Count].SetActive(true);
+        //SetGhostGraphics(ref ALL_GHOSTS[usedGhosts.Count], Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
+        //usedGhosts.Add(ALL_GHOSTS[usedGhosts.Count]);
+
+        modifiedTiles.Add(new CachedAssets.DoubleInt(_gridX, _gridY));
+        SetGhostGraphics(Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
 	}
 	protected virtual void AddGhostsForConnectedDiagonals(Tile _tile) {
 	}
 	protected virtual void AddGhostsForConnectedDoors(Tile _tile) {
 	}
 
-	protected virtual void SetGhostGraphics(ref GhostInfo _ghost, Tile _tileUnderGhost, bool _snapToNeighbours) {
+	protected virtual void SetGhostGraphics(Tile _tile, bool _snapToNeighbours) {
 
-		// if a diagonal is below, sort ghost so the diagonal covers it in a pretty way
-		if (_tileUnderGhost.ConnectedDiagonal_B != null) {
-			_ghost.BottomQuad.SortCustom(_tileUnderGhost.BottomQuad.GetSortOrder() + 1);
-			_ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
-		}
-		// otherwise just go on top
-		else {
-			_ghost.BottomQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
-			_ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 2);
-		}
+		//// if a diagonal is below, sort ghost so the diagonal covers it in a pretty way
+		//if (_tileUnderGhost.ConnectedDiagonal_B != null) {
+		//	_ghost.BottomQuad.SortCustom(_tileUnderGhost.BottomQuad.GetSortOrder() + 1);
+		//	_ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
+		//}
+		//// otherwise just go on top
+		//else {
+		//	_ghost.BottomQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
+		//	_ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 2);
+		//}
 	}
 
 	protected void EvaluateUsedGhostConditions() {
-		GhostInfo _ghost;
-		Tile _tileUnderGhost;
-		Tile.TileOrientation _orientation;
+		//GhostInfo _ghost;
+		//Tile _tile;
+		//Tile.TileOrientation _orientation;
 
-		for (int i = 0; i < usedGhosts.Count; i++) {
-			_ghost = usedGhosts[i];
-			_tileUnderGhost = Grid.Instance.grid[(int)usedGhosts[i].position.x, (int)usedGhosts[i].position.y];
-			_orientation = usedGhosts[i].Orientation;
+		for (int i = 0; i < modifiedTiles.Count; i++) {
+			//_tile = usedTiles[i];
+			////_tileUnderGhost = Grid.Instance.grid[(int)usedGhosts[i].position.x, (int)usedGhosts[i].position.y];
+			//_orientation = usedGhosts[i].Orientation;
 
-			Evaluate (_ghost, _tileUnderGhost, _orientation);
+			Evaluate (Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y]);
 		}
 	}
-	protected virtual void Evaluate(GhostInfo _ghost, Tile _tileUnderGhost, Tile.TileOrientation _orientation){
+	protected virtual void Evaluate(Tile _tile){
 	}
 
-	protected void ApplySettingsToGhost(GhostInfo _ghost, Tile _tileUnderGhost, bool _applyToGrid, Color _newColor) {
+	protected void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, Color _newColor) {
 		// apply color and position
-		_ghost.SetActive(true);
-		_ghost.SetColor(_newColor);
-		_ghost.SetPosition(new Vector2(_tileUnderGhost.GridX, _tileUnderGhost.GridY));
+		//_ghost.SetActive(true);
+		//_ghost.SetColor(_newColor);
+		//_ghost.SetPosition(new Vector2(_tile.GridX, _tile.GridY));
+
+        _tile.SetColor(_newColor);
+
 
 		// mark tile for changes
 		if (_applyToGrid) {
 
-			selectedTiles.Add(_tileUnderGhost);
+			selectedTiles.Add(_tile);
 
 			// add selected settings
-			selectedTilesNewType.Add(_ghost.Type);
-			selectedTilesNewOrientation.Add(_ghost.Orientation);
+			//selectedTilesNewType.Add(_ghost.Type);
+			//selectedTilesNewOrientation.Add(_ghost.Orientation);
 		}
 	}
 
 	protected virtual void ApplyCurrentTool() {
 		// reset stuff
 		selectedTiles.Clear();
-		selectedTilesNewType.Clear();
-		selectedTilesNewOrientation.Clear();
-		usedGhosts.Clear();
-		for (int i = 0; i < ALL_GHOSTS.Length; i++) {
-			ALL_GHOSTS[i].ResetHasNeighbours();
-			ALL_GHOSTS[i].SetActive(false);
-		}
+		//selectedTilesNewType.Clear();
+		//selectedTilesNewOrientation.Clear();
+		//usedTiles.Clear();
+		//for (int i = 0; i < ALL_GHOSTS.Length; i++) {
+		//	ALL_GHOSTS[i].ResetHasNeighbours();
+		//	ALL_GHOSTS[i].SetActive(false);
+		//}
 	}
 }
