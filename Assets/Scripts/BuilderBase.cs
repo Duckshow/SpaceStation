@@ -209,6 +209,31 @@ public class BuilderBase {
         mouseGhostIsDirty = true;
         OnNewRound();
     }
+	protected void ResetModifiedTiles(){
+		// reset old stuff
+		for (int i = 0; i < modifiedTiles.Count; i++) {
+			// Debug.Log(mouseTile.GridX + "x" + mouseTile.GridY + " / " + modifiedTiles[i].X + "x" + modifiedTiles[i].Y);
+			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].TempType = Tile.Type.Empty;
+			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].TempOrientation = Tile.TileOrientation.None;
+			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeWallGraphics(null, null, true);
+			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeFloorGraphics(null, true);
+			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetColor(Color.white);
+		}
+
+		modifiedTiles.Clear();
+	}
+	protected void ResetSelectedTiles(){
+		// reset old stuff
+		for (int i = 0; i < selectedTiles.Count; i++) {
+			selectedTiles[i].TempType = Tile.Type.Empty;
+			selectedTiles[i].TempOrientation = Tile.TileOrientation.None;
+			selectedTiles[i].ChangeWallGraphics(null, null, true);
+			selectedTiles[i].ChangeFloorGraphics(null, true);
+			selectedTiles[i].SetColor(Color.white);
+		}
+
+		selectedTiles.Clear();
+	}
 
 	private void ControlMouseGhost() {
 		// find current tile
@@ -218,9 +243,9 @@ public class BuilderBase {
 		mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridX || oldMouseGridPos.y != mouseTile.GridY;
 		if (modeWasChanged)
 			mouseGhostHasNewTile = true; // have to force my way into the sprite-update stuff below
-        if (mouseGhostHasNewTile) {
+		if (mouseGhostHasNewTile){
 			mouseGhostIsDirty = true;
-
+			ResetModifiedTiles ();
             //Grid.Instance.grid[(int)oldMouseGridPos.x, (int)oldMouseGridPos.y].TempType = Tile.Type.Empty;
             //Grid.Instance.grid[(int)oldMouseGridPos.x, (int)oldMouseGridPos.y].TempOrientation = Tile.TileOrientation.None;
             //Grid.Instance.grid[(int)oldMouseGridPos.x, (int)oldMouseGridPos.y].ChangeWallGraphics(null, null, true);
@@ -326,35 +351,21 @@ public class BuilderBase {
 			ghostTile_GridY = startTile.GridY;
 		}
 
-        // reset old stuff
-        for (int i = 0; i < modifiedTiles.Count; i++) {
-           // Debug.Log(mouseTile.GridX + "x" + mouseTile.GridY + " / " + modifiedTiles[i].X + "x" + modifiedTiles[i].Y);
-            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].TempType = Tile.Type.Empty;
-            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].TempOrientation = Tile.TileOrientation.None;
-            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeWallGraphics(null, null, true);
-            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeFloorGraphics(null, true);
-            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetColor(Color.white);
-        }
+//		if(Mouse.StateLeft != Mouse.MouseStateEnum.Click && Mouse.StateRight != Mouse.MouseStateEnum.Click)
+			//ResetOldThings (); ohqdooqdnon // continue here. doing this here causes changes made by TryRotateGhost to disappear. The line above helps, but there was some case that still got through. Find a better solution, I guess :/
 
-        modifiedTiles.Clear();
-		selectedTiles.Clear();
-		//selectedTilesNewType.Clear();
-		//selectedTilesNewOrientation.Clear();
-		//usedGhosts.Clear();
-		//for (int i = 0; i < ALL_GHOSTS.Length; i++) {
-		//	ALL_GHOSTS[i].ResetHasNeighbours();
-		//	ALL_GHOSTS[i].SetActive(false);
-		//}
 
 		switch (Mode) {
 			// click-Modes
 			case ModeEnum.Diagonal:
 			case ModeEnum.Door:
 			case ModeEnum.Airlock:
-            case ModeEnum.ObjectPlacing:
+			case ModeEnum.ObjectPlacing:
 				ghostTile_GridX = mouseTile.GridX;
 				ghostTile_GridY = mouseTile.GridY;
-				AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+
+				AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+				AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 				break;
 
 				// drag-Modes
@@ -362,7 +373,9 @@ public class BuilderBase {
 				if (!_hasClicked) {
 					ghostTile_GridX = mouseTile.GridX;
 					ghostTile_GridY = mouseTile.GridY;
-					AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+
+					AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+					AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 				}
 				else {
 					#region Default Held
@@ -370,6 +383,7 @@ public class BuilderBase {
 					highestAxisValue = Mathf.Max(distXAbs, distYAbs);
 					isGoingDiagonal = Mathf.Abs(distXAbs - distYAbs) <= highestAxisValue * 0.5f;
 
+					// first pass
 					for (int i = 0; i <= highestAxisValue; i++) {
 						// determine the offset from the _startTile
 						if (distXAbs >= distYAbs || isGoingDiagonal)
@@ -383,18 +397,23 @@ public class BuilderBase {
 						if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 							break;
 
-						//if (!isGoingDiagonal) {
-						//	if (distYAbs > distXAbs) {
-      //                          ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Top = (distY > 0) ? (i < highestAxisValue) : (i > 0);
-						//		ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Bottom = (distY > 0) ? (i > 0) : (i < highestAxisValue);
-						//	}
-						//	if (distXAbs > distYAbs) {
-						//		ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Right = (distX > 0) ? (i < highestAxisValue) : (i > 0);
-						//		ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Left = (distX > 0) ? (i > 0) : (i < highestAxisValue);
-						//	}
-						//}
+						AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+					}
+					// second pass
+					for (int i = 0; i <= highestAxisValue; i++) {
+						// determine the offset from the _startTile
+						if (distXAbs >= distYAbs || isGoingDiagonal)
+							ghostTile_GridX = distX < 0 ? startTile.GridX - i : startTile.GridX + i;
+						if (distYAbs >= distXAbs || isGoingDiagonal)
+							ghostTile_GridY = distY < 0 ? startTile.GridY - i : startTile.GridY + i;
 
-						AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+						// if outside grid, break
+						if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
+							break;
+						if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
+							break;
+
+						AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 					}
 					#endregion
 				}
@@ -403,13 +422,16 @@ public class BuilderBase {
 				if (!_hasClicked) {
 					ghostTile_GridX = mouseTile.GridX;
 					ghostTile_GridY = mouseTile.GridY;
-					AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+
+					AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+					AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 				}
 				else {
 					#region Room Held
 					bool _isOnEdgeX = true;
 					bool _isOnEdgeY = true;
 
+					// first pass
 					for (int y = 0; y <= distYAbs; y++) {
 						_isOnEdgeY = (y == 0 || y == distYAbs);
 
@@ -428,16 +450,29 @@ public class BuilderBase {
 							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 								continue;
 
-							//if (_isOnEdgeX) {
-							//	ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Top = (distY > 0) ? (y < distYAbs) : (y > 0);
-							//	ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Bottom = (distY > 0) ? (y > 0) : (y < distYAbs);
-							//}
-							//if (_isOnEdgeY) {
-							//	ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Right = (distX > 0) ? (x < distXAbs) : (x > 0);
-							//	ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Left = (distX > 0) ? (x > 0) : (x < distXAbs);
-							//}
+							AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+						}
+					}
+					// second pass
+					for (int y = 0; y <= distYAbs; y++) {
+						_isOnEdgeY = (y == 0 || y == distYAbs);
 
-							AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+						for (int x = 0; x <= distXAbs; x++) {
+							_isOnEdgeX = (x == 0 || x == distXAbs);
+
+							if (!_isOnEdgeX && !_isOnEdgeY)
+								continue;
+
+							ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
+							ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
+
+							// if outside grid, continue (would break, but orka)
+							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
+								continue;
+							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
+								continue;
+
+							AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 						}
 					}
 					#endregion
@@ -447,11 +482,14 @@ public class BuilderBase {
 			case ModeEnum.Fill:
 				if (!_hasClicked) {
 					ghostTile_GridX = mouseTile.GridX;
-					ghostTile_GridY = mouseTile.GridY;
-					AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+					ghostTile_GridY = mouseTile.GridY; 
+
+					AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+					AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 				}
 				else {
 					#region Room Held
+					// first pass
 					for (int y = 0; y <= distYAbs; y++) {
 						for (int x = 0; x <= distXAbs; x++) {
 							ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
@@ -463,12 +501,22 @@ public class BuilderBase {
 							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 								continue;
 
-								//ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Top = (distY > 0) ? (y < distYAbs) : (y > 0);
-								//ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Bottom = (distY > 0) ? (y > 0) : (y < distYAbs);
-								//ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Right = (distX > 0) ? (x < distXAbs) : (x > 0);
-								//ALL_GHOSTS[usedGhosts.Count].HasNeighbourGhost_Left = (distX > 0) ? (x > 0) : (x < distXAbs);
+							AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+						}
+					}
+					// second pass
+					for (int y = 0; y <= distYAbs; y++) {
+						for (int x = 0; x <= distXAbs; x++) {
+							ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
+							ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
 
-							AddNextGhost(ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+							// if outside grid, continue (would break, but orka)
+							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
+								continue;
+							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
+								continue;
+
+							AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
 						}
 					}
 					#endregion
@@ -483,22 +531,20 @@ public class BuilderBase {
 	}
 
 	protected void AddNextGhost(int _gridX, int _gridY, bool _snapToNeighbours) {
-        //if (usedGhosts.Find(x => x.position.x == _gridX && x.position.y == _gridY) != null)
-        //	return;
-
-        //ALL_GHOSTS[usedGhosts.Count].SetPosition(new Vector2(_gridX, _gridY));
-        //ALL_GHOSTS[usedGhosts.Count].SetActive(true);
-        //SetGhostGraphics(ref ALL_GHOSTS[usedGhosts.Count], Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
-        //usedGhosts.Add(ALL_GHOSTS[usedGhosts.Count]);
-
-        modifiedTiles.Add(new CachedAssets.DoubleInt(_gridX, _gridY));
-        SetGhostGraphics(Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
+		modifiedTiles.Add (new CachedAssets.DoubleInt (_gridX, _gridY));
+		SetGhostType (Grid.Instance.grid [_gridX, _gridY], _snapToNeighbours);
+	}
+	protected void AddNextGhostGraphics(int _gridX, int _gridY, bool _snapToNeighbours){
+		SetGhostGraphics (Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
 	}
 	protected virtual void AddGhostsForConnectedDiagonals(Tile _tile) {
 	}
 	protected virtual void AddGhostsForConnectedDoors(Tile _tile) {
 	}
 
+	protected virtual void SetGhostType(Tile _tile, bool _snapToNeighbours){
+	
+	}
 	protected virtual void SetGhostGraphics(Tile _tile, bool _snapToNeighbours) {
 
 		//// if a diagonal is below, sort ghost so the diagonal covers it in a pretty way
@@ -551,13 +597,6 @@ public class BuilderBase {
 
 	protected virtual void ApplyCurrentTool() {
 		// reset stuff
-		selectedTiles.Clear();
-		//selectedTilesNewType.Clear();
-		//selectedTilesNewOrientation.Clear();
-		//usedTiles.Clear();
-		//for (int i = 0; i < ALL_GHOSTS.Length; i++) {
-		//	ALL_GHOSTS[i].ResetHasNeighbours();
-		//	ALL_GHOSTS[i].SetActive(false);
-		//}
+		ResetSelectedTiles ();
 	}
 }

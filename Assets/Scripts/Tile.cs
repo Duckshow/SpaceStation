@@ -40,7 +40,7 @@ public class Tile : IHeapItem<Tile> {
     }
 
     public Type TempType = Type.Empty;
-    public TileOrientation TempOrientation = TileOrientation.None;
+	public TileOrientation TempOrientation = TileOrientation.None;
 
     public bool Walkable { get; private set; }
     public bool IsOccupiedByObject = false;
@@ -380,7 +380,6 @@ public class Tile : IHeapItem<Tile> {
         ChangeWallGraphics (
 			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, true, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
 			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, false, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B));
-        UpdateWallCornerHider();
     }
 	public void SetFloorType(Type _newType, TileOrientation _newOrientation){
 
@@ -469,7 +468,6 @@ public class Tile : IHeapItem<Tile> {
             UpdateNeighbourFloor(sCachedNeighbour_BL, TileOrientation.BottomLeft);
 
         ChangeFloorGraphics (CachedAssets.Instance.GetFloorAssetForTile(_FloorType_, _FloorOrientation_, 0, HasConnectableFloor_L, HasConnectableFloor_T, HasConnectableFloor_R, HasConnectableFloor_B));
-        UpdateFloorCornerHider();
 	}
 
 	// WARNING: this doesn't support changing the type and orientation of the tile, so if you're gonna change the type of a tile
@@ -543,7 +541,6 @@ public class Tile : IHeapItem<Tile> {
 		_neighbour.ChangeWallGraphics (
 			CachedAssets.Instance.GetWallAssetForTile (_neighbour._WallType_, _neighbour._Orientation_, 0, true, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B),
 			CachedAssets.Instance.GetWallAssetForTile (_neighbour._WallType_, _neighbour._Orientation_, 0, false, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B));
-        _neighbour.UpdateWallCornerHider();
     }
 	// WARNING: this doesn't support changing the type and orientation of the tile, so if you're gonna change the type of a tile
 	// you're gonna want to update its neighbours, but with something more fleshed out than this!
@@ -574,7 +571,6 @@ public class Tile : IHeapItem<Tile> {
 		}
 
 		_neighbour.ChangeFloorGraphics (CachedAssets.Instance.GetFloorAssetForTile(_neighbour._FloorType_, _neighbour._FloorOrientation_, 0, _neighbour.HasConnectableFloor_L, _neighbour.HasConnectableFloor_T, _neighbour.HasConnectableFloor_R, _neighbour.HasConnectableFloor_B));
-        _neighbour.UpdateFloorCornerHider();
     }
 
     public void UpdateWallCornerHider() {
@@ -607,14 +603,20 @@ public class Tile : IHeapItem<Tile> {
     public void ChangeWallGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices, bool _temporary = false) {
 		BottomQuad.ChangeAsset(_bottomAssetIndices, _temporary);
         TopQuad.ChangeAsset(_topAssetIndices, _temporary);
+		UpdateWallCornerHider ();
+		UpdateFloorCornerHider ();
     }
 	public void ChangeFloorGraphics(CachedAssets.DoubleInt _assetIndices, bool _temporary = false) {
 		FloorQuad.ChangeAsset(_assetIndices, _temporary);
+		UpdateWallCornerHider ();
+		UpdateFloorCornerHider ();
 	}
     public void SetColor(Color32 _color32) {
         FloorQuad.ChangeColor(_color32);
         BottomQuad.ChangeColor(_color32);
         TopQuad.ChangeColor(_color32);
+		WallCornerHider.ChangeColor (_color32);
+		FloorCornerHider.ChangeColor (_color32);
     }
 
     public void OnActorApproachingTile(TileOrientation _direction) {

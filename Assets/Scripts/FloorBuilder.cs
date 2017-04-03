@@ -15,37 +15,90 @@ public class FloorBuilder : BuilderBase {
 	}
 
 	protected override void AddGhostsForConnectedDiagonals(Tile _tile) {
-		if (_tile.ConnectedDiagonalFloor_B != null)
+		if (_tile.ConnectedDiagonalFloor_B != null) {
 			AddNextGhost(_tile.ConnectedDiagonalFloor_B.GridX, _tile.ConnectedDiagonalFloor_B.GridY, false);
-		if (_tile.ConnectedDiagonalFloor_L != null)
+			AddNextGhostGraphics(_tile.ConnectedDiagonalFloor_B.GridX, _tile.ConnectedDiagonalFloor_B.GridY, false);
+		}
+		if (_tile.ConnectedDiagonalFloor_L != null) {
 			AddNextGhost(_tile.ConnectedDiagonalFloor_L.GridX, _tile.ConnectedDiagonalFloor_L.GridY, false);
-		if (_tile.ConnectedDiagonalFloor_T != null)
+			AddNextGhostGraphics(_tile.ConnectedDiagonalFloor_L.GridX, _tile.ConnectedDiagonalFloor_L.GridY, false);
+		}
+		if (_tile.ConnectedDiagonalFloor_T != null) {
 			AddNextGhost(_tile.ConnectedDiagonalFloor_T.GridX, _tile.ConnectedDiagonalFloor_T.GridY, false);
-		if (_tile.ConnectedDiagonalFloor_R != null)
+			AddNextGhostGraphics(_tile.ConnectedDiagonalFloor_T.GridX, _tile.ConnectedDiagonalFloor_T.GridY, false);
+		}
+		if (_tile.ConnectedDiagonalFloor_R != null) {
 			AddNextGhost(_tile.ConnectedDiagonalFloor_R.GridX, _tile.ConnectedDiagonalFloor_R.GridY, false);
+			AddNextGhostGraphics(_tile.ConnectedDiagonalFloor_R.GridX, _tile.ConnectedDiagonalFloor_R.GridY, false);
+		}
 	}
 
-	protected override void SetGhostGraphics(Tile _tile, bool _snapToNeighbours) {
-
-        Tile.sTryTempCacheNeighbour_L(_tile.GridX, _tile.GridY);
-		bool _hasConnection_L = Tile.sCachedNeighbour_L.TempType != Tile.Type.Empty || _tile.HasConnectableFloor_L;
-
-        Tile.sTryTempCacheNeighbour_R(_tile.GridX, _tile.GridY);
-		bool _hasConnection_R = Tile.sCachedNeighbour_R.TempType != Tile.Type.Empty || _tile.HasConnectableFloor_R;
-
-        Tile.sTryTempCacheNeighbour_T(_tile.GridX, _tile.GridY);
-		bool _hasConnection_T = Tile.sCachedNeighbour_T.TempType != Tile.Type.Empty || _tile.HasConnectableFloor_T;
-
-        Tile.sTryTempCacheNeighbour_B(_tile.GridX, _tile.GridY);
-        bool _hasConnection_B = Tile.sCachedNeighbour_B.TempType != Tile.Type.Empty || _tile.HasConnectableFloor_B;
-
+	protected override void SetGhostType(Tile _tile, bool _snapToNeighbours){
 		switch (Mode) {
 			case ModeEnum.Default:
 			case ModeEnum.Room:
 			case ModeEnum.Fill:
 				_tile.TempType = Tile.Type.Solid;
 				_tile.TempOrientation = Tile.TileOrientation.None;
+				break;
 
+			case ModeEnum.Diagonal:
+
+				// default values 
+				_tile.TempType = Tile.Type.Diagonal;
+				_tile.TempOrientation = _snapToNeighbours ? Tile.TileOrientation.TopLeft : _tile.TempOrientation;
+
+				// diagonal top left
+				if (	(_snapToNeighbours && _tile.HasConnectableFloor_L && _tile.HasConnectableFloor_T)
+					|| (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopLeft)) {
+
+					_tile.TempOrientation = Tile.TileOrientation.TopLeft;
+				}
+
+				// diagonal top right
+				else if ((_snapToNeighbours && _tile.HasConnectableFloor_T && _tile.HasConnectableFloor_R)
+					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopRight)) {
+
+					_tile.TempOrientation = Tile.TileOrientation.TopRight;
+				}
+
+				// diagonal bottom right
+				else if ((_snapToNeighbours && _tile.HasConnectableFloor_R && _tile.HasConnectableFloor_B)
+					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomRight)) {
+
+					_tile.TempOrientation = Tile.TileOrientation.BottomRight;
+				}
+
+				// diagonal bottom left
+				else if ((_snapToNeighbours && _tile.HasConnectableFloor_B && _tile.HasConnectableFloor_L)
+					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomLeft)) {
+
+					_tile.TempOrientation = Tile.TileOrientation.BottomLeft;
+				}
+
+				break;
+
+			case ModeEnum.Door:
+			case ModeEnum.Airlock:
+			case ModeEnum.ObjectPlacing:
+				throw new System.Exception (Mode.ToString() + " does not apply to Floor!");
+			default:
+				throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
+		}
+
+		base.SetGhostType (_tile, _snapToNeighbours);
+	}
+	protected override void SetGhostGraphics(Tile _tile, bool _snapToNeighbours) {
+
+		bool _hasConnection_L = (Tile.sTryTempCacheNeighbour_L(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_L.TempType != Tile.Type.Empty) || _tile.HasConnectableFloor_L;
+		bool _hasConnection_R = (Tile.sTryTempCacheNeighbour_R(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_R.TempType != Tile.Type.Empty) || _tile.HasConnectableFloor_R;
+		bool _hasConnection_T = (Tile.sTryTempCacheNeighbour_T(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_T.TempType != Tile.Type.Empty) || _tile.HasConnectableFloor_T;
+		bool _hasConnection_B = (Tile.sTryTempCacheNeighbour_B(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_B.TempType != Tile.Type.Empty) || _tile.HasConnectableFloor_B;
+
+		switch (Mode) {
+			case ModeEnum.Default:
+			case ModeEnum.Room:
+			case ModeEnum.Fill:
 				//if (isDeleting && _tile._FloorType_ != Tile.Type.Empty) { // excluding empty because otherwise it doesn't get graphics
 				//	//_ghost.ChangeAssets(
 				//	//	CachedAssets.Instance.GetFloorAssetForTile(_tile._FloorType_, _tile._FloorOrientation_, 0, _hasConnection_Left, _hasConnection_Top, _hasConnection_Right, _hasConnection_Bottom),
@@ -62,18 +115,13 @@ public class FloorBuilder : BuilderBase {
 			case ModeEnum.Diagonal:
 
 				// default values 
-				_tile.TempType = Tile.Type.Diagonal;
-				_tile.TempOrientation = _snapToNeighbours ? Tile.TileOrientation.TopLeft : _tile.TempOrientation;
 				_tile.ChangeFloorGraphics(
 					CachedAssets.WallSet.floor_Diagonal_TopLeft,
 					true);
 
-
 				// diagonal top left
-				if ((_snapToNeighbours && _tile.HasConnectableFloor_L && _tile.HasConnectableFloor_T)
-					|| (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopLeft)) {
-
-					_tile.TempOrientation = Tile.TileOrientation.TopLeft;
+				if 	((_snapToNeighbours && _tile.HasConnectableFloor_L && _tile.HasConnectableFloor_T)
+				 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopLeft)) {
 					_tile.ChangeFloorGraphics(
 						CachedAssets.WallSet.floor_Diagonal_TopLeft,
 						true);
@@ -81,9 +129,7 @@ public class FloorBuilder : BuilderBase {
 
 				// diagonal top right
 				else if ((_snapToNeighbours && _tile.HasConnectableFloor_T && _tile.HasConnectableFloor_R)
-					|| (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopRight)) {
-
-					_tile.TempOrientation = Tile.TileOrientation.TopRight;
+					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopRight)) {
 					_tile.ChangeFloorGraphics(
 						CachedAssets.WallSet.floor_Diagonal_TopRight,
 						true);
@@ -91,9 +137,7 @@ public class FloorBuilder : BuilderBase {
 
 				// diagonal bottom right
 				else if ((_snapToNeighbours && _tile.HasConnectableFloor_R && _tile.HasConnectableFloor_B)
-					|| (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomRight)) {
-
-					_tile.TempOrientation = Tile.TileOrientation.BottomRight;
+					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomRight)) {
 					_tile.ChangeFloorGraphics(
 						CachedAssets.WallSet.floor_Diagonal_BottomRight,
 						true);
@@ -101,9 +145,7 @@ public class FloorBuilder : BuilderBase {
 
 				// diagonal bottom left
 				else if ((_snapToNeighbours && _tile.HasConnectableFloor_B && _tile.HasConnectableFloor_L)
-					|| (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomLeft)) {
-
-				    _tile.TempOrientation = Tile.TileOrientation.BottomLeft;
+					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomLeft)) {
 					_tile.ChangeFloorGraphics(
 						CachedAssets.WallSet.floor_Diagonal_BottomLeft,
 						true);
