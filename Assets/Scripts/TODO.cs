@@ -4,8 +4,11 @@
 
 == Next time ==
 
-
 == Goal ==
+Get coloring working!
+"1.@frag check the R of the underlying pixel of the pallette map (0-3)
+ 2.use the R to check the corresponding vertex color channel
+ 3.use that value to determine which color variable to use."
 
 
 == Needs to be done ==
