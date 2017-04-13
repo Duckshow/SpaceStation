@@ -177,8 +177,8 @@ public class Grid : MonoBehaviour {
         }
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                grid[x, y].UpdateWallCornerHider();
-                grid[x, y].UpdateFloorCornerHider();
+                grid[x, y].UpdateWallCornerHider(false);
+                grid[x, y].UpdateFloorCornerHider(false);
             }
         }
     }

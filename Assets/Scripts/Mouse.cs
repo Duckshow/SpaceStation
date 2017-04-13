@@ -56,14 +56,27 @@ public class Mouse : MonoBehaviour {
 	void Update () {
 
 		// for testing purposes only
-        if (Input.GetKeyDown(KeyCode.O)) {
+        if (Input.GetKeyUp(KeyCode.O)) {
             Actor[] _actor = FindObjectsOfType<Actor>();
             for (int i = 0; i < _actor.Length; i++) {
                 _actor[i].enabled = !_actor[i].enabled;
             }
         }
 
-		SetMouseState ();
+        if (Input.GetKeyUp(KeyCode.P)) {
+            Debug.Break();
+        }
+
+        if (Input.GetKeyUp(KeyCode.Tab)) {
+            currentSelectedModeIndex++;
+            if (currentSelectedModeIndex > ModeButtons.Length - 1)
+                currentSelectedModeIndex = 0;
+
+            ModeButtons[currentSelectedModeIndex].isOn = true;
+            OnModeButtonsNewActive(currentSelectedModeIndex);
+        }
+
+        SetMouseState ();
 
 		inspectableInRange = null;
 		CanClick _clickable = null;
@@ -239,15 +252,6 @@ public class Mouse : MonoBehaviour {
 
         if (ObjectPlacing.PickedUpObject != null)
             return;
-		
-		if (Input.GetKeyUp(KeyCode.Tab)) {
-			currentSelectedModeIndex++;
-			if (currentSelectedModeIndex > ModeButtons.Length - 1)
-				currentSelectedModeIndex = 0;
-
-			ModeButtons [currentSelectedModeIndex].isOn = true;
-			OnModeButtonsNewActive (currentSelectedModeIndex);
-		}
     }
 
 	void OnModeButton0ValueChanged(bool b){

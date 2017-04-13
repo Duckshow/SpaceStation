@@ -61,8 +61,8 @@ public class ObjectPlacer {
             position = _value;
         }
         public void ChangeAssets(CachedAssets.DoubleInt _bottomIndices, CachedAssets.DoubleInt _topIndices) {
-            BottomQuad.ChangeAsset(_bottomIndices);
-            TopQuad.ChangeAsset(_topIndices);
+            BottomQuad.ChangeAsset(_bottomIndices, false);
+            TopQuad.ChangeAsset(_topIndices, false);
         }
         public void SetColor(Color _color) {
             BottomQuad.ChangeColor(_color);

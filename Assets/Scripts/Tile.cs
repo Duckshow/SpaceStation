@@ -40,7 +40,7 @@ public class Tile : IHeapItem<Tile> {
     }
 
     public Type TempType = Type.Empty;
-	public TileOrientation TempOrientation = TileOrientation.None;
+    public TileOrientation TempOrientation = TileOrientation.None;
 
     public bool Walkable { get; private set; }
     public bool IsOccupiedByObject = false;
@@ -74,6 +74,15 @@ public class Tile : IHeapItem<Tile> {
 	public bool CanConnectFloor_R { get; private set; }
 	public bool CanConnectFloor_B { get; private set; }
 
+    public bool CanConnectTemp_L { get; private set; }
+    public bool CanConnectTemp_T { get; private set; }
+    public bool CanConnectTemp_R { get; private set; }
+    public bool CanConnectTemp_B { get; private set; }
+    public bool CanConnectTempFloor_L { get; private set; }
+    public bool CanConnectTempFloor_T { get; private set; }
+    public bool CanConnectTempFloor_R { get; private set; }
+    public bool CanConnectTempFloor_B { get; private set; }
+
     [HideInInspector] public bool HasConnectable_L = false;
     [HideInInspector] public bool HasConnectable_T = false;
     [HideInInspector] public bool HasConnectable_R = false;
@@ -82,6 +91,15 @@ public class Tile : IHeapItem<Tile> {
 	[HideInInspector] public bool HasConnectableFloor_T = false;
 	[HideInInspector] public bool HasConnectableFloor_R = false;
 	[HideInInspector] public bool HasConnectableFloor_B = false;
+
+    [HideInInspector] public bool HasConnectableTemp_L = false;
+    [HideInInspector] public bool HasConnectableTemp_T = false;
+    [HideInInspector] public bool HasConnectableTemp_R = false;
+    [HideInInspector] public bool HasConnectableTemp_B = false;
+	[HideInInspector] public bool HasConnectableTempFloor_L = false;
+	[HideInInspector] public bool HasConnectableTempFloor_T = false;
+	[HideInInspector] public bool HasConnectableTempFloor_R = false;
+	[HideInInspector] public bool HasConnectableTempFloor_B = false;
 
     [HideInInspector] public bool HideFloorCorner_TL = false;
     [HideInInspector] public bool HideFloorCorner_TR = false;
@@ -213,7 +231,109 @@ public class Tile : IHeapItem<Tile> {
         return sCachedNeighbour_BL != null;
     }
 
-    public void SetTileType(Type _newType, TileOrientation _newOrientation) {
+    private static bool[] sTypeConnectability = new bool[4];
+    private static void sAssignTypeConnectability(Type _type, TileOrientation _orientation = TileOrientation.None) {
+        sTypeConnectability[0] = false; //L
+        sTypeConnectability[1] = false; //T
+        sTypeConnectability[2] = false; //R
+        sTypeConnectability[3] = false; //B
+        switch (_type) {
+            case Type.Empty:
+                break;
+            case Type.Solid:
+                sTypeConnectability[0] = true;
+                sTypeConnectability[1] = true;
+                sTypeConnectability[2] = true;
+                sTypeConnectability[3] = true;
+                break;
+            case Type.Diagonal:
+                switch (_orientation) {
+                    case TileOrientation.BottomLeft:
+                        sTypeConnectability[0] = true;
+                        sTypeConnectability[3] = true;
+                        break;
+                    case TileOrientation.TopLeft:
+                        sTypeConnectability[0] = true;
+                        sTypeConnectability[1] = true;
+                        break;
+                    case TileOrientation.TopRight:
+                        sTypeConnectability[1] = true;
+                        sTypeConnectability[2] = true;
+                        break;
+                    case TileOrientation.BottomRight:
+                        sTypeConnectability[2] = true;
+                        sTypeConnectability[3] = true;
+                        break;
+                }
+                break;
+            case Type.Door:
+                switch (_orientation) {
+                    // vertical
+                    case TileOrientation.Bottom:
+                    case TileOrientation.Top:
+                        sTypeConnectability[1] = true;
+                        sTypeConnectability[3] = true;
+                        break;
+                    // horizontal
+                    case TileOrientation.Left:
+                    case TileOrientation.Right:
+                        sTypeConnectability[0] = true;
+                        sTypeConnectability[2] = true;
+                        break;
+                }
+                break;
+            case Type.Airlock:
+                switch (_orientation) {
+                    // vertical
+                    case TileOrientation.Bottom:
+                    case TileOrientation.Top:
+                        sTypeConnectability[1] = true;
+                        sTypeConnectability[3] = true;
+                        break;
+                    // horizontal
+                    case TileOrientation.Left:
+                    case TileOrientation.Right:
+                        sTypeConnectability[0] = true;
+                        sTypeConnectability[2] = true;
+                        break;
+                }
+                break;
+            default:
+                throw new System.Exception(_type.ToString() + " has not been properly implemented yet!");
+        }
+    }
+
+    public void SetTileType(Type _newType, TileOrientation _newOrientation, bool _temporarily = false) {
+        if (_temporarily) {
+            TempType = _newType;
+            TempOrientation = _newOrientation;
+
+            sAssignTypeConnectability(_newType, _newOrientation);
+            CanConnectTemp_L = sTypeConnectability[0];
+            CanConnectTemp_T = sTypeConnectability[1];
+            CanConnectTemp_R = sTypeConnectability[2];
+            CanConnectTemp_B = sTypeConnectability[3];
+
+            if (sTryTempCacheNeighbour_L(GridX, GridY))
+                UpdateNeighbourWall(sCachedNeighbour_L, TileOrientation.Left, true);
+            if (sTryTempCacheNeighbour_T(GridX, GridY))
+                UpdateNeighbourWall(sCachedNeighbour_T, TileOrientation.Top, true);
+            if (sTryTempCacheNeighbour_R(GridX, GridY))
+                UpdateNeighbourWall(sCachedNeighbour_R, TileOrientation.Right, true);
+            if (sTryTempCacheNeighbour_B(GridX, GridY))
+                UpdateNeighbourWall(sCachedNeighbour_B, TileOrientation.Bottom, true);
+
+            if (sTryTempCacheNeighbour_TL(GridX, GridY))
+                UpdateNeighbourWall(sCachedNeighbour_TL, TileOrientation.TopLeft, true);
+            if (sTryTempCacheNeighbour_TR(GridX, GridY))
+                UpdateNeighbourWall(sCachedNeighbour_TR, TileOrientation.TopRight, true);
+            if (sTryTempCacheNeighbour_BR(GridX, GridY))
+                UpdateNeighbourWall(sCachedNeighbour_BR, TileOrientation.BottomRight, true);
+            if (sTryTempCacheNeighbour_BL(GridX, GridY))
+                UpdateNeighbourWall(sCachedNeighbour_BL, TileOrientation.BottomLeft, true);
+            return;
+        }
+
         Animator.StopAnimating();
 
 		prevType = _WallType_;
@@ -263,10 +383,11 @@ public class Tile : IHeapItem<Tile> {
 				SetFloorType (Type.Empty, _newOrientation);
         }
 
-		CanConnect_L = false;
-		CanConnect_T = false;
-		CanConnect_R = false;
-		CanConnect_B = false;
+        sAssignTypeConnectability(_newType, _newOrientation);
+        CanConnect_L = sTypeConnectability[0];
+        CanConnect_T = sTypeConnectability[1];
+        CanConnect_R = sTypeConnectability[2];
+        CanConnect_B = sTypeConnectability[3];
 
         switch (_newType) {
             case Type.Empty:
@@ -275,11 +396,6 @@ public class Tile : IHeapItem<Tile> {
                 break;
             case Type.Solid:
                 Walkable = false;
-                CanConnect_L = true;
-                CanConnect_T = true;
-                CanConnect_R = true;
-                CanConnect_B = true;
-
 				SetFloorType (Type.Empty, _newOrientation);
                 break;
 			case Type.Diagonal:
@@ -287,23 +403,15 @@ public class Tile : IHeapItem<Tile> {
                 switch (_newOrientation) {
                     case TileOrientation.BottomLeft:
                         DefaultPositionWorld = WorldPosition + new Vector3(0.25f, 0.25f, 0);
-                        CanConnect_L = true;
-                        CanConnect_B = true;
                         break;
                     case TileOrientation.TopLeft:
                         DefaultPositionWorld = WorldPosition + new Vector3(0.25f, -0.25f, 0);
-                        CanConnect_L = true;
-                        CanConnect_T = true;
                         break;
                     case TileOrientation.TopRight:
                         DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, -0.25f, 0);
-                        CanConnect_T = true;
-                        CanConnect_R = true;
                         break;
                     case TileOrientation.BottomRight:
                         DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, 0.25f, 0);
-                        CanConnect_R = true;
-                        CanConnect_B = true;
                         break;
                 }
 				if (_FloorType_ != Type.Empty)
@@ -317,15 +425,10 @@ public class Tile : IHeapItem<Tile> {
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
                         DefaultPositionWorld = WorldPosition + new Vector3(0, -0.15f, 0);
-
-                        CanConnect_T = true;
-                        CanConnect_B = true;
                         break;
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
-                        CanConnect_L = true;
-                        CanConnect_R = true;
                         break;
                 }
 
@@ -339,17 +442,11 @@ public class Tile : IHeapItem<Tile> {
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
                         DefaultPositionWorld = WorldPosition + new Vector3(0, -0.25f, 0);
-
-                        CanConnect_T = true;
-                        CanConnect_B = true;
                         break;
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
                         DefaultPositionWorld = WorldPosition + new Vector3(0, -0.35f, 0);
-
-                        CanConnect_L = true;
-                        CanConnect_R = true;
                         break;
                 }
 
@@ -360,30 +457,61 @@ public class Tile : IHeapItem<Tile> {
         }
 
 		if (sTryTempCacheNeighbour_L(GridX, GridY))
-			UpdateNeighbourWall(sCachedNeighbour_L, TileOrientation.Left);
+			UpdateNeighbourWall(sCachedNeighbour_L, TileOrientation.Left, false);
 		if (sTryTempCacheNeighbour_T(GridX, GridY))
-			UpdateNeighbourWall(sCachedNeighbour_T, TileOrientation.Top);
+			UpdateNeighbourWall(sCachedNeighbour_T, TileOrientation.Top, false);
 		if (sTryTempCacheNeighbour_R(GridX, GridY))
-			UpdateNeighbourWall(sCachedNeighbour_R, TileOrientation.Right);
+			UpdateNeighbourWall(sCachedNeighbour_R, TileOrientation.Right, false);
 		if (sTryTempCacheNeighbour_B(GridX, GridY))
-			UpdateNeighbourWall(sCachedNeighbour_B, TileOrientation.Bottom);
+			UpdateNeighbourWall(sCachedNeighbour_B, TileOrientation.Bottom, false);
 
         if (sTryTempCacheNeighbour_TL(GridX, GridY))
-            UpdateNeighbourWall(sCachedNeighbour_TL, TileOrientation.TopLeft);
+            UpdateNeighbourWall(sCachedNeighbour_TL, TileOrientation.TopLeft, false);
         if (sTryTempCacheNeighbour_TR(GridX, GridY))
-            UpdateNeighbourWall(sCachedNeighbour_TR, TileOrientation.TopRight);
+            UpdateNeighbourWall(sCachedNeighbour_TR, TileOrientation.TopRight, false);
         if (sTryTempCacheNeighbour_BR(GridX, GridY))
-            UpdateNeighbourWall(sCachedNeighbour_BR, TileOrientation.BottomRight);
+            UpdateNeighbourWall(sCachedNeighbour_BR, TileOrientation.BottomRight, false);
         if (sTryTempCacheNeighbour_BL(GridX, GridY))
-            UpdateNeighbourWall(sCachedNeighbour_BL, TileOrientation.BottomLeft);
+            UpdateNeighbourWall(sCachedNeighbour_BL, TileOrientation.BottomLeft, false);
 
         ChangeWallGraphics (
 			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, true, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
-			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, false, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B));
+			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, false, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
+            false
+        );
     }
-	public void SetFloorType(Type _newType, TileOrientation _newOrientation){
+    public void SetFloorType(Type _newType, TileOrientation _newOrientation, bool _temporarily = false){
+        if (_temporarily) {
+            TempType = _newType;
+            TempOrientation = _newOrientation;
 
-		if (_FloorType_ == Type.Diagonal) {
+            sAssignTypeConnectability(_newType, _newOrientation);
+            CanConnectTempFloor_L = sTypeConnectability[0];
+            CanConnectTempFloor_T = sTypeConnectability[1];
+            CanConnectTempFloor_R = sTypeConnectability[2];
+            CanConnectTempFloor_B = sTypeConnectability[3];
+
+            if (sTryTempCacheNeighbour_L(GridX, GridY))
+                UpdateNeighbourFloor(sCachedNeighbour_L, TileOrientation.Left, true);
+            if (sTryTempCacheNeighbour_T(GridX, GridY))
+                UpdateNeighbourFloor(sCachedNeighbour_T, TileOrientation.Top, true);
+            if (sTryTempCacheNeighbour_R(GridX, GridY))
+                UpdateNeighbourFloor(sCachedNeighbour_R, TileOrientation.Right, true);
+            if (sTryTempCacheNeighbour_B(GridX, GridY))
+                UpdateNeighbourFloor(sCachedNeighbour_B, TileOrientation.Bottom, true);
+
+            if (sTryTempCacheNeighbour_TL(GridX, GridY))
+                UpdateNeighbourFloor(sCachedNeighbour_TL, TileOrientation.TopLeft, true);
+            if (sTryTempCacheNeighbour_TR(GridX, GridY))
+                UpdateNeighbourFloor(sCachedNeighbour_TR, TileOrientation.TopRight, true);
+            if (sTryTempCacheNeighbour_BR(GridX, GridY))
+                UpdateNeighbourFloor(sCachedNeighbour_BR, TileOrientation.BottomRight, true);
+            if (sTryTempCacheNeighbour_BL(GridX, GridY))
+                UpdateNeighbourFloor(sCachedNeighbour_BL, TileOrientation.BottomLeft, true);
+            return;
+        }
+
+        if (_FloorType_ == Type.Diagonal) {
 			if(GridX > 0)
 				Grid.Instance.grid[GridX - 1, GridY].ConnectedDiagonalFloor_R = null;
 			if(GridX < Grid.Instance.GridSizeX - 1)
@@ -407,72 +535,74 @@ public class Tile : IHeapItem<Tile> {
         ForceActorStopWhenPassingThis = false;
 		MovementPenalty = 0; //TODO: use this for something!
 
-
-		CanConnectFloor_L = false;
-		CanConnectFloor_T = false;
-		CanConnectFloor_R = false;
-		CanConnectFloor_B = false;
-
-		switch (_newType) {
-			case Type.Empty:
-				break;
-			case Type.Solid:
-				CanConnectFloor_L = true;
-				CanConnectFloor_T = true;
-				CanConnectFloor_R = true;
-				CanConnectFloor_B = true;
-				break;
-			case Type.Diagonal:
-				switch (_newOrientation) {
-					case TileOrientation.BottomLeft:
-						CanConnectFloor_L = true;
-						CanConnectFloor_B = true;
-						break;
-					case TileOrientation.TopLeft:
-						CanConnectFloor_L = true;
-						CanConnectFloor_T = true;
-						break;
-					case TileOrientation.TopRight:
-						CanConnectFloor_T = true;
-						CanConnectFloor_R = true;
-						break;
-					case TileOrientation.BottomRight:
-						CanConnectFloor_R = true;
-						CanConnectFloor_B = true;
-						break;
-				}
-				break;
-			case Type.Door:
-			case Type.Airlock:
-				throw new System.Exception (_newType.ToString() + " isn't applicable to Floor!");
-			default:
-				throw new System.Exception(_newType.ToString() + " has not been properly implemented yet!");
-		}
+        sAssignTypeConnectability(_newType, _newOrientation);
+		CanConnectFloor_L = sTypeConnectability[0];
+		CanConnectFloor_T = sTypeConnectability[1];
+		CanConnectFloor_R = sTypeConnectability[2];
+		CanConnectFloor_B = sTypeConnectability[3];
 
 		if (sTryTempCacheNeighbour_L(GridX, GridY))
-			UpdateNeighbourFloor(sCachedNeighbour_L, TileOrientation.Left);
+			UpdateNeighbourFloor(sCachedNeighbour_L, TileOrientation.Left, false);
 		if (sTryTempCacheNeighbour_T(GridX, GridY))
-			UpdateNeighbourFloor(sCachedNeighbour_T, TileOrientation.Top);
+			UpdateNeighbourFloor(sCachedNeighbour_T, TileOrientation.Top, false);
 		if (sTryTempCacheNeighbour_R(GridX, GridY))
-			UpdateNeighbourFloor(sCachedNeighbour_R, TileOrientation.Right);
+			UpdateNeighbourFloor(sCachedNeighbour_R, TileOrientation.Right, false);
 		if (sTryTempCacheNeighbour_B(GridX, GridY))
-			UpdateNeighbourFloor(sCachedNeighbour_B, TileOrientation.Bottom);
+			UpdateNeighbourFloor(sCachedNeighbour_B, TileOrientation.Bottom, false);
 
         if (sTryTempCacheNeighbour_TL(GridX, GridY))
-            UpdateNeighbourFloor(sCachedNeighbour_TL, TileOrientation.TopLeft);
+            UpdateNeighbourFloor(sCachedNeighbour_TL, TileOrientation.TopLeft, false);
         if (sTryTempCacheNeighbour_TR(GridX, GridY))
-            UpdateNeighbourFloor(sCachedNeighbour_TR, TileOrientation.TopRight);
+            UpdateNeighbourFloor(sCachedNeighbour_TR, TileOrientation.TopRight, false);
         if (sTryTempCacheNeighbour_BR(GridX, GridY))
-            UpdateNeighbourFloor(sCachedNeighbour_BR, TileOrientation.BottomRight);
+            UpdateNeighbourFloor(sCachedNeighbour_BR, TileOrientation.BottomRight, false);
         if (sTryTempCacheNeighbour_BL(GridX, GridY))
-            UpdateNeighbourFloor(sCachedNeighbour_BL, TileOrientation.BottomLeft);
+            UpdateNeighbourFloor(sCachedNeighbour_BL, TileOrientation.BottomLeft, false);
 
-        ChangeFloorGraphics (CachedAssets.Instance.GetFloorAssetForTile(_FloorType_, _FloorOrientation_, 0, HasConnectableFloor_L, HasConnectableFloor_T, HasConnectableFloor_R, HasConnectableFloor_B));
+        ChangeFloorGraphics (
+            CachedAssets.Instance.GetFloorAssetForTile(_FloorType_, _FloorOrientation_, 0, HasConnectableFloor_L, HasConnectableFloor_T, HasConnectableFloor_R, HasConnectableFloor_B),
+            false
+        );
 	}
 
 	// WARNING: this doesn't support changing the type and orientation of the tile, so if you're gonna change the type of a tile
 	// you're gonna want to update its neighbours, but with something more fleshed out than this!
-    void UpdateNeighbourWall(Tile _neighbour, TileOrientation _directionFromThisTile) {
+    void UpdateNeighbourWall(Tile _neighbour, TileOrientation _directionFromThisTile, bool _temporarily) {
+        if (_temporarily) {
+            //if (_neighbour.TempType == Type.Empty)
+            //    return;
+
+            switch (_directionFromThisTile) {
+                case TileOrientation.Bottom:
+                    _neighbour.HasConnectableTemp_T = CanConnectTemp_B;
+                    break;
+                case TileOrientation.Left:
+                    _neighbour.HasConnectableTemp_R = CanConnectTemp_L;
+                    break;
+                case TileOrientation.Top:
+                    _neighbour.HasConnectableTemp_B = CanConnectTemp_T;
+                    break;
+                case TileOrientation.Right:
+                    _neighbour.HasConnectableTemp_L = CanConnectTemp_R;
+                    break;
+                case TileOrientation.TopLeft:
+                case TileOrientation.TopRight:
+                case TileOrientation.BottomRight:
+                case TileOrientation.BottomLeft:
+                    _neighbour.UpdateWallCornerHider(true);
+                    return;
+            }
+
+            if (_neighbour.TempType == _neighbour.wallType)
+                return;
+
+            _neighbour.ChangeWallGraphics(
+                CachedAssets.Instance.GetWallAssetForTile(_neighbour.TempType, _neighbour.TempOrientation, 0, true, _neighbour.HasConnectableTemp_L, _neighbour.HasConnectableTemp_T, _neighbour.HasConnectableTemp_R, _neighbour.HasConnectableTemp_B),
+                CachedAssets.Instance.GetWallAssetForTile(_neighbour.TempType, _neighbour.TempOrientation, 0, false, _neighbour.HasConnectableTemp_L, _neighbour.HasConnectableTemp_T, _neighbour.HasConnectableTemp_R, _neighbour.HasConnectableTemp_B),
+                _temporary: true
+            );
+            return;
+        }
         switch (_directionFromThisTile) {
 			case TileOrientation.Bottom:
 				_neighbour.HasConnectable_T = CanConnect_B;
@@ -485,7 +615,7 @@ public class Tile : IHeapItem<Tile> {
                     _neighbour.SetBuildingAllowed(false);
                 break;
             case TileOrientation.Left:
-				_neighbour.HasConnectable_R = CanConnect_L;
+                _neighbour.HasConnectable_R = CanConnect_L;
 				_neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Left);
 				_neighbour.ConnectedDiagonal_R = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.BottomLeft)) ? this : null;
 				_neighbour.ConnectedDoorOrAirlock_R = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
@@ -495,13 +625,12 @@ public class Tile : IHeapItem<Tile> {
                     _neighbour.SetBuildingAllowed(false);
                 break;
             case TileOrientation.Top:
-				_neighbour.HasConnectable_B = CanConnect_T;
+                _neighbour.HasConnectable_B = CanConnect_T;
 				_neighbour.IsBlocked_B = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Bottom);
 				_neighbour.ConnectedDiagonal_B = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.TopRight)) ? this : null;
 				_neighbour.ConnectedDoorOrAirlock_B = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
 				if (_WallType_ == Type.Door || _WallType_ == Type.Airlock) {
-
                     // prevent building in front of door
 					if (_IsHorizontal_)
                         _neighbour.SetBuildingAllowed(false);
@@ -521,7 +650,7 @@ public class Tile : IHeapItem<Tile> {
                 }
                 break;
             case TileOrientation.Right:
-				_neighbour.HasConnectable_L = CanConnect_R;
+                _neighbour.HasConnectable_L = CanConnect_R;
 				_neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Left);
 				_neighbour.ConnectedDiagonal_L = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.BottomRight || _Orientation_ == TileOrientation.TopRight)) ? this : null;
 				_neighbour.ConnectedDoorOrAirlock_L = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
@@ -534,82 +663,199 @@ public class Tile : IHeapItem<Tile> {
 			case TileOrientation.TopRight:
 			case TileOrientation.BottomRight:
 			case TileOrientation.BottomLeft:
-                _neighbour.UpdateWallCornerHider();
+                _neighbour.UpdateWallCornerHider(false);
                 return;
         }
 
 		_neighbour.ChangeWallGraphics (
 			CachedAssets.Instance.GetWallAssetForTile (_neighbour._WallType_, _neighbour._Orientation_, 0, true, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B),
-			CachedAssets.Instance.GetWallAssetForTile (_neighbour._WallType_, _neighbour._Orientation_, 0, false, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B));
+			CachedAssets.Instance.GetWallAssetForTile (_neighbour._WallType_, _neighbour._Orientation_, 0, false, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B),
+            false
+        );
     }
 	// WARNING: this doesn't support changing the type and orientation of the tile, so if you're gonna change the type of a tile
 	// you're gonna want to update its neighbours, but with something more fleshed out than this!
-	void UpdateNeighbourFloor(Tile _neighbour, TileOrientation _directionFromThisTile) {
-		switch (_directionFromThisTile) {
+	void UpdateNeighbourFloor(Tile _neighbour, TileOrientation _directionFromThisTile, bool _temporarily) {
+        if (_temporarily) {
+            if (_neighbour.TempType == Type.Empty)
+                return;
+
+            switch (_directionFromThisTile) {
+                case TileOrientation.Bottom:
+                    _neighbour.HasConnectableTempFloor_T = CanConnectTempFloor_B;
+                    break;
+                case TileOrientation.Left:
+                    _neighbour.HasConnectableTempFloor_R = CanConnectTempFloor_L;
+                    break;
+                case TileOrientation.Top:
+                    _neighbour.HasConnectableTempFloor_B = CanConnectTempFloor_T;
+                    break;
+                case TileOrientation.Right:
+                    _neighbour.HasConnectableTempFloor_L = CanConnectTempFloor_R;
+                    break;
+                case TileOrientation.TopLeft:
+                case TileOrientation.TopRight:
+                case TileOrientation.BottomRight:
+                case TileOrientation.BottomLeft:
+                    _neighbour.UpdateFloorCornerHider(true);
+                    return;
+            }
+
+            if (_neighbour.TempType == _neighbour._FloorType_)
+                return;
+
+            _neighbour.ChangeFloorGraphics(
+                CachedAssets.Instance.GetFloorAssetForTile(_neighbour.TempType, _neighbour.TempOrientation, 0, _neighbour.HasConnectableTempFloor_L, _neighbour.HasConnectableTempFloor_T, _neighbour.HasConnectableTempFloor_R, _neighbour.HasConnectableTempFloor_B), 
+                true
+            );
+            return;
+        }
+        switch (_directionFromThisTile) {
 			case TileOrientation.Bottom:
-				_neighbour.HasConnectableFloor_T = CanConnectFloor_B;
+                _neighbour.HasConnectableFloor_T = CanConnectFloor_B;
 				_neighbour.ConnectedDiagonalFloor_T = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.BottomLeft || _FloorOrientation_ == TileOrientation.BottomRight)) ? this : null;
                 break;
 			case TileOrientation.Left:
-				_neighbour.HasConnectableFloor_R = CanConnectFloor_L;
+                _neighbour.HasConnectableFloor_R = CanConnectFloor_L;
 				_neighbour.ConnectedDiagonalFloor_R = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.TopLeft || _FloorOrientation_ == TileOrientation.BottomLeft)) ? this : null;
 				break;
 			case TileOrientation.Top:
-				_neighbour.HasConnectableFloor_B = CanConnectFloor_T;
+                _neighbour.HasConnectableFloor_B = CanConnectFloor_T;
 				_neighbour.ConnectedDiagonalFloor_B = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.TopLeft || _FloorOrientation_ == TileOrientation.TopRight)) ? this : null;
 				break;
 			case TileOrientation.Right:
-				_neighbour.HasConnectableFloor_L = CanConnectFloor_R;
+                _neighbour.HasConnectableFloor_L = CanConnectFloor_R;
 				_neighbour.ConnectedDiagonalFloor_L = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.BottomRight || _FloorOrientation_ == TileOrientation.TopRight)) ? this : null;
 				break;
             case TileOrientation.TopLeft:
             case TileOrientation.TopRight:
             case TileOrientation.BottomRight:
             case TileOrientation.BottomLeft:
-                _neighbour.UpdateFloorCornerHider();
+                _neighbour.UpdateFloorCornerHider(false);
                 return;
 		}
 
-		_neighbour.ChangeFloorGraphics (CachedAssets.Instance.GetFloorAssetForTile(_neighbour._FloorType_, _neighbour._FloorOrientation_, 0, _neighbour.HasConnectableFloor_L, _neighbour.HasConnectableFloor_T, _neighbour.HasConnectableFloor_R, _neighbour.HasConnectableFloor_B));
+		_neighbour.ChangeFloorGraphics (
+            CachedAssets.Instance.GetFloorAssetForTile(_neighbour._FloorType_, _neighbour._FloorOrientation_, 0, _neighbour.HasConnectableFloor_L, _neighbour.HasConnectableFloor_T, _neighbour.HasConnectableFloor_R, _neighbour.HasConnectableFloor_B),
+            false
+        );
     }
 
-    public void UpdateWallCornerHider() {
+    //private bool IsInAnyWayConnected(TileOrientation _direction) {
+    //    //switch (_direction) {
+    //    //    case TileOrientation.Bottom:
+    //    //        return (CanConnect_B && HasConnectable_B) || (CanConnectTemp_B && HasConnectableTemp_B);
+    //    //    case TileOrientation.Left:
+    //    //        return (CanConnect_L && HasConnectable_L) || (CanConnectTemp_L && HasConnectableTemp_L);
+    //    //    case TileOrientation.Top:
+    //    //        return (CanConnect_T && HasConnectable_T) || (CanConnectTemp_T && HasConnectableTemp_T);
+    //    //    case TileOrientation.Right:
+    //    //        return (CanConnect_R && HasConnectable_R) || (CanConnectTemp_R && HasConnectableTemp_R);
+    //    //}
+    //    switch (_direction) {
+    //        case TileOrientation.Bottom:
+    //            return (CanConnect_B || CanConnectTemp_B) && (HasConnectable_B || HasConnectableTemp_B);
+    //        case TileOrientation.Left:
+    //            return (CanConnect_L || CanConnectTemp_L) && (HasConnectable_L || HasConnectableTemp_L);
+    //        case TileOrientation.Top:
+    //            return (CanConnect_T || CanConnectTemp_T) && (HasConnectable_T || HasConnectableTemp_T);
+    //        case TileOrientation.Right:
+    //            return (CanConnect_R || CanConnectTemp_R) && (HasConnectable_R || HasConnectableTemp_R);
+    //    }
+    //    return false;
+    //}
+    //private bool IsInAnyWayConnectedFloor(TileOrientation _direction) {
+    //    //switch (_direction) {
+    //    //    case TileOrientation.Bottom:
+    //    //        return (CanConnectFloor_B && HasConnectableFloor_B) || (CanConnectTempFloor_B && HasConnectableTempFloor_B);
+    //    //    case TileOrientation.Left:
+    //    //        return (CanConnectFloor_L && HasConnectableFloor_L) || (CanConnectTempFloor_L && HasConnectableTempFloor_L);
+    //    //    case TileOrientation.Top:
+    //    //        return (CanConnectFloor_T && HasConnectableFloor_T) || (CanConnectTempFloor_T && HasConnectableTempFloor_T);
+    //    //    case TileOrientation.Right:
+    //    //        return (CanConnectFloor_R && HasConnectableFloor_R) || (CanConnectTempFloor_R && HasConnectableTempFloor_R);
+    //    //}
+    //    switch (_direction) {
+    //        case TileOrientation.Bottom:
+    //            return (CanConnectFloor_B || CanConnectTempFloor_B) && (HasConnectableFloor_B || HasConnectableTempFloor_B);
+    //        case TileOrientation.Left:
+    //            return (CanConnectFloor_L || CanConnectTempFloor_L) && (HasConnectableFloor_L || HasConnectableTempFloor_L);
+    //        case TileOrientation.Top:
+    //            return (CanConnectFloor_T || CanConnectTempFloor_T) && (HasConnectableFloor_T || HasConnectableTempFloor_T);
+    //        case TileOrientation.Right:
+    //            return (CanConnectFloor_R || CanConnectTempFloor_R) && (HasConnectableFloor_R || HasConnectableTempFloor_R);
+    //    }
+    //    return false;
+    //}
+    public void UpdateWallCornerHider(bool _temporarily) {
+        if (_temporarily && _WallType_ == TempType && TempType != Type.Empty)
+            return;
+
         sTryTempCacheNeighbour_L(GridX, GridY);
         sTryTempCacheNeighbour_T(GridX, GridY);
         sTryTempCacheNeighbour_R(GridX, GridY);
         sTryTempCacheNeighbour_B(GridX, GridY);
 
-        WallCornerHider.ChangeAsset(CachedAssets.Instance.GetWallCornerAsset(
-            CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_L && sCachedNeighbour_T.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_T && sCachedNeighbour_L.HasConnectable_T,
-            CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_R && sCachedNeighbour_T.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_T && sCachedNeighbour_R.HasConnectable_T,
-            CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_R && sCachedNeighbour_B.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_B && sCachedNeighbour_R.HasConnectable_B,
-            CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_L && sCachedNeighbour_B.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_B && sCachedNeighbour_L.HasConnectable_B
-         ));
+        if (_temporarily) {
+            //WallCornerHider.SetDebugBools(CanConnectTemp_L, HasConnectableTemp_L, CanConnectTemp_T, HasConnectableTemp_T, CanConnectTemp_R, HasConnectableTemp_R, CanConnectTemp_B, HasConnectableTemp_B);
+
+            WallCornerHider.ChangeAsset(CachedAssets.Instance.GetWallCornerAsset(
+                CanConnectTemp_T && HasConnectableTemp_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTemp_L && sCachedNeighbour_T.HasConnectableTemp_L && CanConnectTemp_L && HasConnectableTemp_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTemp_T && sCachedNeighbour_L.HasConnectableTemp_T,
+                CanConnectTemp_T && HasConnectableTemp_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTemp_R && sCachedNeighbour_T.HasConnectableTemp_R && CanConnectTemp_R && HasConnectableTemp_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTemp_T && sCachedNeighbour_R.HasConnectableTemp_T,
+                CanConnectTemp_B && HasConnectableTemp_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTemp_R && sCachedNeighbour_B.HasConnectableTemp_R && CanConnectTemp_R && HasConnectableTemp_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTemp_B && sCachedNeighbour_R.HasConnectableTemp_B,
+                CanConnectTemp_B && HasConnectableTemp_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTemp_L && sCachedNeighbour_B.HasConnectableTemp_L && CanConnectTemp_L && HasConnectableTemp_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTemp_B && sCachedNeighbour_L.HasConnectableTemp_B),
+                true
+            );
+        }
+        else {
+            WallCornerHider.ChangeAsset(CachedAssets.Instance.GetWallCornerAsset(
+                CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_L && sCachedNeighbour_T.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_T && sCachedNeighbour_L.HasConnectable_T,
+                CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_R && sCachedNeighbour_T.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_T && sCachedNeighbour_R.HasConnectable_T,
+                CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_R && sCachedNeighbour_B.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_B && sCachedNeighbour_R.HasConnectable_B,
+                CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_L && sCachedNeighbour_B.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_B && sCachedNeighbour_L.HasConnectable_B), 
+                false
+            );
+        }
     }
-    public void UpdateFloorCornerHider() {
+    public void UpdateFloorCornerHider(bool _temporarily) {
+        if (_temporarily && _FloorType_ == TempType && TempType != Type.Empty)
+            return;
+
         sTryTempCacheNeighbour_L(GridX, GridY);
         sTryTempCacheNeighbour_T(GridX, GridY);
         sTryTempCacheNeighbour_R(GridX, GridY);
         sTryTempCacheNeighbour_B(GridX, GridY);
 
-        FloorCornerHider.ChangeAsset(CachedAssets.Instance.GetFloorCornerAsset(
-            CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_L && sCachedNeighbour_T.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_T && sCachedNeighbour_L.HasConnectableFloor_T,
-            CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_R && sCachedNeighbour_T.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_T && sCachedNeighbour_R.HasConnectableFloor_T,
-            CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_R && sCachedNeighbour_B.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_B && sCachedNeighbour_R.HasConnectableFloor_B,
-            CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_L && sCachedNeighbour_B.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_B && sCachedNeighbour_L.HasConnectableFloor_B
-        ));
+        if (_temporarily) {
+            FloorCornerHider.ChangeAsset(CachedAssets.Instance.GetFloorCornerAsset(
+                CanConnectTempFloor_T && HasConnectableTempFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTempFloor_L && sCachedNeighbour_T.HasConnectableTempFloor_L && CanConnectTempFloor_L && HasConnectableTempFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTempFloor_T && sCachedNeighbour_L.HasConnectableTempFloor_T,
+                CanConnectTempFloor_T && HasConnectableTempFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTempFloor_R && sCachedNeighbour_T.HasConnectableTempFloor_R && CanConnectTempFloor_R && HasConnectableTempFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTempFloor_T && sCachedNeighbour_R.HasConnectableTempFloor_T,
+                CanConnectTempFloor_B && HasConnectableTempFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTempFloor_R && sCachedNeighbour_B.HasConnectableTempFloor_R && CanConnectTempFloor_R && HasConnectableTempFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTempFloor_B && sCachedNeighbour_R.HasConnectableTempFloor_B,
+                CanConnectTempFloor_B && HasConnectableTempFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTempFloor_L && sCachedNeighbour_B.HasConnectableTempFloor_L && CanConnectTempFloor_L && HasConnectableTempFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTempFloor_B && sCachedNeighbour_L.HasConnectableTempFloor_B),
+                true
+            );
+        }
+        else {
+            FloorCornerHider.ChangeAsset(CachedAssets.Instance.GetFloorCornerAsset(
+                CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_L && sCachedNeighbour_T.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_T && sCachedNeighbour_L.HasConnectableFloor_T,
+                CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_R && sCachedNeighbour_T.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_T && sCachedNeighbour_R.HasConnectableFloor_T,
+                CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_R && sCachedNeighbour_B.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_B && sCachedNeighbour_R.HasConnectableFloor_B,
+                CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_L && sCachedNeighbour_B.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_B && sCachedNeighbour_L.HasConnectableFloor_B),
+                false
+            );
+        }
     }
 
-    public void ChangeWallGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices, bool _temporary = false) {
+    public void ChangeWallGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices, bool _temporary) {
 		BottomQuad.ChangeAsset(_bottomAssetIndices, _temporary);
         TopQuad.ChangeAsset(_topAssetIndices, _temporary);
-		UpdateWallCornerHider ();
-		UpdateFloorCornerHider ();
+		UpdateWallCornerHider (_temporary);
+		//UpdateFloorCornerHider (_temporary);
     }
-	public void ChangeFloorGraphics(CachedAssets.DoubleInt _assetIndices, bool _temporary = false) {
+	public void ChangeFloorGraphics(CachedAssets.DoubleInt _assetIndices, bool _temporary) {
 		FloorQuad.ChangeAsset(_assetIndices, _temporary);
-		UpdateWallCornerHider ();
-		UpdateFloorCornerHider ();
+		//UpdateWallCornerHider (_temporary);
+		UpdateFloorCornerHider (_temporary);
 	}
     public void SetColor(Color32 _color32) {
         FloorQuad.ChangeColor(_color32);

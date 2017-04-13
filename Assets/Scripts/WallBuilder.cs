@@ -20,144 +20,212 @@ public class WallBuilder : BuilderBase {
 
     protected override void AddGhostsForConnectedDiagonals(Tile _tile) {
 		if (_tile.ConnectedDiagonal_B != null) {
-			AddNextGhost(_tile.ConnectedDiagonal_B.GridX, _tile.ConnectedDiagonal_B.GridY, false);
-			AddNextGhostGraphics(_tile.ConnectedDiagonal_B.GridX, _tile.ConnectedDiagonal_B.GridY, false);
+			AddNextGhost(_tile.ConnectedDiagonal_B.GridX, _tile.ConnectedDiagonal_B.GridY, DetermineGhostType(_tile.ConnectedDiagonal_B), DetermineGhostOrientation(_tile.ConnectedDiagonal_B, false), false);
+            SetGhostType(_tile.ConnectedDiagonal_B);
+            SetGhostGraphics(_tile.ConnectedDiagonal_B, false);
 		}
 		if (_tile.ConnectedDiagonal_L != null) {
-			AddNextGhost(_tile.ConnectedDiagonal_L.GridX, _tile.ConnectedDiagonal_L.GridY, false);
-			AddNextGhostGraphics(_tile.ConnectedDiagonal_L.GridX, _tile.ConnectedDiagonal_L.GridY, false);
+			AddNextGhost(_tile.ConnectedDiagonal_L.GridX, _tile.ConnectedDiagonal_L.GridY, DetermineGhostType(_tile.ConnectedDiagonal_L), DetermineGhostOrientation(_tile.ConnectedDiagonal_L, false), false);
+            SetGhostType(_tile.ConnectedDiagonal_L);
+            SetGhostGraphics(_tile.ConnectedDiagonal_L, false);
 		}
 		if (_tile.ConnectedDiagonal_T != null) {
-			AddNextGhost(_tile.ConnectedDiagonal_T.GridX, _tile.ConnectedDiagonal_T.GridY, false);
-			AddNextGhostGraphics(_tile.ConnectedDiagonal_T.GridX, _tile.ConnectedDiagonal_T.GridY, false);
+			AddNextGhost(_tile.ConnectedDiagonal_T.GridX, _tile.ConnectedDiagonal_T.GridY, DetermineGhostType(_tile.ConnectedDiagonal_T), DetermineGhostOrientation(_tile.ConnectedDiagonal_T, false), false);
+            SetGhostType(_tile.ConnectedDiagonal_T);
+            SetGhostGraphics(_tile.ConnectedDiagonal_T, false);
 		}
 		if (_tile.ConnectedDiagonal_R != null) {
-			AddNextGhost(_tile.ConnectedDiagonal_R.GridX, _tile.ConnectedDiagonal_R.GridY, false);
-			AddNextGhostGraphics(_tile.ConnectedDiagonal_R.GridX, _tile.ConnectedDiagonal_R.GridY, false);
+			AddNextGhost(_tile.ConnectedDiagonal_R.GridX, _tile.ConnectedDiagonal_R.GridY, DetermineGhostType(_tile.ConnectedDiagonal_R), DetermineGhostOrientation(_tile.ConnectedDiagonal_R, false), false);
+            SetGhostType(_tile.ConnectedDiagonal_R);
+            SetGhostGraphics(_tile.ConnectedDiagonal_R, false);
 		}
     }
 	protected override void AddGhostsForConnectedDoors(Tile _tile) {
 		if (_tile.ConnectedDoorOrAirlock_B != null) {
-			AddNextGhost(_tile.ConnectedDoorOrAirlock_B.GridX, _tile.ConnectedDoorOrAirlock_B.GridY, false);
-			AddNextGhostGraphics(_tile.ConnectedDoorOrAirlock_B.GridX, _tile.ConnectedDoorOrAirlock_B.GridY, false);
+			AddNextGhost(_tile.ConnectedDoorOrAirlock_B.GridX, _tile.ConnectedDoorOrAirlock_B.GridY, DetermineGhostType(_tile.ConnectedDoorOrAirlock_B), DetermineGhostOrientation(_tile.ConnectedDoorOrAirlock_B, false), false);
+            SetGhostType(_tile.ConnectedDoorOrAirlock_B);
+            SetGhostGraphics(_tile.ConnectedDoorOrAirlock_B, false);
 		}
 		if (_tile.ConnectedDoorOrAirlock_L != null) {
-			AddNextGhost(_tile.ConnectedDoorOrAirlock_L.GridX, _tile.ConnectedDoorOrAirlock_L.GridY, false);
-			AddNextGhostGraphics(_tile.ConnectedDoorOrAirlock_L.GridX, _tile.ConnectedDoorOrAirlock_L.GridY, false);
+			AddNextGhost(_tile.ConnectedDoorOrAirlock_L.GridX, _tile.ConnectedDoorOrAirlock_L.GridY, DetermineGhostType(_tile.ConnectedDoorOrAirlock_L), DetermineGhostOrientation(_tile.ConnectedDoorOrAirlock_L, false), false);
+            SetGhostType(_tile.ConnectedDoorOrAirlock_L);
+            SetGhostGraphics(_tile.ConnectedDoorOrAirlock_L, false);
 		}
 		if (_tile.ConnectedDoorOrAirlock_T != null) {
-			AddNextGhost(_tile.ConnectedDoorOrAirlock_T.GridX, _tile.ConnectedDoorOrAirlock_T.GridY, false);
-			AddNextGhostGraphics(_tile.ConnectedDoorOrAirlock_T.GridX, _tile.ConnectedDoorOrAirlock_T.GridY, false);
+			AddNextGhost(_tile.ConnectedDoorOrAirlock_T.GridX, _tile.ConnectedDoorOrAirlock_T.GridY, DetermineGhostType(_tile.ConnectedDoorOrAirlock_T), DetermineGhostOrientation(_tile.ConnectedDoorOrAirlock_T, false), false);
+            SetGhostType(_tile.ConnectedDoorOrAirlock_T);
+            SetGhostGraphics(_tile.ConnectedDoorOrAirlock_T, false);
 		}
 		if (_tile.ConnectedDoorOrAirlock_R != null) {
-			AddNextGhost(_tile.ConnectedDoorOrAirlock_R.GridX, _tile.ConnectedDoorOrAirlock_R.GridY, false);
-			AddNextGhostGraphics(_tile.ConnectedDoorOrAirlock_R.GridX, _tile.ConnectedDoorOrAirlock_R.GridY, false);
+			AddNextGhost(_tile.ConnectedDoorOrAirlock_R.GridX, _tile.ConnectedDoorOrAirlock_R.GridY, DetermineGhostType(_tile.ConnectedDoorOrAirlock_R), DetermineGhostOrientation(_tile.ConnectedDoorOrAirlock_R, false), false);
+            SetGhostType(_tile.ConnectedDoorOrAirlock_R);
+            SetGhostGraphics(_tile.ConnectedDoorOrAirlock_R, false);
 		}
     }
 
-	protected override void SetGhostType(Tile _tile, bool _snapToNeighbours) {
-		switch (Mode) {
-			case ModeEnum.Default:
-			case ModeEnum.Room:
-			case ModeEnum.Fill:
-				_tile.TempType = Tile.Type.Solid;
-				_tile.TempOrientation = Tile.TileOrientation.None;
-				break;
+    //protected override void SetGhostType(Tile _tile) {
+    //	switch (Mode) {
+    //		case ModeEnum.Default:
+    //		case ModeEnum.Room:
+    //		case ModeEnum.Fill:
+    //               if(isDeleting)
+    //                   _tile.SetTileType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
+    //               else
+    //                  _tile.SetTileType(Tile.Type.Solid, Tile.TileOrientation.None, _temporarily: true);
+    //			break;
 
-			case ModeEnum.Diagonal:
+    //		case ModeEnum.Diagonal:
+    //			// diagonal top left
+    //			if 	((_snapToNeighbours && _tile.HasConnectable_L && _tile.HasConnectable_T)
+    //			 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopLeft)) {
 
-				// default values 
-				_tile.TempType = Tile.Type.Diagonal;
-				_tile.TempOrientation = _snapToNeighbours ? Tile.TileOrientation.TopLeft : _tile.TempOrientation;
+    //                   _tile.SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.TopLeft, _temporarily: true);
+    //               }
 
-				// diagonal top left
-				if 	((_snapToNeighbours && _tile.HasConnectable_L && _tile.HasConnectable_T)
-				 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopLeft)) {
+    //               // diagonal top right
+    //               else if ((_snapToNeighbours && _tile.HasConnectable_T && _tile.HasConnectable_R)
+    //					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopRight)) {
 
-					_tile.TempOrientation = Tile.TileOrientation.TopLeft;
-				}
+    //                   _tile.SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.TopRight, _temporarily: true);
+    //               }
 
-				// diagonal top right
-				else if ((_snapToNeighbours && _tile.HasConnectable_T && _tile.HasConnectable_R)
- 					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopRight)) {
+    //               // diagonal bottom right
+    //               else if ((_snapToNeighbours && _tile.HasConnectable_R && _tile.HasConnectable_B)
+    //				 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomRight)) {
 
-					_tile.TempOrientation = Tile.TileOrientation.TopRight;
-				}
+    //                   _tile.SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.BottomRight, _temporarily: true);
+    //               }
 
-				// diagonal bottom right
-				else if ((_snapToNeighbours && _tile.HasConnectable_R && _tile.HasConnectable_B)
-					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomRight)) {
+    //               // diagonal bottom left
+    //               else if ((_snapToNeighbours && _tile.HasConnectable_B && _tile.HasConnectable_L)
+    //				 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomLeft)) {
 
-					_tile.TempOrientation = Tile.TileOrientation.BottomRight;
-				}
+    //                   _tile.SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.BottomLeft, _temporarily: true);
+    //               }
 
-				// diagonal bottom left
-				else if ((_snapToNeighbours && _tile.HasConnectable_B && _tile.HasConnectable_L)
-					 || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomLeft)) {
+    //               else
+    //                   _tile.SetTileType(Tile.Type.Diagonal, _snapToNeighbours ? Tile.TileOrientation.TopLeft : _tile.TempOrientation, _temporarily: true);
 
-					_tile.TempOrientation = Tile.TileOrientation.BottomLeft;
-				}
+    //               break;
 
-				break;
+    //		case ModeEnum.Door:
+    //			if 	((_snapToNeighbours && (_tile.HasConnectable_L && _tile.HasConnectable_R && !_tile.HasConnectable_B && !_tile.HasConnectable_T))
+    //			 || (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Left || _tile.TempOrientation == Tile.TileOrientation.Right))) {
 
-			case ModeEnum.Door:
-				_tile.TempType = Tile.Type.Door;
-				_tile.TempOrientation = _snapToNeighbours ? Tile.TileOrientation.Left : _tile.TempOrientation;
+    //                   _tile.SetTileType(Tile.Type.Door, Tile.TileOrientation.Left, _temporarily: true); // left or right shouldn't matter...
+    //               }
+    //			else if ((_snapToNeighbours && (!_tile.HasConnectable_L && !_tile.HasConnectable_R && _tile.HasConnectable_B && _tile.HasConnectable_T))
+    //				 || (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Bottom || _tile.TempOrientation == Tile.TileOrientation.Top))) {
 
-				if 	((_snapToNeighbours && (_tile.HasConnectable_L && _tile.HasConnectable_R && !_tile.HasConnectable_B && !_tile.HasConnectable_T))
-				 || (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Left || _tile.TempOrientation == Tile.TileOrientation.Right))) {
+    //                   _tile.SetTileType(Tile.Type.Door, Tile.TileOrientation.Bottom, _temporarily: true); // bottom or top shouldn't matter...
+    //               }
+    //               else
+    //                   _tile.SetTileType(Tile.Type.Door, _snapToNeighbours ? Tile.TileOrientation.Left : _tile.TempOrientation, _temporarily: true);
 
-					_tile.TempOrientation = Tile.TileOrientation.Left; // left or right shouldn't matter...
-				}
-				else if ((_snapToNeighbours && (!_tile.HasConnectable_L && !_tile.HasConnectable_R && _tile.HasConnectable_B && _tile.HasConnectable_T))
-					 || (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Bottom || _tile.TempOrientation == Tile.TileOrientation.Top))) {
+    //               break;
+    //		case ModeEnum.Airlock:
+    //			if ((_snapToNeighbours && (_tile.HasConnectable_L && _tile.HasConnectable_R && !_tile.HasConnectable_B && !_tile.HasConnectable_T))
+    //				|| (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Left || _tile.TempOrientation == Tile.TileOrientation.Right))) {
 
-					_tile.TempOrientation = Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
-				}
-				break;
-			case ModeEnum.Airlock:
-				_tile.TempType = Tile.Type.Airlock;
-				_tile.TempOrientation = _snapToNeighbours ? Tile.TileOrientation.Left : _tile.TempOrientation;
+    //                   _tile.SetTileType(Tile.Type.Airlock, Tile.TileOrientation.Left, _temporarily: true); // left or right shouldn't matter...
+    //               }
+    //               else if ((_snapToNeighbours && (!_tile.HasConnectable_L && !_tile.HasConnectable_R && _tile.HasConnectable_B && _tile.HasConnectable_T))
+    //				|| (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Bottom || _tile.TempOrientation == Tile.TileOrientation.Top))) {
 
-				if ((_snapToNeighbours && (_tile.HasConnectable_L && _tile.HasConnectable_R && !_tile.HasConnectable_B && !_tile.HasConnectable_T))
-					|| (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Left || _tile.TempOrientation == Tile.TileOrientation.Right))) {
+    //                   _tile.SetTileType(Tile.Type.Airlock, Tile.TileOrientation.Bottom, _temporarily: true); // bottom or top shouldn't matter...
+    //               }
+    //               else
+    //                   _tile.SetTileType(Tile.Type.Airlock, _snapToNeighbours ? Tile.TileOrientation.Left : _tile.TempOrientation, _temporarily: true);
 
-					_tile.TempOrientation = Tile.TileOrientation.Left; // left or right shouldn't matter...
-				}
-				else if ((_snapToNeighbours && (!_tile.HasConnectable_L && !_tile.HasConnectable_R && _tile.HasConnectable_B && _tile.HasConnectable_T))
-					|| (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Bottom || _tile.TempOrientation == Tile.TileOrientation.Top))) {
+    //               break;
+    //		case ModeEnum.ObjectPlacing:
+    //			throw new System.Exception(Mode.ToString() + " doesn't apply to Wallbuilding!");
+    //		default:
+    //			throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
+    //	}
 
-					_tile.TempOrientation = Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
-				}
+    //	base.SetGhostType (_tile, _snapToNeighbours);
+    //}
+    protected override Tile.Type DetermineGhostType(Tile _tile) {
+        if (isDeleting)
+            return Tile.Type.Empty;
+        switch (Mode) {
+            case ModeEnum.Default:
+            case ModeEnum.Room:
+            case ModeEnum.Fill:
+                return Tile.Type.Solid;
+            case ModeEnum.Diagonal:
+                return Tile.Type.Diagonal;
+            case ModeEnum.Door:
+                return Tile.Type.Door;
+            case ModeEnum.Airlock:
+                return Tile.Type.Airlock;
+            case ModeEnum.ObjectPlacing:
+                throw new System.Exception(Mode.ToString() + " does not apply to Walls!");
+            default:
+                throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
+        }
+    }
+    protected override Tile.TileOrientation DetermineGhostOrientation(Tile _tile, bool _snapToNeighbours) {
+        switch (Mode) {
+            case ModeEnum.Default:
+            case ModeEnum.Room:
+            case ModeEnum.Fill:
+            case ModeEnum.ObjectPlacing:
+                return Tile.TileOrientation.None;
+            case ModeEnum.Diagonal:
+                // diagonal top left
+                if ((_snapToNeighbours && _tile.HasConnectable_L && _tile.HasConnectable_T) || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopLeft))
+                    return Tile.TileOrientation.TopLeft;
+                // diagonal top right
+                else if ((_snapToNeighbours && _tile.HasConnectable_T && _tile.HasConnectable_R) || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.TopRight))
+                    return Tile.TileOrientation.TopRight;
+                // diagonal bottom right
+                else if ((_snapToNeighbours && _tile.HasConnectable_R && _tile.HasConnectable_B) || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomRight))
+                    return Tile.TileOrientation.BottomRight;
+                // diagonal bottom left
+                else if ((_snapToNeighbours && _tile.HasConnectable_B && _tile.HasConnectable_L) || (!_snapToNeighbours && _tile.TempOrientation == Tile.TileOrientation.BottomLeft))
+                    return Tile.TileOrientation.BottomLeft;
+                else
+                    return _snapToNeighbours ? Tile.TileOrientation.TopLeft : _tile.TempOrientation;
+            case ModeEnum.Door:
+                if ((_snapToNeighbours && (_tile.HasConnectable_L && _tile.HasConnectable_R && !_tile.HasConnectable_B && !_tile.HasConnectable_T)) || (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Left || _tile.TempOrientation == Tile.TileOrientation.Right)))
+                    return Tile.TileOrientation.Left; // left or right shouldn't matter...
+                else if ((_snapToNeighbours && (!_tile.HasConnectable_L && !_tile.HasConnectable_R && _tile.HasConnectable_B && _tile.HasConnectable_T)) || (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Bottom || _tile.TempOrientation == Tile.TileOrientation.Top)))
+                    return Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
+                else
+                   return _snapToNeighbours ? Tile.TileOrientation.Left : _tile.TempOrientation;
+            case ModeEnum.Airlock:
+                if ((_snapToNeighbours && (_tile.HasConnectable_L && _tile.HasConnectable_R && !_tile.HasConnectable_B && !_tile.HasConnectable_T)) || (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Left || _tile.TempOrientation == Tile.TileOrientation.Right)))
+                    return Tile.TileOrientation.Left; // left or right shouldn't matter...
+                else if ((_snapToNeighbours && (!_tile.HasConnectable_L && !_tile.HasConnectable_R && _tile.HasConnectable_B && _tile.HasConnectable_T)) || (!_snapToNeighbours && (_tile.TempOrientation == Tile.TileOrientation.Bottom || _tile.TempOrientation == Tile.TileOrientation.Top)))
+                    return Tile.TileOrientation.Bottom; // bottom or top shouldn't matter...
+                else
+                    return _snapToNeighbours ? Tile.TileOrientation.Left : _tile.TempOrientation;
 
-				break;
-			case ModeEnum.ObjectPlacing:
-				throw new System.Exception(Mode.ToString() + " doesn't apply to Wallbuilding!");
-			default:
-				throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
-		}
-
-		base.SetGhostType (_tile, _snapToNeighbours);
-	}
+            default:
+                throw new System.NotImplementedException(Mode.ToString() + " hasn't been properly implemented yet!");
+        }
+    }
     protected override void SetGhostGraphics(Tile _tile, bool _snapToNeighbours) {
 
-		bool _hasConnection_L = (Tile.sTryTempCacheNeighbour_L(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_L.TempType != Tile.Type.Empty) || _tile.HasConnectable_L;
-		bool _hasConnection_R = (Tile.sTryTempCacheNeighbour_R(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_R.TempType != Tile.Type.Empty) || _tile.HasConnectable_R;
-		bool _hasConnection_T = (Tile.sTryTempCacheNeighbour_T(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_T.TempType != Tile.Type.Empty) || _tile.HasConnectable_T;
-		bool _hasConnection_B = (Tile.sTryTempCacheNeighbour_B(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_B.TempType != Tile.Type.Empty) || _tile.HasConnectable_B;
+		bool _hasConnection_L = (Tile.sTryTempCacheNeighbour_L(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_L.TempType != Tile.Type.Empty);
+		bool _hasConnection_R = (Tile.sTryTempCacheNeighbour_R(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_R.TempType != Tile.Type.Empty);
+		bool _hasConnection_T = (Tile.sTryTempCacheNeighbour_T(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_T.TempType != Tile.Type.Empty);
+		bool _hasConnection_B = (Tile.sTryTempCacheNeighbour_B(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_B.TempType != Tile.Type.Empty);
 
         switch (Mode) {
             case ModeEnum.Default:
             case ModeEnum.Room:
 			case ModeEnum.Fill:
-      //          if (isDeleting && _tile._WallType_ != Tile.Type.Empty) { // excluding empty because otherwise it doesn't get graphics
-      //              _tile.ChangeWallGraphics(
-						//CachedAssets.Instance.GetWallAssetForTile(_tile._WallType_, _tile._Orientation_, 0, true, _hasConnection_L, _hasConnection_T, _hasConnection_R, _hasConnection_B),
-						//CachedAssets.Instance.GetWallAssetForTile(_tile._WallType_, _tile._Orientation_, 0, false, _hasConnection_L, _hasConnection_T, _hasConnection_R, _hasConnection_B),
-      //                  true
-      //              );
-      //          }
-                if(!isDeleting) {
+                //if (isDeleting) {
+                //    //_tile.ChangeWallGraphics(
+                //    //    CachedAssets.Instance.GetWallAssetForTile(_tile._WallType_, _tile._Orientation_, 0, true, _tile.HasConnectable_L, _tile.HasConnectable_T, _tile.HasConnectable_R, _tile.HasConnectable_B),
+                //    //    CachedAssets.Instance.GetWallAssetForTile(_tile._WallType_, _tile._Orientation_, 0, false, _tile.HasConnectable_L, _tile.HasConnectable_T, _tile.HasConnectable_R, _tile.HasConnectable_B),
+                //    //    true
+                //    //);
+                //}
+                if (!isDeleting && _tile._WallType_ != _tile.TempType) {
                     _tile.ChangeWallGraphics(
 						CachedAssets.Instance.GetWallAssetForTile(_tile.TempType, _tile.TempOrientation, 0, true, _hasConnection_L, _hasConnection_T, _hasConnection_R, _hasConnection_B),
 						CachedAssets.Instance.GetWallAssetForTile(_tile.TempType, _tile.TempOrientation, 0, false, _hasConnection_L, _hasConnection_T, _hasConnection_R, _hasConnection_B),
@@ -282,15 +350,19 @@ public class WallBuilder : BuilderBase {
     bool isHorizontal = false;
     bool isVertical = false;
 	protected override void Evaluate(Tile _tile){
+		// is building even allowed?
+		if (!_tile._BuildingAllowed_) {
+			ApplySettingsToGhost(_tile, false, Color_Blocked);
+			return;
+		}
 
 		// deleting old tiles
 		if (isDeleting) {
-			// is building even allowed?
-			if (!_tile._BuildingAllowed_ && _tile._WallType_ != Tile.Type.Empty) { // empty tiles allowed for deletion bc it looks better
-				ApplySettingsToGhost(_tile, false, Color_Blocked);
-				return;
-			}
-
+            if (_tile._WallType_ == Tile.Type.Empty) { // empty tiles can't be deleted
+                ApplySettingsToGhost(_tile, false, Color_Blocked);
+                return;
+            }
+            
 			// is the tile occupied?
 			if (_tile.IsOccupiedByObject) {
 				ApplySettingsToGhost(_tile, false, Color_Blocked);
@@ -298,23 +370,14 @@ public class WallBuilder : BuilderBase {
 			}
 
 			// all's good - but add connected diagonals and doors to be deleted as well!
-			if (_tile._WallType_ != Tile.Type.Empty) {
-				AddGhostsForConnectedDiagonals(_tile);
-				AddGhostsForConnectedDoors(_tile);
-			}
-
+			AddGhostsForConnectedDiagonals(_tile);
+			AddGhostsForConnectedDoors(_tile);
 			ApplySettingsToGhost(_tile, true, Color_Remove);
 			return;
 		}
 
 
 		// adding new tiles
-
-		// is building even allowed?
-		if (!_tile._BuildingAllowed_) {
-			ApplySettingsToGhost(_tile, false, Color_Blocked);
-			return;
-		}
 		switch (Mode) {
 			case ModeEnum.Diagonal:
 				// is the tile below already a diagonal of the same orientation?
@@ -420,10 +483,10 @@ public class WallBuilder : BuilderBase {
 
 	protected override void ApplyCurrentTool() {
 		for (int i = 0; i < selectedTiles.Count; i++) {
-			if (selectedTiles [i].TempType == Tile.Type.Door || selectedTiles [i].TempType == Tile.Type.Airlock || selectedTiles [i].TempType == Tile.Type.Diagonal) {
-				if (selectedTiles [i].TempOrientation == Tile.TileOrientation.None)
-					Debug.LogError ("A " + selectedTiles[i].TempType + " can't be " + selectedTiles[i].TempOrientation + "!");
-			}
+			//if (selectedTiles [i].TempType == Tile.Type.Door || selectedTiles [i].TempType == Tile.Type.Airlock || selectedTiles [i].TempType == Tile.Type.Diagonal) {
+			//	if (selectedTiles [i].TempOrientation == Tile.TileOrientation.None)
+			//		Debug.LogError ("A " + selectedTiles[i].TempType + " can't be " + selectedTiles[i].TempOrientation + "!");
+			//}
 
 			selectedTiles[i].SetTileType(isDeleting ? Tile.Type.Empty : selectedTiles[i].TempType, isDeleting ? Tile.TileOrientation.None : selectedTiles[i].TempOrientation);
 		}

@@ -18,6 +18,26 @@ public class UVController : MonoBehaviour {
     private bool isHidden = false;
 
 
+    //public bool L;
+    //public bool HasL;
+    //public bool T;
+    //public bool HasT;
+    //public bool R;
+    //public bool HasR;
+    //public bool B;
+    //public bool HasB;
+    //public void SetDebugBools(bool _canL, bool _hasL, bool _canT, bool _hasT, bool _canR, bool _hasR, bool _canB, bool _hasB) {
+    //    L = _canL;
+    //    HasL = _hasL;
+    //    T = _canT;
+    //    HasT = _hasT;
+    //    R = _canR;
+    //    HasR = _canR;
+    //    B = _canB;
+    //    HasB = _hasB;
+    //}
+
+
     void Start() {
         if (!hasStarted)
             Setup();
@@ -35,11 +55,11 @@ public class UVController : MonoBehaviour {
 		myMeshUVs = myMeshFilter.sharedMesh != null ? myMeshFilter.sharedMesh.uv : myMeshFilter.mesh.uv;
 
         cachedPropertyColor = Shader.PropertyToID("_Color");
-        ChangeAsset(Coordinates);
+        ChangeAsset(Coordinates, false);
     }
 
+    public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, bool _temporary) {
 
-    public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, bool _temporary = false) {
         if (_assetIndices == null) {
             if (_temporary) {
                 TemporaryCoordinates = null;

@@ -181,7 +181,7 @@ public class TileAnimator {
         // apply new frame
         currentFrameBottom = (Animation.Bottom != null && Animation.Bottom.Length > CurrentFrame) ? Animation.Bottom[CurrentFrame] : null;
         currentFrameTop = (Animation.Top != null && Animation.Top.Length > CurrentFrame) ? Animation.Top[CurrentFrame] : null;
-        owner.ChangeWallGraphics(currentFrameBottom, currentFrameTop);
+        owner.ChangeWallGraphics(currentFrameBottom, currentFrameTop, false);
 
         IsFinished = CurrentFrame == EndFrame;
         if (IsFinished) {

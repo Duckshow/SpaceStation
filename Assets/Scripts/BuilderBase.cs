@@ -72,17 +72,17 @@ public class BuilderBase {
     //protected static GhostInfo[] ALL_GHOSTS;
     //private List<GhostInfo> usedGhosts = new List<GhostInfo>();
 
-    private List<CachedAssets.DoubleInt> modifiedTiles = new List<CachedAssets.DoubleInt>();
 
 	private Vector2 oldMouseGridPos;
 
 	private Tile startTile;
-	private Tile mouseTile;
+	protected Tile mouseTile;
 
 	protected bool isDeleting = false;
 	private bool modeWasChanged = false;
 	private bool mouseGhostHasNewTile = false;
 	protected bool mouseGhostIsDirty = true;
+    private static Tile.TileOrientation cachedMouseOrientation; // to save it from being lost in reset :(
 
 	private int distX;
 	private int distY;
@@ -95,6 +95,7 @@ public class BuilderBase {
 
 	private bool isGoingDiagonal;
 
+    protected List<CachedAssets.DoubleInt> modifiedTiles = new List<CachedAssets.DoubleInt>();
 	protected List<Tile> selectedTiles = new List<Tile>();
 	//protected List<Tile.Type> selectedTilesNewType = new List<Tile.Type>();
 	//protected List<Tile.TileOrientation> selectedTilesNewOrientation = new List<Tile.TileOrientation>();
@@ -126,6 +127,8 @@ public class BuilderBase {
 		if (!IsActive)
 			return;
 		IsActive = false;
+        ResetModifiedTiles(_includingMouse: true);
+        ResetSelectedTiles();
 
 		//for (int i = 0; i < ALL_GHOSTS.Length; i++)
 		//	ALL_GHOSTS[i].SetActive(false);
@@ -155,9 +158,9 @@ public class BuilderBase {
                 OnNewRound();
 			}
 			
-			// click
-			if (Mouse.StateLeft == Mouse.MouseStateEnum.Click || isDeleting)
-				mouseGhostIsDirty = true;
+			//// click
+			//if (Mouse.StateLeft == Mouse.MouseStateEnum.Click || isDeleting)
+			//	mouseGhostIsDirty = true;
 
 			// no click
 			if ((Mouse.StateLeft == Mouse.MouseStateEnum.None && Mouse.StateRight == Mouse.MouseStateEnum.None) || mouseGhostIsDirty)
@@ -167,10 +170,10 @@ public class BuilderBase {
         if (Mouse.IsOverGUI)
             return;
 
-		bool skip = (!isDeleting && Mouse.StateLeft == Mouse.MouseStateEnum.Release) || (isDeleting && Mouse.StateRight == Mouse.MouseStateEnum.Release);
-		if (!skip && Time.time - timeLastGhostUpdate < 0.01f)
-			return;
-		if (CanDrag() && (Mouse.StateLeft == Mouse.MouseStateEnum.Hold || Mouse.StateRight == Mouse.MouseStateEnum.Hold)) {
+        bool skip = (!isDeleting && Mouse.StateLeft == Mouse.MouseStateEnum.Release) || (isDeleting && Mouse.StateRight == Mouse.MouseStateEnum.Release);
+        if (!skip && Time.time - timeLastGhostUpdate < 0.01f)
+            return;
+        if (CanDrag() && (Mouse.StateLeft == Mouse.MouseStateEnum.Hold || Mouse.StateRight == Mouse.MouseStateEnum.Hold)) {
 			DetermineGhostPositions(_hasClicked: true, _snapToNeighbours: false);
 			timeLastGhostUpdate = Time.time;
 		}
@@ -209,32 +212,48 @@ public class BuilderBase {
         mouseGhostIsDirty = true;
         OnNewRound();
     }
-	protected void ResetModifiedTiles(){
-		// reset old stuff
-		for (int i = 0; i < modifiedTiles.Count; i++) {
-			// Debug.Log(mouseTile.GridX + "x" + mouseTile.GridY + " / " + modifiedTiles[i].X + "x" + modifiedTiles[i].Y);
-			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].TempType = Tile.Type.Empty;
-			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].TempOrientation = Tile.TileOrientation.None;
-			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeWallGraphics(null, null, true);
-			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeFloorGraphics(null, true);
-			Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetColor(Color.white);
-		}
 
-		modifiedTiles.Clear();
-	}
-	protected void ResetSelectedTiles(){
-		// reset old stuff
-		for (int i = 0; i < selectedTiles.Count; i++) {
-			selectedTiles[i].TempType = Tile.Type.Empty;
-			selectedTiles[i].TempOrientation = Tile.TileOrientation.None;
-			selectedTiles[i].ChangeWallGraphics(null, null, true);
-			selectedTiles[i].ChangeFloorGraphics(null, true);
-			selectedTiles[i].SetColor(Color.white);
-		}
+    protected virtual void ResetModifiedTiles(bool _includingMouse = false) {
+        //  not sure if I need three passes rather than one, but this is definitely safer
+        for (int i = 0; i < modifiedTiles.Count; i++) {
+            //if (!_includingMouse && mouseTile != null && Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y] == mouseTile)
+            //    continue;
 
-		selectedTiles.Clear();
-	}
+            if (this is WallBuilder) {
+                Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetTileType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
+                Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeWallGraphics(null, null, true);
+            }
+            else {
+                Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
+                Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeFloorGraphics(null, true);
+            }
 
+            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetColor(Color.white);
+        }
+
+        modifiedTiles.Clear();
+    }
+    protected virtual void ResetSelectedTiles() {
+        //  not sure if I need three passes rather than one, but this is definitely safer
+        for (int i = 0; i < selectedTiles.Count; i++) {
+
+            if (this is WallBuilder) {
+                selectedTiles[i].SetTileType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
+                selectedTiles[i].ChangeWallGraphics(null, null, true);
+            }
+            else {
+                selectedTiles[i].SetFloorType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
+                selectedTiles[i].ChangeFloorGraphics(null, true);
+            }
+
+            selectedTiles[i].SetColor(Color.white);
+        }
+
+        selectedTiles.Clear();
+    }
+
+
+    Tile.TileOrientation prevMouseOrientation;
 	private void ControlMouseGhost() {
 		// find current tile
 		oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridX, mouseTile.GridY);
@@ -257,7 +276,11 @@ public class BuilderBase {
 
         // set rotation
         //ALL_GHOSTS[0].Orientation = TryRotateMouseGhost();
+        prevMouseOrientation = mouseTile.TempOrientation;
         mouseTile.TempOrientation = TryRotateMouseGhost();
+        cachedMouseOrientation = mouseTile.TempOrientation;
+        if (mouseTile.TempOrientation != prevMouseOrientation)
+            mouseGhostIsDirty = true;
 
 		if (mouseGhostIsDirty) {
 			mouseGhostIsDirty = false;
@@ -265,7 +288,7 @@ public class BuilderBase {
 		}
 	}
 	private Tile.TileOrientation TryRotateMouseGhost() {
-		// rotate diagonals with Q&E
+        // rotate diagonals with Q&E
 		int _rotateDirection = 0;
 		_rotateDirection += Input.GetKeyUp(KeyCode.E) ? -1 : 0;
 		_rotateDirection += Input.GetKeyUp(KeyCode.Q) ? 1 : 0;
@@ -318,7 +341,7 @@ public class BuilderBase {
 			}
 		}
 
-		return mouseTile.TempOrientation;
+        return mouseTile.TempOrientation;
 	}
 
 	private bool hasMoved;
@@ -327,9 +350,9 @@ public class BuilderBase {
 	protected void DetermineGhostPositions(bool _hasClicked, bool _snapToNeighbours) {
 
 		// find current tile
-		if(!_hasClicked)
+		if(!_hasClicked || startTile == null)
 			startTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
-		else
+	    if(_hasClicked || startTile == null)
 			mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
 		if (Mode == ModeEnum.Default || Mode == ModeEnum.Room || Mode == ModeEnum.Fill) {
@@ -351,9 +374,12 @@ public class BuilderBase {
 			ghostTile_GridY = startTile.GridY;
 		}
 
-//		if(Mouse.StateLeft != Mouse.MouseStateEnum.Click && Mouse.StateRight != Mouse.MouseStateEnum.Click)
-			//ResetOldThings (); ohqdooqdnon // continue here. doing this here causes changes made by TryRotateGhost to disappear. The line above helps, but there was some case that still got through. Find a better solution, I guess :/
-
+        ResetModifiedTiles();
+        ResetSelectedTiles();
+        if (cachedMouseOrientation != Tile.TileOrientation.None) {
+            mouseTile.TempOrientation = cachedMouseOrientation;
+            cachedMouseOrientation = Tile.TileOrientation.None;
+        }
 
 		switch (Mode) {
 			// click-Modes
@@ -364,8 +390,9 @@ public class BuilderBase {
 				ghostTile_GridX = mouseTile.GridX;
 				ghostTile_GridY = mouseTile.GridY;
 
-				AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-				AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+				AddNextGhost (ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
+                SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
+                SetGhostGraphics (Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);
 				break;
 
 				// drag-Modes
@@ -374,8 +401,9 @@ public class BuilderBase {
 					ghostTile_GridX = mouseTile.GridX;
 					ghostTile_GridY = mouseTile.GridY;
 
-					AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-					AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+					AddNextGhost (ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
+                    SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
+                    SetGhostGraphics (Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);
 				}
 				else {
 					#region Default Held
@@ -397,10 +425,26 @@ public class BuilderBase {
 						if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 							break;
 
-						AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+						AddNextGhost (ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
 					}
-					// second pass
-					for (int i = 0; i <= highestAxisValue; i++) {
+                    // second pass
+                    for (int i = 0; i <= highestAxisValue; i++) {
+                        // determine the offset from the _startTile
+                        if (distXAbs >= distYAbs || isGoingDiagonal)
+                            ghostTile_GridX = distX < 0 ? startTile.GridX - i : startTile.GridX + i;
+                        if (distYAbs >= distXAbs || isGoingDiagonal)
+                            ghostTile_GridY = distY < 0 ? startTile.GridY - i : startTile.GridY + i;
+
+                        // if outside grid, break
+                        if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
+                            break;
+                        if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
+                            break;
+
+                        SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
+                    }
+                    // third pass
+                    for (int i = 0; i <= highestAxisValue; i++) {
 						// determine the offset from the _startTile
 						if (distXAbs >= distYAbs || isGoingDiagonal)
 							ghostTile_GridX = distX < 0 ? startTile.GridX - i : startTile.GridX + i;
@@ -413,7 +457,7 @@ public class BuilderBase {
 						if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 							break;
 
-						AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
+						SetGhostGraphics (Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);
 					}
 					#endregion
 				}
@@ -423,9 +467,10 @@ public class BuilderBase {
 					ghostTile_GridX = mouseTile.GridX;
 					ghostTile_GridY = mouseTile.GridY;
 
-					AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-					AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-				}
+                    AddNextGhost(ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
+                    SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
+                    SetGhostGraphics(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);
+                }
 				else {
 					#region Room Held
 					bool _isOnEdgeX = true;
@@ -450,9 +495,9 @@ public class BuilderBase {
 							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 								continue;
 
-							AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-						}
-					}
+                            AddNextGhost(ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
+                        }
+                    }
 					// second pass
 					for (int y = 0; y <= distYAbs; y++) {
 						_isOnEdgeY = (y == 0 || y == distYAbs);
@@ -472,21 +517,44 @@ public class BuilderBase {
 							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 								continue;
 
-							AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-						}
-					}
-					#endregion
-				}
+                            SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
+                        }
+                    }
+                    // third pass
+                    for (int y = 0; y <= distYAbs; y++) {
+                        _isOnEdgeY = (y == 0 || y == distYAbs);
+
+                        for (int x = 0; x <= distXAbs; x++) {
+                            _isOnEdgeX = (x == 0 || x == distXAbs);
+
+                            if (!_isOnEdgeX && !_isOnEdgeY)
+                                continue;
+
+                            ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
+                            ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
+
+                            // if outside grid, continue (would break, but orka)
+                            if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
+                                continue;
+                            if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
+                                continue;
+
+                            SetGhostGraphics(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);
+                        }
+                    }
+                    #endregion
+                }
 
 				break;
 			case ModeEnum.Fill:
 				if (!_hasClicked) {
 					ghostTile_GridX = mouseTile.GridX;
-					ghostTile_GridY = mouseTile.GridY; 
+					ghostTile_GridY = mouseTile.GridY;
 
-					AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-					AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-				}
+                    AddNextGhost(ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
+                    SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
+                    SetGhostGraphics(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);
+                }
 				else {
 					#region Room Held
 					// first pass
@@ -501,9 +569,9 @@ public class BuilderBase {
 							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 								continue;
 
-							AddNextGhost (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-						}
-					}
+                            AddNextGhost(ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
+                        }
+                    }
 					// second pass
 					for (int y = 0; y <= distYAbs; y++) {
 						for (int x = 0; x <= distXAbs; x++) {
@@ -516,11 +584,26 @@ public class BuilderBase {
 							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
 								continue;
 
-							AddNextGhostGraphics (ghostTile_GridX, ghostTile_GridY, _snapToNeighbours);
-						}
-					}
-					#endregion
-				}
+                            SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
+                        }
+                    }
+                    // third pass
+                    for (int y = 0; y <= distYAbs; y++) {
+                        for (int x = 0; x <= distXAbs; x++) {
+                            ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
+                            ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
+
+                            // if outside grid, continue (would break, but orka)
+                            if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
+                                continue;
+                            if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.Instance.GridSizeY)
+                                continue;
+
+                            SetGhostGraphics(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);
+                        }
+                    }
+                    #endregion
+                }
 
 				break;
 			default:
@@ -530,34 +613,30 @@ public class BuilderBase {
 		EvaluateUsedGhostConditions();
 	}
 
-	protected void AddNextGhost(int _gridX, int _gridY, bool _snapToNeighbours) {
+	protected void AddNextGhost(int _gridX, int _gridY, Tile.Type _tempType, Tile.TileOrientation _tempOrientation, bool _snapToNeighbours) {
 		modifiedTiles.Add (new CachedAssets.DoubleInt (_gridX, _gridY));
-		SetGhostType (Grid.Instance.grid [_gridX, _gridY], _snapToNeighbours);
-	}
-	protected void AddNextGhostGraphics(int _gridX, int _gridY, bool _snapToNeighbours){
-		SetGhostGraphics (Grid.Instance.grid[_gridX, _gridY], _snapToNeighbours);
-	}
-	protected virtual void AddGhostsForConnectedDiagonals(Tile _tile) {
+        Grid.Instance.grid[_gridX, _gridY].TempType = _tempType;
+        Grid.Instance.grid[_gridX, _gridY].TempOrientation = _tempOrientation;
+    }
+    protected virtual void AddGhostsForConnectedDiagonals(Tile _tile) {
 	}
 	protected virtual void AddGhostsForConnectedDoors(Tile _tile) {
 	}
 
-	protected virtual void SetGhostType(Tile _tile, bool _snapToNeighbours){
-	
-	}
-	protected virtual void SetGhostGraphics(Tile _tile, bool _snapToNeighbours) {
-
-		//// if a diagonal is below, sort ghost so the diagonal covers it in a pretty way
-		//if (_tileUnderGhost.ConnectedDiagonal_B != null) {
-		//	_ghost.BottomQuad.SortCustom(_tileUnderGhost.BottomQuad.GetSortOrder() + 1);
-		//	_ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
-		//}
-		//// otherwise just go on top
-		//else {
-		//	_ghost.BottomQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
-		//	_ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 2);
-		//}
-	}
+    protected virtual Tile.Type DetermineGhostType(Tile _tile) {
+        return Tile.Type.Empty;
+    }
+    protected virtual Tile.TileOrientation DetermineGhostOrientation(Tile _tile, bool _snapToNeighbours) {
+        return Tile.TileOrientation.None;
+    }
+	protected void SetGhostType(Tile _tile){
+        if (this is WallBuilder)
+            _tile.SetTileType(_tile.TempType, _tile.TempOrientation, true);
+        else if(this is FloorBuilder)
+            _tile.SetFloorType(_tile.TempType, _tile.TempOrientation, true);
+    }
+    protected virtual void SetGhostGraphics(Tile _tile, bool _snapToNeighbours) {
+    }
 
 	protected void EvaluateUsedGhostConditions() {
 		//GhostInfo _ghost;
