@@ -13,20 +13,21 @@ public class Mouse : MonoBehaviour {
 
     [SerializeField] private WallBuilder WallBuilding;
 	[SerializeField] private FloorBuilder FloorBuilding;
+	[SerializeField] public ColoringTool Coloring;
 	[SerializeField] private ObjectPlacer ObjectPlacing;
 
 	[SerializeField] private Toggle[] ModeButtons;
 
     [System.Serializable]
-    public enum BuildModeEnum { None, BuildWalls, BuildFloor, PlaceObject }
+    public enum BuildModeEnum { None, BuildWalls, BuildFloor, Coloring, PlaceObject }
     public BuildModeEnum BuildMode = BuildModeEnum.None;
 
 	public CanInspect SelectedObject;
 
 	private CanInspect inspectableInRange;
 
-	private Vector2 mouseScreenPos;
-    private Vector2 mouseWorldPos;
+	//private Vector2 mouseScreenPos;
+    //private Vector2 mouseWorldPos;
 
 
     void Awake() {
@@ -36,7 +37,7 @@ public class Mouse : MonoBehaviour {
 		ModeButtons [0].group.SetAllTogglesOff ();
 		ModeButtons [0].isOn = true;
 
-		BuilderBase.Setup(transform);
+		Coloring.Setup(transform);
 		ObjectPlacing.Setup (transform);
      }
 
@@ -45,12 +46,14 @@ public class Mouse : MonoBehaviour {
 		ModeButtons [1].onValueChanged.AddListener (OnModeButton1ValueChanged);
 		ModeButtons [2].onValueChanged.AddListener (OnModeButton2ValueChanged);
 		ModeButtons [3].onValueChanged.AddListener (OnModeButton3ValueChanged);
+		ModeButtons [4].onValueChanged.AddListener (OnModeButton4ValueChanged);
 	}
 	void OnDisable(){
 		ModeButtons [0].onValueChanged.RemoveListener (OnModeButton0ValueChanged);
 		ModeButtons [1].onValueChanged.RemoveListener (OnModeButton1ValueChanged);
 		ModeButtons [2].onValueChanged.RemoveListener (OnModeButton2ValueChanged);
 		ModeButtons [3].onValueChanged.RemoveListener (OnModeButton3ValueChanged);
+		ModeButtons [4].onValueChanged.RemoveListener (OnModeButton4ValueChanged);
 	}
 	
 	void Update () {
@@ -231,16 +234,16 @@ public class Mouse : MonoBehaviour {
 		}
 	}
 
-	
-
     void LateUpdate() {
-        mouseScreenPos = Input.mousePosition;
-        mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+        //mouseScreenPos = Input.mousePosition;
+        //mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
 
 		if (WallBuilding.IsActive)
 			WallBuilding.Update ();
 		if (FloorBuilding.IsActive)
 			FloorBuilding.Update ();
+		if (Coloring.IsActive)
+			Coloring.Update ();
 		if (ObjectPlacing.IsActive)
 			ObjectPlacing.Update ();
 
@@ -266,6 +269,9 @@ public class Mouse : MonoBehaviour {
 	void OnModeButton3ValueChanged(bool b){
 		if(b) OnModeButtonsNewActive (3);
 	}
+	void OnModeButton4ValueChanged(bool b){
+		if(b) OnModeButtonsNewActive (4);
+	}
 	int currentSelectedModeIndex = 0;
 	void OnModeButtonsNewActive(int selectedModeIndex){
 		TryDeselectSelectedObject();
@@ -284,6 +290,9 @@ public class Mouse : MonoBehaviour {
 			case 3:
 				SetMode (BuildModeEnum.PlaceObject);
 				break;
+			case 4:
+				SetMode (BuildModeEnum.Coloring);
+				break;
 			default:
 				throw new System.IndexOutOfRangeException ("selectedModeIndex was out of range!");
 		}
@@ -298,21 +307,31 @@ public class Mouse : MonoBehaviour {
 			case BuildModeEnum.None:
 				WallBuilding.DeActivate ();
 				FloorBuilding.DeActivate ();
+				Coloring.DeActivate ();
 				ObjectPlacing.DeActivate ();
 				break;
 			case BuildModeEnum.BuildWalls:
 				FloorBuilding.DeActivate ();
+				Coloring.DeActivate ();
 				ObjectPlacing.DeActivate ();
 				WallBuilding.Activate();
                 break;
 			case BuildModeEnum.BuildFloor:
 				WallBuilding.DeActivate ();
+				Coloring.DeActivate ();
 				ObjectPlacing.DeActivate ();
 				FloorBuilding.Activate ();
+				break;
+			case BuildModeEnum.Coloring:
+				WallBuilding.DeActivate ();
+				FloorBuilding.DeActivate ();
+				ObjectPlacing.DeActivate ();
+				Coloring.Activate ();
 				break;
 			case BuildModeEnum.PlaceObject:
 				WallBuilding.DeActivate ();
 				FloorBuilding.DeActivate ();
+				Coloring.DeActivate ();
 				ObjectPlacing.Activate ();
 				break;
             default:

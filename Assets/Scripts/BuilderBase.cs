@@ -20,58 +20,6 @@ public class BuilderBase {
 	[System.NonSerialized] public bool IsActive = false;
 
 	private IEnumerator ghostRoutine;
-    //public class GhostInfo {
-    //	public UVController BottomQuad;
-    //	public UVController TopQuad;
-    //	//private SpriteRenderer _renderer;
-    //	//public bool _IsActive_ { get { return _renderer.gameObject.activeSelf; } }
-    //	public Vector3 position { get; private set; }
-    //	public Tile.Type Type;
-    //	public Tile.TileOrientation Orientation;
-    //	public bool HasNeighbourGhost_Left;
-    //	public bool HasNeighbourGhost_Top;
-    //	public bool HasNeighbourGhost_Right;
-    //	public bool HasNeighbourGhost_Bottom;
-
-    //	public GhostInfo(UVController _bottomQuad, UVController _topQuad) {
-    //		BottomQuad = _bottomQuad;
-    //		TopQuad = _topQuad;
-    //		//_renderer = _rend;
-    //		SetPosition(Vector2.zero);
-    //		Type = Tile.Type.Empty;
-    //		Orientation = Tile.TileOrientation.None;
-    //	}
-
-    //	private const float DEFAULT_OFFSET_Y = 0.5f;
-    //	private Vector3 newPos;
-    //	public void SetPosition(Vector3 _value) {
-    //		newPos = new Vector3(Grid.Instance.grid[0, 0].WorldPosition.x + _value.x, Grid.Instance.grid[0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
-    //		BottomQuad.transform.position = newPos;
-    //		TopQuad.transform.position = newPos;
-    //		position = _value;
-    //	}
-    //	public void ChangeAssets(CachedAssets.DoubleInt _bottomIndices, CachedAssets.DoubleInt _topIndices) {
-    //		BottomQuad.ChangeAsset(_bottomIndices);
-    //		TopQuad.ChangeAsset(_topIndices);
-    //	}
-    //	public void SetColor(Color _color) {
-    //		BottomQuad.ChangeColor(_color);
-    //		TopQuad.ChangeColor(_color);
-    //	}
-    //	public void SetActive(bool _b) {
-    //		BottomQuad.gameObject.SetActive(_b);
-    //		TopQuad.gameObject.SetActive(_b);
-    //	}
-    //	public void ResetHasNeighbours() {
-    //		HasNeighbourGhost_Left = false;
-    //		HasNeighbourGhost_Top = false;
-    //		HasNeighbourGhost_Right = false;
-    //		HasNeighbourGhost_Bottom = false;
-    //	}
-    //}
-    //protected static GhostInfo[] ALL_GHOSTS;
-    //private List<GhostInfo> usedGhosts = new List<GhostInfo>();
-
 
 	private Vector2 oldMouseGridPos;
 
@@ -95,22 +43,20 @@ public class BuilderBase {
 
 	private bool isGoingDiagonal;
 
-    protected List<CachedAssets.DoubleInt> modifiedTiles = new List<CachedAssets.DoubleInt>();
+	protected List<Tile> modifiedTiles = new List<Tile>();
 	protected List<Tile> selectedTiles = new List<Tile>();
 	//protected List<Tile.Type> selectedTilesNewType = new List<Tile.Type>();
 	//protected List<Tile.TileOrientation> selectedTilesNewOrientation = new List<Tile.TileOrientation>();
 
 
-	public static void Setup(Transform _transform) {
-		UVController[] _allQuads = _transform.GetComponentsInChildren<UVController>(true);
+	public virtual void Setup(Transform _transform) {
+		//UVController[] _allQuads = _transform.GetComponentsInChildren<UVController>(true);
 		//ALL_GHOSTS = new GhostInfo[(int)(_allQuads.Length * 0.5f)];
 		//for (int quadIteration = 0, ghostIteration = 0; quadIteration < _allQuads.Length; quadIteration += 2, ghostIteration++) {
 		//	_allQuads[quadIteration].Setup();
 		//	_allQuads[quadIteration + 1].Setup();
 		//	ALL_GHOSTS[ghostIteration] = new GhostInfo(_allQuads[quadIteration], _allQuads[quadIteration + 1]);
 		//}
-	}
-	public virtual void Setup(){
 	}
 
 	private float timeActivated;
@@ -213,42 +159,10 @@ public class BuilderBase {
         OnNewRound();
     }
 
-    protected virtual void ResetModifiedTiles(bool _includingMouse = false) {
-        //  not sure if I need three passes rather than one, but this is definitely safer
-        for (int i = 0; i < modifiedTiles.Count; i++) {
-            //if (!_includingMouse && mouseTile != null && Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y] == mouseTile)
-            //    continue;
-
-            if (this is WallBuilder) {
-                Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetTileType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
-                Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeWallGraphics(null, null, true);
-            }
-            else {
-                Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
-                Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].ChangeFloorGraphics(null, true);
-            }
-
-            Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y].SetColor(Color.white);
-        }
-
+	protected virtual void ResetModifiedTiles(bool _includingMouse = false) {
         modifiedTiles.Clear();
     }
     protected virtual void ResetSelectedTiles() {
-        //  not sure if I need three passes rather than one, but this is definitely safer
-        for (int i = 0; i < selectedTiles.Count; i++) {
-
-            if (this is WallBuilder) {
-                selectedTiles[i].SetTileType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
-                selectedTiles[i].ChangeWallGraphics(null, null, true);
-            }
-            else {
-                selectedTiles[i].SetFloorType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
-                selectedTiles[i].ChangeFloorGraphics(null, true);
-            }
-
-            selectedTiles[i].SetColor(Color.white);
-        }
-
         selectedTiles.Clear();
     }
 
@@ -614,7 +528,7 @@ public class BuilderBase {
 	}
 
 	protected void AddNextGhost(int _gridX, int _gridY, Tile.Type _tempType, Tile.TileOrientation _tempOrientation, bool _snapToNeighbours) {
-		modifiedTiles.Add (new CachedAssets.DoubleInt (_gridX, _gridY));
+		modifiedTiles.Add (Grid.Instance.grid[_gridX, _gridY]);
         Grid.Instance.grid[_gridX, _gridY].TempType = _tempType;
         Grid.Instance.grid[_gridX, _gridY].TempOrientation = _tempOrientation;
     }
@@ -648,7 +562,7 @@ public class BuilderBase {
 			////_tileUnderGhost = Grid.Instance.grid[(int)usedGhosts[i].position.x, (int)usedGhosts[i].position.y];
 			//_orientation = usedGhosts[i].Orientation;
 
-			Evaluate (Grid.Instance.grid[modifiedTiles[i].X, modifiedTiles[i].Y]);
+			Evaluate (modifiedTiles[i]);
 		}
 	}
 	protected virtual void Evaluate(Tile _tile){

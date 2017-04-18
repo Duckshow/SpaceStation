@@ -4,40 +4,41 @@ using System.Collections.Generic;
 public class Grid : MonoBehaviour {
 
     public static Grid Instance;
+	public Material GridMaterial;
 
-    private class GridGraphics {
-        public bool IsDirty = false;
-
-        public Texture2D Diffuse;
-        public Texture2D Normal;
-        public Texture2D Emissive;
-        public Texture2D Specular;
-
-        public GridGraphics(int _width, int _height, TextureFormat _format, bool _mipmap) {
-            ApplySettingsToAsset(out Diffuse, _width, _height, _format, _mipmap);
-            ApplySettingsToAsset(out Normal, _width, _height, _format, _mipmap);
-            ApplySettingsToAsset(out Emissive, _width, _height, _format, _mipmap);
-            ApplySettingsToAsset(out Specular, _width, _height, _format, _mipmap);
-        }
-
-        void ApplySettingsToAsset(out Texture2D _texture, int _width, int _height, TextureFormat _format, bool _mipmap) {
-            _texture = new Texture2D(_width, _height, _format, _mipmap);
-            _texture.filterMode = FilterMode.Point;
-            _texture.wrapMode = TextureWrapMode.Clamp;
-            _texture.anisoLevel = 0;
-        }
-
-        public void ApplyAll() {
-            if (!IsDirty)
-                return;
-            IsDirty = false;
-
-            Diffuse.Apply();
-            Normal.Apply();
-            Emissive.Apply();
-            Specular.Apply();
-        }
-    }
+//    private class GridGraphics {
+//        public bool IsDirty = false;
+//
+//        public Texture2D Diffuse;
+//        public Texture2D Normal;
+//        public Texture2D Emissive;
+//        public Texture2D Specular;
+//
+//        public GridGraphics(int _width, int _height, TextureFormat _format, bool _mipmap) {
+//            ApplySettingsToAsset(out Diffuse, _width, _height, _format, _mipmap);
+//            ApplySettingsToAsset(out Normal, _width, _height, _format, _mipmap);
+//            ApplySettingsToAsset(out Emissive, _width, _height, _format, _mipmap);
+//            ApplySettingsToAsset(out Specular, _width, _height, _format, _mipmap);
+//        }
+//
+//        void ApplySettingsToAsset(out Texture2D _texture, int _width, int _height, TextureFormat _format, bool _mipmap) {
+//            _texture = new Texture2D(_width, _height, _format, _mipmap);
+//            _texture.filterMode = FilterMode.Point;
+//            _texture.wrapMode = TextureWrapMode.Clamp;
+//            _texture.anisoLevel = 0;
+//        }
+//
+//        public void ApplyAll() {
+//            if (!IsDirty)
+//                return;
+//            IsDirty = false;
+//
+//            Diffuse.Apply();
+//            Normal.Apply();
+//            Emissive.Apply();
+//            Specular.Apply();
+//        }
+//    }
 
     [SerializeField] private Texture2D TextureWithGoodImportSettings;
     [SerializeField] private Texture2D NormalMapWithGoodImportSettings;
@@ -45,8 +46,8 @@ public class Grid : MonoBehaviour {
     [SerializeField] private MeshRenderer[] GridGraphicsBottomRenderers;
     [SerializeField] private MeshRenderer[] GridGraphicsTopRenderers;
 
-    private GridGraphics[] gridGraphicsBottom;
-    private GridGraphics[] gridGraphicsTop;
+//    private GridGraphics[] gridGraphicsBottom;
+//    private GridGraphics[] gridGraphicsTop;
     public const int TILE_RESOLUTION = 64;
     public const float WORLD_BOTTOM_HEIGHT = 0.01f;
     public const float WORLD_TOP_HEIGHT = -0.01f;
@@ -73,8 +74,8 @@ public class Grid : MonoBehaviour {
     void Awake() {
         Instance = this;
 
-        gridGraphicsBottom = new GridGraphics[GridGraphicsBottomRenderers.Length];
-        gridGraphicsTop = new GridGraphics[GridGraphicsBottomRenderers.Length];
+//        gridGraphicsBottom = new GridGraphics[GridGraphicsBottomRenderers.Length];
+//        gridGraphicsTop = new GridGraphics[GridGraphicsBottomRenderers.Length];
 
         nodeDiameter = NodeRadius * 2;
         GridSizeX = Mathf.RoundToInt(GridWorldSize.x / nodeDiameter);

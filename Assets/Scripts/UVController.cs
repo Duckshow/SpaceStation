@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 public class UVController : MonoBehaviour {
 
 	public CachedAssets.DoubleInt Coordinates;
@@ -13,32 +14,16 @@ public class UVController : MonoBehaviour {
     private MeshRenderer myRenderer;
     private Vector2[] myMeshUVs;
 
-    private int cachedPropertyColor;
+	private static int sCachedPropertyColor = -1;
+	private static int sCachedPropertyAllColors = -1;
     private bool hasStarted = false;
     private bool isHidden = false;
 
-
-    //public bool L;
-    //public bool HasL;
-    //public bool T;
-    //public bool HasT;
-    //public bool R;
-    //public bool HasR;
-    //public bool B;
-    //public bool HasB;
-    //public void SetDebugBools(bool _canL, bool _hasL, bool _canT, bool _hasT, bool _canR, bool _hasR, bool _canB, bool _hasB) {
-    //    L = _canL;
-    //    HasL = _hasL;
-    //    T = _canT;
-    //    HasT = _hasT;
-    //    R = _canR;
-    //    HasR = _canR;
-    //    B = _canB;
-    //    HasB = _hasB;
-    //}
+	private Color32 oldVertexColor;
+	private Color32 vertexColor;
 
 
-    void Start() {
+	void Start() {
         if (!hasStarted)
             Setup();
     }
@@ -54,12 +39,19 @@ public class UVController : MonoBehaviour {
         myRenderer.sortingLayerName = "Grid";
 		myMeshUVs = myMeshFilter.sharedMesh != null ? myMeshFilter.sharedMesh.uv : myMeshFilter.mesh.uv;
 
-        cachedPropertyColor = Shader.PropertyToID("_Color");
-        ChangeAsset(Coordinates, false);
+		if(sCachedPropertyColor == -1)
+	        sCachedPropertyColor = Shader.PropertyToID("_Color");
+		ChangeAsset(Coordinates, false);
+
+		if (sCachedPropertyAllColors == -1) {
+			sCachedPropertyAllColors = Shader.PropertyToID("_allColors");
+			myRenderer.sharedMaterial.SetVectorArray (sCachedPropertyAllColors, ColoringTool.sAllColorsForShaders);
+		}
+
+		SetVertexColor (0, 1, 2, 0, false);
     }
 
     public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, bool _temporary) {
-
         if (_assetIndices == null) {
             if (_temporary) {
                 TemporaryCoordinates = null;
@@ -106,8 +98,29 @@ public class UVController : MonoBehaviour {
     }
 
     public void ChangeColor(Color _color) {
-        myRenderer.material.SetColor(cachedPropertyColor, _color);
+        myRenderer.material.SetColor(sCachedPropertyColor, _color);
     }
+	private static List<Color32> sVertexColors = new List<Color32> ();
+	public void SetVertexColor(byte _color0, byte _color1, byte _color2, byte _color3, bool _temporarily){
+		if(oldVertexColor.Equals(vertexColor))
+			oldVertexColor = vertexColor;
+
+		vertexColor.r = _color0;
+		vertexColor.g = _color1;
+		vertexColor.b = _color2;
+		vertexColor.a = _color3;
+
+		if (!_temporarily)
+			oldVertexColor = vertexColor;
+
+		sVertexColors.Clear ();
+		for (int i = 0; i < myMeshFilter.mesh.vertexCount; i++)
+			sVertexColors.Add (vertexColor);
+		myMeshFilter.mesh.SetColors (sVertexColors);
+	}
+	public void ResetVertexColor(){
+		SetVertexColor (oldVertexColor.r, oldVertexColor.g, oldVertexColor.b, oldVertexColor.a, false);
+	}
 
     public static int GetSortOrderFromGridY(int _gridY) { return (Grid.Instance.GridSizeY * 10) - (_gridY * 10); }
     public int GetSortOrder() { return (customSortOrder.HasValue ? (int)customSortOrder : regularSortOrder); }

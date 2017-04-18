@@ -14,6 +14,25 @@ public class FloorBuilder : BuilderBase {
 			Mode = ModeEnum.Diagonal;
 	}
 
+	protected override void ResetModifiedTiles(bool _includingMouse = false) {
+		for (int i = 0; i < modifiedTiles.Count; i++) {
+			modifiedTiles[i].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
+			modifiedTiles[i].ChangeFloorGraphics(null, true);
+			modifiedTiles[i].SetColor(Color.white);
+		}
+
+		base.ResetModifiedTiles ();
+	}
+	protected override void ResetSelectedTiles() {
+		for (int i = 0; i < selectedTiles.Count; i++) {
+			selectedTiles[i].SetFloorType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
+			selectedTiles[i].ChangeFloorGraphics(null, true);
+			selectedTiles[i].SetColor(Color.white);
+		}
+
+		base.ResetSelectedTiles ();
+	}
+
     protected override void AddGhostsForConnectedDiagonals(Tile _tile) {
 		if (_tile.ConnectedDiagonalFloor_B != null) {
 			AddNextGhost(_tile.ConnectedDiagonalFloor_B.GridX, _tile.ConnectedDiagonalFloor_B.GridY, DetermineGhostType(_tile.ConnectedDiagonalFloor_B), DetermineGhostOrientation(_tile.ConnectedDiagonalFloor_B, false), false);

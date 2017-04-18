@@ -30,18 +30,18 @@ a door without a wall. Need to check for neighboring doors' neighboring doors, e
 
 __Replace TileQuads with MegaQuad!__ 
 
-Why? : Instead of >10.000 transforms I should be able to have 5. Jesus Christ that sounds nice.
+Why? : Instead of >10.000 transforms I should be able to have 5 (eh, 250 if I want depthsorting). Jesus Christ that sounds nice.
 
 How? : If I had a plane with X quads, I should be able to set the UVs of those quads instead. However, this would mean I can't have depth sorting, unless
 I instead have one megaquad, 2 units high, for each Y-unit. That could get me 48 transforms at least, going by the current gridsize.
 _________________
 
-__Instead of mouseghosts, just change the grid temporarily__ 
+__Replace unity-lights with shader__ 
 
-Why? : Instead of, what, 800~ additional transforms, I could have zero and possibly the ability to select a LOT more stuff at a time.
+Why? : Better control over lighting and possibly better for performance.
 
-How? : Add a second DoubleInt to UVController that will be used unless null, then set that using BuilderBase.
-
+How? : Everytime a lamp-object is added to the grid, 3 static arrays are assigned with every lamp's position, range, color (maybe intensity?).
+The arrays can be sent to a shader via MaterialPropertyBlocks. Those arrays are iterated over in the grid-shader, applying maybe the 4 strongest lights to each pixel.
 _________________
 
 __Floor-windows__ 

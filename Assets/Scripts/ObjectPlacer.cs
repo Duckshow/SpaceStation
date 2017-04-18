@@ -55,8 +55,12 @@ public class ObjectPlacer {
         private const float DEFAULT_OFFSET_Y = 0.5f;
         private Vector3 newPos;
         public void SetPosition(Vector3 _value) {
-            newPos = new Vector3(Grid.Instance.grid[0, 0].WorldPosition.x + _value.x, Grid.Instance.grid[0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
-            BottomQuad.transform.position = newPos;
+			if (Grid.Instance != null)
+				newPos = new Vector3 (Grid.Instance.grid [0, 0].WorldPosition.x + _value.x, Grid.Instance.grid [0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
+			else
+				newPos = Vector3.zero;
+
+			BottomQuad.transform.position = newPos;
             TopQuad.transform.position = newPos;
             position = _value;
         }
