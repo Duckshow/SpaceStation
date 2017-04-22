@@ -24,6 +24,9 @@ on the only tv-chair and so finds no comfort. Maybe check *who's* using a chair?
 Putting two doors/airlocks next to eachother and deleting a wall connected to only one of them causes one door to be deleted but not the other one, leaving
 a door without a wall. Need to check for neighboring doors' neighboring doors, etc etc!
 
+Ghosting around with the coloring-tool (not applying), then ghosting around with the wall-tool causes weird wall-ghosts to appear, or something. Doesn't seem to 
+affect the floor-tool...
+
 
 
 == Ideas for the future ==

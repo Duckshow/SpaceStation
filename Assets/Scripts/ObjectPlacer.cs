@@ -147,7 +147,7 @@ public class ObjectPlacer {
         else if (activeTemporarily) // shouldn't reload UISelectedObject when we're not planning on staying in this tool
             return;
         else if (PickedUpObject == null) {
-            for (int i = 0; i < ObjectButtons.Length; i++) {
+            for (int i = 1; i < ObjectButtons.Length; i++) { // skipping 0 because it's currently the None-button
                 if (ObjectButtons[i].isOn) {
                     selectedObjectButtonHasChanged = oldObjectButtonIndex != i;
                     oldObjectButtonIndex = i;

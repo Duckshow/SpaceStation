@@ -16,7 +16,8 @@ public class Mouse : MonoBehaviour {
 	[SerializeField] public ColoringTool Coloring;
 	[SerializeField] private ObjectPlacer ObjectPlacing;
 
-	[SerializeField] private Toggle[] ModeButtons;
+	[SerializeField] private SetToolMode[] MainToolButtons;
+   	[SerializeField] private Toggle[] AllButtons;
 
     [System.Serializable]
     public enum BuildModeEnum { None, BuildWalls, BuildFloor, Coloring, PlaceObject }
@@ -34,28 +35,13 @@ public class Mouse : MonoBehaviour {
         if (Instance) return;
         Instance = this;
 
-		ModeButtons [0].group.SetAllTogglesOff ();
-		ModeButtons [0].isOn = true;
+		MainToolButtons [0].MyToggle.group.SetAllTogglesOff ();
+		MainToolButtons [0].MyToggle.isOn = true;
 
 		Coloring.Setup(transform);
 		ObjectPlacing.Setup (transform);
      }
 
-	void OnEnable(){
-		ModeButtons [0].onValueChanged.AddListener (OnModeButton0ValueChanged);
-		ModeButtons [1].onValueChanged.AddListener (OnModeButton1ValueChanged);
-		ModeButtons [2].onValueChanged.AddListener (OnModeButton2ValueChanged);
-		ModeButtons [3].onValueChanged.AddListener (OnModeButton3ValueChanged);
-		ModeButtons [4].onValueChanged.AddListener (OnModeButton4ValueChanged);
-	}
-	void OnDisable(){
-		ModeButtons [0].onValueChanged.RemoveListener (OnModeButton0ValueChanged);
-		ModeButtons [1].onValueChanged.RemoveListener (OnModeButton1ValueChanged);
-		ModeButtons [2].onValueChanged.RemoveListener (OnModeButton2ValueChanged);
-		ModeButtons [3].onValueChanged.RemoveListener (OnModeButton3ValueChanged);
-		ModeButtons [4].onValueChanged.RemoveListener (OnModeButton4ValueChanged);
-	}
-	
 	void Update () {
 
 		// for testing purposes only
@@ -72,11 +58,11 @@ public class Mouse : MonoBehaviour {
 
         if (Input.GetKeyUp(KeyCode.Tab)) {
             currentSelectedModeIndex++;
-            if (currentSelectedModeIndex > ModeButtons.Length - 1)
+            if (currentSelectedModeIndex > MainToolButtons.Length - 1)
                 currentSelectedModeIndex = 0;
 
-            ModeButtons[currentSelectedModeIndex].isOn = true;
-            OnModeButtonsNewActive(currentSelectedModeIndex);
+            MainToolButtons[currentSelectedModeIndex].MyToggle.isOn = true;
+            OnBuildModeChange(MainToolButtons[currentSelectedModeIndex].ToolIndex, MainToolButtons[currentSelectedModeIndex].ToggleMode);
         }
 
         SetMouseState ();
@@ -248,55 +234,54 @@ public class Mouse : MonoBehaviour {
 			ObjectPlacing.Update ();
 
         // disable UI-stuff
-        for (int i = 0; i < ModeButtons.Length; i++)
-            ModeButtons[i].interactable = (ObjectPlacing.PickedUpObject == null);
-        for (int i = 0; i < ObjectPlacing.ObjectButtons.Length; i++)
-            ObjectPlacing.ObjectButtons[i].interactable = (ObjectPlacing.PickedUpObject == null);
+        for (int i = 0; i < AllButtons.Length; i++)
+            AllButtons[i].interactable = (ObjectPlacing.PickedUpObject == null);
 
         if (ObjectPlacing.PickedUpObject != null)
             return;
     }
 
-	void OnModeButton0ValueChanged(bool b){
-		if(b) OnModeButtonsNewActive (0);
-	}
-	void OnModeButton1ValueChanged(bool b){
-		if(b) OnModeButtonsNewActive (1);
-	}
-	void OnModeButton2ValueChanged(bool b){
-		if(b) OnModeButtonsNewActive (2);
-	}
-	void OnModeButton3ValueChanged(bool b){
-		if(b) OnModeButtonsNewActive (3);
-	}
-	void OnModeButton4ValueChanged(bool b){
-		if(b) OnModeButtonsNewActive (4);
-	}
-	int currentSelectedModeIndex = 0;
-	void OnModeButtonsNewActive(int selectedModeIndex){
-		TryDeselectSelectedObject();
+	//void OnModeButton0ValueChanged(bool b){
+	//	if(b) OnModeButtonsNewActive (0);
+	//}
+	//void OnModeButton1ValueChanged(bool b){
+	//	if(b) OnModeButtonsNewActive (1);
+	//}
+	//void OnModeButton2ValueChanged(bool b){
+	//	if(b) OnModeButtonsNewActive (2);
+	//}
+	//void OnModeButton3ValueChanged(bool b){
+	//	if(b) OnModeButtonsNewActive (3);
+	//}
+	//void OnModeButtonsNewActive(int selectedModeIndex){
+	//	TryDeselectSelectedObject();
 
-		currentSelectedModeIndex = selectedModeIndex;
-		switch (currentSelectedModeIndex) {
-			case 0:
-				SetMode (BuildModeEnum.None);
-				break;
-			case 1:
-				SetMode (BuildModeEnum.BuildWalls);
-				break;
-			case 2:
-				SetMode (BuildModeEnum.BuildFloor);
-				break;
-			case 3:
-				SetMode (BuildModeEnum.PlaceObject);
-				break;
-			case 4:
-				SetMode (BuildModeEnum.Coloring);
-				break;
-			default:
-				throw new System.IndexOutOfRangeException ("selectedModeIndex was out of range!");
-		}
-	}
+	//	currentSelectedModeIndex = selectedModeIndex;
+	//	switch (currentSelectedModeIndex) {
+	//		case 0:
+	//			SetMode (BuildModeEnum.None);
+	//			break;
+	//		case 1:
+	//			SetMode (BuildModeEnum.BuildWalls);
+	//			break;
+	//		case 2:
+	//			SetMode (BuildModeEnum.BuildFloor);
+	//			break;
+	//		case 3:
+	//			SetMode (BuildModeEnum.Coloring);
+	//			break;
+	//		default:
+	//			throw new System.IndexOutOfRangeException ("selectedModeIndex was out of range!");
+	//	}
+	//}
+
+	int currentSelectedModeIndex = 0;
+    public void OnBuildModeChange(int _toolIndex, BuildModeEnum _mode) {
+        TryDeselectSelectedObject();
+        if(_toolIndex > -1)
+            currentSelectedModeIndex = _toolIndex;
+        SetMode(_mode);
+    }
 
     void SetMode(BuildModeEnum _mode) {
         if (BuildMode == _mode)
