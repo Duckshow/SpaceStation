@@ -4,8 +4,9 @@ using UnityEngine.UI;
 public class SetToolMode : MonoBehaviour {
     public Mouse.BuildModeEnum ToggleMode;
     public int ToolIndex = -1;
-    [SerializeField] private SetToolMode OverrideOtherButton;
-    [System.NonSerialized] public bool IsOverriden;
+	[SerializeField] private GameObject ExtraStuff;
+	[SerializeField] private SetToolMode OverrideOtherButton;
+	[System.NonSerialized] public bool IsOverriden;
     [System.NonSerialized] public Mouse.BuildModeEnum OverrideToggleMode;
     [System.NonSerialized] public int OverrideToolIndex;
     [System.NonSerialized] public Toggle MyToggle;
@@ -13,6 +14,8 @@ public class SetToolMode : MonoBehaviour {
 
     void Awake() {
         MyToggle = GetComponent<Toggle>();
+		if(ExtraStuff != null)
+			ExtraStuff.SetActive (false);
     }
     void OnEnable() {
         MyToggle.onValueChanged.AddListener(OnToggleValueChanged);
@@ -36,9 +39,14 @@ public class SetToolMode : MonoBehaviour {
             }
         }
 
-        if(IsOverriden)
-            Mouse.Instance.OnBuildModeChange(OverrideToolIndex, OverrideToggleMode);
-        else
-            Mouse.Instance.OnBuildModeChange(ToolIndex, ToggleMode);
+		if (_b) {
+			if(IsOverriden)
+				Mouse.Instance.OnBuildModeChange(OverrideToolIndex, OverrideToggleMode);
+			else
+				Mouse.Instance.OnBuildModeChange(ToolIndex, ToggleMode);
+		} 
+
+		if(ExtraStuff != null)
+			ExtraStuff.SetActive (_b);
     }
 }

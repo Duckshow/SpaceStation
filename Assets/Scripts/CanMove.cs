@@ -8,7 +8,6 @@ public class CanMove : MonoBehaviour {
    	[SerializeField] private GameObject ObjectToDisableWhenMovedBack;
     [SerializeField] private float MoveY;
 	[SerializeField] private float Speed;
-    [SerializeField] private Toggle[] AutoMoveBackIfOn;
 	private float returnToY;
 	private float yAtStartMove;
 	private float timeAtMoveStart;
@@ -38,14 +37,6 @@ public class CanMove : MonoBehaviour {
 	void OnToggleValueChanged(bool _b){
         if (_b == oldValue)
             return;
-
-        for (int i = 0; i < AutoMoveBackIfOn.Length; i++) {
-            if (AutoMoveBackIfOn[i].isOn) {
-                ConnectedToggle.isOn = false;
-                oldValue = false;
-                return;
-            }
-        }
 
         oldValue = _b;
         Move (_b);
@@ -81,15 +72,6 @@ public class CanMove : MonoBehaviour {
                 progress = moveForward ? ProgressEnum.Target : ProgressEnum.Default;
             }
 		}
-        else if(progress == ProgressEnum.Target) {
-            for (int i = 0; i < AutoMoveBackIfOn.Length; i++) {
-                if (AutoMoveBackIfOn[i].isOn) {
-                    ConnectedToggle.isOn = false;
-                    Move(false);
-                    break;
-                }
-            }
-        }
         else if (progress == ProgressEnum.Default) {
             if (ObjectToDisableWhenMovedBack != null && ObjectToDisableWhenMovedBack.activeSelf)
                 ObjectToDisableWhenMovedBack.SetActive(false);

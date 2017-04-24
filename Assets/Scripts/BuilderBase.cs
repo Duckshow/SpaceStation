@@ -529,6 +529,9 @@ public class BuilderBase {
 
 	protected void AddNextGhost(int _gridX, int _gridY, Tile.Type _tempType, Tile.TileOrientation _tempOrientation, bool _snapToNeighbours) {
 		modifiedTiles.Add (Grid.Instance.grid[_gridX, _gridY]);
+		if (this is ColoringTool)
+			return;
+
         Grid.Instance.grid[_gridX, _gridY].TempType = _tempType;
         Grid.Instance.grid[_gridX, _gridY].TempOrientation = _tempOrientation;
     }

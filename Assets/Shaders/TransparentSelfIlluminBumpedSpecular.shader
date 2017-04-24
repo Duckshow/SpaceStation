@@ -35,7 +35,7 @@ struct Input {
 
 void surf (Input IN, inout SurfaceOutput o) {
 	fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
-	fixed4 specTex = tex2D(_SpecMap, IN.uv_SpecMap);
+	//fixed4 specTex = tex2D(_SpecMap, IN.uv_SpecMap);
 	c = tex * _Color;
 	o.Albedo = c.rgb;
 	o.Emission = /*c.rgb * */tex2D(_Illum, IN.uv_Illum)/*.a*/;

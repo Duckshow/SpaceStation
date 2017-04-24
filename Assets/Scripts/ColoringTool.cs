@@ -8,11 +8,20 @@ public class ColoringTool : BuilderBase {
 	public Color[] AllColors = new Color[32];
 	public static List<Vector4> sAllColorsForShaders = new List<Vector4> ();
 
-	[SerializeField] private byte Color_0;
-	[SerializeField] private byte Color_1;
-	[SerializeField] private byte Color_2;
-	[SerializeField] private byte Color_3;
-
+	private static byte sColorIndex_0 = 0;
+	private static byte sColorIndex_1 = 0;
+	private static byte sColorIndex_2 = 0;
+	private static byte sColorIndex_3 = 0;
+	public static void AssignColorIndex(int _channel, byte _value){
+		if (_channel == 0)
+			sColorIndex_0 = _value;
+		if (_channel == 1)
+			sColorIndex_1 = _value;
+		if (_channel == 2)
+			sColorIndex_2 = _value;
+		if (_channel == 3)
+			sColorIndex_3 = _value;
+	}
 
 	public override void Setup(Transform transform) {
 		base.Setup (transform);
@@ -37,9 +46,8 @@ public class ColoringTool : BuilderBase {
 		base.ResetModifiedTiles (_includingMouse);
 	}
 	protected override void ResetSelectedTiles() {
-		for (int i = 0; i < selectedTiles.Count; i++) {
+		for (int i = 0; i < selectedTiles.Count; i++)
 			ResetColor (selectedTiles[i]);
-		}
 
 		base.ResetSelectedTiles ();
 	}
@@ -76,11 +84,11 @@ public class ColoringTool : BuilderBase {
 	}
 
 	public void SetColor(Tile _tile, bool _temporarily){
-		_tile.FloorQuad.SetVertexColor (Color_0, Color_1, Color_2, Color_3, _temporarily);
-		_tile.FloorCornerHider.SetVertexColor (Color_0, Color_1, Color_2, Color_3, _temporarily);
-		_tile.BottomQuad.SetVertexColor (Color_0, Color_1, Color_2, Color_3, _temporarily);
-		_tile.TopQuad.SetVertexColor (Color_0, Color_1, Color_2, Color_3, _temporarily);
-		_tile.WallCornerHider.SetVertexColor (Color_0, Color_1, Color_2, Color_3, _temporarily);
+		_tile.FloorQuad.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
+		_tile.FloorCornerHider.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
+		_tile.BottomQuad.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
+		_tile.TopQuad.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
+		_tile.WallCornerHider.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
 	}
 	public void ResetColor(Tile _tile){
 		_tile.FloorQuad.ResetVertexColor ();

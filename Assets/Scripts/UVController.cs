@@ -48,7 +48,7 @@ public class UVController : MonoBehaviour {
 			myRenderer.sharedMaterial.SetVectorArray (sCachedPropertyAllColors, ColoringTool.sAllColorsForShaders);
 		}
 
-		SetVertexColor (0, 1, 2, 0, false);
+		SetVertexColor (1, 2, 2, 2, false);
     }
 
     public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, bool _temporary) {

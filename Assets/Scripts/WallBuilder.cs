@@ -5,7 +5,6 @@ using System.Collections.Generic;
 [System.Serializable]
 public class WallBuilder : BuilderBase {
 
-	[Header("Max 32 Colors!")]
 	private Color32[] AllColors;
 
 	protected override void TryChangeMode(){
