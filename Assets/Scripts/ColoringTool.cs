@@ -5,14 +5,17 @@ using System.Collections.Generic;
 [System.Serializable]
 public class ColoringTool : BuilderBase {
 
-	public Color[] AllColors = new Color[32];
+    public Texture2D Palette;
+	public Color[] AllColors = new Color[128];
 	public static List<Vector4> sAllColorsForShaders = new List<Vector4> ();
 
 	private static byte sColorIndex_0 = 0;
 	private static byte sColorIndex_1 = 0;
 	private static byte sColorIndex_2 = 0;
 	private static byte sColorIndex_3 = 0;
-	public static void AssignColorIndex(int _channel, byte _value){
+    private static byte sColorIndex_4 = 0;
+    private static byte sColorIndex_5 = 0;
+    public static void AssignColorIndex(int _channel, byte _value){
 		if (_channel == 0)
 			sColorIndex_0 = _value;
 		if (_channel == 1)
@@ -21,7 +24,11 @@ public class ColoringTool : BuilderBase {
 			sColorIndex_2 = _value;
 		if (_channel == 3)
 			sColorIndex_3 = _value;
-	}
+        if (_channel == 4)
+            sColorIndex_4 = _value;
+        if (_channel == 5)
+            sColorIndex_5 = _value;
+    }
 
 	public override void Setup(Transform transform) {
 		base.Setup (transform);
@@ -84,17 +91,17 @@ public class ColoringTool : BuilderBase {
 	}
 
 	public void SetColor(Tile _tile, bool _temporarily){
-		_tile.FloorQuad.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
-		_tile.FloorCornerHider.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
-		_tile.BottomQuad.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
-		_tile.TopQuad.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
-		_tile.WallCornerHider.SetVertexColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, _temporarily);
+		_tile.FloorQuad.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, _temporarily);
+		_tile.FloorCornerHider.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, _temporarily);
+		_tile.BottomQuad.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, _temporarily);
+		_tile.TopQuad.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, _temporarily);
+		_tile.WallCornerHider.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, _temporarily);
 	}
 	public void ResetColor(Tile _tile){
-		_tile.FloorQuad.ResetVertexColor ();
-		_tile.FloorCornerHider.ResetVertexColor ();
-		_tile.BottomQuad.ResetVertexColor ();
-		_tile.TopQuad.ResetVertexColor ();
-		_tile.WallCornerHider.ResetVertexColor ();
+		_tile.FloorQuad.ResetUVColor ();
+		_tile.FloorCornerHider.ResetUVColor ();
+		_tile.BottomQuad.ResetUVColor ();
+		_tile.TopQuad.ResetUVColor ();
+		_tile.WallCornerHider.ResetUVColor ();
 	}
 }

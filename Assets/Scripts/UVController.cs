@@ -19,11 +19,25 @@ public class UVController : MonoBehaviour {
     private bool hasStarted = false;
     private bool isHidden = false;
 
-	private Color32 oldVertexColor;
-	private Color32 vertexColor;
+	//private Color32 oldVertexColor;
+	//private Color32 vertexColor;
+
+    private byte uvColorIndex_0;
+    private byte uvColorIndex_1;
+    private byte uvColorIndex_2;
+    private byte uvColorIndex_3;
+    private byte uvColorIndex_4;
+    private byte uvColorIndex_5;
+    private byte oldUvColorIndex_0;
+    private byte oldUvColorIndex_1;
+    private byte oldUvColorIndex_2;
+    private byte oldUvColorIndex_3;
+    private byte oldUvColorIndex_4;
+    private byte oldUvColorIndex_5;
 
 
-	void Start() {
+
+    void Start() {
         if (!hasStarted)
             Setup();
     }
@@ -48,7 +62,7 @@ public class UVController : MonoBehaviour {
 			myRenderer.sharedMaterial.SetVectorArray (sCachedPropertyAllColors, ColoringTool.sAllColorsForShaders);
 		}
 
-		SetVertexColor (1, 2, 2, 2, false);
+		SetUVColor (1, 2, 2, 2, 2, 2, false);
     }
 
     public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, bool _temporary) {
@@ -100,27 +114,74 @@ public class UVController : MonoBehaviour {
     public void ChangeColor(Color _color) {
         myRenderer.material.SetColor(sCachedPropertyColor, _color);
     }
-	private static List<Color32> sVertexColors = new List<Color32> ();
-	public void SetVertexColor(byte _color0, byte _color1, byte _color2, byte _color3, bool _temporarily){
-		if(oldVertexColor.Equals(vertexColor))
-			oldVertexColor = vertexColor;
+	//private static List<Color32> sVertexColors = new List<Color32> ();
+	//public void SetVertexColor(byte _color0, byte _color1, byte _color2, byte _color3, bool _temporarily){
+	//	if(oldVertexColor.Equals(vertexColor))
+	//		oldVertexColor = vertexColor;
 
-		vertexColor.r = _color0;
-		vertexColor.g = _color1;
-		vertexColor.b = _color2;
-		vertexColor.a = _color3;
+	//	vertexColor.r = _color0;
+	//	vertexColor.g = _color1;
+	//	vertexColor.b = _color2;
+	//	vertexColor.a = _color3;
 
-		if (!_temporarily)
-			oldVertexColor = vertexColor;
+	//	if (!_temporarily)
+	//		oldVertexColor = vertexColor;
 
-		sVertexColors.Clear ();
-		for (int i = 0; i < myMeshFilter.mesh.vertexCount; i++)
-			sVertexColors.Add (vertexColor);
-		myMeshFilter.mesh.SetColors (sVertexColors);
-	}
-	public void ResetVertexColor(){
-		SetVertexColor (oldVertexColor.r, oldVertexColor.g, oldVertexColor.b, oldVertexColor.a, false);
-	}
+	//	sVertexColors.Clear ();
+ //       for (int i = 0; i < myMeshFilter.mesh.vertexCount; i++)
+ //           sVertexColors.Add(vertexColor);
+	//	myMeshFilter.mesh.SetColors (sVertexColors);
+	//}
+	//public void ResetVertexColor(){
+	//	SetVertexColor (oldVertexColor.r, oldVertexColor.g, oldVertexColor.b, oldVertexColor.a, false);
+	//}
+
+    private static List<Vector2> sUVColors_0 = new List<Vector2>();
+    private static List<Vector2> sUVColors_1 = new List<Vector2>();
+    private static List<Vector2> sUVColors_2 = new List<Vector2>();
+    private static Vector2 sUVColor_0 = new Vector2();
+    private static Vector2 sUVColor_1 = new Vector2();
+    private static Vector2 sUVColor_2 = new Vector2();
+    public void SetUVColor(byte _color0, byte _color1, byte _color2, byte _color3, byte _color4, byte _color5, bool _temporarily, bool _resetting = false) {
+        if (!_resetting && !_temporarily && (uvColorIndex_0 != _color0 || uvColorIndex_1 != _color1 || uvColorIndex_2 != _color2 || uvColorIndex_3 != _color3 || uvColorIndex_4 != _color4 || uvColorIndex_5 != _color5)) {
+            oldUvColorIndex_0 = uvColorIndex_0;
+            oldUvColorIndex_1 = uvColorIndex_1;
+            oldUvColorIndex_2 = uvColorIndex_2;
+            oldUvColorIndex_3 = uvColorIndex_3;
+            oldUvColorIndex_4 = uvColorIndex_4;
+            oldUvColorIndex_5 = uvColorIndex_5;
+        }
+
+        uvColorIndex_0 = _color0;
+        uvColorIndex_1 = _color1;
+        uvColorIndex_2 = _color2;
+        uvColorIndex_3 = _color3;
+        uvColorIndex_4 = _color4;
+        uvColorIndex_5 = _color5;
+        if(transform.parent == null)
+            Debug.Log(transform.name + " (" + _temporarily + "): " + _color0 + ", " + _color1 + ", " + _color2 + ", " + _color3 + ", " + _color4 + ", " + _color5);
+
+        sUVColors_0.Clear();
+        sUVColors_1.Clear();
+        sUVColors_2.Clear();
+        sUVColor_0.x = uvColorIndex_0;
+        sUVColor_0.y = uvColorIndex_1;
+        sUVColor_1.x = uvColorIndex_2;
+        sUVColor_1.y = uvColorIndex_3;
+        sUVColor_2.x = uvColorIndex_4;
+        sUVColor_2.y = uvColorIndex_5;
+        for (int i = 0; i < myMeshFilter.mesh.uv.Length; i++) {
+            sUVColors_0.Add(sUVColor_0);
+            sUVColors_1.Add(sUVColor_1);
+            sUVColors_2.Add(sUVColor_2);
+        }
+        myMeshFilter.mesh.SetUVs(1, sUVColors_0);
+        myMeshFilter.mesh.SetUVs(2, sUVColors_1);
+        myMeshFilter.mesh.SetUVs(3, sUVColors_2);
+    }
+    public void ResetUVColor() {
+        SetUVColor(oldUvColorIndex_0, oldUvColorIndex_1, oldUvColorIndex_2, oldUvColorIndex_3, oldUvColorIndex_4, oldUvColorIndex_5, false, true);
+    }
 
     public static int GetSortOrderFromGridY(int _gridY) { return (Grid.Instance.GridSizeY * 10) - (_gridY * 10); }
     public int GetSortOrder() { return (customSortOrder.HasValue ? (int)customSortOrder : regularSortOrder); }

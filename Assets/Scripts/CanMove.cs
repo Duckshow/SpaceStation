@@ -6,10 +6,10 @@ public class CanMove : MonoBehaviour {
 	[SerializeField] private Toggle ConnectedToggle;
 	[SerializeField] private Transform Transform;
    	[SerializeField] private GameObject ObjectToDisableWhenMovedBack;
-    [SerializeField] private float MoveY;
+    [SerializeField] private Vector2 MoveDelta;
 	[SerializeField] private float Speed;
-	private float returnToY;
-	private float yAtStartMove;
+	private Vector2 returnToPos;
+	private Vector2 posAtStartMove;
 	private float timeAtMoveStart;
 	private Vector3 offset;
     private enum ProgressEnum { Default, OnTheWay, Target }
@@ -20,8 +20,8 @@ public class CanMove : MonoBehaviour {
 
 	void Awake() {
 		// Clickable = GetComponent<CanClick> ();
-		returnToY = Transform.localPosition.y;
-		MoveY += returnToY;
+		returnToPos = Transform.localPosition;
+		MoveDelta += returnToPos;
 	}
 
 	void OnEnable() {
@@ -48,7 +48,7 @@ public class CanMove : MonoBehaviour {
 		//Clickable.Enabled = false;
 		pleaseMove = true;
 		moveForward = _b;
-		yAtStartMove = Transform.localPosition.y;
+		posAtStartMove = Transform.localPosition;
 		timeAtMoveStart = Time.time;
 	}
 
@@ -58,9 +58,9 @@ public class CanMove : MonoBehaviour {
 			_t = (Time.time - timeAtMoveStart) * Speed;
 
 			if (moveForward)
-				Transform.localPosition = new Vector3 (Transform.localPosition.x, Mathf.Lerp (yAtStartMove, MoveY, _t), Transform.localPosition.z);
+				Transform.localPosition = new Vector3 (Mathf.Lerp(posAtStartMove.x, MoveDelta.x, _t), Mathf.Lerp (posAtStartMove.y, MoveDelta.y, _t), Transform.localPosition.z);
 			else
-				Transform.localPosition = new Vector3(Transform.localPosition.x, Mathf.Lerp (yAtStartMove, returnToY, _t), Transform.localPosition.z);
+				Transform.localPosition = new Vector3(Mathf.Lerp(posAtStartMove.x, MoveDelta.x, _t), Mathf.Lerp (posAtStartMove.y, returnToPos.y, _t), Transform.localPosition.z);
 
             progress = ProgressEnum.OnTheWay;
             if (ObjectToDisableWhenMovedBack != null && !ObjectToDisableWhenMovedBack.activeSelf)

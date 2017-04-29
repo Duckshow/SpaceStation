@@ -42,8 +42,7 @@ public class Mouse : MonoBehaviour {
 		ObjectPlacing.Setup (transform);
      }
 
-	void Update () {
-
+    void Update () {
 		// for testing purposes only
         if (Input.GetKeyUp(KeyCode.O)) {
             Actor[] _actor = FindObjectsOfType<Actor>();

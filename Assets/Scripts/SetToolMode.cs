@@ -14,6 +14,8 @@ public class SetToolMode : MonoBehaviour {
 
     void Awake() {
         MyToggle = GetComponent<Toggle>();
+    }
+    void Start() {
 		if(ExtraStuff != null)
 			ExtraStuff.SetActive (false);
     }
