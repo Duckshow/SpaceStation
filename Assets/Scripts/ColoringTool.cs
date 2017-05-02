@@ -9,12 +9,12 @@ public class ColoringTool : BuilderBase {
 	public Color[] AllColors = new Color[128];
 	public static List<Vector4> sAllColorsForShaders = new List<Vector4> ();
 
-	private static byte sColorIndex_0 = 0;
-	private static byte sColorIndex_1 = 0;
-	private static byte sColorIndex_2 = 0;
-	private static byte sColorIndex_3 = 0;
-    private static byte sColorIndex_4 = 0;
-    private static byte sColorIndex_5 = 0;
+	private static byte sColorIndex_0 = 5;
+	private static byte sColorIndex_1 = 5;
+	private static byte sColorIndex_2 = 5;
+	private static byte sColorIndex_3 = 5;
+    private static byte sColorIndex_4 = 5;
+    private static byte sColorIndex_5 = 5;
     public static void AssignColorIndex(int _channel, byte _value){
 		if (_channel == 0)
 			sColorIndex_0 = _value;

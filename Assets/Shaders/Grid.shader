@@ -60,19 +60,19 @@ Shader "Custom/Grid" {
 			emTex = tex2D(_EmissiveMap, IN.uv_EmissiveMap);
 			palTex = tex2D(_PalletteMap, IN.uv_PalletteMap);
 
-			if(palTex.r > 0.83f){
+			if(palTex.r > 0.84f){
 				colorToUse = _allColors[floor(IN.uv2_MainTex2.x)];
 			}
-			else if(palTex.r > 0.66f){
+			else if(palTex.r > 0.67f){
 				colorToUse = _allColors[floor(IN.uv2_MainTex2.y)];
 			}
-			else if(palTex.r > 0.49f){
+			else if(palTex.r > 0.51f){
 				colorToUse = _allColors[floor(IN.uv3_MainTex3.x)];
 			}
-			else if(palTex.r > 0.33f){
+			else if(palTex.r > 0.34f){
 				colorToUse = _allColors[floor(IN.uv3_MainTex3.y)];
 			}
-			else if (palTex.r > 0.16f) {
+			else if (palTex.r > 0.17f) {
 				colorToUse = _allColors[floor(IN.uv4_MainTex4.x)];
 			}
 			else if (palTex.r > 0.0f) {

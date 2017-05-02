@@ -23,7 +23,7 @@ public class ColorAssignButton : MonoBehaviour {
 		MyToggle.onValueChanged.RemoveListener(OnToggleValueChanged);
 	}
 	void Start(){
-		AssignColor (0);
+		AssignColor (5);
 	}
 
 	public void OnToggleValueChanged(bool _b) {

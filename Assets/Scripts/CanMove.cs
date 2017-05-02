@@ -22,6 +22,7 @@ public class CanMove : MonoBehaviour {
 		// Clickable = GetComponent<CanClick> ();
 		returnToPos = Transform.localPosition;
 		MoveDelta += returnToPos;
+		Debug.Log (transform.parent.name);
 	}
 
 	void OnEnable() {
@@ -60,7 +61,7 @@ public class CanMove : MonoBehaviour {
 			if (moveForward)
 				Transform.localPosition = new Vector3 (Mathf.Lerp(posAtStartMove.x, MoveDelta.x, _t), Mathf.Lerp (posAtStartMove.y, MoveDelta.y, _t), Transform.localPosition.z);
 			else
-				Transform.localPosition = new Vector3(Mathf.Lerp(posAtStartMove.x, MoveDelta.x, _t), Mathf.Lerp (posAtStartMove.y, returnToPos.y, _t), Transform.localPosition.z);
+				Transform.localPosition = new Vector3(Mathf.Lerp(posAtStartMove.x, returnToPos.x, _t), Mathf.Lerp (posAtStartMove.y, returnToPos.y, _t), Transform.localPosition.z);
 
             progress = ProgressEnum.OnTheWay;
             if (ObjectToDisableWhenMovedBack != null && !ObjectToDisableWhenMovedBack.activeSelf)

@@ -28,12 +28,12 @@ public class UVController : MonoBehaviour {
     private byte uvColorIndex_3;
     private byte uvColorIndex_4;
     private byte uvColorIndex_5;
-    private byte oldUvColorIndex_0;
-    private byte oldUvColorIndex_1;
-    private byte oldUvColorIndex_2;
-    private byte oldUvColorIndex_3;
-    private byte oldUvColorIndex_4;
-    private byte oldUvColorIndex_5;
+	private byte setUvColorIndex_0;
+	private byte setUvColorIndex_1;
+	private byte setUvColorIndex_2;
+	private byte setUvColorIndex_3;
+	private byte setUvColorIndex_4;
+	private byte setUvColorIndex_5;
 
 
 
@@ -142,14 +142,14 @@ public class UVController : MonoBehaviour {
     private static Vector2 sUVColor_0 = new Vector2();
     private static Vector2 sUVColor_1 = new Vector2();
     private static Vector2 sUVColor_2 = new Vector2();
-    public void SetUVColor(byte _color0, byte _color1, byte _color2, byte _color3, byte _color4, byte _color5, bool _temporarily, bool _resetting = false) {
-        if (!_resetting && !_temporarily && (uvColorIndex_0 != _color0 || uvColorIndex_1 != _color1 || uvColorIndex_2 != _color2 || uvColorIndex_3 != _color3 || uvColorIndex_4 != _color4 || uvColorIndex_5 != _color5)) {
-            oldUvColorIndex_0 = uvColorIndex_0;
-            oldUvColorIndex_1 = uvColorIndex_1;
-            oldUvColorIndex_2 = uvColorIndex_2;
-            oldUvColorIndex_3 = uvColorIndex_3;
-            oldUvColorIndex_4 = uvColorIndex_4;
-            oldUvColorIndex_5 = uvColorIndex_5;
+    public void SetUVColor(byte _color0, byte _color1, byte _color2, byte _color3, byte _color4, byte _color5, bool _temporarily) {
+        if (!_temporarily) {
+			setUvColorIndex_0 = _color0;
+			setUvColorIndex_1 = _color1;
+			setUvColorIndex_2 = _color2;
+			setUvColorIndex_3 = _color3;
+			setUvColorIndex_4 = _color4;
+			setUvColorIndex_5 = _color5;
         }
 
         uvColorIndex_0 = _color0;
@@ -158,8 +158,6 @@ public class UVController : MonoBehaviour {
         uvColorIndex_3 = _color3;
         uvColorIndex_4 = _color4;
         uvColorIndex_5 = _color5;
-        if(transform.parent == null)
-            Debug.Log(transform.name + " (" + _temporarily + "): " + _color0 + ", " + _color1 + ", " + _color2 + ", " + _color3 + ", " + _color4 + ", " + _color5);
 
         sUVColors_0.Clear();
         sUVColors_1.Clear();
@@ -180,7 +178,7 @@ public class UVController : MonoBehaviour {
         myMeshFilter.mesh.SetUVs(3, sUVColors_2);
     }
     public void ResetUVColor() {
-        SetUVColor(oldUvColorIndex_0, oldUvColorIndex_1, oldUvColorIndex_2, oldUvColorIndex_3, oldUvColorIndex_4, oldUvColorIndex_5, false, true);
+        SetUVColor(setUvColorIndex_0, setUvColorIndex_1, setUvColorIndex_2, setUvColorIndex_3, setUvColorIndex_4, setUvColorIndex_5, false);
     }
 
     public static int GetSortOrderFromGridY(int _gridY) { return (Grid.Instance.GridSizeY * 10) - (_gridY * 10); }
