@@ -8,6 +8,7 @@ public class ColorAssignButton : MonoBehaviour {
 	[SerializeField] private GameObject ColorPalletteObject;
 	[SerializeField] private int ColorChannel;
 	[System.NonSerialized] public Toggle MyToggle;
+	[System.NonSerialized] public byte AssignedColorIndex;
 	private Image myImage;
 
 
@@ -36,9 +37,16 @@ public class ColorAssignButton : MonoBehaviour {
 			ColorPalletteObject.SetActive (false);
 		}
 	}
+
+	public delegate void DefaultDelegate ();
+	public DefaultDelegate OnColorChange;
 	public void AssignColor(byte _colorIndex){
-		ColoringTool.AssignColorIndex (ColorChannel, _colorIndex);
-		myImage.color = Mouse.Instance.Coloring.AllColors [_colorIndex];
+		AssignedColorIndex = _colorIndex;
+		ColoringTool.AssignColorIndex (ColorChannel, AssignedColorIndex);
+		myImage.color = Mouse.Instance.Coloring.AllColors [AssignedColorIndex];
 		MyToggle.isOn = false;
+
+		if (OnColorChange != null)
+			OnColorChange ();
 	}
 }

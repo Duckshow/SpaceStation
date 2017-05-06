@@ -4,24 +4,27 @@ using UnityEngine.UI;
 [ExecuteInEditMode]
 public class ColorPaletteButton : MonoBehaviour {
 
+	[SerializeField] public Image SelectedButtonImage;
 	private byte ColorIndex;
+	private RectTransform myRectTransform;
 	private Button myButton;
 	private Image myImage;
 
 
 	void Awake(){
+		myRectTransform = GetComponent<RectTransform> ();
 		myButton = GetComponent<Button> ();
 		myImage = GetComponent<Image> ();
 	}
 	void OnEnable() {
-		myButton.onClick.AddListener(OnToggleValueChanged);
+		myButton.onClick.AddListener(OnButtonClick);
         Reload();
 	}
 	void OnDisable() {
-		myButton.onClick.RemoveListener(OnToggleValueChanged);
+		myButton.onClick.RemoveListener(OnButtonClick);
 	}
 
-	public void OnToggleValueChanged() {
+	public void OnButtonClick() {
 		ColorAssignButton.sActiveButton.AssignColor (ColorIndex);
 	}
 
@@ -33,5 +36,10 @@ public class ColorPaletteButton : MonoBehaviour {
 	#else
 		myImage.color = Mouse.Instance.Coloring.AllColors [ColorIndex];
 	#endif
+
+		if (ColorAssignButton.sActiveButton != null && ColorAssignButton.sActiveButton.AssignedColorIndex == ColorIndex) {
+			SelectedButtonImage.transform.SetParent (transform);
+			SelectedButtonImage.transform.localPosition = myRectTransform.rect.center;
+		}
     }
 }
