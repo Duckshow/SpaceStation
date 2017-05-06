@@ -48,7 +48,7 @@ Shader "Custom/Grid" {
 			float2 uv_BumpMap;
 			//float2 uv_SpecMap;
 			float2 uv_EmissiveMap;
-			//float4 vColor : COLOR; // interpolated vertex color
+			float4 vColor : COLOR; // interpolated vertex color
 			float2 uv2_MainTex2;
 			float2 uv3_MainTex3;
 			float2 uv4_MainTex4;
@@ -60,23 +60,35 @@ Shader "Custom/Grid" {
 			emTex = tex2D(_EmissiveMap, IN.uv_EmissiveMap);
 			palTex = tex2D(_PalletteMap, IN.uv_PalletteMap);
 
-			if(palTex.r > 0.84f){
+			if(palTex.r > 0.9f){
 				colorToUse = _allColors[floor(IN.uv2_MainTex2.x)];
 			}
-			else if(palTex.r > 0.67f){
+			else if(palTex.r > 0.8f){
 				colorToUse = _allColors[floor(IN.uv2_MainTex2.y)];
 			}
-			else if(palTex.r > 0.51f){
+			else if(palTex.r > 0.7f){
 				colorToUse = _allColors[floor(IN.uv3_MainTex3.x)];
 			}
-			else if(palTex.r > 0.34f){
+			else if(palTex.r > 0.6f){
 				colorToUse = _allColors[floor(IN.uv3_MainTex3.y)];
 			}
-			else if (palTex.r > 0.17f) {
+			else if (palTex.r > 0.5f) {
 				colorToUse = _allColors[floor(IN.uv4_MainTex4.x)];
 			}
-			else if (palTex.r > 0.0f) {
+			else if (palTex.r > 0.4f) {
 				colorToUse = _allColors[floor(IN.uv4_MainTex4.y)];
+			}
+			else if (palTex.r > 0.3f) {
+				colorToUse = _allColors[floor(IN.vColor.r * 255)];
+			}
+			else if (palTex.r > 0.2f) {
+				colorToUse = _allColors[floor(IN.vColor.g * 255)];
+			}
+			else if (palTex.r > 0.1f) {
+				colorToUse = _allColors[floor(IN.vColor.b * 255)];
+			}
+			else if (palTex.r > 0.0f) {
+				colorToUse = _allColors[floor(IN.vColor.a * 255)];
 			}
 
 			o.Albedo = (tex.rgb * _Color.rgb * colorToUse.rgb);

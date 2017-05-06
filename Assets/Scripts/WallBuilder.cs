@@ -20,11 +20,82 @@ public class WallBuilder : BuilderBase {
 			Mode = ModeEnum.Airlock;
 	}
 
-	protected override void ResetModifiedTiles(bool _includingMouse = false) {
+    private static bool neighboursPassedEval = true;
+    protected override bool AddGhostsForConnectedDiagonals(Tile _tile) {
+        neighboursPassedEval = true;
+
+        if (_tile.ConnectedDiagonal_B != null) {
+            AddNextGhost(_tile.ConnectedDiagonal_B.GridX, _tile.ConnectedDiagonal_B.GridY, DetermineGhostType(_tile.ConnectedDiagonal_B), DetermineGhostOrientation(_tile.ConnectedDiagonal_B, false), false);
+            SetGhostType(_tile.ConnectedDiagonal_B);
+            SetGhostGraphics(_tile.ConnectedDiagonal_B, false);
+            if (!Evaluate(_tile.ConnectedDiagonal_B))
+                neighboursPassedEval = false;
+        }
+        if (_tile.ConnectedDiagonal_L != null) {
+            AddNextGhost(_tile.ConnectedDiagonal_L.GridX, _tile.ConnectedDiagonal_L.GridY, DetermineGhostType(_tile.ConnectedDiagonal_L), DetermineGhostOrientation(_tile.ConnectedDiagonal_L, false), false);
+            SetGhostType(_tile.ConnectedDiagonal_L);
+            SetGhostGraphics(_tile.ConnectedDiagonal_L, false);
+            if (!Evaluate(_tile.ConnectedDiagonal_L))
+                neighboursPassedEval = false;
+        }
+        if (_tile.ConnectedDiagonal_T != null) {
+            AddNextGhost(_tile.ConnectedDiagonal_T.GridX, _tile.ConnectedDiagonal_T.GridY, DetermineGhostType(_tile.ConnectedDiagonal_T), DetermineGhostOrientation(_tile.ConnectedDiagonal_T, false), false);
+            SetGhostType(_tile.ConnectedDiagonal_T);
+            SetGhostGraphics(_tile.ConnectedDiagonal_T, false);
+            if (!Evaluate(_tile.ConnectedDiagonal_T))
+                neighboursPassedEval = false;
+        }
+        if (_tile.ConnectedDiagonal_R != null) {
+            AddNextGhost(_tile.ConnectedDiagonal_R.GridX, _tile.ConnectedDiagonal_R.GridY, DetermineGhostType(_tile.ConnectedDiagonal_R), DetermineGhostOrientation(_tile.ConnectedDiagonal_R, false), false);
+            SetGhostType(_tile.ConnectedDiagonal_R);
+            SetGhostGraphics(_tile.ConnectedDiagonal_R, false);
+            if (!Evaluate(_tile.ConnectedDiagonal_R))
+                neighboursPassedEval = false;
+        }
+
+        return neighboursPassedEval;
+    }
+    protected override bool AddGhostsForConnectedDoors(Tile _tile) {
+        neighboursPassedEval = true;
+
+        if (_tile.ConnectedDoorOrAirlock_B != null) {
+            AddNextGhost(_tile.ConnectedDoorOrAirlock_B.GridX, _tile.ConnectedDoorOrAirlock_B.GridY, DetermineGhostType(_tile.ConnectedDoorOrAirlock_B), DetermineGhostOrientation(_tile.ConnectedDoorOrAirlock_B, false), false);
+            SetGhostType(_tile.ConnectedDoorOrAirlock_B);
+            SetGhostGraphics(_tile.ConnectedDoorOrAirlock_B, false);
+            if (!Evaluate(_tile.ConnectedDoorOrAirlock_B))
+                neighboursPassedEval = false;
+        }
+        if (_tile.ConnectedDoorOrAirlock_L != null) {
+            AddNextGhost(_tile.ConnectedDoorOrAirlock_L.GridX, _tile.ConnectedDoorOrAirlock_L.GridY, DetermineGhostType(_tile.ConnectedDoorOrAirlock_L), DetermineGhostOrientation(_tile.ConnectedDoorOrAirlock_L, false), false);
+            SetGhostType(_tile.ConnectedDoorOrAirlock_L);
+            SetGhostGraphics(_tile.ConnectedDoorOrAirlock_L, false);
+            if (!Evaluate(_tile.ConnectedDoorOrAirlock_L))
+                neighboursPassedEval = false;
+        }
+        if (_tile.ConnectedDoorOrAirlock_T != null) {
+            AddNextGhost(_tile.ConnectedDoorOrAirlock_T.GridX, _tile.ConnectedDoorOrAirlock_T.GridY, DetermineGhostType(_tile.ConnectedDoorOrAirlock_T), DetermineGhostOrientation(_tile.ConnectedDoorOrAirlock_T, false), false);
+            SetGhostType(_tile.ConnectedDoorOrAirlock_T);
+            SetGhostGraphics(_tile.ConnectedDoorOrAirlock_T, false);
+            if (!Evaluate(_tile.ConnectedDoorOrAirlock_T))
+                neighboursPassedEval = false;
+        }
+        if (_tile.ConnectedDoorOrAirlock_R != null) {
+            AddNextGhost(_tile.ConnectedDoorOrAirlock_R.GridX, _tile.ConnectedDoorOrAirlock_R.GridY, DetermineGhostType(_tile.ConnectedDoorOrAirlock_R), DetermineGhostOrientation(_tile.ConnectedDoorOrAirlock_R, false), false);
+            SetGhostType(_tile.ConnectedDoorOrAirlock_R);
+            SetGhostGraphics(_tile.ConnectedDoorOrAirlock_R, false);
+            if (!Evaluate(_tile.ConnectedDoorOrAirlock_R))
+                neighboursPassedEval = false;
+        }
+
+        return neighboursPassedEval;
+    }
+
+    protected override void ResetModifiedTiles(bool _includingMouse = false) {
 		for (int i = 0; i < modifiedTiles.Count; i++) {
 			modifiedTiles[i].SetTileType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
 			modifiedTiles[i].ChangeWallGraphics(null, null, true);
-			modifiedTiles[i].SetColor(Color.white);
+            modifiedTiles[i].SetFloorColor(Color.white);
+            modifiedTiles[i].SetWallColor(Color.white);
 		}
 
 		base.ResetModifiedTiles (_includingMouse);
@@ -33,7 +104,8 @@ public class WallBuilder : BuilderBase {
 		for (int i = 0; i < selectedTiles.Count; i++) {
 			selectedTiles[i].SetTileType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
 			selectedTiles[i].ChangeWallGraphics(null, null, true);
-			selectedTiles[i].SetColor(Color.white);
+            selectedTiles[i].SetFloorColor(Color.white);
+            selectedTiles[i].SetWallColor(Color.white);
 		}
 
 		base.ResetSelectedTiles ();
@@ -242,31 +314,44 @@ public class WallBuilder : BuilderBase {
     int diffY;
     bool isHorizontal = false;
     bool isVertical = false;
-	protected override void Evaluate(Tile _tile){
+	protected override bool Evaluate(Tile _tile){
+        if (_tile.HasBeenEvaluated)
+            return false; // not sure what to return here :s
+        _tile.HasBeenEvaluated = true;
+
 		// is building even allowed?
 		if (!_tile._BuildingAllowed_) {
 			ApplySettingsToGhost(_tile, false, Color_Blocked);
-			return;
+			return false;
 		}
 
 		// deleting old tiles
 		if (isDeleting) {
             if (_tile._WallType_ == Tile.Type.Empty) { // empty tiles can't be deleted
                 ApplySettingsToGhost(_tile, false, Color_Blocked);
-                return;
+                return false;
             }
-            
-			// is the tile occupied?
-			if (_tile.IsOccupiedByObject) {
-				ApplySettingsToGhost(_tile, false, Color_Blocked);
-				return;
-			}
 
-			// all's good - but add connected diagonals and doors to be deleted as well!
-			AddGhostsForConnectedDiagonals(_tile);
-			AddGhostsForConnectedDoors(_tile);
-			ApplySettingsToGhost(_tile, true, Color_Remove);
-			return;
+            // is the tile occupied?
+            if (_tile.IsOccupiedByObject) {
+				ApplySettingsToGhost(_tile, false, Color_Blocked);
+                return false;
+            }
+
+            // add ghosts for connected diagonals - but is any of them blocked from doing so?
+            if (!AddGhostsForConnectedDiagonals(_tile)) {
+                ApplySettingsToGhost(_tile, false, Color_Blocked);
+                return false;
+            }
+
+            // add ghosts for connected doors and airlocks - but is any of them blocked from doing so?
+            if (!AddGhostsForConnectedDoors(_tile)) {
+                ApplySettingsToGhost(_tile, false, Color_Blocked);
+                return false;
+            }
+
+            ApplySettingsToGhost(_tile, true, Color_Remove);
+			return true;
 		}
 
 
@@ -276,24 +361,24 @@ public class WallBuilder : BuilderBase {
 				// is the tile below already a diagonal of the same orientation?
 				if (_tile._WallType_ == Tile.Type.Diagonal && _tile._Orientation_ == _tile.TempOrientation) {
 					ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
-					return;
-				}
-				// is the tile below not cleared?
-				if (_tile._WallType_ != Tile.Type.Empty || _tile.IsOccupiedByObject) {
+                    return false;
+                }
+                // is the tile below not cleared?
+                if (_tile._WallType_ != Tile.Type.Empty || _tile.IsOccupiedByObject) {
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
-				}
+                    return false;
+                }
 
-				// does the ghost's orientation match the neighbouring walls below?
-				if ((_tile.TempOrientation == Tile.TileOrientation.TopLeft && !(_tile.HasConnectable_L && _tile.HasConnectable_T))
+                // does the ghost's orientation match the neighbouring walls below?
+                if ((_tile.TempOrientation == Tile.TileOrientation.TopLeft && !(_tile.HasConnectable_L && _tile.HasConnectable_T))
 					|| (_tile.TempOrientation == Tile.TileOrientation.TopRight && !(_tile.HasConnectable_T && _tile.HasConnectable_R))
 					|| (_tile.TempOrientation == Tile.TileOrientation.BottomRight && !(_tile.HasConnectable_R && _tile.HasConnectable_B))
 					|| (_tile.TempOrientation == Tile.TileOrientation.BottomLeft && !(_tile.HasConnectable_B && _tile.HasConnectable_L))) {
 
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
-				}
-				break;
+                    return false;
+                }
+                break;
 
 			case ModeEnum.Door:
 			case ModeEnum.Airlock:
@@ -301,10 +386,10 @@ public class WallBuilder : BuilderBase {
 				// is the tile... living on the edge? B)
 				if (_tile.GridX == 0 || _tile.GridX == Grid.Instance.GridSizeX - 1 || _tile.GridY == 0 || _tile.GridY == Grid.Instance.GridSizeY) {
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
-				}
+                    return false;
+                }
 
-				isHorizontal = _tile.TempOrientation == Tile.TileOrientation.Left || _tile.TempOrientation == Tile.TileOrientation.Right;
+                isHorizontal = _tile.TempOrientation == Tile.TileOrientation.Left || _tile.TempOrientation == Tile.TileOrientation.Right;
 				isVertical = _tile.TempOrientation == Tile.TileOrientation.Bottom || _tile.TempOrientation == Tile.TileOrientation.Top;
 
 				// does the tile have adjacent walls for the door to be in?
@@ -312,11 +397,11 @@ public class WallBuilder : BuilderBase {
 					|| isVertical && (!_tile.HasConnectable_B || !_tile.HasConnectable_T)) {
 
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
-				}
+                    return false;
+                }
 
-				// does the tile have space for door entrances?
-				bool _failed = false;
+                // does the tile have space for door entrances?
+                bool _failed = false;
 				neighbours = Grid.Instance.GetNeighbours(_tile.GridX, _tile.GridY);
 				for (int j = 0; j < neighbours.Count; j++) {
 					diffX = neighbours[j].GridX - _tile.GridX;
@@ -329,25 +414,25 @@ public class WallBuilder : BuilderBase {
 					}
 				}
 				if (_failed)
-					return;
+                    return false;
 
-				// is there already a door?
-				if (_tile._WallType_ == Tile.Type.Door) {
+                // is there already a door?
+                if (_tile._WallType_ == Tile.Type.Door) {
 					ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
-					return;
-				}
-				//}
-				//else if (_type == Tile.TileType.Empty) { // door entrance should never write to grid
-				//    ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_NewWall);
-				//    return;
-				//}
+                    return false;
+                }
+                //}
+                //else if (_type == Tile.TileType.Empty) { // door entrance should never write to grid
+                //    ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_NewWall);
+                //    return;
+                //}
 
-				// is the tile below not cleared?
-				if (_tile.IsOccupiedByObject) {
+                // is the tile below not cleared?
+                if (_tile.IsOccupiedByObject) {
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
-				}
-				break;
+                    return false;
+                }
+                break;
 
 			case ModeEnum.Default:
 			case ModeEnum.Room:
@@ -355,14 +440,14 @@ public class WallBuilder : BuilderBase {
 				// is the tile below already a wall?
 				if (_tile._WallType_ == Tile.Type.Solid) {
 					ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
-					return;
-				}
-				// is the tile below not cleared?
-				if (_tile._WallType_ != Tile.Type.Empty || _tile.IsOccupiedByObject) {
+                    return false;
+                }
+                // is the tile below not cleared?
+                if (_tile._WallType_ != Tile.Type.Empty || _tile.IsOccupiedByObject) {
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
-				}
-				break;
+                    return false;
+                }
+                break;
 
             case ModeEnum.ObjectPlacing:
                 throw new System.Exception(Mode.ToString() + "doesn't apply to Wallbuilding!");
@@ -372,9 +457,16 @@ public class WallBuilder : BuilderBase {
 
 		// all's good
 		ApplySettingsToGhost(_tile, true, Color_New);
+        return true;
 	}
 
-	protected override void ApplyCurrentTool() {
+    protected override void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, Color _newColor) {
+        _tile.SetFloorColor(Color_AlreadyExisting);
+        _tile.SetWallColor(_newColor);
+        base.ApplySettingsToGhost(_tile, _applyToGrid, _newColor);
+    }
+
+    protected override void ApplyCurrentTool() {
 		for (int i = 0; i < selectedTiles.Count; i++) {
 			//if (selectedTiles [i].TempType == Tile.Type.Door || selectedTiles [i].TempType == Tile.Type.Airlock || selectedTiles [i].TempType == Tile.Type.Diagonal) {
 			//	if (selectedTiles [i].TempOrientation == Tile.TileOrientation.None)

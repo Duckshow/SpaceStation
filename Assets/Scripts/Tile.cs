@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 
 public class Tile : IHeapItem<Tile> {
 
@@ -41,6 +42,7 @@ public class Tile : IHeapItem<Tile> {
 
     public Type TempType = Type.Empty;
     public TileOrientation TempOrientation = TileOrientation.None;
+    [NonSerialized] public bool HasBeenEvaluated = false;
 
     public bool Walkable { get; private set; }
     public bool IsOccupiedByObject = false;
@@ -83,55 +85,55 @@ public class Tile : IHeapItem<Tile> {
     public bool CanConnectTempFloor_R { get; private set; }
     public bool CanConnectTempFloor_B { get; private set; }
 
-    [HideInInspector] public bool HasConnectable_L = false;
-    [HideInInspector] public bool HasConnectable_T = false;
-    [HideInInspector] public bool HasConnectable_R = false;
-    [HideInInspector] public bool HasConnectable_B = false;
-	[HideInInspector] public bool HasConnectableFloor_L = false;
-	[HideInInspector] public bool HasConnectableFloor_T = false;
-	[HideInInspector] public bool HasConnectableFloor_R = false;
-	[HideInInspector] public bool HasConnectableFloor_B = false;
+    [NonSerialized] public bool HasConnectable_L = false;
+    [NonSerialized] public bool HasConnectable_T = false;
+    [NonSerialized] public bool HasConnectable_R = false;
+    [NonSerialized] public bool HasConnectable_B = false;
+	[NonSerialized] public bool HasConnectableFloor_L = false;
+	[NonSerialized] public bool HasConnectableFloor_T = false;
+	[NonSerialized] public bool HasConnectableFloor_R = false;
+	[NonSerialized] public bool HasConnectableFloor_B = false;
 
-    [HideInInspector] public bool HasConnectableTemp_L = false;
-    [HideInInspector] public bool HasConnectableTemp_T = false;
-    [HideInInspector] public bool HasConnectableTemp_R = false;
-    [HideInInspector] public bool HasConnectableTemp_B = false;
-	[HideInInspector] public bool HasConnectableTempFloor_L = false;
-	[HideInInspector] public bool HasConnectableTempFloor_T = false;
-	[HideInInspector] public bool HasConnectableTempFloor_R = false;
-	[HideInInspector] public bool HasConnectableTempFloor_B = false;
+    [NonSerialized] public bool HasConnectableTemp_L = false;
+    [NonSerialized] public bool HasConnectableTemp_T = false;
+    [NonSerialized] public bool HasConnectableTemp_R = false;
+    [NonSerialized] public bool HasConnectableTemp_B = false;
+	[NonSerialized] public bool HasConnectableTempFloor_L = false;
+	[NonSerialized] public bool HasConnectableTempFloor_T = false;
+	[NonSerialized] public bool HasConnectableTempFloor_R = false;
+	[NonSerialized] public bool HasConnectableTempFloor_B = false;
 
-    [HideInInspector] public bool HideFloorCorner_TL = false;
-    [HideInInspector] public bool HideFloorCorner_TR = false;
-    [HideInInspector] public bool HideFloorCorner_BR = false;
-    [HideInInspector] public bool HideFloorCorner_BL = false;
-    [HideInInspector] public bool HideWallCorner_Tl = false;
-    [HideInInspector] public bool HideWallCorner_TR = false;
-    [HideInInspector] public bool HideWallCorner_BR = false;
-    [HideInInspector] public bool HideWallCorner_BL = false;
+    [NonSerialized] public bool HideFloorCorner_TL = false;
+    [NonSerialized] public bool HideFloorCorner_TR = false;
+    [NonSerialized] public bool HideFloorCorner_BR = false;
+    [NonSerialized] public bool HideFloorCorner_BL = false;
+    [NonSerialized] public bool HideWallCorner_Tl = false;
+    [NonSerialized] public bool HideWallCorner_TR = false;
+    [NonSerialized] public bool HideWallCorner_BR = false;
+    [NonSerialized] public bool HideWallCorner_BL = false;
 
-    [HideInInspector] public bool IsBlocked_L = false;
-    [HideInInspector] public bool IsBlocked_T = false;
-    [HideInInspector] public bool IsBlocked_R = false;
-    [HideInInspector] public bool IsBlocked_B = false;
+    [NonSerialized] public bool IsBlocked_L = false;
+    [NonSerialized] public bool IsBlocked_T = false;
+    [NonSerialized] public bool IsBlocked_R = false;
+    [NonSerialized] public bool IsBlocked_B = false;
 
     // optimization: could probably cache these some smarter way
-    [HideInInspector] public Tile ConnectedDiagonal_L;
-	[HideInInspector] public Tile ConnectedDiagonal_T;
-	[HideInInspector] public Tile ConnectedDiagonal_R;
-	[HideInInspector] public Tile ConnectedDiagonal_B;
-	[HideInInspector] public Tile ConnectedDiagonalFloor_L;
-	[HideInInspector] public Tile ConnectedDiagonalFloor_T;
-	[HideInInspector] public Tile ConnectedDiagonalFloor_R;
-	[HideInInspector] public Tile ConnectedDiagonalFloor_B;
-    [HideInInspector] public Tile ConnectedDoorOrAirlock_L;
-	[HideInInspector] public Tile ConnectedDoorOrAirlock_T;
-	[HideInInspector] public Tile ConnectedDoorOrAirlock_R;
-	[HideInInspector] public Tile ConnectedDoorOrAirlock_B;
+    [NonSerialized] public Tile ConnectedDiagonal_L;
+	[NonSerialized] public Tile ConnectedDiagonal_T;
+	[NonSerialized] public Tile ConnectedDiagonal_R;
+	[NonSerialized] public Tile ConnectedDiagonal_B;
+	[NonSerialized] public Tile ConnectedDiagonalFloor_L;
+	[NonSerialized] public Tile ConnectedDiagonalFloor_T;
+	[NonSerialized] public Tile ConnectedDiagonalFloor_R;
+	[NonSerialized] public Tile ConnectedDiagonalFloor_B;
+    [NonSerialized] public Tile ConnectedDoorOrAirlock_L;
+	[NonSerialized] public Tile ConnectedDoorOrAirlock_T;
+	[NonSerialized] public Tile ConnectedDoorOrAirlock_R;
+	[NonSerialized] public Tile ConnectedDoorOrAirlock_B;
 
-    [HideInInspector] public Tile ParentTile;
-    [HideInInspector] public int GCost;
-    [HideInInspector] public int HCost;
+    [NonSerialized] public Tile ParentTile;
+    [NonSerialized] public int GCost;
+    [NonSerialized] public int HCost;
     public int _FCost_ { get { return GCost + HCost; } }
 
     private int heapIndex;
@@ -857,12 +859,14 @@ public class Tile : IHeapItem<Tile> {
 		//UpdateWallCornerHider (_temporary);
 		UpdateFloorCornerHider (_temporary);
 	}
-    public void SetColor(Color32 _color32) {
+    public void SetFloorColor(Color32 _color32) {
         FloorQuad.ChangeColor(_color32);
+		FloorCornerHider.ChangeColor (_color32);
+    }
+    public void SetWallColor(Color32 _color32) {
         BottomQuad.ChangeColor(_color32);
         TopQuad.ChangeColor(_color32);
-		WallCornerHider.ChangeColor (_color32);
-		FloorCornerHider.ChangeColor (_color32);
+        WallCornerHider.ChangeColor(_color32);
     }
 
     public void OnActorApproachingTile(TileOrientation _direction) {

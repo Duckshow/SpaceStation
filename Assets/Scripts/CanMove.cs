@@ -22,7 +22,6 @@ public class CanMove : MonoBehaviour {
 		// Clickable = GetComponent<CanClick> ();
 		returnToPos = Transform.localPosition;
 		MoveDelta += returnToPos;
-		Debug.Log (transform.parent.name);
 	}
 
 	void OnEnable() {

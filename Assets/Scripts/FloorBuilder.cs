@@ -18,42 +18,57 @@ public class FloorBuilder : BuilderBase {
 		for (int i = 0; i < modifiedTiles.Count; i++) {
 			modifiedTiles[i].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
 			modifiedTiles[i].ChangeFloorGraphics(null, true);
-			modifiedTiles[i].SetColor(Color.white);
-		}
+			modifiedTiles[i].SetFloorColor(Color.white);
+            modifiedTiles[i].SetWallColor(Color.white);
+        }
 
-		base.ResetModifiedTiles ();
+        base.ResetModifiedTiles ();
 	}
 	protected override void ResetSelectedTiles() {
 		for (int i = 0; i < selectedTiles.Count; i++) {
 			selectedTiles[i].SetFloorType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
 			selectedTiles[i].ChangeFloorGraphics(null, true);
-			selectedTiles[i].SetColor(Color.white);
-		}
+			selectedTiles[i].SetFloorColor(Color.white);
+            selectedTiles[i].SetWallColor(Color.white);
+        }
 
-		base.ResetSelectedTiles ();
+        base.ResetSelectedTiles ();
 	}
 
-    protected override void AddGhostsForConnectedDiagonals(Tile _tile) {
+    private static bool neighboursPassedEval = true;
+    protected override bool AddGhostsForConnectedDiagonals(Tile _tile) {
+        neighboursPassedEval = true;
+
 		if (_tile.ConnectedDiagonalFloor_B != null) {
 			AddNextGhost(_tile.ConnectedDiagonalFloor_B.GridX, _tile.ConnectedDiagonalFloor_B.GridY, DetermineGhostType(_tile.ConnectedDiagonalFloor_B), DetermineGhostOrientation(_tile.ConnectedDiagonalFloor_B, false), false);
             SetGhostType(_tile.ConnectedDiagonalFloor_B);
             SetGhostGraphics(_tile.ConnectedDiagonalFloor_B, false);
-		}
+            if (!Evaluate(_tile.ConnectedDiagonalFloor_B))
+                neighboursPassedEval = false;
+        }
 		if (_tile.ConnectedDiagonalFloor_L != null) {
             AddNextGhost(_tile.ConnectedDiagonalFloor_L.GridX, _tile.ConnectedDiagonalFloor_L.GridY, DetermineGhostType(_tile.ConnectedDiagonalFloor_L), DetermineGhostOrientation(_tile.ConnectedDiagonalFloor_L, false), false);
             SetGhostType(_tile.ConnectedDiagonalFloor_L);
             SetGhostGraphics(_tile.ConnectedDiagonalFloor_L, false);
+            if (!Evaluate(_tile.ConnectedDiagonalFloor_L))
+                neighboursPassedEval = false;
         }
 		if (_tile.ConnectedDiagonalFloor_T != null) {
             AddNextGhost(_tile.ConnectedDiagonalFloor_T.GridX, _tile.ConnectedDiagonalFloor_T.GridY, DetermineGhostType(_tile.ConnectedDiagonalFloor_T), DetermineGhostOrientation(_tile.ConnectedDiagonalFloor_T, false), false);
             SetGhostType(_tile.ConnectedDiagonalFloor_T);
             SetGhostGraphics(_tile.ConnectedDiagonalFloor_T, false);
+            if (!Evaluate(_tile.ConnectedDiagonalFloor_T))
+                neighboursPassedEval = false;
         }
 		if (_tile.ConnectedDiagonalFloor_R != null) {
             AddNextGhost(_tile.ConnectedDiagonalFloor_R.GridX, _tile.ConnectedDiagonalFloor_R.GridY, DetermineGhostType(_tile.ConnectedDiagonalFloor_R), DetermineGhostOrientation(_tile.ConnectedDiagonalFloor_R, false), false);
             SetGhostType(_tile.ConnectedDiagonalFloor_R);
             SetGhostGraphics(_tile.ConnectedDiagonalFloor_R, false);
+            if (!Evaluate(_tile.ConnectedDiagonalFloor_R))
+                neighboursPassedEval = false;
         }
+
+        return neighboursPassedEval;
 	}
 
 	protected override Tile.Type DetermineGhostType(Tile _tile){
@@ -180,31 +195,39 @@ public class FloorBuilder : BuilderBase {
 	List<Tile> neighbours;
 	int diffX;
 	int diffY;
-	protected override void Evaluate(Tile _tile){
+	protected override bool Evaluate(Tile _tile){
+        if (_tile.HasBeenEvaluated)
+            return false; // not sure what to return here :s
+        _tile.HasBeenEvaluated = true;
 
 		// is building even allowed?
 		if (!_tile._BuildingAllowed_) {
 			ApplySettingsToGhost(_tile, false, Color_Blocked);
-			return;
+            return false;
 		}
 
 		// deleting old tiles
 		if (isDeleting) {
             if (_tile._FloorType_ == Tile.Type.Empty) { // can't delete empty tiles
                 ApplySettingsToGhost(_tile, false, Color_Blocked);
-                return;
+                return false;
             }
 
-//			// is the tile occupied?
-//			if (_tileUnderGhost.IsOccupied) {
-//				ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
-//				return;
-//			}
+            //			// is the tile occupied?
+            //			if (_tileUnderGhost.IsOccupied) {
+            //				ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_Blocked);
+            //				return;
+            //			}
 
-			// all's good - but add connected diagonals to be deleted as well!
-			AddGhostsForConnectedDiagonals(_tile);
+
+            // add ghosts for connected diagonals - but is any of them blocked from doing so?
+            if (!AddGhostsForConnectedDiagonals(_tile)) {
+                ApplySettingsToGhost(_tile, false, Color_Blocked);
+                return false;
+            }
+
 			ApplySettingsToGhost(_tile, true, Color_Remove);
-			return;
+			return true;
 		}
 
 
@@ -214,18 +237,18 @@ public class FloorBuilder : BuilderBase {
 				// is the tile below not free of walls?
 				if (_tile._WallType_ != Tile.Type.Empty && _tile._WallType_ != Tile.Type.Diagonal) {
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
+                    return false;
 				}
 
 				// is the tile below already a diagonal of the same orientation?
 				if (_tile._FloorType_ == Tile.Type.Diagonal && _tile._FloorOrientation_ == _tile.TempOrientation) {
 					ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
-					return;
+                    return false;
 				}
 				// is the tile below not cleared?
 				if (_tile._FloorType_ != Tile.Type.Empty || _tile.IsOccupiedByObject) {
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
+                    return false;
 				}
 
 				// does the ghost's orientation match the neighbouring walls below?
@@ -235,7 +258,7 @@ public class FloorBuilder : BuilderBase {
 					|| (_tile.TempOrientation == Tile.TileOrientation.BottomLeft && !(_tile.HasConnectableFloor_B && _tile.HasConnectableFloor_L))) {
 
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
+                    return false;
 				}
 				break;
 			case ModeEnum.Default:
@@ -244,17 +267,17 @@ public class FloorBuilder : BuilderBase {
 				// is the tile below covered by some kind of wall?
 				if (_tile._WallType_ != Tile.Type.Empty) {
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
+                    return false;
 				}
 				// is the tile below already a solid?
 				if (_tile._FloorType_ == Tile.Type.Solid) {
 					ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
-					return;
+                    return false;
 				}
 				// is the tile below not cleared?
 				if (_tile._FloorType_ != Tile.Type.Empty/* || _tileUnderGhost.IsOccupied*/) {
 					ApplySettingsToGhost(_tile, false, Color_Blocked);
-					return;
+                    return false;
 				}
 				break;
 			case ModeEnum.Door:
@@ -268,9 +291,16 @@ public class FloorBuilder : BuilderBase {
 
 		// all's good
 		ApplySettingsToGhost(_tile, true, Color_New);
-	}
+        return true;
+    }
 
-	protected override void ApplyCurrentTool() {
+    protected override void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, Color _newColor) {
+        _tile.SetFloorColor(_newColor);
+        _tile.SetWallColor(Color_AlreadyExisting);
+        base.ApplySettingsToGhost(_tile, _applyToGrid, _newColor);
+    }
+
+    protected override void ApplyCurrentTool() {
 		for (int i = 0; i < selectedTiles.Count; i++)
 			selectedTiles [i].SetFloorType (isDeleting ? Tile.Type.Empty : selectedTiles[i].TempType, isDeleting ? Tile.TileOrientation.None : selectedTiles[i].TempOrientation);
 		base.ApplyCurrentTool ();

@@ -160,9 +160,13 @@ public class BuilderBase {
     }
 
 	protected virtual void ResetModifiedTiles(bool _includingMouse = false) {
+        for (int i = 0; i < modifiedTiles.Count; i++)
+            modifiedTiles[i].HasBeenEvaluated = false;
         modifiedTiles.Clear();
     }
     protected virtual void ResetSelectedTiles() {
+        for (int i = 0; i < selectedTiles.Count; i++)
+            selectedTiles[i].HasBeenEvaluated = false;
         selectedTiles.Clear();
     }
 
@@ -535,10 +539,12 @@ public class BuilderBase {
         Grid.Instance.grid[_gridX, _gridY].TempType = _tempType;
         Grid.Instance.grid[_gridX, _gridY].TempOrientation = _tempOrientation;
     }
-    protected virtual void AddGhostsForConnectedDiagonals(Tile _tile) {
-	}
-	protected virtual void AddGhostsForConnectedDoors(Tile _tile) {
-	}
+    protected virtual bool AddGhostsForConnectedDiagonals(Tile _tile) {
+        return true;
+    }
+	protected virtual bool AddGhostsForConnectedDoors(Tile _tile) {
+        return true;
+    }
 
     protected virtual Tile.Type DetermineGhostType(Tile _tile) {
         return Tile.Type.Empty;
@@ -556,39 +562,17 @@ public class BuilderBase {
     }
 
 	protected void EvaluateUsedGhostConditions() {
-		//GhostInfo _ghost;
-		//Tile _tile;
-		//Tile.TileOrientation _orientation;
-
-		for (int i = 0; i < modifiedTiles.Count; i++) {
-			//_tile = usedTiles[i];
-			////_tileUnderGhost = Grid.Instance.grid[(int)usedGhosts[i].position.x, (int)usedGhosts[i].position.y];
-			//_orientation = usedGhosts[i].Orientation;
-
+		for (int i = 0; i < modifiedTiles.Count; i++)
 			Evaluate (modifiedTiles[i]);
-		}
 	}
-	protected virtual void Evaluate(Tile _tile){
-	}
+	protected virtual bool Evaluate(Tile _tile){
+        return true;
+    }
 
-	protected void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, Color _newColor) {
-		// apply color and position
-		//_ghost.SetActive(true);
-		//_ghost.SetColor(_newColor);
-		//_ghost.SetPosition(new Vector2(_tile.GridX, _tile.GridY));
-
-        _tile.SetColor(_newColor);
-
-
+	protected virtual void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, Color _newColor) {
 		// mark tile for changes
-		if (_applyToGrid) {
-
+		if (_applyToGrid)
 			selectedTiles.Add(_tile);
-
-			// add selected settings
-			//selectedTilesNewType.Add(_ghost.Type);
-			//selectedTilesNewOrientation.Add(_ghost.Orientation);
-		}
 	}
 
 	protected virtual void ApplyCurrentTool() {
