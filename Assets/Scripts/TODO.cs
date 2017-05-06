@@ -5,13 +5,13 @@
 == Next time ==
 
 == Goal ==
-Get coloring working!
-"1.@frag check the R of the underlying pixel of the pallette map (0-3)
- 2.use the R to check the corresponding vertex color channel
- 3.use that value to determine which color variable to use."
+
 
 
 == Needs to be done ==
+Floor needs a diagonal state that's only connected to one floortile and one that's not connected
+at all, sadly. These kinds of areas appears very easily with diagonal walls and you should be able to fill them :/
+
 Doors need a higher cost in pathfinding!
 
 
@@ -23,10 +23,13 @@ on the only tv-chair and so finds no comfort. Maybe check *who's* using a chair?
 
 Putting two doors/airlocks next to eachother and deleting a wall connected to only one of them causes one door to be deleted but not the other one, leaving
 a door without a wall. Need to check for neighboring doors' neighboring doors, etc etc!
+UPDATE: since making tiles use Evaluate() on connected diagonals+doors+airlocks, this seems to have changed a bit.
+Two tiles requiring neighbours adjacent to each other (like [Wall-Door-Door-Wall]) are now impossible to remove. Maybe we can have conflicting tiles
+pass evaluation if they're all being deleted? 
+Also, placing something like [Door-Wall-Diagonal] and deleting the wall, will show the wall as blocked, but the diagonal as okay
+and only delete that.
 
-Ghosting around with the coloring-tool (not applying), then ghosting around with the wall-tool causes weird wall-ghosts to appear, or something. Doesn't seem to 
-affect the floor-tool...
-
+Opening the color-palette window causes a huge lagspike. Might be the amount of buttons, I guess.
 
 
 == Ideas for the future ==
