@@ -151,9 +151,11 @@ public class ResourceContainer : MonoBehaviour {
                 continue;
             if (!_kvp.Key.CanBeUsedByMany && _kvp.Key.AmountUsingThis > 0)
                 continue;
-            if (!_tv.ViewingArea.bounds.Contains(_kvp.Key.transform.position))
+            if( _kvp.Key.transform.position.x < _tv.ViewingArea.bounds.min.x || 
+                _kvp.Key.transform.position.x > _tv.ViewingArea.bounds.max.x ||
+                _kvp.Key.transform.position.y < _tv.ViewingArea.bounds.min.y ||
+                _kvp.Key.transform.position.y > _tv.ViewingArea.bounds.max.y)
                 continue;
-
             float newDist = Vector3.Distance(_kvp.Key.transform.position, unit.transform.position);
             if (newDist < _shortestDist) {
                 _shortestDist = newDist;
