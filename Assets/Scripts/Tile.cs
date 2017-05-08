@@ -534,7 +534,7 @@ public class Tile : IHeapItem<Tile> {
         FloorCornerHider.SortingLayer = UVController.SortingLayerEnum.Floor;
         FloorCornerHider.Sort(GridY);
 
-        ForceActorStopWhenPassingThis = false;
+        //ForceActorStopWhenPassingThis = false; // if floor actually needs this, it has to be its own - otherwise breaks airlocks and such!
 		MovementPenalty = 0; //TODO: use this for something!
 
         sAssignTypeConnectability(_newType, _newOrientation);
