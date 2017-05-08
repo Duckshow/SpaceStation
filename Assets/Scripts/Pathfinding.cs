@@ -25,6 +25,7 @@ public class Pathfinding : MonoBehaviour {
         sw.Start();
 
         Waypoint[] waypoints = new Waypoint[0];
+        Waypoint[] waypointsFull = new Waypoint[0];
         bool pathSuccess = false;
         
         Tile startNode = grid.GetTileFromWorldPoint(_startPos);
@@ -37,7 +38,7 @@ public class Pathfinding : MonoBehaviour {
         
         if (startNode == targetNode) {
             UnityEngine.Debug.Log("Something tried to walk to where it already was! Skip!");
-            requestManager.FinishedProcessingPath(waypoints, false);
+            requestManager.FinishedProcessingPath(waypoints, waypoints, false);
             yield break;
         }
 
@@ -85,12 +86,12 @@ public class Pathfinding : MonoBehaviour {
 
         yield return null;
         if (pathSuccess)
-            waypoints = RetracePath(startNode, targetNode);
+            RetracePath(startNode, targetNode, out waypoints, out waypointsFull);
 
-        requestManager.FinishedProcessingPath(waypoints, pathSuccess);
+        requestManager.FinishedProcessingPath(waypoints, waypointsFull, pathSuccess);
     }
 
-    Waypoint[] RetracePath(Tile startNode, Tile endNode) {
+    void RetracePath(Tile startNode, Tile endNode, out Waypoint[] newPath, out Waypoint[] fullPath) {
 
         List<Tile> path = new List<Tile>();
         Tile currentNode = endNode;
@@ -99,31 +100,37 @@ public class Pathfinding : MonoBehaviour {
             currentNode = currentNode.ParentTile;
         }
         path.Add(startNode); // added 11/18/2016 (not sure if dangerous, but might prevent problems e.g. if the path starts in front of a door?)
-
-
-        Waypoint[] waypoints = SimplifyPath(path);
-        Array.Reverse(waypoints);
+        
+        fullPath = MakeWaypointArray(path);
+        Array.Reverse(fullPath);
+        newPath = SimplifyPath(path);
+        Array.Reverse(newPath);
 
         if (grid.DisplayPaths || grid.DisplayWaypoints) {
-            for (int i = 1; i < waypoints.Length; i++) {
+            for (int i = 1; i < newPath.Length; i++) {
                 if(grid.DisplayPaths)
-                    UnityEngine.Debug.DrawLine(waypoints[i - 1].Position, waypoints[i].Position, Color.yellow, 30);
+                    UnityEngine.Debug.DrawLine(newPath[i - 1].Position, newPath[i].Position, Color.yellow, 30);
                 if (grid.DisplayWaypoints) {
-                    DrawDebugMarker(waypoints[i - 1].Position, Color.red);
+                    DrawDebugMarker(newPath[i - 1].Position, Color.red);
 
-                    if(i == waypoints.Length - 1)
-                        DrawDebugMarker(waypoints[i].Position, Color.red);
+                    if(i == newPath.Length - 1)
+                        DrawDebugMarker(newPath[i].Position, Color.red);
                 }
             }
         }
-
-        return waypoints;
     }
     void DrawDebugMarker(Vector3 _pos, Color _color) {
         UnityEngine.Debug.DrawLine(_pos + new Vector3(0, 0.1f, 0), _pos + new Vector3(0.1f, 0, 0), _color, 30);
         UnityEngine.Debug.DrawLine(_pos + new Vector3(0.1f, 0, 0), _pos + new Vector3(0, -0.1f, 0), _color, 30);
         UnityEngine.Debug.DrawLine(_pos + new Vector3(0, -0.1f, 0), _pos + new Vector3(-0.1f, 0, 0), _color, 30);
         UnityEngine.Debug.DrawLine(_pos + new Vector3(-0.1f, 0, 0), _pos + new Vector3(0, 0.1f, 0), _color, 30);
+    }
+
+    Waypoint[] MakeWaypointArray(List<Tile> path){
+        List<Waypoint> waypoints = new List<Waypoint>();
+        for(int i = 0; i < path.Count; i++)
+            waypoints.Add(new Waypoint(path[i].CharacterPositionWorld));
+        return waypoints.ToArray();
     }
     Waypoint[] SimplifyPath(List<Tile> path) {
         List<Waypoint> waypoints = new List<Waypoint>();

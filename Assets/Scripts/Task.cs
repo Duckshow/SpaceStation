@@ -27,6 +27,8 @@ public class Task {
         Vector3 target;
         float speed;
         Waypoint[] path;
+        Waypoint[] pathFull;
+
         int targetIndex = 0;
 
         Waypoint nextWaypoint;
@@ -36,6 +38,7 @@ public class Task {
         Tile nextWaypointTile;
         Tile prevWaypointTile;
         Tile.TileOrientation direction;
+        int nextWaypointInFullPath;
         Tile.TileOrientation prevDirection;
         float distance;
         float timeAtPrevWaypoint;
@@ -52,12 +55,13 @@ public class Task {
             base.Start(_meta);
         }
 
-        void OnPathFound(Waypoint[] newPath, bool pathSuccessful) {
+        void OnPathFound(Waypoint[] newPath, Waypoint[] fullPath, bool pathSuccessful) {
             if (!IsRunning) // if the task was cancelled during the pathfinding
                 return;
 
             if (pathSuccessful) {
                 path = newPath;
+                pathFull = fullPath;
                 cachedRoutine = _PerformTask();
                 meta.Handler.Owner.StartCoroutine(cachedRoutine);
             }
@@ -73,6 +77,7 @@ public class Task {
             nextWaypoint = path[0];
             previousWaypoint = new Waypoint(meta.Handler.Owner.transform.position);
             nextWaypointTile = Grid.Instance.GetTileFromWorldPoint(nextWaypoint.Position);
+            nextWaypointInFullPath = 0;
             prevWaypointTile = Grid.Instance.GetTileFromWorldPoint(meta.Handler.Owner.transform.position);
             distance = Vector3.Distance(previousWaypoint.Position, nextWaypoint.Position);
             timeAtPrevWaypoint = Time.time;
@@ -95,10 +100,25 @@ public class Task {
                     nextWaypointTile = Grid.Instance.GetTileFromWorldPoint(nextWaypoint.Position);
                     distance = Vector3.Distance(previousWaypoint.Position, nextWaypoint.Position);
                     
+                    for(int i = 0; i < pathFull.Length; i++){
+                        if(pathFull[i].Position != nextWaypoint.Position){
+                            Debug.Log(pathFull[i].Position + " / " + nextWaypoint.Position);
+                            continue;
+                        }
+                        nextWaypointInFullPath = i;
+                        Debug.Log("bing");
+                        break;
+                    }
+
                     // update orientation
                     SendActorNewOrientation((nextWaypoint.Position - previousWaypoint.Position).normalized);
                     prevDirection = direction;
-                    direction = GetDirectionFromVector3((nextWaypoint.Position - previousWaypoint.Position).normalized); ;
+                    if(targetIndex <= 1)
+                        direction = GetDirectionFromVector3((nextWaypoint.Position - previousWaypoint.Position).normalized);
+                    else{
+                        Debug.Log(path.Length + ", " + pathFull.Length + ", " + nextWaypointInFullPath);
+                        direction = GetDirectionFromVector3((nextWaypoint.Position - pathFull[nextWaypointInFullPath - 1].Position).normalized);
+                    }
 
                     // trigger effects at current tile if applicable
                     if (prevWaypointTile.ForceActorStopWhenPassingThis) {

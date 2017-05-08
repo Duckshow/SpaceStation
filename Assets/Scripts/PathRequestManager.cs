@@ -16,7 +16,7 @@ public class PathRequestManager : MonoBehaviour {
         pathfinding = GetComponent<Pathfinding>();
     }
 
-    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Waypoint[], bool> callback) {
+    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Waypoint[], Waypoint[], bool> callback) {
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, callback);
         instance.pathRequestQueue.Enqueue(newRequest);
         instance.TryProcessNext();
@@ -30,8 +30,8 @@ public class PathRequestManager : MonoBehaviour {
         }
     }
 
-    public void FinishedProcessingPath(Waypoint[] path, bool success) {
-        currentPathRequest.callback(path, success);
+    public void FinishedProcessingPath(Waypoint[] path, Waypoint[] fullPath, bool success) {
+        currentPathRequest.callback(path, fullPath, success);
         isProcessingPath = false;
         TryProcessNext();
     }
@@ -39,9 +39,9 @@ public class PathRequestManager : MonoBehaviour {
     struct PathRequest {
         public Vector3 pathStart;
         public Vector3 pathEnd;
-        public Action<Waypoint[], bool> callback;
+        public Action<Waypoint[], Waypoint[], bool> callback;
 
-        public PathRequest(Vector3 _start, Vector3 _end, Action<Waypoint[], bool> _callback) {
+        public PathRequest(Vector3 _start, Vector3 _end, Action<Waypoint[], Waypoint[], bool> _callback) {
             pathStart = _start;
             pathEnd = _end;
             callback = _callback;
