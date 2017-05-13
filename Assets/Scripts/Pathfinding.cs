@@ -109,12 +109,12 @@ public class Pathfinding : MonoBehaviour {
         if (grid.DisplayPaths || grid.DisplayWaypoints) {
             for (int i = 1; i < newPath.Length; i++) {
                 if(grid.DisplayPaths)
-                    UnityEngine.Debug.DrawLine(newPath[i - 1].Position, newPath[i].Position, Color.yellow, 30);
+                    UnityEngine.Debug.DrawLine(newPath[i - 1].CharacterPosition, newPath[i].CharacterPosition, Color.yellow, 30);
                 if (grid.DisplayWaypoints) {
-                    DrawDebugMarker(newPath[i - 1].Position, Color.red);
+                    DrawDebugMarker(newPath[i - 1].CharacterPosition, Color.red);
 
                     if(i == newPath.Length - 1)
-                        DrawDebugMarker(newPath[i].Position, Color.red);
+                        DrawDebugMarker(newPath[i].CharacterPosition, Color.red);
                 }
             }
         }
@@ -128,8 +128,10 @@ public class Pathfinding : MonoBehaviour {
 
     Waypoint[] MakeWaypointArray(List<Tile> path){
         List<Waypoint> waypoints = new List<Waypoint>();
-        for(int i = 0; i < path.Count; i++)
-            waypoints.Add(new Waypoint(path[i].CharacterPositionWorld));
+        for (int i = 0; i < path.Count; i++) {
+            waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
+            waypoints[i].CenterPosition = path[i].DefaultPositionWorld;
+        }
         return waypoints.ToArray();
     }
     Waypoint[] SimplifyPath(List<Tile> path) {
@@ -149,7 +151,7 @@ public class Pathfinding : MonoBehaviour {
 
                 // stop behind previous tile
                 if (path[i + 1].StopAheadAndBehindMeWhenCrossing) {
-                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld));
+                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
                     continue;
                 }
             }
@@ -157,20 +159,20 @@ public class Pathfinding : MonoBehaviour {
             if (i > 0) {
                 // stop ahead of next tile
                 if (path[i - 1].StopAheadAndBehindMeWhenCrossing) {
-                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld));
+                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
                     continue;
                 }
             }
 
             // wait for X seconds on this tile
             if (path[i].ForceActorStopWhenPassingThis) {
-                waypoints.Add(new Waypoint(path[i].CharacterPositionWorld));
+                waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
                 continue;
             }
 
             // if the direction is changing (or if at start/end), add waypoint
             if (directionToNext != directionFromLast || i == 0 || i == path.Count - 1) {
-                waypoints.Add(new Waypoint(path[i].CharacterPositionWorld));
+                waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
                 continue;
             }
         }
@@ -189,8 +191,10 @@ public class Pathfinding : MonoBehaviour {
     }
 }
 public class Waypoint {
-    public Vector3 Position;
-    public Waypoint(Vector3 _pos) {
-        Position = _pos;
+    public Vector3 CharacterPosition;
+    public Vector3 CenterPosition;
+    public Waypoint(Vector3 _charPos, Vector3 _centerPos) {
+        CharacterPosition = _charPos;
+        CenterPosition = _centerPos;
     }
 }

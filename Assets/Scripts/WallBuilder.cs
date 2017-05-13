@@ -252,8 +252,8 @@ public class WallBuilder : BuilderBase {
 
             case ModeEnum.Door:
                 _tile.ChangeWallGraphics(
-                       CachedAssets.WallSet.anim_DoorHorizontal_Open.Bottom[0],
-                       CachedAssets.WallSet.anim_DoorHorizontal_Open.Top[0],
+                       CachedAssets.WallSet.anim_DoorHorizontal_Open.GetBottomFirstFrame(),
+                       CachedAssets.WallSet.anim_DoorHorizontal_Open.GetTopFirstFrame(),
                        true
                 );
 

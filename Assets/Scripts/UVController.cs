@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 public class UVController : MonoBehaviour {
 
+    private const byte LAYERS_PER_POS_Y = 10;
+
 	public CachedAssets.DoubleInt Coordinates;
     public CachedAssets.DoubleInt TemporaryCoordinates;
 
@@ -187,7 +189,7 @@ public class UVController : MonoBehaviour {
         SetUVColor(setColorIndex_0, setColorIndex_1, setColorIndex_2, setColorIndex_3, setColorIndex_4, setColorIndex_5, setVertexColor.r, setVertexColor.g, setVertexColor.b, setVertexColor.a, false);
     }
 
-    public static int GetSortOrderFromGridY(int _gridY) { return (Grid.Instance.GridSizeY * 10) - (_gridY * 10); }
+    public static int GetSortOrderFromGridY(int _gridY) { return (Grid.Instance.GridSizeY * LAYERS_PER_POS_Y) - (_gridY * LAYERS_PER_POS_Y); }
     public int GetSortOrder() { return (customSortOrder.HasValue ? (int)customSortOrder : regularSortOrder); }
     private int regularSortOrder = 0;
     public void Sort(int _gridY) {

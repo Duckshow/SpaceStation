@@ -270,12 +270,12 @@ public class Tile : IHeapItem<Tile> {
                 break;
             case Type.Door:
                 switch (_orientation) {
-                    // vertical
-                    case TileOrientation.Bottom:
-                    case TileOrientation.Top:
-                        sTypeConnectability[1] = true;
-                        sTypeConnectability[3] = true;
-                        break;
+                    //// vertical
+                    //case TileOrientation.Bottom:
+                    //case TileOrientation.Top:
+                    //    sTypeConnectability[1] = true;
+                    //    sTypeConnectability[3] = true;
+                    //    break;
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
@@ -632,24 +632,28 @@ public class Tile : IHeapItem<Tile> {
 				_neighbour.ConnectedDiagonal_B = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.TopRight)) ? this : null;
 				_neighbour.ConnectedDoorOrAirlock_B = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
-				if (_WallType_ == Type.Door || _WallType_ == Type.Airlock) {
-                    // prevent building in front of door
-					if (_IsHorizontal_)
-                        _neighbour.SetBuildingAllowed(false);
+                // prevent building in front of door
+                if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsHorizontal_)
+                    _neighbour.SetBuildingAllowed(false);
 
-                    // sort connected neighbour of door on top, so as to hide actors moving through it
-					else if (_IsVertical_) {
-                        _neighbour.BottomQuad.SortCustom(TopQuad.GetSortOrder() - 2);
-                        _neighbour.TopQuad.SortCustom(TopQuad.GetSortOrder() - 1);
-                    }
-                }
-				else if (_PrevType_ == Type.Door || _PrevType_ == Type.Airlock) {
-                    // reset to ordinary sorting
-					if (_IsVertical_) {
-                        _neighbour.BottomQuad.RemoveCustomSort();
-                        _neighbour.TopQuad.RemoveCustomSort();
-                    }
-                }
+                //if (_WallType_ == Type.Door || _WallType_ == Type.Airlock) {
+                //                // prevent building in front of door
+                //	if (_IsHorizontal_)
+                //                    _neighbour.SetBuildingAllowed(false);
+
+                //                // sort connected neighbour of door on top, so as to hide actors moving through it
+                //	else if (_IsVertical_) {
+                //                    _neighbour.BottomQuad.SortCustom(TopQuad.GetSortOrder() - 2);
+                //                    _neighbour.TopQuad.SortCustom(TopQuad.GetSortOrder() - 1);
+                //                }
+                //            }
+                //else if (_PrevType_ == Type.Door || _PrevType_ == Type.Airlock) {
+                //                // reset to ordinary sorting
+                //	if (_IsVertical_) {
+                //                    _neighbour.BottomQuad.RemoveCustomSort();
+                //                    _neighbour.TopQuad.RemoveCustomSort();
+                //                }
+                //            }
                 break;
             case TileOrientation.Right:
                 _neighbour.HasConnectable_L = CanConnect_R;

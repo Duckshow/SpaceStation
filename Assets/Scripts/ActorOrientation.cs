@@ -1,6 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
-
 public class ActorOrientation : MonoBehaviour {
 
     public enum OrientationEnum { Down, Left, Up, Right }
@@ -28,6 +26,8 @@ public class ActorOrientation : MonoBehaviour {
     private const float TIME_BETWEEN_POS_UPDATES = 0.1f;
     private float timeAtLastPosUpdate = 0;
     private int newSortOrder = 0;
+    private int prevY = -1;
+    private int currentY = 0;
 	void Update () {
         if (Input.GetKeyUp(KeyCode.KeypadEnter)) {
             Orientation++;
@@ -38,8 +38,11 @@ public class ActorOrientation : MonoBehaviour {
             SetOrientation(Orientation);
         }
 
-        if (Time.time - timeAtLastPosUpdate > TIME_BETWEEN_POS_UPDATES) {
-            timeAtLastPosUpdate = Time.time;
+        // TODO: this should be a part of the sorting system proper!
+        currentY = Mathf.RoundToInt(transform.position.y - 0.5f);
+        if (currentY != prevY) {
+            prevY = currentY;
+
             newSortOrder = UVController.GetSortOrderFromGridY(Grid.Instance.GetTileFromWorldPoint(transform.position).GridY);
             BodyRenderer.sortingOrder = newSortOrder + 2;
             HeadRenderer.sortingOrder = newSortOrder + 3;

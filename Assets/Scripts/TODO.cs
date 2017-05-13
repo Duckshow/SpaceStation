@@ -9,10 +9,12 @@
 
 
 == Needs to be done ==
-Floor needs a diagonal state that's only connected to one floortile and one that's not connected
-at all, sadly. These kinds of areas appears very easily with diagonal walls and you should be able to fill them :/
+Floor in front of doors/airlocks should force the use of the DefaultPosition when walking on it, to prevent actors shortcutting through walls
 
 Doors need a higher cost in pathfinding!
+
+Replace Actors' SpriteRenderers with UVControllers. Not sure if there's a reason for it being like this, but they currently don't use the sorting
+system like everything else which is pretty shit.
 
 
 == Known bugs ==

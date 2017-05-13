@@ -12,29 +12,41 @@ public class TileAnimator {
         public CachedAssets.DoubleInt[] Top;
 
 		private static List<CachedAssets.DoubleInt> frameList = new List<CachedAssets.DoubleInt>();
-        public TileAnimation(int bottomPosY, int topPosY, int amountOfFrames, int bottomForceFrameX = -1, int topForceFrameX = -1) {
-
-            frameList.Clear();
-            for (int i = 0; i < amountOfFrames; i++)
-                frameList.Add(new CachedAssets.DoubleInt(bottomForceFrameX >= 0 ? bottomForceFrameX : i, bottomPosY));
-            Bottom = frameList.ToArray();
-
-            frameList.Clear();
-            for (int i = 0; i < amountOfFrames; i++)
-                frameList.Add(new CachedAssets.DoubleInt(topForceFrameX >= 0 ? topForceFrameX : i, topPosY));
-            Top = frameList.ToArray();
+        public TileAnimation(int bottomPosY, int topPosY, int amountOfFrames, int bottomForceFrameX = -1, CachedAssets.DoubleInt bottomForceFirstFrame = null, int topForceFrameX = -1, CachedAssets.DoubleInt topForceFirstFrame = null) {
+            if (bottomPosY > -1) {
+                frameList.Clear();
+                for (int i = 0; i < amountOfFrames; i++) {
+                    if(i == 0 && bottomForceFirstFrame != null)
+                        frameList.Add(bottomForceFirstFrame);
+                    else
+                        frameList.Add(new CachedAssets.DoubleInt(bottomForceFrameX > -1 ? bottomForceFrameX : i, bottomPosY));
+                }
+                Bottom = frameList.ToArray();
+            }
+            if (topPosY > -1) {
+                frameList.Clear();
+                for (int i = 0; i < amountOfFrames; i++) {
+                    if(i == 0 && topForceFirstFrame != null)
+                        frameList.Add(topForceFirstFrame);
+                    else
+                       frameList.Add(new CachedAssets.DoubleInt(topForceFrameX >= 0 ? topForceFrameX : i, topPosY));
+                }
+                Top = frameList.ToArray();
+            }
         }
         public TileAnimation Reverse() {
-            frameList.Clear();
-            frameList.AddRange(Bottom);
-            frameList.Reverse();
-            Bottom = frameList.ToArray();
-
-            frameList.Clear();
-            frameList.AddRange(Top);
-            frameList.Reverse();
-            Top = frameList.ToArray();
-
+            if (Bottom != null) {
+                frameList.Clear();
+                frameList.AddRange(Bottom);
+                frameList.Reverse();
+                Bottom = frameList.ToArray();
+            }
+            if (Top != null) {
+                frameList.Clear();
+                frameList.AddRange(Top);
+                frameList.Reverse();
+                Top = frameList.ToArray();
+            }
             return this;
         }
         public CachedAssets.DoubleInt GetBottomFirstFrame() {

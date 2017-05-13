@@ -75,19 +75,19 @@ public class Task {
             meta.Handler.Owner.CurrentTask = "Moving to " + target;
 
             nextWaypoint = path[0];
-            previousWaypoint = new Waypoint(meta.Handler.Owner.transform.position);
-            nextWaypointTile = Grid.Instance.GetTileFromWorldPoint(nextWaypoint.Position);
+            previousWaypoint = new Waypoint(meta.Handler.Owner.transform.position, meta.Handler.Owner.transform.position);
+            nextWaypointTile = Grid.Instance.GetTileFromWorldPoint(nextWaypoint.CharacterPosition);
             nextWaypointInFullPath = 0;
             prevWaypointTile = Grid.Instance.GetTileFromWorldPoint(meta.Handler.Owner.transform.position);
-            distance = Vector3.Distance(previousWaypoint.Position, nextWaypoint.Position);
+            distance = Vector3.Distance(previousWaypoint.CharacterPosition, nextWaypoint.CharacterPosition);
             timeAtPrevWaypoint = Time.time;
             direction = Tile.TileOrientation.None;
             prevDirection = Tile.TileOrientation.None;
             yieldTime = 0;
             
-            SendActorNewOrientation((nextWaypoint.Position - meta.Handler.Owner.transform.position).normalized);
+            SendActorNewOrientation((nextWaypoint.CharacterPosition - meta.Handler.Owner.transform.position).normalized);
             while (true) {
-                if (Mathf.Abs(nextWaypoint.Position.x - meta.Handler.Owner.transform.position.x) < 0.01f && Mathf.Abs(nextWaypoint.Position.y - meta.Handler.Owner.transform.position.y) < 0.01f) {
+                if (Mathf.Abs(nextWaypoint.CharacterPosition.x - meta.Handler.Owner.transform.position.x) < 0.01f && Mathf.Abs(nextWaypoint.CharacterPosition.y - meta.Handler.Owner.transform.position.y) < 0.01f) {
 
                     targetIndex++;
                     if (targetIndex >= path.Length)
@@ -97,28 +97,23 @@ public class Task {
                     previousWaypoint = nextWaypoint;
                     prevWaypointTile = nextWaypointTile;
                     nextWaypoint = path[targetIndex];
-                    nextWaypointTile = Grid.Instance.GetTileFromWorldPoint(nextWaypoint.Position);
-                    distance = Vector3.Distance(previousWaypoint.Position, nextWaypoint.Position);
+                    nextWaypointTile = Grid.Instance.GetTileFromWorldPoint(nextWaypoint.CharacterPosition);
+                    distance = Vector3.Distance(previousWaypoint.CharacterPosition, nextWaypoint.CharacterPosition);
                     
                     for(int i = 0; i < pathFull.Length; i++){
-                        if(pathFull[i].Position != nextWaypoint.Position){
-                            Debug.Log(pathFull[i].Position + " / " + nextWaypoint.Position);
+                        if((pathFull[i].CenterPosition - nextWaypoint.CenterPosition).magnitude > 0.05f)
                             continue;
-                        }
                         nextWaypointInFullPath = i;
-                        Debug.Log("bing");
                         break;
                     }
 
                     // update orientation
-                    SendActorNewOrientation((nextWaypoint.Position - previousWaypoint.Position).normalized);
+                    SendActorNewOrientation((nextWaypoint.CharacterPosition - previousWaypoint.CharacterPosition).normalized);
                     prevDirection = direction;
-                    if(targetIndex <= 1)
-                        direction = GetDirectionFromVector3((nextWaypoint.Position - previousWaypoint.Position).normalized);
-                    else{
-                        Debug.Log(path.Length + ", " + pathFull.Length + ", " + nextWaypointInFullPath);
-                        direction = GetDirectionFromVector3((nextWaypoint.Position - pathFull[nextWaypointInFullPath - 1].Position).normalized);
-                    }
+                    if (targetIndex == 1)
+                        direction = GetDirectionFromVector3((nextWaypoint.CenterPosition - previousWaypoint.CenterPosition).normalized);
+                    else
+                        direction = GetDirectionFromVector3((nextWaypoint.CenterPosition - pathFull[nextWaypointInFullPath - 1].CenterPosition).normalized);
 
                     // trigger effects at current tile if applicable
                     if (prevWaypointTile.ForceActorStopWhenPassingThis) {
@@ -145,10 +140,10 @@ public class Task {
                 }
 
                 // create a slowdown-effect when approaching nextwaypoint
-                newPosition = Vector3.Lerp(previousWaypoint.Position, nextWaypoint.Position, Mathf.Clamp01((Time.time - timeAtPrevWaypoint) / (distance / speed)));
+                newPosition = Vector3.Lerp(previousWaypoint.CharacterPosition, nextWaypoint.CharacterPosition, Mathf.Clamp01((Time.time - timeAtPrevWaypoint) / (distance / speed)));
                 diff = newPosition - meta.Handler.Owner.transform.position; 
-                if (Vector3.Distance(newPosition, nextWaypoint.Position) < Grid.Instance.NodeRadius)
-                    diff *= Mathf.Max(0.1f, Vector3.Distance(newPosition, nextWaypoint.Position) / Grid.Instance.NodeRadius);
+                if (Vector3.Distance(newPosition, nextWaypoint.CharacterPosition) < Grid.Instance.NodeRadius)
+                    diff *= Mathf.Max(0.1f, Vector3.Distance(newPosition, nextWaypoint.CharacterPosition) / Grid.Instance.NodeRadius);
 
                 meta.Handler.Owner.transform.position += diff;
                 yield return null;
