@@ -17,8 +17,8 @@ public class FloorBuilder : BuilderBase {
 	protected override void ResetModifiedTiles(bool _includingMouse = false) {
 		for (int i = 0; i < modifiedTiles.Count; i++) {
 			modifiedTiles[i].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
-			modifiedTiles[i].ChangeFloorGraphics(null, true);
-			modifiedTiles[i].SetFloorColor(Color.white);
+            modifiedTiles[i].ResetTempSettingsFloor();
+            modifiedTiles[i].SetFloorColor(Color.white);
             modifiedTiles[i].SetWallColor(Color.white);
         }
 
@@ -27,7 +27,7 @@ public class FloorBuilder : BuilderBase {
 	protected override void ResetSelectedTiles() {
 		for (int i = 0; i < selectedTiles.Count; i++) {
 			selectedTiles[i].SetFloorType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
-			selectedTiles[i].ChangeFloorGraphics(null, true);
+            selectedTiles[i].ResetTempSettingsFloor();
 			selectedTiles[i].SetFloorColor(Color.white);
             selectedTiles[i].SetWallColor(Color.white);
         }
@@ -118,10 +118,10 @@ public class FloorBuilder : BuilderBase {
     }
     protected override void SetGhostGraphics(Tile _tile, bool _snapToNeighbours) {
 
-		bool _hasConnection_L = (Tile.sTryTempCacheNeighbour_L(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_L.TempType != Tile.Type.Empty);
-		bool _hasConnection_R = (Tile.sTryTempCacheNeighbour_R(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_R.TempType != Tile.Type.Empty);
-		bool _hasConnection_T = (Tile.sTryTempCacheNeighbour_T(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_T.TempType != Tile.Type.Empty);
-		bool _hasConnection_B = (Tile.sTryTempCacheNeighbour_B(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_B.TempType != Tile.Type.Empty);
+		bool _hasConnection_L = (Tile.sTryTempCacheNeighbour_L(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_L.TempType != Tile.Type.Empty && Tile.sCachedNeighbour_L.TempType != Tile.sCachedNeighbour_L._FloorType_);
+		bool _hasConnection_T = (Tile.sTryTempCacheNeighbour_T(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_T.TempType != Tile.Type.Empty && Tile.sCachedNeighbour_T.TempType != Tile.sCachedNeighbour_T._FloorType_);
+		bool _hasConnection_R = (Tile.sTryTempCacheNeighbour_R(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_R.TempType != Tile.Type.Empty && Tile.sCachedNeighbour_R.TempType != Tile.sCachedNeighbour_R._FloorType_);
+		bool _hasConnection_B = (Tile.sTryTempCacheNeighbour_B(_tile.GridX, _tile.GridY) && Tile.sCachedNeighbour_B.TempType != Tile.Type.Empty && Tile.sCachedNeighbour_B.TempType != Tile.sCachedNeighbour_B._FloorType_);
 
 		switch (Mode) {
 			case ModeEnum.Default:
