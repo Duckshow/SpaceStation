@@ -75,23 +75,34 @@ public class UVController : MonoBehaviour {
 		SetUVColor (1, 2, 2, 2, 2, 2, 2, 2, 2, 2, false);
     }
 
+    public void StopTempMode() {
+        TemporaryCoordinates = null;
+        ChangeAsset(Coordinates, false);
+    }
     public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, bool _temporary) {
-        if (_assetIndices == null) {
-            if (_temporary) {
-                TemporaryCoordinates = null;
-                ChangeAsset(Coordinates, false);
-                return;
-            }
-
-            Coordinates = null;
-            myRenderer.enabled = false;
-            return;
-        }
 
         if (_temporary)
             TemporaryCoordinates = _assetIndices;
         else
 	    	Coordinates = _assetIndices;
+
+        if (_assetIndices == null) {
+            //if (_temporary) {
+            //    TemporaryCoordinates = null;
+            //    _assetIndices = Coordinates;
+            //    _temporary = false;
+            //}
+
+            //if (_assetIndices == null && !_temporary) {
+            //    Coordinates = null;
+            //    myRenderer.enabled = false;
+            //    return;
+            //}
+
+            myRenderer.enabled = false;
+            return;
+        }
+
 
         myMeshUVs[0].x = (Grid.TILE_RESOLUTION * _assetIndices.X) / CachedAssets.WallSet.TEXTURE_SIZE_X;
         myMeshUVs[0].y = (Grid.TILE_RESOLUTION * _assetIndices.Y) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
