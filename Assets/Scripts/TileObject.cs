@@ -42,7 +42,7 @@ public class TileObject : MonoBehaviour {
 
     private bool isActive = true;
     public void Activate() {
-        if (isActive) //dijnqidnqd // continue here. Try placing a large group of Components together in a cluster and switch between them. Something's making them lock to their tiles and act reeeeaaally weirdly :(
+        if (isActive)
             return;
         if (MyTile == null)
             return;

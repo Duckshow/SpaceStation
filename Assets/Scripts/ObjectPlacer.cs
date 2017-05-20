@@ -302,16 +302,16 @@ public class ObjectPlacer {
         Ghost.Orientation = Tile.TileOrientation.None;
         Ghost.ChangeAssets (AssetBottom, AssetTop);
 
-        // if a diagonal is below, sort ghost so the diagonal covers it in a pretty way
-        if (_tileUnderGhost.ConnectedDiagonal_B != null) {
-            Ghost.BottomQuad.SortCustom(_tileUnderGhost.BottomQuad.GetSortOrder() + 1);
-            Ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
-        }
-        // otherwise just go on top
-        else {
-            Ghost.BottomQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
-            Ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 2);
-        }
+        //// if a diagonal is below, sort ghost so the diagonal covers it in a pretty way
+        //if (_tileUnderGhost.ConnectedDiagonal_B != null) {
+        //    Ghost.BottomQuad.SortCustom(_tileUnderGhost.BottomQuad.GetSortOrder() + 1);
+        //    Ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
+        //}
+        //// otherwise just go on top
+        //else {
+        //    Ghost.BottomQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
+        //    Ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 2);
+        //}
 	}
 
     List<Tile> neighbours;

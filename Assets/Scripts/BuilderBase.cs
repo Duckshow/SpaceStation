@@ -160,13 +160,13 @@ public class BuilderBase {
     }
 
 	protected virtual void ResetModifiedTiles(bool _includingMouse = false) {
-        for (int i = 0; i < modifiedTiles.Count; i++)
-            modifiedTiles[i].HasBeenEvaluated = false;
+        //for (int i = 0; i < modifiedTiles.Count; i++)
+        //    modifiedTiles[i].HasBeenEvaluated = false;
         modifiedTiles.Clear();
     }
     protected virtual void ResetSelectedTiles() {
-        for (int i = 0; i < selectedTiles.Count; i++)
-            selectedTiles[i].HasBeenEvaluated = false;
+        //for (int i = 0; i < selectedTiles.Count; i++)
+        //    selectedTiles[i].HasBeenEvaluated = false;
         selectedTiles.Clear();
     }
 

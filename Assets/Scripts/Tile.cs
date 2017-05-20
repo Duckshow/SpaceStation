@@ -36,13 +36,16 @@ public class Tile : IHeapItem<Tile> {
                 return TileOrientation.Left;
 			case TileOrientation.BottomRight:
 				return TileOrientation.TopLeft;
+            case TileOrientation.None:
+                return TileOrientation.None;
         }
-        return TileOrientation.None;
+
+        throw new System.Exception("Somehow couldn't find a reverse direction! Input was " + _direction.ToString() + "!");   
     }
 
     public Type TempType = Type.Empty;
     public TileOrientation TempOrientation = TileOrientation.None;
-    [NonSerialized] public bool HasBeenEvaluated = false;
+    //[NonSerialized] public bool HasBeenEvaluated = false;
 
     public bool Walkable { get; private set; }
     public bool IsOccupiedByObject = false;
@@ -118,18 +121,18 @@ public class Tile : IHeapItem<Tile> {
     [NonSerialized] public bool IsBlocked_B = false;
 
     // optimization: could probably cache these some smarter way
-    [NonSerialized] public Tile ConnectedDiagonal_L;
-	[NonSerialized] public Tile ConnectedDiagonal_T;
-	[NonSerialized] public Tile ConnectedDiagonal_R;
-	[NonSerialized] public Tile ConnectedDiagonal_B;
-	[NonSerialized] public Tile ConnectedDiagonalFloor_L;
-	[NonSerialized] public Tile ConnectedDiagonalFloor_T;
-	[NonSerialized] public Tile ConnectedDiagonalFloor_R;
-	[NonSerialized] public Tile ConnectedDiagonalFloor_B;
-    [NonSerialized] public Tile ConnectedDoorOrAirlock_L;
-	[NonSerialized] public Tile ConnectedDoorOrAirlock_T;
-	[NonSerialized] public Tile ConnectedDoorOrAirlock_R;
-	[NonSerialized] public Tile ConnectedDoorOrAirlock_B;
+ //   [NonSerialized] public Tile ConnectedDiagonal_L;
+	//[NonSerialized] public Tile ConnectedDiagonal_T;
+	//[NonSerialized] public Tile ConnectedDiagonal_R;
+	//[NonSerialized] public Tile ConnectedDiagonal_B;
+	//[NonSerialized] public Tile ConnectedDiagonalFloor_L;
+	//[NonSerialized] public Tile ConnectedDiagonalFloor_T;
+	//[NonSerialized] public Tile ConnectedDiagonalFloor_R;
+	//[NonSerialized] public Tile ConnectedDiagonalFloor_B;
+ //   [NonSerialized] public Tile ConnectedDoorOrAirlock_L;
+	//[NonSerialized] public Tile ConnectedDoorOrAirlock_T;
+	//[NonSerialized] public Tile ConnectedDoorOrAirlock_R;
+	//[NonSerialized] public Tile ConnectedDoorOrAirlock_B;
 
     [NonSerialized] public Tile ParentTile;
     [NonSerialized] public int GCost;
@@ -270,12 +273,12 @@ public class Tile : IHeapItem<Tile> {
                 break;
             case Type.Door:
                 switch (_orientation) {
-                    //// vertical
-                    //case TileOrientation.Bottom:
-                    //case TileOrientation.Top:
-                    //    sTypeConnectability[1] = true;
-                    //    sTypeConnectability[3] = true;
-                    //    break;
+                    // vertical
+                    case TileOrientation.Bottom:
+                    case TileOrientation.Top:
+                        sTypeConnectability[1] = true;
+                        sTypeConnectability[3] = true;
+                        break;
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
@@ -372,26 +375,26 @@ public class Tile : IHeapItem<Tile> {
         ForceActorStopWhenPassingThis = false;
         MovementPenalty = 0; //TODO: use this for something!
 
-		if (prevType == Type.Door || prevType == Type.Airlock) {
-            Grid.Instance.grid[GridX + 1, GridY].SetBuildingAllowed(true);
-            Grid.Instance.grid[GridX - 1, GridY].SetBuildingAllowed(true);
-            Grid.Instance.grid[GridX, GridY + 1].SetBuildingAllowed(true);
-            Grid.Instance.grid[GridX, GridY - 1].SetBuildingAllowed(true);
+		//if (prevType == Type.Door || prevType == Type.Airlock) {
+  //          Grid.Instance.grid[GridX + 1, GridY].SetBuildingAllowed(true);
+  //          Grid.Instance.grid[GridX - 1, GridY].SetBuildingAllowed(true);
+  //          Grid.Instance.grid[GridX, GridY + 1].SetBuildingAllowed(true);
+  //          Grid.Instance.grid[GridX, GridY - 1].SetBuildingAllowed(true);
 
-            Grid.Instance.grid[GridX - 1, GridY].ConnectedDoorOrAirlock_R = null;
-            Grid.Instance.grid[GridX + 1, GridY].ConnectedDoorOrAirlock_L = null;
-            Grid.Instance.grid[GridX, GridY - 1].ConnectedDoorOrAirlock_T = null;
-            Grid.Instance.grid[GridX, GridY + 1].ConnectedDoorOrAirlock_B = null;
-        }
+  //          Grid.Instance.grid[GridX - 1, GridY].ConnectedDoorOrAirlock_R = null;
+  //          Grid.Instance.grid[GridX + 1, GridY].ConnectedDoorOrAirlock_L = null;
+  //          Grid.Instance.grid[GridX, GridY - 1].ConnectedDoorOrAirlock_T = null;
+  //          Grid.Instance.grid[GridX, GridY + 1].ConnectedDoorOrAirlock_B = null;
+  //      }
         if (prevType == Type.Diagonal) {
-            if(GridX > 0)
-                Grid.Instance.grid[GridX - 1, GridY].ConnectedDiagonal_R = null;
-            if(GridX < Grid.Instance.GridSizeX - 1)
-                Grid.Instance.grid[GridX + 1, GridY].ConnectedDiagonal_L = null;
-            if(GridY > 0)
-                Grid.Instance.grid[GridX, GridY - 1].ConnectedDiagonal_T = null;
-            if (GridY < Grid.Instance.GridSizeY - 1)
-                Grid.Instance.grid[GridX, GridY + 1].ConnectedDiagonal_B = null;
+            //if(GridX > 0)
+            //    Grid.Instance.grid[GridX - 1, GridY].ConnectedDiagonal_R = null;
+            //if(GridX < Grid.Instance.GridSizeX - 1)
+            //    Grid.Instance.grid[GridX + 1, GridY].ConnectedDiagonal_L = null;
+            //if(GridY > 0)
+            //    Grid.Instance.grid[GridX, GridY - 1].ConnectedDiagonal_T = null;
+            //if (GridY < Grid.Instance.GridSizeY - 1)
+            //    Grid.Instance.grid[GridX, GridY + 1].ConnectedDiagonal_B = null;
 
 			if ((prevOrientation == TileOrientation.BottomLeft && !CanConnectFloor_T && !CanConnectFloor_R) ||
 			   (prevOrientation == TileOrientation.TopLeft && !CanConnectFloor_B && !CanConnectFloor_R) ||
@@ -543,16 +546,16 @@ public class Tile : IHeapItem<Tile> {
             return;
         }
 
-        if (_FloorType_ == Type.Diagonal) {
-			if(GridX > 0)
-				Grid.Instance.grid[GridX - 1, GridY].ConnectedDiagonalFloor_R = null;
-			if(GridX < Grid.Instance.GridSizeX - 1)
-				Grid.Instance.grid[GridX + 1, GridY].ConnectedDiagonalFloor_L = null;
-			if(GridY > 0)
-				Grid.Instance.grid[GridX, GridY - 1].ConnectedDiagonalFloor_T = null;
-			if (GridY < Grid.Instance.GridSizeY - 1)
-				Grid.Instance.grid[GridX, GridY + 1].ConnectedDiagonalFloor_B = null;
-		}
+  //      if (_FloorType_ == Type.Diagonal) {
+		//	if(GridX > 0)
+		//		Grid.Instance.grid[GridX - 1, GridY].ConnectedDiagonalFloor_R = null;
+		//	if(GridX < Grid.Instance.GridSizeX - 1)
+		//		Grid.Instance.grid[GridX + 1, GridY].ConnectedDiagonalFloor_L = null;
+		//	if(GridY > 0)
+		//		Grid.Instance.grid[GridX, GridY - 1].ConnectedDiagonalFloor_T = null;
+		//	if (GridY < Grid.Instance.GridSizeY - 1)
+		//		Grid.Instance.grid[GridX, GridY + 1].ConnectedDiagonalFloor_B = null;
+		//}
 
 		_FloorType_ = _newType;
 		_FloorOrientation_ = _newOrientation;
@@ -636,32 +639,32 @@ public class Tile : IHeapItem<Tile> {
 			case TileOrientation.Bottom:
 				_neighbour.HasConnectable_T = CanConnect_B;
 				_neighbour.IsBlocked_T = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Top);
-				_neighbour.ConnectedDiagonal_T = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.BottomLeft || _Orientation_ == TileOrientation.BottomRight)) ? this : null;
-				_neighbour.ConnectedDoorOrAirlock_T = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
+				//_neighbour.ConnectedDiagonal_T = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.BottomLeft || _Orientation_ == TileOrientation.BottomRight)) ? this : null;
+				//_neighbour.ConnectedDoorOrAirlock_T = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
                 // prevent building in front of door
-				if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsHorizontal_)
-                    _neighbour.SetBuildingAllowed(false);
+				//if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsHorizontal_)
+    //                _neighbour.SetBuildingAllowed(false);
                 break;
             case TileOrientation.Left:
                 _neighbour.HasConnectable_R = CanConnect_L;
 				_neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Left);
-				_neighbour.ConnectedDiagonal_R = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.BottomLeft)) ? this : null;
-				_neighbour.ConnectedDoorOrAirlock_R = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
+				//_neighbour.ConnectedDiagonal_R = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.BottomLeft)) ? this : null;
+				//_neighbour.ConnectedDoorOrAirlock_R = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
                 // prevent building in front of door
-				if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsVertical_)
-                    _neighbour.SetBuildingAllowed(false);
+				//if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsVertical_)
+    //                _neighbour.SetBuildingAllowed(false);
                 break;
             case TileOrientation.Top:
                 _neighbour.HasConnectable_B = CanConnect_T;
 				_neighbour.IsBlocked_B = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Bottom);
-				_neighbour.ConnectedDiagonal_B = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.TopRight)) ? this : null;
-				_neighbour.ConnectedDoorOrAirlock_B = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
+				//_neighbour.ConnectedDiagonal_B = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.TopRight)) ? this : null;
+				//_neighbour.ConnectedDoorOrAirlock_B = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
                 // prevent building in front of door
-                if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsHorizontal_)
-                    _neighbour.SetBuildingAllowed(false);
+                //if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsHorizontal_)
+                //    _neighbour.SetBuildingAllowed(false);
 
                 //if (_WallType_ == Type.Door || _WallType_ == Type.Airlock) {
                 //                // prevent building in front of door
@@ -685,12 +688,12 @@ public class Tile : IHeapItem<Tile> {
             case TileOrientation.Right:
                 _neighbour.HasConnectable_L = CanConnect_R;
 				_neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Left);
-				_neighbour.ConnectedDiagonal_L = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.BottomRight || _Orientation_ == TileOrientation.TopRight)) ? this : null;
-				_neighbour.ConnectedDoorOrAirlock_L = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
+				//_neighbour.ConnectedDiagonal_L = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.BottomRight || _Orientation_ == TileOrientation.TopRight)) ? this : null;
+				//_neighbour.ConnectedDoorOrAirlock_L = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
 
                 // prevent building in front of door
-				if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsVertical_)
-                   _neighbour.SetBuildingAllowed(false);
+				//if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsVertical_)
+    //               _neighbour.SetBuildingAllowed(false);
                 break;
 			case TileOrientation.TopLeft:
 			case TileOrientation.TopRight:
@@ -746,19 +749,19 @@ public class Tile : IHeapItem<Tile> {
         switch (_directionFromThisTile) {
 			case TileOrientation.Bottom:
                 _neighbour.HasConnectableFloor_T = CanConnectFloor_B;
-				_neighbour.ConnectedDiagonalFloor_T = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.BottomLeft || _FloorOrientation_ == TileOrientation.BottomRight)) ? this : null;
+				//_neighbour.ConnectedDiagonalFloor_T = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.BottomLeft || _FloorOrientation_ == TileOrientation.BottomRight)) ? this : null;
                 break;
 			case TileOrientation.Left:
                 _neighbour.HasConnectableFloor_R = CanConnectFloor_L;
-				_neighbour.ConnectedDiagonalFloor_R = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.TopLeft || _FloorOrientation_ == TileOrientation.BottomLeft)) ? this : null;
+				//_neighbour.ConnectedDiagonalFloor_R = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.TopLeft || _FloorOrientation_ == TileOrientation.BottomLeft)) ? this : null;
 				break;
 			case TileOrientation.Top:
                 _neighbour.HasConnectableFloor_B = CanConnectFloor_T;
-				_neighbour.ConnectedDiagonalFloor_B = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.TopLeft || _FloorOrientation_ == TileOrientation.TopRight)) ? this : null;
+				//_neighbour.ConnectedDiagonalFloor_B = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.TopLeft || _FloorOrientation_ == TileOrientation.TopRight)) ? this : null;
 				break;
 			case TileOrientation.Right:
                 _neighbour.HasConnectableFloor_L = CanConnectFloor_R;
-				_neighbour.ConnectedDiagonalFloor_L = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.BottomRight || _FloorOrientation_ == TileOrientation.TopRight)) ? this : null;
+				//_neighbour.ConnectedDiagonalFloor_L = (_FloorType_ == Type.Diagonal && (_FloorOrientation_ == TileOrientation.BottomRight || _FloorOrientation_ == TileOrientation.TopRight)) ? this : null;
 				break;
             case TileOrientation.TopLeft:
             case TileOrientation.TopRight:
@@ -951,34 +954,38 @@ public class Tile : IHeapItem<Tile> {
     }
 
     public void SetBuildingAllowed(bool _b) {
-        Tile _neighbour;
-        bool _isAdjacentHorizontally = false;
-        bool _isAdjacentVertically = false;
-		_BuildingAllowed_ = false;
+        //Tile _neighbour;
+        //bool _isAdjacentHorizontally = false;
+        //bool _isAdjacentVertically = false;
+        _BuildingAllowed_ = false;
         if (_b) {
-            int _gridX, _gridY;
-            for (int y = -1; y <= 1; y++) {
-                for (int x = -1; x <= 1; x++) {
-					if (x == 0 && y == 0) // need to be able to remove the source of the non-allowance :/
-						continue;
+            // if you have new fail-conditions, insert them here.
+            // everything's currently disabled, because now you can do stuff adjacent to doors and stuff
+            // keeping it here because it's nifty code I guess
 
-					_gridX = GridX + x;
-                    _gridY = GridY + y;
+            //int _gridX, _gridY;
+            //for (int y = -1; y <= 1; y++) {
+            //    for (int x = -1; x <= 1; x++) {
+            //        if (x == 0 && y == 0) // need to be able to remove the source of the non-allowance :/
+            //            continue;
 
-                    if (_gridX >= 0 && _gridX < Grid.Instance.GridSizeX && _gridY >= 0 && _gridY < Grid.Instance.GridSizeY) {
-						_neighbour = Grid.Instance.grid[_gridX, _gridY];
+            //        _gridX = GridX + x;
+            //        _gridY = GridY + y;
 
-                        _isAdjacentHorizontally = x != 0 && y == 0;
-                        _isAdjacentVertically = x == 0 && y != 0;
+            //        if (_gridX >= 0 && _gridX < Grid.Instance.GridSizeX && _gridY >= 0 && _gridY < Grid.Instance.GridSizeY) {
+            //            _neighbour = Grid.Instance.grid[_gridX, _gridY];
 
-						// fail conditions
-                        if ((_isAdjacentHorizontally || _isAdjacentVertically) &&  _neighbour._WallType_ == Type.Door)
-                            return;
-						if ((_isAdjacentHorizontally || _isAdjacentVertically) &&  _neighbour._WallType_ == Type.Airlock)
-							return;
-                    }
-                }
-            }
+            //            _isAdjacentHorizontally = x != 0 && y == 0;
+            //            _isAdjacentVertically = x == 0 && y != 0;
+
+            //            // fail conditions
+            //            if ((_isAdjacentHorizontally || _isAdjacentVertically) && _neighbour._WallType_ == Type.Door)
+            //                return;
+            //            if ((_isAdjacentHorizontally || _isAdjacentVertically) && _neighbour._WallType_ == Type.Airlock)
+            //                return;
+            //        }
+            //    }
+            //}
         }
 
         _BuildingAllowed_ = _b;
