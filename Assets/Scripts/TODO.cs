@@ -5,7 +5,27 @@
 == Next time ==
 
 == Goal ==
+Refactor the 2D lighting to work in this system. Current idea (actually, new idea below) is to make a texture-raycast:
+- Use Bresenham's line algorithm to find tiles under ray-vector (http://wiki.unity3d.com/index.php/Bresenham3D)
+- Use Bresenham's to find all tile-pixels under ray-vector (the default above seems to use unity-units as pixels, so... divide by 64 or something?)
+- Iterate over tiles found
+    - find pixels belonging to this tile (somehow?)
+    - use pixels on shadowtexture, using tile's UVs, and get the pixels' colors
+    - if color is white (or something) report raycast-hit
 
+It might be hard to get the texture-cast working and performance is a big unknown, so here's another idea that seems to be pretty fast (but may need real profiling)
+- Each tile gets a collider from a pool, or if not in pool, instantiate
+    - or maybe, cache the path required for each type of collider, then each tile has a collider at all times that just changes its path?
+- Collider-gameobjects (or is component enough/even better?) are always disabled
+- When a light wants to circlecast to find colliders, instead iterate over grid and find all tiles within range and activate their colliders
+- When raycasting against colliders is done, disable again
+
+Also need shader-stuff. I could have regular lights on top of the 2D-lights (ehh), but another solution might be this;
+- Create new shader for the grid (with coloring-stuff)
+- Each light adds its position, range, brightness and color to four arrays in the shader
+- In the frag, find the four (?) lights that have the highest impact on this pixel (distance * (brightness * intensity))
+- Find the direction to each light and create multipliers based on the color of the normal map
+- Apply those lights' properties to the frag, using the multipliers
 
 
 == Needs to be done ==
