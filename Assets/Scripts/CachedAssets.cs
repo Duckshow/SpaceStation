@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections.Generic;
 
 public class CachedAssets : MonoBehaviour {
@@ -401,26 +402,367 @@ public class CachedAssets : MonoBehaviour {
 
         public static TileAnimator.TileAnimation anim_DoorVertical_Open = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorVertical).Y, -1, 4);
         public static TileAnimator.TileAnimation anim_DoorVertical_Close = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorVertical).Y, -1, 4).Reverse();
-
         public static TileAnimator.TileAnimation anim_DoorHorizontal_Open = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorHorizontal).Y, -1, 4);
         public static TileAnimator.TileAnimation anim_DoorHorizontal_Close = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorHorizontal).Y, -1, 4).Reverse();
-
         public static TileAnimator.TileAnimation anim_AirlockHorizontal_OpenBottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_OpenBottom_TOP).Y, 4);
         public static TileAnimator.TileAnimation anim_AirlockHorizontal_CloseBottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_OpenBottom_TOP).Y, 4).Reverse();
-
         public static TileAnimator.TileAnimation anim_AirlockHorizontal_OpenTop = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_OpenTop).Y, 4, bottomForceFrameX: 0);
         public static TileAnimator.TileAnimation anim_AirlockHorizontal_CloseTop = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_OpenTop).Y, 4, bottomForceFrameX: 0).Reverse();
-
         public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_Wait).Y, 8, bottomForceFrameX: 0);
-
         public static TileAnimator.TileAnimation anim_AirlockVertical_OpenLeft = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_OpenLeft_TOP).Y, 4);
         public static TileAnimator.TileAnimation anim_AirlockVertical_CloseLeft = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_OpenLeft_TOP).Y, 4).Reverse();
-
         public static TileAnimator.TileAnimation anim_AirlockVertical_OpenRight = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenRight_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_OpenRight_TOP).Y, 4, bottomForceFirstFrame: GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM), topForceFirstFrame: GetTextureCoord(P.AirlockVertical_OpenLeft_TOP));
         public static TileAnimator.TileAnimation anim_AirlockVertical_CloseRight = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenRight_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_OpenRight_TOP).Y, 4, bottomForceFirstFrame: GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM), topForceFirstFrame: GetTextureCoord(P.AirlockVertical_OpenLeft_TOP)).Reverse();
-
         public static TileAnimator.TileAnimation anim_AirlockVertical_Wait = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_Wait).Y, 8, bottomForceFrameX: 0);
+
+        public Vector2[][] floor_Single_shadow;
+        public Vector2[][] floor_FourWay_shadow;
+        public Vector2[][] floor_Vertical_T_shadow;
+        public Vector2[][] floor_Vertical_M_shadow;
+        public Vector2[][] floor_Vertical_B_shadow;
+        public Vector2[][] floor_Horizontal_L_shadow;
+        public Vector2[][] floor_Horizontal_M_shadow;
+        public Vector2[][] floor_Horizontal_R_shadow;
+        public Vector2[][] floor_Corner_TopRight_shadow;
+        public Vector2[][] floor_Corner_TopLeft_shadow;
+        public Vector2[][] floor_Corner_BottomRight_shadow;
+        public Vector2[][] floor_Corner_BottomLeft_shadow;
+        public Vector2[][] floor_Tee_Right_shadow;
+        public Vector2[][] floor_Tee_Left_shadow;
+        public Vector2[][] floor_Tee_Top_shadow;
+        public Vector2[][] floor_Tee_Bottom_shadow;
+
+        public Vector2[][] floor_Diagonal_TopRight_shadow;
+        public Vector2[][] floor_Diagonal_TopRight_T_shadow;
+        public Vector2[][] floor_Diagonal_TopRight_R_shadow;
+        public Vector2[][] floor_Diagonal_TopRight_TR_shadow;
+        public Vector2[][] floor_Diagonal_TopLeft_shadow;
+        public Vector2[][] floor_Diagonal_TopLeft_T_shadow;
+        public Vector2[][] floor_Diagonal_TopLeft_L_shadow;
+        public Vector2[][] floor_Diagonal_TopLeft_TL_shadow;
+        public Vector2[][] floor_Diagonal_BottomRight_shadow;
+        public Vector2[][] floor_Diagonal_BottomRight_B_shadow;
+        public Vector2[][] floor_Diagonal_BottomRight_R_shadow;
+        public Vector2[][] floor_Diagonal_BottomRight_BR_shadow;
+        public Vector2[][] floor_Diagonal_BottomLeft_shadow;
+        public Vector2[][] floor_Diagonal_BottomLeft_B_shadow;
+        public Vector2[][] floor_Diagonal_BottomLeft_L_shadow;
+        public Vector2[][] floor_Diagonal_BottomLeft_BL_shadow;
+
+        public Vector2[][] floorCornerHider_All_shadow;
+        public Vector2[][] floorCornerHider_TL_BR_shadow;
+        public Vector2[][] floorCornerHider_TR_BL_shadow;
+        public Vector2[][] floorCornerHider_TL_shadow;
+        public Vector2[][] floorCornerHider_TL_TR_shadow;
+        public Vector2[][] floorCornerHider_TL_TR_BR_shadow;
+        public Vector2[][] floorCornerHider_TR_shadow;
+        public Vector2[][] floorCornerHider_TR_BR_shadow;
+        public Vector2[][] floorCornerHider_TR_BR_BL_shadow;
+        public Vector2[][] floorCornerHider_BR_shadow;
+        public Vector2[][] floorCornerHider_BR_BL_shadow;
+        public Vector2[][] floorCornerHider_BR_BL_TL_shadow;
+        public Vector2[][] floorCornerHider_BL_shadow;
+        public Vector2[][] floorCornerHider_BL_TL_shadow;
+        public Vector2[][] floorCornerHider_BL_TL_TR_shadow;
+
+        public Vector2[][] wall_Single_shadow;
+        public Vector2[][] wall_FourWay_shadow;
+        public Vector2[][] wall_Vertical_T_shadow;
+        public Vector2[][] wall_Vertical_M_shadow;
+        public Vector2[][] wall_Vertical_B_shadow;
+        public Vector2[][] wall_Horizontal_L_shadow;
+        public Vector2[][] wall_Horizontal_M_shadow;
+        public Vector2[][] wall_Horizontal_R_shadow;
+
+        public Vector2[][] wall_Corner_TopRight_shadow;
+        public Vector2[][] wall_Corner_TopLeft_shadow;
+        public Vector2[][] wall_Corner_BottomRight_shadow;
+        public Vector2[][] wall_Corner_BottomLeft_shadow;
+        public Vector2[][] wall_Tee_Right_shadow;
+        public Vector2[][] wall_Tee_Left_shadow;
+        public Vector2[][] wall_Tee_Top_shadow;
+        public Vector2[][] wall_Tee_Bottom_shadow;
+
+        public Vector2[][] wall_Diagonal_TopRight_shadow;
+        public Vector2[][] wall_Diagonal_TopRight_T_shadow;
+        public Vector2[][] wall_Diagonal_TopRight_R_shadow;
+        public Vector2[][] wall_Diagonal_TopRight_TR_shadow;
+        public Vector2[][] wall_Diagonal_TopLeft_shadow;
+        public Vector2[][] wall_Diagonal_TopLeft_T_shadow;
+        public Vector2[][] wall_Diagonal_TopLeft_L_shadow;
+        public Vector2[][] wall_Diagonal_TopLeft_TL_shadow;
+        public Vector2[][] wall_Diagonal_BottomRight_shadow;
+        public Vector2[][] wall_Diagonal_BottomRight_B_shadow;
+        public Vector2[][] wall_Diagonal_BottomRight_R_shadow;
+        public Vector2[][] wall_Diagonal_BottomRight_BR_shadow;
+        public Vector2[][] wall_Diagonal_BottomLeft_shadow;
+        public Vector2[][] wall_Diagonal_BottomLeft_B_shadow;
+        public Vector2[][] wall_Diagonal_BottomLeft_L_shadow;
+        public Vector2[][] wall_Diagonal_BottomLeft_BL_shadow;
+
+        public Vector2[][] wallCornerHider_All_shadow;
+        public Vector2[][] wallCornerHider_TL_BR_shadow;
+        public Vector2[][] wallCornerHider_TR_BL_shadow;
+        public Vector2[][] wallCornerHider_TL_shadow;
+        public Vector2[][] wallCornerHider_TL_TR_shadow;
+        public Vector2[][] wallCornerHider_TL_TR_BR_shadow;
+        public Vector2[][] wallCornerHider_TR_shadow;
+        public Vector2[][] wallCornerHider_TR_BR_shadow;
+        public Vector2[][] wallCornerHider_TR_BR_BL_shadow;
+        public Vector2[][] wallCornerHider_BR_shadow;
+        public Vector2[][] wallCornerHider_BR_BL_shadow;
+        public Vector2[][] wallCornerHider_BR_BL_TL_shadow;
+        public Vector2[][] wallCornerHider_BL_shadow;
+        public Vector2[][] wallCornerHider_BL_TL_shadow;
+        public Vector2[][] wallCornerHider_BL_TL_TR_shadow;
+
+        public Vector2[][][] anim_DoorVertical_Open_shadow;
+        public Vector2[][][] anim_DoorVertical_Close_shadow;
+        public Vector2[][][] anim_DoorHorizontal_Open_shadow;
+        public Vector2[][][] anim_DoorHorizontal_Close_shadow;
+        public Vector2[][][] anim_AirlockHorizontal_OpenBottom_shadow;
+        public Vector2[][][] anim_AirlockHorizontal_CloseBottom_shadow;
+        public Vector2[][][] anim_AirlockHorizontal_OpenTop_shadow;
+        public Vector2[][][] anim_AirlockHorizontal_CloseTop_shadow;
+        public Vector2[][][] anim_AirlockHorizontal_Wait_shadow;
+        public Vector2[][][] anim_AirlockVertical_OpenLeft_shadow;
+        public Vector2[][][] anim_AirlockVertical_CloseLeft_shadow;
+        public Vector2[][][] anim_AirlockVertical_OpenRight_shadow;
+        public Vector2[][][] anim_AirlockVertical_CloseRight_shadow;
+        public Vector2[][][] anim_AirlockVertical_Wait_shadow;
+
+
+        public Texture2D ShadowMap;
+    //    public void GenerateShadowColliders() {
+    //        floor_Single_shadow = GenerateShadowCollider(floor_Single);
+    //        floor_FourWay_shadow = GenerateShadowCollider(floor_FourWay);
+    //        floor_Vertical_T_shadow = GenerateShadowCollider(floor_Vertical_T);
+    //        floor_Vertical_M_shadow = GenerateShadowCollider(floor_Vertical_M);
+    //        floor_Vertical_B_shadow = GenerateShadowCollider(floor_Vertical_B);
+    //        floor_Horizontal_L_shadow = GenerateShadowCollider(floor_Horizontal_L);
+    //        floor_Horizontal_M_shadow = GenerateShadowCollider(floor_Horizontal_M);
+    //        floor_Horizontal_R_shadow = GenerateShadowCollider(floor_Horizontal_R);
+    //        floor_Corner_TopRight_shadow = GenerateShadowCollider(floor_Corner_TopRight);
+    //        floor_Corner_TopLeft_shadow = GenerateShadowCollider(floor_Corner_TopLeft);
+    //        floor_Corner_BottomRight_shadow = GenerateShadowCollider(floor_Corner_BottomRight);
+    //        floor_Corner_BottomLeft_shadow = GenerateShadowCollider(floor_Corner_BottomLeft);
+    //        floor_Tee_Right_shadow = GenerateShadowCollider(floor_Tee_Right);
+    //        floor_Tee_Left_shadow = GenerateShadowCollider(floor_Tee_Left);
+    //        floor_Tee_Top_shadow = GenerateShadowCollider(floor_Tee_Top);
+    //        floor_Tee_Bottom_shadow = GenerateShadowCollider(floor_Tee_Bottom);
+
+    //        floor_Diagonal_TopRight_shadow = GenerateShadowCollider(floor_Diagonal_TopRight);
+    //        floor_Diagonal_TopRight_T_shadow = GenerateShadowCollider(floor_Diagonal_TopRight_T);
+    //        floor_Diagonal_TopRight_R_shadow = GenerateShadowCollider(floor_Diagonal_TopRight_R);
+    //        floor_Diagonal_TopRight_TR_shadow = GenerateShadowCollider(floor_Diagonal_TopRight_TR);
+    //        floor_Diagonal_TopLeft_shadow = GenerateShadowCollider(floor_Diagonal_TopLeft);
+    //        floor_Diagonal_TopLeft_T_shadow = GenerateShadowCollider(floor_Diagonal_TopLeft_T);
+    //        floor_Diagonal_TopLeft_L_shadow = GenerateShadowCollider(floor_Diagonal_TopLeft_L);
+    //        floor_Diagonal_TopLeft_TL_shadow = GenerateShadowCollider(floor_Diagonal_TopLeft_TL);
+    //        floor_Diagonal_BottomRight_shadow = GenerateShadowCollider(floor_Diagonal_BottomRight);
+    //        floor_Diagonal_BottomRight_B_shadow = GenerateShadowCollider(floor_Diagonal_BottomRight_B);
+    //        floor_Diagonal_BottomRight_R_shadow = GenerateShadowCollider(floor_Diagonal_BottomRight_R);
+    //        floor_Diagonal_BottomRight_BR_shadow = GenerateShadowCollider(floor_Diagonal_BottomRight_BR);
+    //        floor_Diagonal_BottomLeft_shadow = GenerateShadowCollider(floor_Diagonal_BottomLeft);
+    //        floor_Diagonal_BottomLeft_B_shadow = GenerateShadowCollider(floor_Diagonal_BottomLeft_B);
+    //        floor_Diagonal_BottomLeft_L_shadow = GenerateShadowCollider(floor_Diagonal_BottomLeft_L);
+    //        floor_Diagonal_BottomLeft_BL_shadow = GenerateShadowCollider(floor_Diagonal_BottomLeft_BL);
+
+    //        floorCornerHider_All_shadow = GenerateShadowCollider(floorCornerHider_All);
+    //        floorCornerHider_TL_BR_shadow = GenerateShadowCollider(floorCornerHider_TL_BR);
+    //        floorCornerHider_TR_BL_shadow = GenerateShadowCollider(floorCornerHider_TR_BL);
+    //        floorCornerHider_TL_shadow = GenerateShadowCollider(floorCornerHider_TL);
+    //        floorCornerHider_TL_TR_shadow = GenerateShadowCollider(floorCornerHider_TL_TR);
+    //        floorCornerHider_TL_TR_BR_shadow = GenerateShadowCollider(floorCornerHider_TL_TR_BR);
+    //        floorCornerHider_TR_shadow = GenerateShadowCollider(floorCornerHider_TR);
+    //        floorCornerHider_TR_BR_shadow = GenerateShadowCollider(floorCornerHider_TR_BR);
+    //        floorCornerHider_TR_BR_BL_shadow = GenerateShadowCollider(floorCornerHider_TR_BR_BL);
+    //        floorCornerHider_BR_shadow = GenerateShadowCollider(floorCornerHider_BR);
+    //        floorCornerHider_BR_BL_shadow = GenerateShadowCollider(floorCornerHider_BR_BL);
+    //        floorCornerHider_BR_BL_TL_shadow = GenerateShadowCollider(floorCornerHider_BR_BL_TL);
+    //        floorCornerHider_BL_shadow = GenerateShadowCollider(floorCornerHider_BL);
+    //        floorCornerHider_BL_TL_shadow = GenerateShadowCollider(floorCornerHider_BL_TL);
+    //        floorCornerHider_BL_TL_TR_shadow = GenerateShadowCollider(floorCornerHider_BL_TL_TR);
+
+    //        wall_Single_shadow = GenerateShadowCollider(wall_Single);
+    //        wall_FourWay_shadow = GenerateShadowCollider(wall_FourWay);
+    //        wall_Vertical_T_shadow = GenerateShadowCollider(wall_Vertical_T);
+    //        wall_Vertical_M_shadow = GenerateShadowCollider(wall_Vertical_M);
+    //        wall_Vertical_B_shadow = GenerateShadowCollider(wall_Vertical_B);
+    //        wall_Horizontal_L_shadow = GenerateShadowCollider(wall_Horizontal_L);
+    //        wall_Horizontal_M_shadow = GenerateShadowCollider(wall_Horizontal_M);
+    //        wall_Horizontal_R_shadow = GenerateShadowCollider(wall_Horizontal_R);
+
+    //        wall_Corner_TopRight_shadow = GenerateShadowCollider(wall_Corner_TopRight);
+    //        wall_Corner_TopLeft_shadow = GenerateShadowCollider(wall_Corner_TopLeft);
+    //        wall_Corner_BottomRight_shadow = GenerateShadowCollider(wall_Corner_BottomRight);
+    //        wall_Corner_BottomLeft_shadow = GenerateShadowCollider(wall_Corner_BottomLeft);
+    //        wall_Tee_Right_shadow = GenerateShadowCollider(wall_Tee_Right);
+    //        wall_Tee_Left_shadow = GenerateShadowCollider(wall_Tee_Left);
+    //        wall_Tee_Top_shadow = GenerateShadowCollider(wall_Tee_Top);
+    //        wall_Tee_Bottom_shadow = GenerateShadowCollider(wall_Tee_Bottom);
+
+    //        wall_Diagonal_TopRight_shadow = GenerateShadowCollider(wall_Diagonal_TopRight);
+    //        wall_Diagonal_TopRight_T_shadow = GenerateShadowCollider(wall_Diagonal_TopRight_T);
+    //        wall_Diagonal_TopRight_R_shadow = GenerateShadowCollider(wall_Diagonal_TopRight_R);
+    //        wall_Diagonal_TopRight_TR_shadow = GenerateShadowCollider(wall_Diagonal_TopRight_TR);
+    //        wall_Diagonal_TopLeft_shadow = GenerateShadowCollider(wall_Diagonal_TopLeft);
+    //        wall_Diagonal_TopLeft_T_shadow = GenerateShadowCollider(wall_Diagonal_TopLeft_T);
+    //        wall_Diagonal_TopLeft_L_shadow = GenerateShadowCollider(wall_Diagonal_TopLeft_L);
+    //        wall_Diagonal_TopLeft_TL_shadow = GenerateShadowCollider(wall_Diagonal_TopLeft_TL);
+    //        wall_Diagonal_BottomRight_shadow = GenerateShadowCollider(wall_Diagonal_BottomRight);
+    //        wall_Diagonal_BottomRight_B_shadow = GenerateShadowCollider(wall_Diagonal_BottomRight_B);
+    //        wall_Diagonal_BottomRight_R_shadow = GenerateShadowCollider(wall_Diagonal_BottomRight_R);
+    //        wall_Diagonal_BottomRight_BR_shadow = GenerateShadowCollider(wall_Diagonal_BottomRight_BR);
+    //        wall_Diagonal_BottomLeft_shadow = GenerateShadowCollider(wall_Diagonal_BottomLeft);
+    //        wall_Diagonal_BottomLeft_B_shadow = GenerateShadowCollider(wall_Diagonal_BottomLeft_B);
+    //        wall_Diagonal_BottomLeft_L_shadow = GenerateShadowCollider(wall_Diagonal_BottomLeft_L);
+    //        wall_Diagonal_BottomLeft_BL_shadow = GenerateShadowCollider(wall_Diagonal_BottomLeft_BL);
+
+    //        wallCornerHider_All_shadow = GenerateShadowCollider(wallCornerHider_All);
+    //        wallCornerHider_TL_BR_shadow = GenerateShadowCollider(wallCornerHider_TL_BR);
+    //        wallCornerHider_TR_BL_shadow = GenerateShadowCollider(wallCornerHider_TR_BL);
+    //        wallCornerHider_TL_shadow = GenerateShadowCollider(wallCornerHider_TL);
+    //        wallCornerHider_TL_TR_shadow = GenerateShadowCollider(wallCornerHider_TL_TR);
+    //        wallCornerHider_TL_TR_BR_shadow = GenerateShadowCollider(wallCornerHider_TL_TR_BR);
+    //        wallCornerHider_TR_shadow = GenerateShadowCollider(wallCornerHider_TR);
+    //        wallCornerHider_TR_BR_shadow = GenerateShadowCollider(wallCornerHider_TR_BR);
+    //        wallCornerHider_TR_BR_BL_shadow = GenerateShadowCollider(wallCornerHider_TR_BR_BL);
+    //        wallCornerHider_BR_shadow = GenerateShadowCollider(wallCornerHider_BR);
+    //        wallCornerHider_BR_BL_shadow = GenerateShadowCollider(wallCornerHider_BR_BL);
+    //        wallCornerHider_BR_BL_TL_shadow = GenerateShadowCollider(wallCornerHider_BR_BL_TL);
+    //        wallCornerHider_BL_shadow = GenerateShadowCollider(wallCornerHider_BL);
+    //        wallCornerHider_BL_TL_shadow = GenerateShadowCollider(wallCornerHider_BL_TL);
+    //        wallCornerHider_BL_TL_TR_shadow = GenerateShadowCollider(wallCornerHider_BL_TL_TR);
+    //    } 
+    //    private List<Color32> shadowPixels;
+    //    private Color32[][] assetPixels = new Color32[Grid.TILE_RESOLUTION * 2][];
+    //    private Dictionary<int, Vector2> startingPixels = new Dictionary<int, Vector2>();
+    //    private int currentX = -1;
+    //    private int currentY = -1;
+    //    private int prevX = -1;
+    //    private int prevY = -1;
+    //    private List<List<Vector2>> vertices;
+    //    private int startingPixelindex;
+    //    Vector2[][] GenerateShadowCollider(DoubleInt _texturePos) {
+    //        if (shadowPixels == null)
+    //            shadowPixels = new List<Color32>(ShadowMap.GetPixels32());
+    //        for (int y = 0; y < assetPixels.Length; y++)
+    //            assetPixels[y] = new Color32[Grid.TILE_RESOLUTION];
+
+    //        for (int y = 0; y < assetPixels.Length; y++) {
+    //            for (int x = 0; x < assetPixels[y].Length; x++) {
+    //                if(y < assetPixels.Length * 0.5f)
+    //                    assetPixels[y][x] = shadowPixels[Mathf.RoundToInt((Grid.TILE_RESOLUTION * (_texturePos.Y + y)) + (_texturePos.X + x))];
+    //                else
+    //                    assetPixels[y][x] = shadowPixels[Mathf.RoundToInt((Grid.TILE_RESOLUTION * (_texturePos.Y + y + 1)) + (_texturePos.X + x))];
+    //            }
+    //        }
+
+    //        startingPixels.Clear();
+    //        for (int y = 0; y < assetPixels.Length; y++) {
+    //            for (int x = 0; x < assetPixels[y].Length; x++) {
+                    
+    //                // find a pixel for each path and cache as starting points
+    //                if (assetPixels[y][x].a > 0 && !startingPixels.ContainsKey(assetPixels[y][x].a))
+    //                    startingPixels.Add(assetPixels[y][x].a, new Vector2(x, y));
+    //            }
+    //        }
+
+    //        startingPixelindex = 0;
+    //        vertices = new List<List<Vector2>>(startingPixels.Count);
+    //        foreach (KeyValuePair<int, Vector2> pixel in startingPixels) {
+    //            vertices[startingPixelindex] = new List<Vector2>();
+    //            currentX = (int)pixel.Value.x;
+    //            currentY = (int)pixel.Value.y;
+    //            prevX = currentX;
+    //            prevY = currentY;
+
+    //            while (currentX != pixel.Value.x && currentY != pixel.Value.y) {
+    //                // if corner, add as vertex
+    //                if (assetPixels[currentY][currentX].r == 255)
+    //                    vertices[startingPixelindex].Add(new Vector2(currentX, currentY));
+
+    //                if (currentX - prevX != -1 || currentY - prevY != 0) { // if not from L, try L
+    //                    if (assetPixels[currentY][currentX - 1].a == pixel.Key) {
+    //                        prevX = currentX;
+    //                        prevY = currentY;
+    //                        currentX -= 1;
+    //                        continue;
+    //                    }
+    //                }
+    //                if (currentX - prevX != -1 || currentY - prevY != 1) { // if not from TL, try TL
+    //                    if (assetPixels[currentY + 1][currentX - 1].a == pixel.Key) {
+    //                        prevX = currentX;
+    //                        prevY = currentY;
+    //                        currentX -= 1;
+    //                        currentY += 1;
+    //                        continue;
+    //                    }
+    //                }
+    //                if (currentX - prevX != 0 || currentY - prevY != 1) { // if not from T, try T
+    //                    if (assetPixels[currentY + 1][currentX].a == pixel.Key) {
+    //                        prevX = currentX;
+    //                        prevY = currentY;
+    //                        currentY += 1;
+    //                        continue;
+    //                    }
+    //                }
+    //                if (currentX - prevX != 1 || currentY - prevY != 1) { // if not from TR, try TR
+    //                    if (assetPixels[currentY + 1][currentX + 1].a == pixel.Key) {
+    //                        prevX = currentX;
+    //                        prevY = currentY;
+    //                        currentX += 1;
+    //                        currentY += 1;
+    //                        continue;
+    //                    }
+    //                }
+    //                if (currentX - prevX != 1 || currentY - prevY != 0) { // if not from R, try R
+    //                    if (assetPixels[currentY][currentX + 1].a == pixel.Key) {
+    //                        prevX = currentX;
+    //                        prevY = currentY;
+    //                        currentX += 1;
+    //                        continue;
+    //                    }
+    //                }
+    //                if (currentX - prevX != 1 || currentY - prevY != -1) { // if not from BR, try BR
+    //                    if (assetPixels[currentY - 1][currentX + 1].a == pixel.Key) {
+    //                        prevX = currentX;
+    //                        prevY = currentY;
+    //                        currentX += 1;
+    //                        currentY -= 1;
+    //                        continue;
+    //                    }
+    //                }
+    //                if (currentX - prevX != 0 || currentY - prevY != -1) { // if not from B, try B
+    //                    if (assetPixels[currentY - 1][currentX].a == pixel.Key) {
+    //                        prevX = currentX;
+    //                        prevY = currentY;
+    //                        currentY -= 1;
+    //                        continue;
+    //                    }
+    //                }
+    //                if (currentX - prevX != -1 || currentY - prevY != -1) { // // if not from BL, try BL
+    //                    if (assetPixels[currentY - 1][currentX - 1].a == pixel.Key) {
+    //                        prevX = currentX;
+    //                        prevY = currentY;
+    //                        currentX -= 1;
+    //                        currentY -= 1;
+    //                        continue;
+    //                    }
+    //                }
+    //            }
+
+    //            startingPixelindex++;
+    //        }
+
+    //        Vector2[][] array = new Vector2[vertices.Count][];
+    //        for (int i = 0; i < array.Length; i++)
+    //            array[i] = vertices[i].ToArray();
+    //        return array;
+    //    }
     }
+    public WallSet[] WallSets;
 
     public GameObject TilePrefab;
 
@@ -434,6 +776,7 @@ public class CachedAssets : MonoBehaviour {
     void Awake() {
         Instance = this;
     }
+
 
     public DoubleInt GetWallAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isBottom, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
         switch (_tileType) {
@@ -540,7 +883,6 @@ public class CachedAssets : MonoBehaviour {
 
         return null;
     }
-
 	public DoubleInt GetFloorAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
 		switch (_tileType) {
 			case Tile.Type.Empty:
@@ -622,7 +964,6 @@ public class CachedAssets : MonoBehaviour {
 				throw new System.NotImplementedException(_tileType + " hasn't been properly implemented yet!");
 		}
 	}
-
     public DoubleInt GetWallCornerAsset(bool _TL, bool _TR, bool _BR, bool _BL) {
         if (_TL) {
             if (_TR) {
