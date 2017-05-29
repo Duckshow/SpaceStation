@@ -6,11 +6,13 @@ public class BresenhamsLine : IEnumerable
 {
     Vector2 start;
     Vector2 end;
- 
+    float resolution;
+
     public BresenhamsLine( Vector2 _start, Vector2 _end, float _resolution )
     {
-        start = _start;
-        end = _end * _resolution;
+        resolution = _resolution;
+        start = _start * resolution;
+        end = _end * resolution;
     }
  
 	Vector2 result;
@@ -40,6 +42,8 @@ public class BresenhamsLine : IEnumerable
             {
                 result.x = (int)( x );
                 result.y = (int)( y );
+                result.x *= (1 / resolution);
+                result.y *= (1 / resolution);
                 yield return result;
  
                 if( x == (int)end.x )
@@ -62,6 +66,8 @@ public class BresenhamsLine : IEnumerable
             {
                 result.x = (int)( x );
                 result.y = (int)( y );
+                result.x *= (1 / resolution);
+                result.y *= (1 / resolution);
                 yield return result;
  
                 if( y == (int)end.y )
