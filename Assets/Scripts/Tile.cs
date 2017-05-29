@@ -120,20 +120,6 @@ public class Tile : IHeapItem<Tile> {
     [NonSerialized] public bool IsBlocked_R = false;
     [NonSerialized] public bool IsBlocked_B = false;
 
-    // optimization: could probably cache these some smarter way
- //   [NonSerialized] public Tile ConnectedDiagonal_L;
-	//[NonSerialized] public Tile ConnectedDiagonal_T;
-	//[NonSerialized] public Tile ConnectedDiagonal_R;
-	//[NonSerialized] public Tile ConnectedDiagonal_B;
-	//[NonSerialized] public Tile ConnectedDiagonalFloor_L;
-	//[NonSerialized] public Tile ConnectedDiagonalFloor_T;
-	//[NonSerialized] public Tile ConnectedDiagonalFloor_R;
-	//[NonSerialized] public Tile ConnectedDiagonalFloor_B;
- //   [NonSerialized] public Tile ConnectedDoorOrAirlock_L;
-	//[NonSerialized] public Tile ConnectedDoorOrAirlock_T;
-	//[NonSerialized] public Tile ConnectedDoorOrAirlock_R;
-	//[NonSerialized] public Tile ConnectedDoorOrAirlock_B;
-
     [NonSerialized] public Tile ParentTile;
     [NonSerialized] public int GCost;
     [NonSerialized] public int HCost;
