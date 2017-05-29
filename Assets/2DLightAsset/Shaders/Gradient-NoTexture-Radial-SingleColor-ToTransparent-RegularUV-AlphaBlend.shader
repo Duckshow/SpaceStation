@@ -24,7 +24,7 @@ Shader "Gradient/No Texture/Radial/Single-Color/To Transparent/Regular UV/Alpha 
 			//Set up blending and other operations
 			Cull Off			// Back | Front | Off - Do not cull any triangle faces
 			ZTest LEqual		//Less | Greater | LEqual | GEqual | Equal | NotEqual | Always - Z-Buffer/Depth testing is off
-			ZWrite On			//On | Off - Z coordinates from pixel positions will not be written to the Z/Depth buffer
+			ZWrite Off			//On | Off - Z coordinates from pixel positions will not be written to the Z/Depth buffer
 			AlphaTest Off		//0.0	//Less | Greater | LEqual | GEqual | Equal | NotEqual | Always   (also 0.0 (float value) | [_AlphaTestThreshold]) - All pixels will continue through the graphics pipeline because alpha testing is Off
 			Lighting Off		//On | Off - Lighting will not be calculated or applied
 			ColorMask RGBA		//RGBA | RGB | A | 0 | any combination of R, G, B, A - Color channels allowed to be modified in the backbuffer are: RGBA
