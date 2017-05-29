@@ -9,7 +9,7 @@ public class UVController : MonoBehaviour {
 
     //public Tile.Type Type;
     public Tile.TileOrientation Orientation;
-	public enum SortingLayerEnum { Floor, Bottom, Top }
+	public enum SortingLayerEnum { Floor, FloorCorners, Bottom, Top, TopCorners }
 	public SortingLayerEnum SortingLayer;
 
     private MeshFilter myMeshFilter;
@@ -208,10 +208,17 @@ public class UVController : MonoBehaviour {
             Setup();
 
         regularSortOrder = GetSortOrderFromGridY(_gridY);
-		if (SortingLayer == SortingLayerEnum.Floor)
-			regularSortOrder -= 1;
+		// if (SortingLayer == SortingLayerEnum.Floor)
+		// 	regularSortOrder -= 2;
+        // else 
+        if(SortingLayer == SortingLayerEnum.FloorCorners)
+            regularSortOrder += 1;
+        else if(SortingLayer == SortingLayerEnum.Bottom)
+            regularSortOrder += 2;
 		else if (SortingLayer == SortingLayerEnum.Top)
-            regularSortOrder += 7; // hack to account for transforms in an actor
+            regularSortOrder += 8; // hack to account for 5 transforms in an actor
+        else if(SortingLayer == SortingLayerEnum.TopCorners)
+            regularSortOrder += 9;
 
         if(!customSortOrder.HasValue)
             myRenderer.sortingOrder = regularSortOrder;
