@@ -3,6 +3,48 @@ using System;
 
 public class Tile : IHeapItem<Tile> {
 
+    public enum PurposeEnum {
+            Floor_Single, Floor_Fourway,
+            Floor_Vertical_T, Floor_Vertical_M, Floor_Vertical_B,
+            Floor_Horizontal_L, Floor_Horizontal_M, Floor_Horizontal_R,
+            Floor_Corner_TR, Floor_Corner_TL, Floor_Corner_BR, Floor_Corner_BL,
+            Floor_Tee_R, Floor_Tee_L, Floor_Tee_T, Floor_Tee_B,
+            Floor_Diagonal_TR, Floor_Diagonal_TR_R, Floor_Diagonal_TR_T, Floor_Diagonal_TR_TR,
+            Floor_Diagonal_TL, Floor_Diagonal_TL_L, Floor_Diagonal_TL_T, Floor_Diagonal_TL_TL,
+            Floor_Diagonal_BR, Floor_Diagonal_BR_R, Floor_Diagonal_BR_B, Floor_Diagonal_BR_BR,
+            Floor_Diagonal_BL, Floor_Diagonal_BL_L, Floor_Diagonal_BL_B, Floor_Diagonal_BL_BL,
+            FloorCornerHider_All, FloorCornerHider_TL_BR, FloorCornerHider_TR_BL,
+            FloorCornerHider_TL, FloorCornerHider_TL_TR, FloorCornerHider_TL_TR_BR,
+            FloorCornerHider_TR, FloorCornerHider_TR_BR, FloorCornerHider_TR_BR_BL,
+            FloorCornerHider_BR, FloorCornerHider_BR_BL, FloorCornerHider_BR_BL_TL,
+            FloorCornerHider_BL, FloorCornerHider_BL_TL, FloorCornerHider_BL_TL_TR,
+            Wall_Single, Wall_Fourway,
+            Wall_Vertical_T, Wall_Vertical_M, Wall_Vertical_B,
+            Wall_Horizontal_L, Wall_Horizontal_M, Wall_Horizontal_R,
+            Wall_Corner_TR, Wall_Corner_TL, Wall_Corner_BR, Wall_Corner_BL,
+            Wall_Tee_R, Wall_Tee_L, Wall_Tee_T, Wall_Tee_B,
+            Wall_Diagonal_TR, Wall_Diagonal_TR_R, Wall_Diagonal_TR_T, Wall_Diagonal_TR_TR,
+            Wall_Diagonal_TL, Wall_Diagonal_TL_L, Wall_Diagonal_TL_T, Wall_Diagonal_TL_TL,
+            Wall_Diagonal_BR, Wall_Diagonal_BR_R, Wall_Diagonal_BR_B, Wall_Diagonal_BR_BR,
+            Wall_Diagonal_BL, Wall_Diagonal_BL_L, Wall_Diagonal_BL_B, Wall_Diagonal_BL_BL,
+            WallCornerHider_All, WallCornerHider_TL_BR, WallCornerHider_TR_BL, 
+            WallCornerHider_TL, WallCornerHider_TL_TR, WallCornerHider_TL_TR_BR,
+            WallCornerHider_TR, WallCornerHider_TR_BR, WallCornerHider_TR_BR_BL,
+            WallCornerHider_BR, WallCornerHider_BR_BL, WallCornerHider_BR_BL_TL,
+            WallCornerHider_BL, WallCornerHider_BL_TL, WallCornerHider_BL_TL_TR,
+            DoorVertical, 
+            DoorHorizontal,
+            AirlockHorizontal_OpenBottom_BOTTOM,
+            AirlockHorizontal_OpenBottom_TOP,
+            AirlockHorizontal_OpenTop,
+            AirlockHorizontal_Wait,
+            AirlockVertical_OpenLeft_BOTTOM,
+            AirlockVertical_OpenLeft_TOP,
+            AirlockVertical_OpenRight_BOTTOM,
+            AirlockVertical_OpenRight_TOP,
+            AirlockVertical_Wait
+        }
+    public PurposeEnum ExactType;
     public enum Type { Empty, Solid, Diagonal, Door, Airlock }
 	private Type wallType = Type.Empty;
 	public Type _WallType_ { get { return wallType; } private set { wallType = value; }}
@@ -975,5 +1017,106 @@ public class Tile : IHeapItem<Tile> {
         }
 
         _BuildingAllowed_ = _b;
+    }
+
+    PurposeEnum GetExactType(){
+        if (_WallType_ != Type.Empty){
+            switch (_WallType_) {
+                case Tile.Type.Solid:
+                    if (CanConnect_L && HasConnectable_L) {
+                        if (CanConnect_T && HasConnectable_T) {
+                            if (CanConnect_R && HasConnectable_R) {
+                                if (CanConnect_B && HasConnectable_B) return PurposeEnum.Wall_Fourway;
+                                else return PurposeEnum.Wall_Tee_T;
+                            }
+                            else if (CanConnect_B && HasConnectable_B) return PurposeEnum.Wall_Tee_L;
+                            else return PurposeEnum.Wall_Corner_TL; // NOT EXACT ENOUGH! D:
+                        }
+                        else if (_hasConnection_Right) {
+                            if (_hasConnection_Bottom) return WallSet.wall_Tee_Bottom;
+                            else return WallSet.wall_Horizontal_M;
+                        }
+                        else if (_hasConnection_Bottom) return WallSet.wall_Corner_BottomLeft;
+                        else return WallSet.wall_Horizontal_R;
+                    }
+                    else if (_hasConnection_Top) {
+                        if (_hasConnection_Right) {
+                            if (_hasConnection_Bottom) return WallSet.wall_Tee_Right;
+                            else return WallSet.wall_Corner_TopRight;
+                        }
+                        else if (_hasConnection_Bottom) return WallSet.wall_Vertical_M;
+                        else return WallSet.wall_Vertical_B;
+                    }
+                    else if (_hasConnection_Right) {
+                        if (_hasConnection_Bottom) return WallSet.wall_Corner_BottomRight;
+                        else return WallSet.wall_Horizontal_L;
+                    }
+                    else if (_hasConnection_Bottom) return WallSet.wall_Vertical_T;
+                    else return WallSet.wall_Single;
+
+                case Tile.Type.Diagonal:
+                    switch (_tileOrientation) {
+                        case Tile.TileOrientation.TopRight: {
+                                if (_hasConnection_Top) {
+                                    if (_hasConnection_Right) return (_isBottom ? WallSet.wall_Diagonal_TopRight_TR : null);
+                                    else return (_isBottom ? WallSet.wall_Diagonal_TopRight_T : null);
+                                }
+                                else if(_hasConnection_Right) return (_isBottom ? WallSet.wall_Diagonal_TopRight_R : null);
+                                else return (_isBottom ? WallSet.wall_Diagonal_TopRight : null);
+                            }
+
+                        case Tile.TileOrientation.TopLeft: {
+                                if (_hasConnection_Top) {
+                                    if (_hasConnection_Left) return (_isBottom ? WallSet.wall_Diagonal_TopLeft_TL : null);
+                                    else return (_isBottom ? WallSet.wall_Diagonal_TopLeft_T : null);
+                                }
+                                else if(_hasConnection_Left) return (_isBottom ? WallSet.wall_Diagonal_TopLeft_L : null);
+                                else return (_isBottom ? WallSet.wall_Diagonal_TopLeft : null);
+                            }
+                        case Tile.TileOrientation.BottomRight: {
+                                if (_hasConnection_Bottom) {
+                                    if (_hasConnection_Right) return (_isBottom ? null : WallSet.wall_Diagonal_BottomRight_BR);
+                                    else return(_isBottom ? null : WallSet.wall_Diagonal_BottomRight_B);
+                                }
+                                else if (_hasConnection_Right) return (_isBottom ? null : WallSet.wall_Diagonal_BottomRight_R);
+                                else return(_isBottom ? null : WallSet.wall_Diagonal_BottomRight);
+                            }
+                        case Tile.TileOrientation.BottomLeft: {
+                                if (_hasConnection_Bottom) {
+                                    if (_hasConnection_Left) return (_isBottom ? null : WallSet.wall_Diagonal_BottomLeft_BL);
+                                    else return(_isBottom ? null : WallSet.wall_Diagonal_BottomLeft_B);
+                                }
+                                else if (_hasConnection_Left) return (_isBottom ? null : WallSet.wall_Diagonal_BottomLeft_L);
+                                else return(_isBottom ? null : WallSet.wall_Diagonal_BottomLeft);
+                            }
+                        default:
+                            throw new System.Exception (_tileOrientation + " is not supported by diagonals!");
+                    }
+                case Tile.Type.Door:
+                    switch (_tileOrientation) {
+                        case Tile.TileOrientation.None:
+                        case Tile.TileOrientation.Bottom:
+                        case Tile.TileOrientation.Top:
+                            return _isBottom ? WallSet.anim_DoorVertical_Open.GetBottomFirstFrame() : WallSet.anim_DoorVertical_Open.GetTopFirstFrame();
+                        case Tile.TileOrientation.Left:
+                        case Tile.TileOrientation.Right:
+                            return _isBottom ? WallSet.anim_DoorHorizontal_Open.GetBottomFirstFrame() : WallSet.anim_DoorHorizontal_Open.GetTopFirstFrame();
+                    }
+                    break;
+                case Tile.Type.Airlock:
+                    switch (_tileOrientation) {
+                        case Tile.TileOrientation.None:
+                        case Tile.TileOrientation.Bottom:
+                        case Tile.TileOrientation.Top:
+                            return _isBottom ? WallSet.anim_AirlockVertical_OpenLeft.GetBottomFirstFrame() : WallSet.anim_AirlockVertical_OpenLeft.GetTopFirstFrame();
+                        case Tile.TileOrientation.Left:
+                        case Tile.TileOrientation.Right:
+                            return _isBottom ? WallSet.anim_AirlockHorizontal_OpenTop.GetBottomFirstFrame() : WallSet.anim_AirlockHorizontal_OpenTop.GetTopFirstFrame();
+                    }
+                    break;
+                default:
+                    throw new System.NotImplementedException(_tileType + " hasn't been properly implemented yet!");
+            }
+        }
     }
 }
