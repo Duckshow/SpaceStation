@@ -65,6 +65,13 @@ public class DynamicLight : MonoBehaviour {
 		RenderLightMesh ();
 		ResetBounds ();
     }
+
+	void Update(){
+		GetAllMeshes();
+		SetLight ();
+		RenderLightMesh ();
+		ResetBounds ();
+	}
 		
 	void GetAllMeshes(){
 		//-- Step 1: obtain all active meshes in the scene --//
@@ -387,6 +394,14 @@ public class DynamicLight : MonoBehaviour {
 			p = 2 - p;
 
 		return p;
+	}
+
+	private List<Tile> tilesInCast = new List<Tile>();
+	private BresenhamsLine cast;
+	void Gridcast(Vector2 _start, Vector2 _end){
+		cast = new BresenhamsLine(_start, _end, 1);
+		foreach(Vector2 _tilePos in cast)
+			tilesInCast.Add(Grid.Instance.GetTileFromWorldPoint(_tilePos));
 	}
 }
 
