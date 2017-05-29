@@ -355,7 +355,7 @@ public class Tile : IHeapItem<Tile> {
 		TopQuad.SortingLayer = UVController.SortingLayerEnum.Top;
         TopQuad.Sort(GridY);
 
-        WallCornerHider.SortingLayer = UVController.SortingLayerEnum.Top;
+        WallCornerHider.SortingLayer = UVController.SortingLayerEnum.TopCorners;
         WallCornerHider.Sort(GridY);
 
         ForceActorStopWhenPassingThis = false;
@@ -550,7 +550,7 @@ public class Tile : IHeapItem<Tile> {
 		FloorQuad.SortingLayer = UVController.SortingLayerEnum.Floor;
 		FloorQuad.Sort(GridY);
 
-        FloorCornerHider.SortingLayer = UVController.SortingLayerEnum.Floor;
+        FloorCornerHider.SortingLayer = UVController.SortingLayerEnum.FloorCorners;
         FloorCornerHider.Sort(GridY);
 
         //ForceActorStopWhenPassingThis = false; // if floor actually needs this, it has to be its own - otherwise breaks airlocks and such!
