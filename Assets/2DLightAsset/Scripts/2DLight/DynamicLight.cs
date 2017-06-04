@@ -77,6 +77,7 @@ public class DynamicLight : MonoBehaviour {
 		//-- Step 1: obtain all active meshes in the scene --//
 		//---------------------------------------------------------------------//
 
+        kjbhiubhiu // continue here and convert this stuff
 		Collider2D [] allColl2D = Physics2D.OverlapCircleAll(transform.position, lightRadius, layer);
 		allMeshes = new PolygonCollider2D[allColl2D.Length];
 		for (int i=0; i<allColl2D.Length; i++)
@@ -91,18 +92,19 @@ public class DynamicLight : MonoBehaviour {
     private PolygonCollider2D polCollider;
     private Verts v;
     private Vector3 worldPoint;
-    private RaycastHit2D rayHit;
+    private Vector2 rayHit;
     private int posLowAngle;
     private int posHighAngle;
     private float lowestAngle;
     private float highestAngle;
-    private Vector3 fromCast;
+    private Vector2 fromCast;
     private bool isEndpoint;
     private Vector2 from;
     private Vector2 dir;
     private float mag;
+    private Vector2 end;
     private const float CHECK_POINT_LAST_RAY_OFFSET = 0.005f;
-    private RaycastHit2D rayCont;
+    private Vector2 rayCont;
     private Vector3 hitPos;
     private Vector2 newDir;
     private Verts vL;
@@ -136,10 +138,9 @@ public class DynamicLight : MonoBehaviour {
 					worldPoint = polCollider.transform.TransformPoint(polCollider.points[j]);
 
                     //rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
-                    rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
-                    if (rayHit){
-						v.Pos = rayHit.point;
-						if(worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange))
+                    if (Gridcast(transform.position, worldPoint, out rayHit)) {
+						v.Pos = rayHit;
+						if(worldPoint.sqrMagnitude >= (rayHit.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.sqrMagnitude + magRange))
 							v.Endpoint = true;
 					}
                     else {
@@ -210,7 +211,7 @@ public class DynamicLight : MonoBehaviour {
 				// -- r == 1 --> left ray
 				for (int r = 0; r < 2; r++){
 					//-- Cast a ray in same direction continuos mode, start a last point of last ray --//
-					fromCast = new Vector3();
+					fromCast = new Vector2();
 					isEndpoint = false;
 						
 					if(r == 0){
@@ -223,13 +224,12 @@ public class DynamicLight : MonoBehaviour {
 					}
 						
 					if(isEndpoint == true){
-						dir = fromCast - transform.position;
+						dir = fromCast - (Vector2)transform.position;
 						mag = lightRadius;// - fromCast.magnitude;
-						from = (Vector2)fromCast + (dir * CHECK_POINT_LAST_RAY_OFFSET);
-							
-						rayCont = Physics2D.Raycast(from, dir, mag, layer);
-						if(rayCont)
-							hitPos = rayCont.point;
+						from = fromCast + (dir * CHECK_POINT_LAST_RAY_OFFSET);
+                        end = (from + (dir.normalized * mag));
+                        if ((end - from).magnitude <= mag && Gridcast(from, end, out rayCont))
+							hitPos = rayCont;
 						else{
 							newDir = transform.InverseTransformDirection(dir);	//local p
 							hitPos = (Vector2)transform.TransformPoint( newDir.normalized * mag); //world p
@@ -268,11 +268,13 @@ public class DynamicLight : MonoBehaviour {
 			v.Pos *= lightRadius;
 			v.Pos += transform.position;
 				
-			rayHit = Physics2D.Raycast(transform.position, v.Pos - transform.position, lightRadius, layer);
-			if (!rayHit) {
+			//rayHit = Physics2D.Raycast(transform.position, v.Pos - transform.position, lightRadius, layer);
+            if (!Gridcast(transform.position, v.Pos, out rayHit)) {
 				v.Pos = transform.InverseTransformPoint(v.Pos);
 				allVertices.Add(v);
-			}
+            }
+			//if (!rayHit) {
+			//}
 		}
 			
 		//-- Step 4: Sort each vertex by angle (along sweep ray 0 - 2PI)--//
@@ -396,12 +398,46 @@ public class DynamicLight : MonoBehaviour {
 		return p;
 	}
 
-	private List<Tile> tilesInCast = new List<Tile>();
+	private List<Tile> tiles = new List<Tile>();
 	private BresenhamsLine cast;
-	void Gridcast(Vector2 _start, Vector2 _end){
-		cast = new BresenhamsLine(_start, _end, 1);
-		foreach(Vector2 _tilePos in cast)
-			tilesInCast.Add(Grid.Instance.GetTileFromWorldPoint(_tilePos));
-	}
+    private Tile t;
+    private PolygonCollider2D shadowCollider;
+    private int currentIndex;
+    bool Gridcast(Vector2 _start, Vector2 _end, out Vector2 _rayhit) {
+
+        // find tiles along cast with a shadowcollider
+        cast = new BresenhamsLine(_start, _end, 1);
+        foreach (Vector2 _tilePos in cast) {
+            t = Grid.Instance.GetTileFromWorldPoint(_tilePos);
+            //if (CachedAssets.Instance.WallSets[0].GetColliderPaths(t.ExactType, t.Animator.CurrentFrame) == null)
+            //    continue;
+
+            tiles.Add(t);
+        }
+
+        if (tiles.Count > 0) {
+            shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[0].ExactType, tiles[0].Animator.CurrentFrame);
+            shadowCollider.transform.position = tiles[0].WorldPosition;
+        }
+        cast = new BresenhamsLine(_start, _end, Grid.TILE_RESOLUTION);
+        foreach (Vector2 _pixelPos in cast) {
+            // if pixel is closer to next collider, set next collider as current
+            if (currentIndex < tiles.Count - 1 && (tiles[currentIndex + 1].WorldPosition - _pixelPos).magnitude < (tiles[currentIndex].WorldPosition - _pixelPos).magnitude) {
+                currentIndex++;
+
+                shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[currentIndex].ExactType, tiles[currentIndex].Animator.CurrentFrame);
+                if(shadowCollider != null)
+                    shadowCollider.transform.position = tiles[currentIndex].WorldPosition;
+            }
+
+            if (shadowCollider != null && shadowCollider.OverlapPoint(_pixelPos)) {
+                _rayhit = _pixelPos;
+                return true;
+            }
+        }
+
+        _rayhit = Vector2.zero;
+        return false;
+    }
 }
 

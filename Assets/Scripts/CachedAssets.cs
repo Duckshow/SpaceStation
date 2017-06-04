@@ -41,9 +41,10 @@ public class CachedAssets : MonoBehaviour {
     public class WallSet {
 
         public const float TEXTURE_SIZE_X = 1024;
-        public const float TEXTURE_SIZE_Y = 2176;
+        public const float TEXTURE_SIZE_Y = 2560;
 
-        private enum P { // P for Purpose
+        public enum P { // P for Purpose
+            Null,
             Floor_Single,
             Floor_Fourway,
             Floor_Vertical_T,
@@ -140,15 +141,18 @@ public class CachedAssets : MonoBehaviour {
             WallCornerHider_BL_TL_TR,
             DoorVertical,
             DoorHorizontal,
-            AirlockHorizontal_OpenBottom_BOTTOM,
-            AirlockHorizontal_OpenBottom_TOP,
-            AirlockHorizontal_OpenTop,
+            AirlockHorizontal_Open_B, // TODO: give all tiles a unique asset, aka bottom airlocks shouldn't constantly refer to airlock_open_L :/
+            AirlockHorizontal_Open_B_TOP,
+            AirlockHorizontal_Open_T,
+            AirlockHorizontal_Open_T_TOP,
             AirlockHorizontal_Wait,
-            AirlockVertical_OpenLeft_BOTTOM,
-            AirlockVertical_OpenLeft_TOP,
-            AirlockVertical_OpenRight_BOTTOM,
-            AirlockVertical_OpenRight_TOP,
-            AirlockVertical_Wait
+            AirlockHorizontal_Wait_TOP,
+            AirlockVertical_Open_L,
+            AirlockVertical_Open_L_TOP,
+            AirlockVertical_Open_R,
+            AirlockVertical_Open_R_TOP,
+            AirlockVertical_Wait,
+            AirlockVertical_Wait_TOP
         }
         private static List<List<P>> AllAssetPurposes = new List<List<P>>() {
             new List<P>() {
@@ -264,31 +268,40 @@ public class CachedAssets : MonoBehaviour {
                 P.DoorHorizontal
             },
             new List<P>() {
-                P.AirlockHorizontal_OpenBottom_BOTTOM
+                P.AirlockHorizontal_Open_B
             },
             new List<P>() {
-                P.AirlockHorizontal_OpenBottom_TOP
+                P.AirlockHorizontal_Open_B_TOP
             },
             new List<P>() {
-                P.AirlockHorizontal_OpenTop
+                P.AirlockHorizontal_Open_T
+            },
+            new List<P>() {
+                P.AirlockHorizontal_Open_T_TOP
             },
             new List<P>() {
                 P.AirlockHorizontal_Wait
             },
             new List<P>() {
-                P.AirlockVertical_OpenLeft_BOTTOM
+                P.AirlockHorizontal_Wait_TOP
             },
             new List<P>() {
-                P.AirlockVertical_OpenLeft_TOP
+                P.AirlockVertical_Open_L
             },
             new List<P>() {
-                P.AirlockVertical_OpenRight_BOTTOM
+                P.AirlockVertical_Open_L_TOP
             },
             new List<P>() {
-                P.AirlockVertical_OpenRight_TOP
+                P.AirlockVertical_Open_R
+            },
+            new List<P>() {
+                P.AirlockVertical_Open_R_TOP
             },
             new List<P>() {
                 P.AirlockVertical_Wait
+            },
+            new List<P>() {
+                P.AirlockVertical_Wait_TOP
             }
         };
         private static DoubleInt GetTextureCoord(P id) {
@@ -400,225 +413,200 @@ public class CachedAssets : MonoBehaviour {
         public static DoubleInt wallCornerHider_BL_TL = GetTextureCoord(P.WallCornerHider_BL_TL);
         public static DoubleInt wallCornerHider_BL_TL_TR = GetTextureCoord(P.WallCornerHider_BL_TL_TR);
 
-        public static TileAnimator.TileAnimation anim_DoorVertical_Open = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorVertical).Y, -1, 4);
-        public static TileAnimator.TileAnimation anim_DoorVertical_Close = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorVertical).Y, -1, 4).Reverse();
-        public static TileAnimator.TileAnimation anim_DoorHorizontal_Open = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorHorizontal).Y, -1, 4);
-        public static TileAnimator.TileAnimation anim_DoorHorizontal_Close = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorHorizontal).Y, -1, 4).Reverse();
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_OpenBottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_OpenBottom_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_CloseBottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_OpenBottom_TOP).Y, 4).Reverse();
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_OpenTop = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_OpenTop).Y, 4, bottomForceFrameX: 0);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_CloseTop = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_OpenTop).Y, 4, bottomForceFrameX: 0).Reverse();
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_OpenBottom_BOTTOM).Y, GetTextureCoord(P.AirlockHorizontal_Wait).Y, 8, bottomForceFrameX: 0);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_OpenLeft = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_OpenLeft_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_CloseLeft = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_OpenLeft_TOP).Y, 4).Reverse();
-        public static TileAnimator.TileAnimation anim_AirlockVertical_OpenRight = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenRight_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_OpenRight_TOP).Y, 4, bottomForceFirstFrame: GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM), topForceFirstFrame: GetTextureCoord(P.AirlockVertical_OpenLeft_TOP));
-        public static TileAnimator.TileAnimation anim_AirlockVertical_CloseRight = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenRight_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_OpenRight_TOP).Y, 4, bottomForceFirstFrame: GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM), topForceFirstFrame: GetTextureCoord(P.AirlockVertical_OpenLeft_TOP)).Reverse();
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_OpenLeft_BOTTOM).Y, GetTextureCoord(P.AirlockVertical_Wait).Y, 8, bottomForceFrameX: 0);
+        public static TileAnimator.TileAnimation anim_DoorVertical_Open = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorVertical).Y, 4);
+        public static TileAnimator.TileAnimation anim_DoorVertical_Close = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorVertical).Y, 4).Reverse();
+        public static TileAnimator.TileAnimation anim_DoorHorizontal_Open = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorHorizontal).Y, 4);
+        public static TileAnimator.TileAnimation anim_DoorHorizontal_Close = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorHorizontal).Y, 4).Reverse();
+
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_B_TOP).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_B).Y, 4);
+
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Close_B_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_B_TOP).Y, 4).Reverse();
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Close_B_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_B).Y, 4).Reverse();
+
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_T_TOP).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_T).Y, 4);
+
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Close_T_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_T_TOP).Y, 4).Reverse();
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Close_T_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_T).Y, 4).Reverse();
+
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Wait_TOP).Y, 8);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Wait).Y, 8);
+
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_L_TOP).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_L).Y, 4);
+
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Close_L_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_L_TOP).Y, 4).Reverse();
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Close_L_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_L).Y, 4).Reverse();
+
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_R_TOP).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_R).Y, 4);
+
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Close_R_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_R_TOP).Y, 4).Reverse();
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Close_R_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_R).Y, 4).Reverse();
+
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Wait_TOP).Y, 8);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Wait).Y, 8);
 
         public Texture2D ShadowMap;
         [System.Serializable]
-        public class PathVertices{ // workaround for serializing jagged array
+        public class ColliderPaths { // workaround for serializing jagged array
+            public ColliderVertices[] Paths;
+            public ColliderPaths() { }
+            public ColliderPaths(int _length) { Paths = new ColliderVertices[_length]; }
+        }
+        [System.Serializable]
+        public class ColliderVertices{ // workaround for serializing jagged array
             public Vector2[] Vertices;
-            public PathVertices(){ }
-            public PathVertices(int _length){ Vertices = new Vector2[_length]; }
+            public ColliderVertices(){ }
+            public ColliderVertices(int _length){ Vertices = new Vector2[_length]; }
         }
         // note: code for generating these can be found in CachedAssetsEditor.cs
-        public PathVertices[] wall_Single_shadow;
-        public PathVertices[] wall_FourWay_shadow;
-        public PathVertices[] wall_Vertical_T_shadow;
-        public PathVertices[] wall_Vertical_M_shadow;
-        public PathVertices[] wall_Vertical_B_shadow;
-        public PathVertices[] wall_Horizontal_L_shadow;
-        public PathVertices[] wall_Horizontal_M_shadow;
-        public PathVertices[] wall_Horizontal_R_shadow;
+        public ColliderPaths wall_Single_shadow;
+        public ColliderPaths wall_FourWay_shadow;
+        public ColliderPaths wall_Vertical_T_shadow;
+        public ColliderPaths wall_Vertical_M_shadow;
+        public ColliderPaths wall_Vertical_B_shadow;
+        public ColliderPaths wall_Horizontal_L_shadow;
+        public ColliderPaths wall_Horizontal_M_shadow;
+        public ColliderPaths wall_Horizontal_R_shadow;
 
-        public PathVertices[] wall_Corner_TopRight_shadow;
-        public PathVertices[] wall_Corner_TopLeft_shadow;
-        public PathVertices[] wall_Corner_BottomRight_shadow;
-        public PathVertices[] wall_Corner_BottomLeft_shadow;
-        public PathVertices[] wall_Tee_Right_shadow;
-        public PathVertices[] wall_Tee_Left_shadow;
-        public PathVertices[] wall_Tee_Top_shadow;
-        public PathVertices[] wall_Tee_Bottom_shadow;
+        public ColliderPaths wall_Corner_TopRight_shadow;
+        public ColliderPaths wall_Corner_TopLeft_shadow;
+        public ColliderPaths wall_Corner_BottomRight_shadow;
+        public ColliderPaths wall_Corner_BottomLeft_shadow;
+        public ColliderPaths wall_Tee_Right_shadow;
+        public ColliderPaths wall_Tee_Left_shadow;
+        public ColliderPaths wall_Tee_Top_shadow;
+        public ColliderPaths wall_Tee_Bottom_shadow;
 
-        public PathVertices[] wall_Diagonal_TopRight_shadow;
-        public PathVertices[] wall_Diagonal_TopRight_T_shadow;
-        public PathVertices[] wall_Diagonal_TopRight_R_shadow;
-        public PathVertices[] wall_Diagonal_TopRight_TR_shadow;
-        public PathVertices[] wall_Diagonal_TopLeft_shadow;
-        public PathVertices[] wall_Diagonal_TopLeft_T_shadow;
-        public PathVertices[] wall_Diagonal_TopLeft_L_shadow;
-        public PathVertices[] wall_Diagonal_TopLeft_TL_shadow;
-        public PathVertices[] wall_Diagonal_BottomRight_shadow;
-        public PathVertices[] wall_Diagonal_BottomRight_B_shadow;
-        public PathVertices[] wall_Diagonal_BottomRight_R_shadow;
-        public PathVertices[] wall_Diagonal_BottomRight_BR_shadow;
-        public PathVertices[] wall_Diagonal_BottomLeft_shadow;
-        public PathVertices[] wall_Diagonal_BottomLeft_B_shadow;
-        public PathVertices[] wall_Diagonal_BottomLeft_L_shadow;
-        public PathVertices[] wall_Diagonal_BottomLeft_BL_shadow;
+        public ColliderPaths wall_Diagonal_TopRight_shadow;
+        public ColliderPaths wall_Diagonal_TopRight_T_shadow;
+        public ColliderPaths wall_Diagonal_TopRight_R_shadow;
+        public ColliderPaths wall_Diagonal_TopRight_TR_shadow;
+        public ColliderPaths wall_Diagonal_TopLeft_shadow;
+        public ColliderPaths wall_Diagonal_TopLeft_T_shadow;
+        public ColliderPaths wall_Diagonal_TopLeft_L_shadow;
+        public ColliderPaths wall_Diagonal_TopLeft_TL_shadow;
+        public ColliderPaths wall_Diagonal_BottomRight_shadow;
+        public ColliderPaths wall_Diagonal_BottomRight_B_shadow;
+        public ColliderPaths wall_Diagonal_BottomRight_R_shadow;
+        public ColliderPaths wall_Diagonal_BottomRight_BR_shadow;
+        public ColliderPaths wall_Diagonal_BottomLeft_shadow;
+        public ColliderPaths wall_Diagonal_BottomLeft_B_shadow;
+        public ColliderPaths wall_Diagonal_BottomLeft_L_shadow;
+        public ColliderPaths wall_Diagonal_BottomLeft_BL_shadow;
 
-        // TODO: animations don't work at all currently - change that!
-        // public PathVertices[][] anim_DoorVertical_Open_shadow;
-        // public PathVertices[][] anim_DoorVertical_Close_shadow;
-        // public PathVertices[][] anim_DoorHorizontal_Open_shadow;
-        // public PathVertices[][] anim_DoorHorizontal_Close_shadow;
-        // public PathVertices[][] anim_AirlockHorizontal_OpenBottom_shadow;
-        // public PathVertices[][] anim_AirlockHorizontal_CloseBottom_shadow;
-        // public PathVertices[][] anim_AirlockHorizontal_OpenTop_shadow;
-        // public PathVertices[][] anim_AirlockHorizontal_CloseTop_shadow;
-        // public PathVertices[][] anim_AirlockHorizontal_Wait_shadow;
-        // public PathVertices[][] anim_AirlockVertical_OpenLeft_shadow;
-        // public PathVertices[][] anim_AirlockVertical_CloseLeft_shadow;
-        // public PathVertices[][] anim_AirlockVertical_OpenRight_shadow;
-        // public PathVertices[][] anim_AirlockVertical_CloseRight_shadow;
-        // public PathVertices[][] anim_AirlockVertical_Wait_shadow;
+        public ColliderPaths[] anim_DoorVertical_Open_shadow;
+        public ColliderPaths[] anim_DoorVertical_Close_shadow;
+        public ColliderPaths[] anim_DoorHorizontal_Open_shadow;
+        public ColliderPaths[] anim_DoorHorizontal_Close_shadow;
+        public ColliderPaths[] anim_AirlockHorizontal_Open_B_shadow;
+        public ColliderPaths[] anim_AirlockHorizontal_Close_B_shadow;
+        public ColliderPaths[] anim_AirlockHorizontal_Open_T_shadow;
+        public ColliderPaths[] anim_AirlockHorizontal_Close_T_shadow;
+        public ColliderPaths[] anim_AirlockHorizontal_Wait_shadow;
+        public ColliderPaths[] anim_AirlockVertical_Open_L_shadow;
+        public ColliderPaths[] anim_AirlockVertical_Close_L_shadow;
+        public ColliderPaths[] anim_AirlockVertical_Open_R_shadow;
+        public ColliderPaths[] anim_AirlockVertical_Close_R_shadow;
+        public ColliderPaths[] anim_AirlockVertical_Wait_shadow;
 
-        private PathVertices[] pv;
-        public PolygonCollider2D GetShadowCollider(P _type){
-            switch(_type){
+        public ColliderPaths GetColliderPaths(P _type, int _animationFrame) { // currently only for assets sorting as Bottom
+            switch (_type) {
                 case P.Wall_Single:
-                    pv = wall_Single_shadow;
-                    break;
+                    return wall_Single_shadow;
                 case P.Wall_Fourway:
-                    pv = wall_FourWay_shadow;
-                    break;
+                    return wall_FourWay_shadow;
                 case P.Wall_Vertical_T:
-                    pv = wall_Vertical_T_shadow;
-                    break;
+                    return wall_Vertical_T_shadow;
                 case P.Wall_Vertical_M:
-                    pv = wall_Vertical_M_shadow;
-                    break;
+                    return wall_Vertical_M_shadow;
                 case P.Wall_Vertical_B:
-                    pv = wall_Vertical_B_shadow;
-                    break;
+                    return wall_Vertical_B_shadow;
                 case P.Wall_Horizontal_L:
-                    pv = wall_Horizontal_L_shadow;
-                    break;
+                    return wall_Horizontal_L_shadow;
                 case P.Wall_Horizontal_M:
-                    pv = wall_Horizontal_M_shadow;
-                    break;
+                    return wall_Horizontal_M_shadow;
                 case P.Wall_Horizontal_R:
-                    pv = wall_Horizontal_R_shadow;
-                    break;
+                    return wall_Horizontal_R_shadow;
                 case P.Wall_Corner_TR:
-                    pv = wall_Corner_TopRight_shadow;
-                    break;
+                    return wall_Corner_TopRight_shadow;
                 case P.Wall_Corner_TL:
-                    pv = wall_Corner_TopLeft_shadow;
-                    break;
+                    return wall_Corner_TopLeft_shadow;
                 case P.Wall_Corner_BR:
-                    pv = wall_Corner_BottomRight_shadow;
-                    break;
+                    return wall_Corner_BottomRight_shadow;
                 case P.Wall_Corner_BL:
-                    pv = wall_Corner_BottomLeft_shadow;
-                    break;
+                    return wall_Corner_BottomLeft_shadow;
                 case P.Wall_Tee_R:
-                    pv = wall_Tee_Right_shadow;
-                    break;
+                    return wall_Tee_Right_shadow;
                 case P.Wall_Tee_L:
-                    pv = wall_Tee_Left_shadow;
-                    break;
+                    return wall_Tee_Left_shadow;
                 case P.Wall_Tee_T:
-                    pv = wall_Tee_Top_shadow;
-                    break;
+                    return wall_Tee_Top_shadow;
                 case P.Wall_Tee_B:
-                    pv = wall_Tee_Bottom_shadow;
-                    break;
+                    return wall_Tee_Bottom_shadow;
                 case P.Wall_Diagonal_TR:
-                    pv = wall_Diagonal_TopRight_shadow;
-                    break;
+                    return wall_Diagonal_TopRight_shadow;
                 case P.Wall_Diagonal_TR_R:
-                    pv = wall_Diagonal_TopRight_R_shadow;
-                    break;
+                    return wall_Diagonal_TopRight_R_shadow;
                 case P.Wall_Diagonal_TR_T:
-                    pv = wall_Diagonal_TopRight_T_shadow;
-                    break;
+                    return wall_Diagonal_TopRight_T_shadow;
                 case P.Wall_Diagonal_TR_TR:
-                    pv = wall_Diagonal_TopRight_TR_shadow;
-                    break;
+                    return wall_Diagonal_TopRight_TR_shadow;
                 case P.Wall_Diagonal_TL:
-                    pv = wall_Diagonal_TopLeft_shadow;
-                    break;
+                    return wall_Diagonal_TopLeft_shadow;
                 case P.Wall_Diagonal_TL_L:
-                    pv = wall_Diagonal_TopLeft_L_shadow;
-                    break;
+                    return wall_Diagonal_TopLeft_L_shadow;
                 case P.Wall_Diagonal_TL_T:
-                    pv = wall_Diagonal_TopLeft_T_shadow;
-                    break;
+                    return wall_Diagonal_TopLeft_T_shadow;
                 case P.Wall_Diagonal_TL_TL:
-                    pv = wall_Diagonal_TopLeft_TL_shadow;
-                    break;
+                    return wall_Diagonal_TopLeft_TL_shadow;
                 case P.Wall_Diagonal_BR:
-                    pv = wall_Diagonal_BottomRight_shadow;
-                    break;
+                    return wall_Diagonal_BottomRight_shadow;
                 case P.Wall_Diagonal_BR_R:
-                    pv = wall_Diagonal_BottomRight_R_shadow;
-                    break;
+                    return wall_Diagonal_BottomRight_R_shadow;
                 case P.Wall_Diagonal_BR_B:
-                    pv = wall_Diagonal_BottomRight_B_shadow;
-                    break;
+                    return wall_Diagonal_BottomRight_B_shadow;
                 case P.Wall_Diagonal_BR_BR:
-                    pv = wall_Diagonal_BottomRight_BR_shadow;
-                    break;
+                    return wall_Diagonal_BottomRight_BR_shadow;
                 case P.Wall_Diagonal_BL:
-                    pv = wall_Diagonal_BottomLeft_shadow;
-                    break;
+                    return wall_Diagonal_BottomLeft_shadow;
                 case P.Wall_Diagonal_BL_L:
-                    pv = wall_Diagonal_BottomLeft_L_shadow;
-                    break;
+                    return wall_Diagonal_BottomLeft_L_shadow;
                 case P.Wall_Diagonal_BL_B:
-                    pv = wall_Diagonal_BottomLeft_B_shadow;
-                    break;
+                    return wall_Diagonal_BottomLeft_B_shadow;
                 case P.Wall_Diagonal_BL_BL:
-                    pv = wall_Diagonal_BottomLeft_BL_shadow;
-                    break;
+                    return wall_Diagonal_BottomLeft_BL_shadow;
+
+                    // TODO: we probably need some more info here - should we return the open or the close animation for example?
+
+                case P.DoorVertical:
+                    return anim_DoorVertical_Open_shadow[_animationFrame];
+                case P.DoorHorizontal:
+                    return anim_DoorHorizontal_Open_shadow[_animationFrame];
+                case P.AirlockHorizontal_Open_B:
+                    return anim_AirlockHorizontal_Open_B_shadow[_animationFrame];
+                case P.AirlockVertical_Open_L:
+                    return anim_AirlockVertical_Open_L_shadow[_animationFrame];
+                case P.AirlockVertical_Open_R:
+                    return anim_AirlockVertical_Open_R_shadow[_animationFrame];
                 default:
-                    pv = null;
-                    break;
-                // case P.DoorVertical:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P.DoorHorizontal:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P.AirlockHorizontal_OpenBottom_BOTTOM:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P.AirlockHorizontal_OpenBottom_TOP:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P.AirlockHorizontal_OpenTop:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P.AirlockHorizontal_Wait:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P.AirlockVertical_OpenLeft_BOTTOM:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P.AirlockVertical_OpenLeft_TOP:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P. AirlockVertical_OpenRight_BOTTOM:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P.AirlockVertical_OpenRight_TOP:
-                //     pv = floor_Single_shadow;
-                //     break;
-                // case P.AirlockVertical_Wait:
-                //     pv = anim_AirlockVertical_Wait;
-                //     break;
+                    return null;
             }
-            if (pv != null){
-                for(int i = 0; i < pv.Length; i++)
-                    ShadowCollider.SetPath(i, pv[i].Vertices);
+        }
+        private ColliderPaths cp;
+        public PolygonCollider2D GetShadowCollider(P _type, int _animationFrame){
+            cp = GetColliderPaths(_type, _animationFrame);
+            if (cp != null){
+                for(int i = 0; i < cp.Paths.Length; i++)
+                    Instance.ShadowCollider.SetPath(i, cp.Paths[i].Vertices);
             }
-            return ShadowCollider;
+            return Instance.ShadowCollider;
         }
     }
     public WallSet[] WallSets;
-    public static PolygonCollider2D ShadowCollider;
+    public PolygonCollider2D ShadowCollider;
     public GameObject TilePrefab;
 
     [Header("Character Assets")]
@@ -633,6 +621,207 @@ public class CachedAssets : MonoBehaviour {
     }
 
 
+    private bool isConnected_L;
+    private bool isConnected_T;
+    private bool isConnected_R;
+    private bool isConnected_B;
+    public WallSet.P GetTileDefinition(Tile _tile) {
+        isConnected_L = false;
+        isConnected_T = false;
+        isConnected_R = false;
+        isConnected_B = false;
+
+        if (_tile._WallType_ != Tile.Type.Empty) {
+            isConnected_L = _tile.CanConnect_L && _tile.HasConnectable_L;
+            isConnected_T = _tile.CanConnect_T && _tile.HasConnectable_T;
+            isConnected_R = _tile.CanConnect_R && _tile.HasConnectable_R;
+            isConnected_B = _tile.CanConnect_B && _tile.HasConnectable_B;
+
+            switch (_tile._WallType_) {
+                case Tile.Type.Solid:
+                    if (isConnected_L) {
+                        if (isConnected_T) {
+                            if (isConnected_R) {
+                                if (isConnected_B) return WallSet.P.Wall_Fourway;
+                                else return WallSet.P.Wall_Tee_T;
+                            }
+                            else if (isConnected_B) return WallSet.P.Wall_Tee_L;
+                            else return WallSet.P.Wall_Corner_TL;
+                        }
+                        else if (isConnected_R) {
+                            if (isConnected_B) return WallSet.P.Wall_Tee_B;
+                            else return WallSet.P.Wall_Horizontal_M;
+                        }
+                        else if (isConnected_B) return WallSet.P.Wall_Corner_BL;
+                        else return WallSet.P.Wall_Horizontal_R;
+                    }
+                    else if (isConnected_T) {
+                        if (isConnected_R) {
+                            if (isConnected_B) return WallSet.P.Wall_Tee_R;
+                            else return WallSet.P.Wall_Corner_TR;
+                        }
+                        else if (isConnected_B) return WallSet.P.Wall_Vertical_M;
+                        else return WallSet.P.Wall_Vertical_B;
+                    }
+                    else if (isConnected_R) {
+                        if (isConnected_B) return WallSet.P.Wall_Corner_BR;
+                        else return WallSet.P.Wall_Horizontal_L;
+                    }
+                    else if (isConnected_B) return WallSet.P.Wall_Vertical_T;
+                    else return WallSet.P.Wall_Single;
+
+                case Tile.Type.Diagonal:
+                    switch (_tile._Orientation_) {
+                        case Tile.TileOrientation.TopRight: {
+                                if (isConnected_T) {
+                                    if (isConnected_R) return WallSet.P.Wall_Diagonal_TR_TR;
+                                    else return WallSet.P.Wall_Diagonal_TR_T;
+                                }
+                                else if (isConnected_R) return WallSet.P.Wall_Diagonal_TR_R;
+                                else return WallSet.P.Wall_Diagonal_TR;
+                            }
+
+                        case Tile.TileOrientation.TopLeft: {
+                                if (isConnected_T) {
+                                    if (isConnected_L) return WallSet.P.Wall_Diagonal_TL_TL;
+                                    else return WallSet.P.Wall_Diagonal_TL_T;
+                                }
+                                else if (isConnected_L) return WallSet.P.Wall_Diagonal_TL_L;
+                                else return WallSet.P.Wall_Diagonal_TL;
+                            }
+                        case Tile.TileOrientation.BottomRight: {
+                                if (isConnected_B) {
+                                    if (isConnected_R) return WallSet.P.Wall_Diagonal_BR_BR;
+                                    else return WallSet.P.Wall_Diagonal_BR_B;
+                                }
+                                else if (isConnected_R) return WallSet.P.Wall_Diagonal_BR_R;
+                                else return WallSet.P.Wall_Diagonal_BR;
+                            }
+                        case Tile.TileOrientation.BottomLeft: {
+                                if (isConnected_B) {
+                                    if (isConnected_L) return WallSet.P.Wall_Diagonal_BL_BL;
+                                    else return WallSet.P.Wall_Diagonal_BL_B;
+                                }
+                                else if (isConnected_L) return WallSet.P.Wall_Diagonal_BL_L;
+                                else return WallSet.P.Wall_Diagonal_BL;
+                            }
+                        default:
+                            throw new System.Exception(_tile._Orientation_ + " is not supported by diagonals!");
+                    }
+                case Tile.Type.Door:
+                    switch (_tile._Orientation_) {
+                        case Tile.TileOrientation.None:
+                        case Tile.TileOrientation.Bottom:
+                        case Tile.TileOrientation.Top:
+                            return WallSet.P.DoorVertical;
+                        case Tile.TileOrientation.Left:
+                        case Tile.TileOrientation.Right:
+                            return WallSet.P.DoorHorizontal;
+                    }
+                    break;
+                case Tile.Type.Airlock:
+                    switch (_tile._Orientation_) {
+                        case Tile.TileOrientation.None:
+                        case Tile.TileOrientation.Bottom:
+                        case Tile.TileOrientation.Top:
+                            return WallSet.P.AirlockVertical_Open_L;
+                        case Tile.TileOrientation.Left:
+                        case Tile.TileOrientation.Right:
+                            return WallSet.P.AirlockHorizontal_Open_T_TOP;
+                    }
+                    break;
+                default:
+                    throw new System.NotImplementedException(_tile._Orientation_ + " hasn't been properly implemented yet!");
+            }
+        }
+        else if (_tile._FloorType_ != Tile.Type.Empty) {
+            isConnected_L = _tile.CanConnectFloor_L && _tile.HasConnectableFloor_L;
+            isConnected_T = _tile.CanConnectFloor_T && _tile.HasConnectableFloor_T;
+            isConnected_R = _tile.CanConnectFloor_R && _tile.HasConnectableFloor_R;
+            isConnected_B = _tile.CanConnectFloor_B && _tile.HasConnectableFloor_B;
+
+            switch (_tile._FloorType_) {
+                case Tile.Type.Solid:
+                    if (isConnected_L) {
+                        if (isConnected_T) {
+                            if (isConnected_R) {
+                                if (isConnected_B) return WallSet.P.Floor_Fourway;
+                                else return WallSet.P.Floor_Tee_T;
+                            }
+                            else if (isConnected_B) return WallSet.P.Floor_Tee_L;
+                            else return WallSet.P.Floor_Corner_TL;
+                        }
+                        else if (isConnected_R) {
+                            if (isConnected_B) return WallSet.P.Floor_Tee_B;
+                            else return WallSet.P.Floor_Horizontal_M;
+                        }
+                        else if (isConnected_B) return WallSet.P.Floor_Corner_BL;
+                        else return WallSet.P.Floor_Horizontal_R;
+                    }
+                    else if (isConnected_T) {
+                        if (isConnected_R) {
+                            if (isConnected_B) return WallSet.P.Floor_Tee_R;
+                            else return WallSet.P.Floor_Corner_TR;
+                        }
+                        else if (isConnected_B) return WallSet.P.Floor_Vertical_M;
+                        else return WallSet.P.Floor_Vertical_B;
+                    }
+                    else if (isConnected_R) {
+                        if (isConnected_B) return WallSet.P.Floor_Corner_BR;
+                        else return WallSet.P.Floor_Horizontal_L;
+                    }
+                    else if (isConnected_B) return WallSet.P.Floor_Vertical_T;
+                    else return WallSet.P.Floor_Single;
+
+                case Tile.Type.Diagonal:
+                    switch (_tile._FloorOrientation_) {
+                        case Tile.TileOrientation.TopRight: {
+                                if (isConnected_T) {
+                                    if (isConnected_R) return WallSet.P.Floor_Diagonal_TR_TR;
+                                    else return WallSet.P.Floor_Diagonal_TR_T;
+                                }
+                                else if (isConnected_R) return WallSet.P.Floor_Diagonal_TR_R;
+                                else return WallSet.P.Floor_Diagonal_TR;
+                            }
+                        case Tile.TileOrientation.TopLeft: {
+                                if (isConnected_T) {
+                                    if (isConnected_L) return WallSet.P.Floor_Diagonal_TL_TL;
+                                    else return WallSet.P.Floor_Diagonal_TL_T;
+                                }
+                                else if (isConnected_L) return WallSet.P.Floor_Diagonal_TL_L;
+                                else return WallSet.P.Floor_Diagonal_TL;
+                            }
+                        case Tile.TileOrientation.BottomRight: {
+                                if (isConnected_B) {
+                                    if (isConnected_R) return WallSet.P.Floor_Diagonal_BR_BR;
+                                    else return WallSet.P.Floor_Diagonal_BR_B;
+                                }
+                                else if (isConnected_R) return WallSet.P.Floor_Diagonal_BR_R;
+                                else return WallSet.P.Floor_Diagonal_BR;
+                            }
+                        case Tile.TileOrientation.BottomLeft: {
+                                if (isConnected_B) {
+                                    if (isConnected_L) return WallSet.P.Floor_Diagonal_BL_BL;
+                                    else return WallSet.P.Floor_Diagonal_BL_B;
+                                }
+                                else if (isConnected_L) return WallSet.P.Floor_Diagonal_BL_L;
+                                else return WallSet.P.Floor_Diagonal_BL;
+                            }
+                        default:
+                            throw new System.Exception(_tile._FloorOrientation_ + " is not supported by diagonals!");
+                    }
+                case Tile.Type.Door:
+                case Tile.Type.Airlock:
+                    throw new System.Exception(_tile._FloorType_.ToString() + " does not apply to Floor!");
+                default:
+                    throw new System.NotImplementedException(_tile._FloorOrientation_ + " hasn't been properly implemented yet!");
+            }
+        }
+
+        return WallSet.P.Null;
+    }
+
+    // TODO: this should be able to just use the ExactType, saving some processing
     public DoubleInt GetWallAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isBottom, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
         switch (_tileType) {
             case Tile.Type.Empty:
@@ -715,10 +904,10 @@ public class CachedAssets : MonoBehaviour {
                     case Tile.TileOrientation.None:
                     case Tile.TileOrientation.Bottom:
                     case Tile.TileOrientation.Top:
-                        return _isBottom ? WallSet.anim_DoorVertical_Open.GetBottomFirstFrame() : WallSet.anim_DoorVertical_Open.GetTopFirstFrame();
+                        return _isBottom ? WallSet.anim_DoorVertical_Open.Frames[0] : null;
                     case Tile.TileOrientation.Left:
                     case Tile.TileOrientation.Right:
-                        return _isBottom ? WallSet.anim_DoorHorizontal_Open.GetBottomFirstFrame() : WallSet.anim_DoorHorizontal_Open.GetTopFirstFrame();
+                        return _isBottom ? WallSet.anim_DoorHorizontal_Open.Frames[0] : null;
                 }
                 break;
             case Tile.Type.Airlock:
@@ -726,10 +915,10 @@ public class CachedAssets : MonoBehaviour {
                     case Tile.TileOrientation.None:
                     case Tile.TileOrientation.Bottom:
                     case Tile.TileOrientation.Top:
-                        return _isBottom ? WallSet.anim_AirlockVertical_OpenLeft.GetBottomFirstFrame() : WallSet.anim_AirlockVertical_OpenLeft.GetTopFirstFrame();
+                        return _isBottom ? WallSet.anim_AirlockVertical_Open_L_Bottom.Frames[0] : WallSet.anim_AirlockVertical_Open_L_Top.Frames[0];
                     case Tile.TileOrientation.Left:
                     case Tile.TileOrientation.Right:
-                        return _isBottom ? WallSet.anim_AirlockHorizontal_OpenTop.GetBottomFirstFrame() : WallSet.anim_AirlockHorizontal_OpenTop.GetTopFirstFrame();
+                        return _isBottom ? WallSet.anim_AirlockHorizontal_Open_T_Bottom.Frames[0] : WallSet.anim_AirlockHorizontal_Open_T_Top.Frames[0];
                 }
                 break;
             default:

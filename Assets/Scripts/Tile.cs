@@ -3,48 +3,7 @@ using System;
 
 public class Tile : IHeapItem<Tile> {
 
-    public enum PurposeEnum {
-            Floor_Single, Floor_Fourway,
-            Floor_Vertical_T, Floor_Vertical_M, Floor_Vertical_B,
-            Floor_Horizontal_L, Floor_Horizontal_M, Floor_Horizontal_R,
-            Floor_Corner_TR, Floor_Corner_TL, Floor_Corner_BR, Floor_Corner_BL,
-            Floor_Tee_R, Floor_Tee_L, Floor_Tee_T, Floor_Tee_B,
-            Floor_Diagonal_TR, Floor_Diagonal_TR_R, Floor_Diagonal_TR_T, Floor_Diagonal_TR_TR,
-            Floor_Diagonal_TL, Floor_Diagonal_TL_L, Floor_Diagonal_TL_T, Floor_Diagonal_TL_TL,
-            Floor_Diagonal_BR, Floor_Diagonal_BR_R, Floor_Diagonal_BR_B, Floor_Diagonal_BR_BR,
-            Floor_Diagonal_BL, Floor_Diagonal_BL_L, Floor_Diagonal_BL_B, Floor_Diagonal_BL_BL,
-            FloorCornerHider_All, FloorCornerHider_TL_BR, FloorCornerHider_TR_BL,
-            FloorCornerHider_TL, FloorCornerHider_TL_TR, FloorCornerHider_TL_TR_BR,
-            FloorCornerHider_TR, FloorCornerHider_TR_BR, FloorCornerHider_TR_BR_BL,
-            FloorCornerHider_BR, FloorCornerHider_BR_BL, FloorCornerHider_BR_BL_TL,
-            FloorCornerHider_BL, FloorCornerHider_BL_TL, FloorCornerHider_BL_TL_TR,
-            Wall_Single, Wall_Fourway,
-            Wall_Vertical_T, Wall_Vertical_M, Wall_Vertical_B,
-            Wall_Horizontal_L, Wall_Horizontal_M, Wall_Horizontal_R,
-            Wall_Corner_TR, Wall_Corner_TL, Wall_Corner_BR, Wall_Corner_BL,
-            Wall_Tee_R, Wall_Tee_L, Wall_Tee_T, Wall_Tee_B,
-            Wall_Diagonal_TR, Wall_Diagonal_TR_R, Wall_Diagonal_TR_T, Wall_Diagonal_TR_TR,
-            Wall_Diagonal_TL, Wall_Diagonal_TL_L, Wall_Diagonal_TL_T, Wall_Diagonal_TL_TL,
-            Wall_Diagonal_BR, Wall_Diagonal_BR_R, Wall_Diagonal_BR_B, Wall_Diagonal_BR_BR,
-            Wall_Diagonal_BL, Wall_Diagonal_BL_L, Wall_Diagonal_BL_B, Wall_Diagonal_BL_BL,
-            WallCornerHider_All, WallCornerHider_TL_BR, WallCornerHider_TR_BL, 
-            WallCornerHider_TL, WallCornerHider_TL_TR, WallCornerHider_TL_TR_BR,
-            WallCornerHider_TR, WallCornerHider_TR_BR, WallCornerHider_TR_BR_BL,
-            WallCornerHider_BR, WallCornerHider_BR_BL, WallCornerHider_BR_BL_TL,
-            WallCornerHider_BL, WallCornerHider_BL_TL, WallCornerHider_BL_TL_TR,
-            DoorVertical, 
-            DoorHorizontal,
-            AirlockHorizontal_OpenBottom_BOTTOM,
-            AirlockHorizontal_OpenBottom_TOP,
-            AirlockHorizontal_OpenTop,
-            AirlockHorizontal_Wait,
-            AirlockVertical_OpenLeft_BOTTOM,
-            AirlockVertical_OpenLeft_TOP,
-            AirlockVertical_OpenRight_BOTTOM,
-            AirlockVertical_OpenRight_TOP,
-            AirlockVertical_Wait
-        }
-    public PurposeEnum ExactType;
+    public CachedAssets.WallSet.P ExactType;
     public enum Type { Empty, Solid, Diagonal, Door, Airlock }
 	private Type wallType = Type.Empty;
 	public Type _WallType_ { get { return wallType; } private set { wallType = value; }}
@@ -97,12 +56,12 @@ public class Tile : IHeapItem<Tile> {
     public int GridX { get; private set; }
     public int GridY { get; private set; }
 
-    public Vector3 WorldPosition { get; private set; }
-    public Vector3 DefaultPositionWorld { get; private set; }
-    public Vector3 CharacterPositionWorld { // the position a character should stand on (exists to better simulate zero-g)
+    public Vector2 WorldPosition { get; private set; }
+    public Vector2 DefaultPositionWorld { get; private set; }
+    public Vector2 CharacterPositionWorld { // the position a character should stand on (exists to better simulate zero-g)
         get {
 			if (_WallType_ == Type.Empty) {
-                Vector3 _offset = Vector3.zero;
+                Vector2 _offset = Vector2.zero;
                 _offset.x = IsBlocked_L ? -0.4f : IsBlocked_R ? 0.4f : 0;
                 _offset.y = IsBlocked_B ? -0.4f : IsBlocked_T ? 0.4f : 0;
                 return DefaultPositionWorld + _offset;
@@ -450,16 +409,16 @@ public class Tile : IHeapItem<Tile> {
 				Walkable = true;
                 switch (_newOrientation) {
                     case TileOrientation.BottomLeft:
-                        DefaultPositionWorld = WorldPosition + new Vector3(0.25f, 0.25f, 0);
+                        DefaultPositionWorld = WorldPosition + new Vector2(0.25f, 0.25f);
                         break;
                     case TileOrientation.TopLeft:
-                        DefaultPositionWorld = WorldPosition + new Vector3(0.25f, -0.25f, 0);
+                        DefaultPositionWorld = WorldPosition + new Vector2(0.25f, -0.25f);
                         break;
                     case TileOrientation.TopRight:
-                        DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, -0.25f, 0);
+                        DefaultPositionWorld = WorldPosition + new Vector2(-0.25f, -0.25f);
                         break;
                     case TileOrientation.BottomRight:
-                        DefaultPositionWorld = WorldPosition + new Vector3(-0.25f, 0.25f, 0);
+                        DefaultPositionWorld = WorldPosition + new Vector2(-0.25f, 0.25f);
                         break;
                 }
 				if (_FloorType_ != Type.Empty)
@@ -472,7 +431,7 @@ public class Tile : IHeapItem<Tile> {
                     // vertical
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
-                        DefaultPositionWorld = WorldPosition + new Vector3(0, -0.15f, 0);
+                        DefaultPositionWorld = WorldPosition + new Vector2(0, -0.15f);
                         break;
                     // horizontal
                     case TileOrientation.Left:
@@ -489,12 +448,12 @@ public class Tile : IHeapItem<Tile> {
                     // vertical
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
-                        DefaultPositionWorld = WorldPosition + new Vector3(0, -0.25f, 0);
+                        DefaultPositionWorld = WorldPosition + new Vector2(0, -0.25f);
                         break;
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
-                        DefaultPositionWorld = WorldPosition + new Vector3(0, -0.35f, 0);
+                        DefaultPositionWorld = WorldPosition + new Vector2(0, -0.35f);
                         break;
                 }
 
@@ -522,6 +481,7 @@ public class Tile : IHeapItem<Tile> {
         if (sTryTempCacheNeighbour_BL(GridX, GridY))
             UpdateNeighbourWall(sCachedNeighbour_BL, TileOrientation.BottomLeft, false);
 
+        ExactType = CachedAssets.Instance.GetTileDefinition(this);
         ChangeWallGraphics (
 			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, true, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
 			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, false, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
@@ -622,7 +582,8 @@ public class Tile : IHeapItem<Tile> {
         if (sTryTempCacheNeighbour_BL(GridX, GridY))
             UpdateNeighbourFloor(sCachedNeighbour_BL, TileOrientation.BottomLeft, false);
 
-        ChangeFloorGraphics (
+        ExactType = CachedAssets.Instance.GetTileDefinition(this);
+        ChangeFloorGraphics(
             CachedAssets.Instance.GetFloorAssetForTile(_FloorType_, _FloorOrientation_, 0, HasConnectableFloor_L, HasConnectableFloor_T, HasConnectableFloor_R, HasConnectableFloor_B),
             false
         );
@@ -731,6 +692,7 @@ public class Tile : IHeapItem<Tile> {
                 return;
         }
 
+        _neighbour.ExactType = CachedAssets.Instance.GetTileDefinition(_neighbour);
 		_neighbour.ChangeWallGraphics (
 			CachedAssets.Instance.GetWallAssetForTile (_neighbour._WallType_, _neighbour._Orientation_, 0, true, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B),
 			CachedAssets.Instance.GetWallAssetForTile (_neighbour._WallType_, _neighbour._Orientation_, 0, false, _neighbour.HasConnectable_L, _neighbour.HasConnectable_T, _neighbour.HasConnectable_R, _neighbour.HasConnectable_B),
@@ -799,6 +761,7 @@ public class Tile : IHeapItem<Tile> {
                 return;
 		}
 
+        _neighbour.ExactType = CachedAssets.Instance.GetTileDefinition(_neighbour);
 		_neighbour.ChangeFloorGraphics (
             CachedAssets.Instance.GetFloorAssetForTile(_neighbour._FloorType_, _neighbour._FloorOrientation_, 0, _neighbour.HasConnectableFloor_L, _neighbour.HasConnectableFloor_T, _neighbour.HasConnectableFloor_R, _neighbour.HasConnectableFloor_B),
             false
@@ -946,16 +909,21 @@ public class Tile : IHeapItem<Tile> {
             case Type.Diagonal:
                 break;
             case Type.Door:
-                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Open), _forward: true, _loop: false);
+                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Open), null, _forward: true, _loop: false);
                 break;
             case Type.Airlock:
-                Animator.Animate(Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Open, _direction), _forward: true, _loop: false);
+                Animator.Animate(
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, _direction), 
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, _direction), 
+                    _forward: true, _loop: false
+                );
                 break;
             default:
 				throw new System.NotImplementedException(_WallType_ + " hasn't been properly implemented yet!");
         }
     }
-    TileAnimator.TileAnimation[] animationSequence;
+    TileAnimator.TileAnimation[] animationSequenceTop;
+    TileAnimator.TileAnimation[] animationSequenceBottom;
     public void OnActorEnterTile(TileOrientation _direction, out float _yieldTime) {
         _yieldTime = 0;
 		switch (_WallType_) {
@@ -964,17 +932,26 @@ public class Tile : IHeapItem<Tile> {
             case Type.Diagonal:
                 break;
             case Type.Door:
-                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Close), _forward: true, _loop: false);
+                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Close), null, _forward: true, _loop: false);
                 break;
             case Type.Airlock:
-                animationSequence = new TileAnimator.TileAnimation[] {
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Close, _direction),
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Wait, TileOrientation.None),
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)),
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationContextEnum.Close, GetReverseDirection(_direction)) };
+                animationSequenceTop = new TileAnimator.TileAnimation[] {
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Close, _direction),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Wait, TileOrientation.None),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Close, GetReverseDirection(_direction)) };
+                animationSequenceBottom = new TileAnimator.TileAnimation[] {
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Close, _direction),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Wait, TileOrientation.None),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Close, GetReverseDirection(_direction)) };
 
-                Animator.AnimateSequence(animationSequence);
-                _yieldTime = Animator.GetProperWaitTimeForAnim(animationSequence[0]) + Animator.GetProperWaitTimeForAnim(animationSequence[1]) + (Animator.GetProperWaitTimeForAnim(animationSequence[2]) * 0.5f);
+                Animator.AnimateSequence(animationSequenceBottom, animationSequenceTop);
+
+                // hardcoded because it probably hopefully shouldn't change much... set to wait until half of the open-animation
+                _yieldTime = Animator.GetProperWaitTimeForTileAnim(animationSequenceBottom[0], animationSequenceTop[0]) + 
+                             Animator.GetProperWaitTimeForTileAnim(animationSequenceBottom[1], animationSequenceTop[1]) + 
+                             (Animator.GetProperWaitTimeForTileAnim(animationSequenceBottom[2], animationSequenceTop[2]) * 0.5f);
                 break;
             default:
 				throw new System.NotImplementedException(_WallType_ + " hasn't been properly implemented yet!");
@@ -1017,106 +994,5 @@ public class Tile : IHeapItem<Tile> {
         }
 
         _BuildingAllowed_ = _b;
-    }
-
-    PurposeEnum GetExactType(){
-        if (_WallType_ != Type.Empty){
-            switch (_WallType_) {
-                case Tile.Type.Solid:
-                    if (CanConnect_L && HasConnectable_L) {
-                        if (CanConnect_T && HasConnectable_T) {
-                            if (CanConnect_R && HasConnectable_R) {
-                                if (CanConnect_B && HasConnectable_B) return PurposeEnum.Wall_Fourway;
-                                else return PurposeEnum.Wall_Tee_T;
-                            }
-                            else if (CanConnect_B && HasConnectable_B) return PurposeEnum.Wall_Tee_L;
-                            else return PurposeEnum.Wall_Corner_TL; // NOT EXACT ENOUGH! D:
-                        }
-                        else if (_hasConnection_Right) {
-                            if (_hasConnection_Bottom) return WallSet.wall_Tee_Bottom;
-                            else return WallSet.wall_Horizontal_M;
-                        }
-                        else if (_hasConnection_Bottom) return WallSet.wall_Corner_BottomLeft;
-                        else return WallSet.wall_Horizontal_R;
-                    }
-                    else if (_hasConnection_Top) {
-                        if (_hasConnection_Right) {
-                            if (_hasConnection_Bottom) return WallSet.wall_Tee_Right;
-                            else return WallSet.wall_Corner_TopRight;
-                        }
-                        else if (_hasConnection_Bottom) return WallSet.wall_Vertical_M;
-                        else return WallSet.wall_Vertical_B;
-                    }
-                    else if (_hasConnection_Right) {
-                        if (_hasConnection_Bottom) return WallSet.wall_Corner_BottomRight;
-                        else return WallSet.wall_Horizontal_L;
-                    }
-                    else if (_hasConnection_Bottom) return WallSet.wall_Vertical_T;
-                    else return WallSet.wall_Single;
-
-                case Tile.Type.Diagonal:
-                    switch (_tileOrientation) {
-                        case Tile.TileOrientation.TopRight: {
-                                if (_hasConnection_Top) {
-                                    if (_hasConnection_Right) return (_isBottom ? WallSet.wall_Diagonal_TopRight_TR : null);
-                                    else return (_isBottom ? WallSet.wall_Diagonal_TopRight_T : null);
-                                }
-                                else if(_hasConnection_Right) return (_isBottom ? WallSet.wall_Diagonal_TopRight_R : null);
-                                else return (_isBottom ? WallSet.wall_Diagonal_TopRight : null);
-                            }
-
-                        case Tile.TileOrientation.TopLeft: {
-                                if (_hasConnection_Top) {
-                                    if (_hasConnection_Left) return (_isBottom ? WallSet.wall_Diagonal_TopLeft_TL : null);
-                                    else return (_isBottom ? WallSet.wall_Diagonal_TopLeft_T : null);
-                                }
-                                else if(_hasConnection_Left) return (_isBottom ? WallSet.wall_Diagonal_TopLeft_L : null);
-                                else return (_isBottom ? WallSet.wall_Diagonal_TopLeft : null);
-                            }
-                        case Tile.TileOrientation.BottomRight: {
-                                if (_hasConnection_Bottom) {
-                                    if (_hasConnection_Right) return (_isBottom ? null : WallSet.wall_Diagonal_BottomRight_BR);
-                                    else return(_isBottom ? null : WallSet.wall_Diagonal_BottomRight_B);
-                                }
-                                else if (_hasConnection_Right) return (_isBottom ? null : WallSet.wall_Diagonal_BottomRight_R);
-                                else return(_isBottom ? null : WallSet.wall_Diagonal_BottomRight);
-                            }
-                        case Tile.TileOrientation.BottomLeft: {
-                                if (_hasConnection_Bottom) {
-                                    if (_hasConnection_Left) return (_isBottom ? null : WallSet.wall_Diagonal_BottomLeft_BL);
-                                    else return(_isBottom ? null : WallSet.wall_Diagonal_BottomLeft_B);
-                                }
-                                else if (_hasConnection_Left) return (_isBottom ? null : WallSet.wall_Diagonal_BottomLeft_L);
-                                else return(_isBottom ? null : WallSet.wall_Diagonal_BottomLeft);
-                            }
-                        default:
-                            throw new System.Exception (_tileOrientation + " is not supported by diagonals!");
-                    }
-                case Tile.Type.Door:
-                    switch (_tileOrientation) {
-                        case Tile.TileOrientation.None:
-                        case Tile.TileOrientation.Bottom:
-                        case Tile.TileOrientation.Top:
-                            return _isBottom ? WallSet.anim_DoorVertical_Open.GetBottomFirstFrame() : WallSet.anim_DoorVertical_Open.GetTopFirstFrame();
-                        case Tile.TileOrientation.Left:
-                        case Tile.TileOrientation.Right:
-                            return _isBottom ? WallSet.anim_DoorHorizontal_Open.GetBottomFirstFrame() : WallSet.anim_DoorHorizontal_Open.GetTopFirstFrame();
-                    }
-                    break;
-                case Tile.Type.Airlock:
-                    switch (_tileOrientation) {
-                        case Tile.TileOrientation.None:
-                        case Tile.TileOrientation.Bottom:
-                        case Tile.TileOrientation.Top:
-                            return _isBottom ? WallSet.anim_AirlockVertical_OpenLeft.GetBottomFirstFrame() : WallSet.anim_AirlockVertical_OpenLeft.GetTopFirstFrame();
-                        case Tile.TileOrientation.Left:
-                        case Tile.TileOrientation.Right:
-                            return _isBottom ? WallSet.anim_AirlockHorizontal_OpenTop.GetBottomFirstFrame() : WallSet.anim_AirlockHorizontal_OpenTop.GetTopFirstFrame();
-                    }
-                    break;
-                default:
-                    throw new System.NotImplementedException(_tileType + " hasn't been properly implemented yet!");
-            }
-        }
     }
 }
