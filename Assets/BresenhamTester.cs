@@ -23,6 +23,7 @@ public class BresenhamTester : MonoBehaviour {
 		BresenhamsLine bres = new BresenhamsLine(StartPos, (StartPos + (Angle * Length)), Resolution);
 		foreach(Vector2 _p in bres){
 			resPos = new Vector2(_p.x, _p.y);
+            Debug.Log(resPos);
 			Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.cyan);
 			Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.cyan);
 			Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.cyan);

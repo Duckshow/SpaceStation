@@ -39,7 +39,7 @@ public class DynamicLight : MonoBehaviour {
 	[Range(4,20)]
 	public int lightSegments = 8;
 
-	[HideInInspector] public PolygonCollider2D[] allMeshes; // Array for all of the meshes in our scene
+	[HideInInspector] public List<Tile> allTiles = new List<Tile>(); // Array for all of the meshes in our scene
 	[HideInInspector] public List<Verts> allVertices = new List<Verts>(); // Array for all of the vertices in our meshes
 
 	private Mesh lightMesh; // Mesh for our light mesh
@@ -77,11 +77,13 @@ public class DynamicLight : MonoBehaviour {
 		//-- Step 1: obtain all active meshes in the scene --//
 		//---------------------------------------------------------------------//
 
-        kjbhiubhiu // continue here and convert this stuff
-		Collider2D [] allColl2D = Physics2D.OverlapCircleAll(transform.position, lightRadius, layer);
-		allMeshes = new PolygonCollider2D[allColl2D.Length];
-		for (int i=0; i<allColl2D.Length; i++)
-			allMeshes[i] = (PolygonCollider2D)allColl2D[i];
+        allTiles.Clear();
+        for (int y = 0; y < Grid.Instance.GridSizeY; y++) {
+            for (int x = 0; x < Grid.Instance.GridSizeX; x++) {
+                if ((Grid.Instance.grid[x, y].WorldPosition - (Vector2)transform.position).magnitude <= lightRadius)
+                    allTiles.Add(Grid.Instance.grid[x, y]);
+            }
+        }
 	}
 
     private bool sortAngles = false;
@@ -122,9 +124,9 @@ public class DynamicLight : MonoBehaviour {
 		magRange = 0.15f;
 		tempVerts.Clear();
 			
-		for (int i = 0; i < allMeshes.Length; i++) {
+		for (int i = 0; i < allTiles.Count; i++) {
 			tempVerts.Clear();
-			polCollider = allMeshes[i];
+			polCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(allTiles[i].ExactType, allTiles[i].Animator.CurrentFrame);
 			// the following variables used to fix sorting bug
 			// the calculated angles are in mixed quadrants (1 and 4)
 			lows = false; // check for minors at -0.5
@@ -400,19 +402,44 @@ public class DynamicLight : MonoBehaviour {
 
 	private List<Tile> tiles = new List<Tile>();
 	private BresenhamsLine cast;
+    private Vector2 tilePos;
     private Tile t;
     private PolygonCollider2D shadowCollider;
     private int currentIndex;
     bool Gridcast(Vector2 _start, Vector2 _end, out Vector2 _rayhit) {
-
         // find tiles along cast with a shadowcollider
+        tiles.Clear();
         cast = new BresenhamsLine(_start, _end, 1);
-        foreach (Vector2 _tilePos in cast) {
-            t = Grid.Instance.GetTileFromWorldPoint(_tilePos);
+        foreach (Vector2 _pos in cast) {
+            tilePos = _pos;
+            tilePos.x -= 0.5f;
+            tilePos.y -= 0.5f;
+
+            t = Grid.Instance.GetTileFromWorldPoint(tilePos);
             //if (CachedAssets.Instance.WallSets[0].GetColliderPaths(t.ExactType, t.Animator.CurrentFrame) == null)
             //    continue;
-
             tiles.Add(t);
+
+           // Debug.Log(t.GridX + ", " + t.GridY);
+            //Debug.DrawLine(
+            //    new Vector2(t.WorldPosition.x - Grid.Instance.NodeRadius, t.WorldPosition.y - Grid.Instance.NodeRadius), 
+            //    new Vector2(t.WorldPosition.x + Grid.Instance.NodeRadius, t.WorldPosition.y - Grid.Instance.NodeRadius),
+            //    Color.red, Time.deltaTime);
+
+            //Debug.DrawLine(
+            //   new Vector2(t.WorldPosition.x + Grid.Instance.NodeRadius, t.WorldPosition.y - Grid.Instance.NodeRadius),
+            //   new Vector2(t.WorldPosition.x + Grid.Instance.NodeRadius, t.WorldPosition.y + Grid.Instance.NodeRadius),
+            //   Color.red, Time.deltaTime);
+
+            //Debug.DrawLine(
+            //   new Vector2(t.WorldPosition.x + Grid.Instance.NodeRadius, t.WorldPosition.y + Grid.Instance.NodeRadius),
+            //   new Vector2(t.WorldPosition.x - Grid.Instance.NodeRadius, t.WorldPosition.y + Grid.Instance.NodeRadius),
+            //   Color.red, Time.deltaTime);
+
+            //Debug.DrawLine(
+            //   new Vector2(t.WorldPosition.x - Grid.Instance.NodeRadius, t.WorldPosition.y + Grid.Instance.NodeRadius),
+            //   new Vector2(t.WorldPosition.x - Grid.Instance.NodeRadius, t.WorldPosition.y - Grid.Instance.NodeRadius),
+            //   Color.red, Time.deltaTime);
         }
 
         if (tiles.Count > 0) {
@@ -420,11 +447,36 @@ public class DynamicLight : MonoBehaviour {
             shadowCollider.transform.position = tiles[0].WorldPosition;
         }
         cast = new BresenhamsLine(_start, _end, Grid.TILE_RESOLUTION);
+        currentIndex = 0;
         foreach (Vector2 _pixelPos in cast) {
+
+            float val = (1 / 32);
+            Debug.Log(_pixelPos);
+            Debug.DrawLine(
+               new Vector2(_pixelPos.x - val, _pixelPos.y - val),
+               new Vector2(_pixelPos.x + val, _pixelPos.y - val),
+               Color.red, Time.deltaTime);
+
+            Debug.DrawLine(
+               new Vector2(_pixelPos.x + val, _pixelPos.y - val),
+               new Vector2(_pixelPos.x + val, _pixelPos.y + val),
+               Color.red, Time.deltaTime);
+
+            Debug.DrawLine(
+               new Vector2(_pixelPos.x + val, _pixelPos.y + val),
+               new Vector2(_pixelPos.x - val, _pixelPos.y + val),
+               Color.red, Time.deltaTime);
+
+            Debug.DrawLine(
+               new Vector2(_pixelPos.x - val, _pixelPos.y + val),
+               new Vector2(_pixelPos.x - val, _pixelPos.y - val),
+               Color.red, Time.deltaTime);
+
+
             // if pixel is closer to next collider, set next collider as current
+            //Debug.Log((tiles[currentIndex + 1].WorldPosition - _pixelPos).magnitude + " / " + (tiles[currentIndex].WorldPosition - _pixelPos).magnitude);
             if (currentIndex < tiles.Count - 1 && (tiles[currentIndex + 1].WorldPosition - _pixelPos).magnitude < (tiles[currentIndex].WorldPosition - _pixelPos).magnitude) {
                 currentIndex++;
-
                 shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[currentIndex].ExactType, tiles[currentIndex].Animator.CurrentFrame);
                 if(shadowCollider != null)
                     shadowCollider.transform.position = tiles[currentIndex].WorldPosition;
