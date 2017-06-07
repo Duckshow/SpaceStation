@@ -36,7 +36,7 @@ public class DynamicLight : MonoBehaviour {
 	public Material lightMaterial;
 	public float lightRadius = 20f;
 	public LayerMask layer;
-	[Range(4,20)]
+	[Range(4,40)]
 	public int lightSegments = 8;
 
 	[HideInInspector] public List<Tile> allTiles = new List<Tile>(); // Array for all of the meshes in our scene
@@ -127,52 +127,55 @@ public class DynamicLight : MonoBehaviour {
 		for (int i = 0; i < allTiles.Count; i++) {
 			tempVerts.Clear();
 			polCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(allTiles[i].ExactType, allTiles[i].Animator.CurrentFrame);
+			if(polCollider == null)
+				continue;
+
 			// the following variables used to fix sorting bug
 			// the calculated angles are in mixed quadrants (1 and 4)
 			lows = false; // check for minors at -0.5
 			highs = false; // check for majors at 2.0
 				
-			if(((1 << polCollider.transform.gameObject.layer) & layer) != 0){ // check if collider's layer is in the current layermask (I think? :c)
-				for (int j = 0; j < polCollider.GetTotalPointCount(); j++) {	// ...and for every vertex we have of each collider...
-					v = new Verts();
-						
-                    // Convert vertex to world space
-					worldPoint = polCollider.transform.TransformPoint(polCollider.points[j]);
+			//if(((1 << polCollider.transform.gameObject.layer) & layer) != 0){ // check if collider's layer is in the current layermask (I think? :c)
+			for (int j = 0; j < polCollider.GetTotalPointCount(); j++) {	// ...and for every vertex we have of each collider...
+				v = new Verts();
+					
+				// Convert vertex to world space
+				worldPoint = polCollider.transform.TransformPoint(polCollider.points[j]);
 
-                    //rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
-                    if (Gridcast(transform.position, worldPoint, out rayHit)) {
-						v.Pos = rayHit;
-						if(worldPoint.sqrMagnitude >= (rayHit.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.sqrMagnitude + magRange))
-							v.Endpoint = true;
-					}
-                    else {
-						v.Pos =  worldPoint;
+				//rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
+				if (Gridcast(transform.position, worldPoint, out rayHit)) {
+					v.Pos = rayHit;
+					if(worldPoint.sqrMagnitude >= (rayHit.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.sqrMagnitude + magRange))
 						v.Endpoint = true;
-					}
-						
-					Debug.DrawLine(transform.position, v.Pos, Color.white);	
-						
-					//--Convert To local space for build mesh (mesh craft only in local vertex)
-					v.Pos = transform.InverseTransformPoint(v.Pos); // optimization: could we do the Linecast in local space instead?
-					//--Calculate angle
-					v.Angle = GetVectorAngle(true,v.Pos.x, v.Pos.y);
-						
-					// -- bookmark if an angle is lower than 0 or higher than 2f --//
-					//-- helper method for fix bug on shape located in 2 or more quadrants
-					if(v.Angle < 0f)
-						lows = true;
-						
-					if(v.Angle > 2f)
-						highs = true;
-						
-					//--Add verts to the main list
-					if((v.Pos).sqrMagnitude <= lightRadius*lightRadius)
-						tempVerts.Add(v);
-						
-					if(sortAngles == false)
-						sortAngles = true;
 				}
+				else {
+					v.Pos =  worldPoint;
+					v.Endpoint = true;
+				}
+
+				Debug.DrawLine(transform.position, v.Pos, Color.white);	
+					
+				//--Convert To local space for build mesh (mesh craft only in local vertex)
+				v.Pos = transform.InverseTransformPoint(v.Pos); // optimization: could we do the Linecast in local space instead?
+				//--Calculate angle
+				v.Angle = GetVectorAngle(true,v.Pos.x, v.Pos.y);
+					
+				// -- bookmark if an angle is lower than 0 or higher than 2f --//
+				//-- helper method for fix bug on shape located in 2 or more quadrants
+				if(v.Angle < 0f)
+					lows = true;
+					
+				if(v.Angle > 2f)
+					highs = true;
+					
+				//--Add verts to the main list
+				if((v.Pos).sqrMagnitude <= lightRadius*lightRadius)
+					tempVerts.Add(v);
+					
+				if(sortAngles == false)
+					sortAngles = true;
 			}
+			//}
 				
 			// Identify the endpoints (left and right)
 			if(tempVerts.Count > 0){
@@ -368,8 +371,7 @@ public class DynamicLight : MonoBehaviour {
 	}
 		
 	void DrawLinePerVertex(){
-		for (int i = 0; i < allVertices.Count; i++)
-		{
+		for (int i = 0; i < allVertices.Count; i++){
 			if (i < (allVertices.Count -1))
 				Debug.DrawLine(allVertices [i].Pos , allVertices [i+1].Pos, new Color(i*0.02f, i*0.02f, i*0.02f));
 			else
@@ -406,90 +408,196 @@ public class DynamicLight : MonoBehaviour {
     private Tile t;
     private PolygonCollider2D shadowCollider;
     private int currentIndex;
+
+	Color col;
     bool Gridcast(Vector2 _start, Vector2 _end, out Vector2 _rayhit) {
+		col = new Color(Random.value, Random.value, Random.value, 1);
+		//Debug.Log(castcount);
+		Debug.Break();
         // find tiles along cast with a shadowcollider
         tiles.Clear();
         cast = new BresenhamsLine(_start, _end, 1);
-        foreach (Vector2 _pos in cast) {
+		foreach (Vector2 _pos in cast) {
             tilePos = _pos;
-            tilePos.x -= 0.5f;
-            tilePos.y -= 0.5f;
+
+			// subtract because Bresenhams is in whole numbers
+            tilePos.x -= Tile.RADIUS;
+            tilePos.y -= Tile.RADIUS;
 
             t = Grid.Instance.GetTileFromWorldPoint(tilePos);
             //if (CachedAssets.Instance.WallSets[0].GetColliderPaths(t.ExactType, t.Animator.CurrentFrame) == null)
             //    continue;
             tiles.Add(t);
+			t.SetWallColor(col);
+			t.SetFloorColor(col);
 
-           // Debug.Log(t.GridX + ", " + t.GridY);
-            //Debug.DrawLine(
-            //    new Vector2(t.WorldPosition.x - Grid.Instance.NodeRadius, t.WorldPosition.y - Grid.Instance.NodeRadius), 
-            //    new Vector2(t.WorldPosition.x + Grid.Instance.NodeRadius, t.WorldPosition.y - Grid.Instance.NodeRadius),
-            //    Color.red, Time.deltaTime);
+            // Debug.DrawLine(
+            //    new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS), 
+            //    new Vector2(t.WorldPosition.x + Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS),
+            //    col, Time.deltaTime);
 
-            //Debug.DrawLine(
-            //   new Vector2(t.WorldPosition.x + Grid.Instance.NodeRadius, t.WorldPosition.y - Grid.Instance.NodeRadius),
-            //   new Vector2(t.WorldPosition.x + Grid.Instance.NodeRadius, t.WorldPosition.y + Grid.Instance.NodeRadius),
-            //   Color.red, Time.deltaTime);
+            // Debug.DrawLine(
+            //   new Vector2(t.WorldPosition.x + Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS),
+            //   new Vector2(t.WorldPosition.x + Tile.RADIUS, t.WorldPosition.y + Tile.RADIUS),
+            //   col, Time.deltaTime);
 
-            //Debug.DrawLine(
-            //   new Vector2(t.WorldPosition.x + Grid.Instance.NodeRadius, t.WorldPosition.y + Grid.Instance.NodeRadius),
-            //   new Vector2(t.WorldPosition.x - Grid.Instance.NodeRadius, t.WorldPosition.y + Grid.Instance.NodeRadius),
-            //   Color.red, Time.deltaTime);
+            // Debug.DrawLine(
+            //   new Vector2(t.WorldPosition.x + Tile.RADIUS, t.WorldPosition.y + Tile.RADIUS),
+            //   new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y + Tile.RADIUS),
+            //   col, Time.deltaTime);
 
-            //Debug.DrawLine(
-            //   new Vector2(t.WorldPosition.x - Grid.Instance.NodeRadius, t.WorldPosition.y + Grid.Instance.NodeRadius),
-            //   new Vector2(t.WorldPosition.x - Grid.Instance.NodeRadius, t.WorldPosition.y - Grid.Instance.NodeRadius),
-            //   Color.red, Time.deltaTime);
+            // Debug.DrawLine(
+            //   new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y + Tile.RADIUS),
+            //   new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS),
+            //   col, Time.deltaTime);
         }
 
         if (tiles.Count > 0) {
             shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[0].ExactType, tiles[0].Animator.CurrentFrame);
-            shadowCollider.transform.position = tiles[0].WorldPosition;
+			if(shadowCollider != null)
+	            shadowCollider.transform.position = tiles[0].WorldPosition;
         }
-        cast = new BresenhamsLine(_start, _end, Grid.TILE_RESOLUTION);
-        currentIndex = 0;
-        foreach (Vector2 _pixelPos in cast) {
 
-            float val = (1 / 32);
-            Debug.Log(_pixelPos);
-            Debug.DrawLine(
-               new Vector2(_pixelPos.x - val, _pixelPos.y - val),
-               new Vector2(_pixelPos.x + val, _pixelPos.y - val),
-               Color.red, Time.deltaTime);
+		Vector2 _curPos = _start;
+		int _i = 0;
+		currentIndex = 0;
+		float _goal = ((_end - _start).magnitude * Tile.RESOLUTION);
+		while(true){ // don't actually need the second Bresenhams, so replaced with While (clean this up a bit later, okay? :P)
+			_curPos = Vector2.Lerp(_start, _end, _i / _goal);
+			_i++;
 
-            Debug.DrawLine(
-               new Vector2(_pixelPos.x + val, _pixelPos.y - val),
-               new Vector2(_pixelPos.x + val, _pixelPos.y + val),
-               Color.red, Time.deltaTime);
+            float val = 0.0078125f; // (1 / 64) / 2 == radius of pixel
+			// Debug.DrawLine(
+            //    new Vector2(_curPos.x - val, _curPos.y - val),
+            //    new Vector2(_curPos.x + val, _curPos.y - val),
+            //    col, Time.deltaTime);
 
-            Debug.DrawLine(
-               new Vector2(_pixelPos.x + val, _pixelPos.y + val),
-               new Vector2(_pixelPos.x - val, _pixelPos.y + val),
-               Color.red, Time.deltaTime);
+            // Debug.DrawLine(
+            //    new Vector2(_curPos.x + val, _curPos.y - val),
+            //    new Vector2(_curPos.x + val, _curPos.y + val),
+            //    col, Time.deltaTime);
 
-            Debug.DrawLine(
-               new Vector2(_pixelPos.x - val, _pixelPos.y + val),
-               new Vector2(_pixelPos.x - val, _pixelPos.y - val),
-               Color.red, Time.deltaTime);
+            // Debug.DrawLine(
+            //    new Vector2(_curPos.x + val, _curPos.y + val),
+            //    new Vector2(_curPos.x - val, _curPos.y + val),
+            //    col, Time.deltaTime);
 
+            // Debug.DrawLine(
+            //    new Vector2(_curPos.x - val, _curPos.y + val),
+            //    new Vector2(_curPos.x - val, _curPos.y - val),
+            //    col, Time.deltaTime);
 
-            // if pixel is closer to next collider, set next collider as current
-            //Debug.Log((tiles[currentIndex + 1].WorldPosition - _pixelPos).magnitude + " / " + (tiles[currentIndex].WorldPosition - _pixelPos).magnitude);
-            if (currentIndex < tiles.Count - 1 && (tiles[currentIndex + 1].WorldPosition - _pixelPos).magnitude < (tiles[currentIndex].WorldPosition - _pixelPos).magnitude) {
+			// if pixel is closer to next collider, set next collider as current
+            if (currentIndex < tiles.Count - 1 && (tiles[currentIndex + 1].WorldPosition - _curPos).magnitude < (tiles[currentIndex].WorldPosition - _curPos).magnitude) {
                 currentIndex++;
                 shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[currentIndex].ExactType, tiles[currentIndex].Animator.CurrentFrame);
-                if(shadowCollider != null)
+                if(shadowCollider != null){
                     shadowCollider.transform.position = tiles[currentIndex].WorldPosition;
+					
+					// for(int i = 0; i < shadowCollider.pathCount; i++){
+					// 	for(int j = 1; j < shadowCollider.GetPath(i).Length; j++){
+					// 		Debug.DrawLine(shadowCollider.transform.position + (Vector3)shadowCollider.GetPath(i)[j - 1], shadowCollider.transform.position + (Vector3)shadowCollider.GetPath(i)[j], Color.red, Time.deltaTime);
+					// 	}
+					// }
+				}
             }
 
-            if (shadowCollider != null && shadowCollider.OverlapPoint(_pixelPos)) {
-                _rayhit = _pixelPos;
+            if (shadowCollider != null && shadowCollider.OverlapPoint(_curPos)) {
+//Debug.Log(p);
+                _rayhit = _curPos;
+				Debug.DrawLine(_start, rayHit, col, 1);
                 return true;
             }
-        }
 
-        _rayhit = Vector2.zero;
-        return false;
-    }
+			if(_i / _goal >= 1){
+				_rayhit = Vector2.zero;
+				Debug.DrawLine(_start, rayHit, col, 1);
+				return false;
+			}
+		}
+
+// 		_start = RoundPositionToPixel(_start);
+// 		_end = RoundPositionToPixel(_end);
+
+//         cast = new BresenhamsLine(_start, _end, Grid.TILE_RESOLUTION);
+//         currentIndex = 0;
+// 		int p = 0;
+//         foreach (Vector2 _pixelPos in cast) {
+// p++;
+//             float val = 0.0078125f; // (1 / 64) / 2 == radius of pixel
+//             //Debug.Log(_pixelPos);
+//             Debug.DrawLine(
+//                new Vector2(_pixelPos.x - val, _pixelPos.y - val),
+//                new Vector2(_pixelPos.x + val, _pixelPos.y - val),
+//                col, Time.deltaTime);
+
+//             Debug.DrawLine(
+//                new Vector2(_pixelPos.x + val, _pixelPos.y - val),
+//                new Vector2(_pixelPos.x + val, _pixelPos.y + val),
+//                col, Time.deltaTime);
+
+//             Debug.DrawLine(
+//                new Vector2(_pixelPos.x + val, _pixelPos.y + val),
+//                new Vector2(_pixelPos.x - val, _pixelPos.y + val),
+//                col, Time.deltaTime);
+
+//             Debug.DrawLine(
+//                new Vector2(_pixelPos.x - val, _pixelPos.y + val),
+//                new Vector2(_pixelPos.x - val, _pixelPos.y - val),
+//                col, Time.deltaTime);
+
+
+//             // if pixel is closer to next collider, set next collider as current
+//             //Debug.Log((tiles[currentIndex + 1].WorldPosition - _pixelPos).magnitude + " / " + (tiles[currentIndex].WorldPosition - _pixelPos).magnitude);
+//             if (currentIndex < tiles.Count - 1 && (tiles[currentIndex + 1].WorldPosition - _pixelPos).magnitude < (tiles[currentIndex].WorldPosition - _pixelPos).magnitude) {
+//                 currentIndex++;
+//                 shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[currentIndex].ExactType, tiles[currentIndex].Animator.CurrentFrame);
+//                 if(shadowCollider != null){
+//                     shadowCollider.transform.position = tiles[currentIndex].WorldPosition;
+// 					for(int i = 0; i < shadowCollider.pathCount; i++){
+// 						for(int j = 1; j < shadowCollider.GetPath(i).Length; j++){
+// 							//Debug.DrawLine(shadowCollider.transform.position + (Vector3)shadowCollider.GetPath(i)[j - 1], shadowCollider.transform.position + (Vector3)shadowCollider.GetPath(i)[j], Color.red, Time.deltaTime);
+// 						}
+// 					}
+// 				}
+//             }
+
+//             if (shadowCollider != null && shadowCollider.OverlapPoint(_pixelPos)) {
+// //Debug.Log(p);
+//                 _rayhit = _pixelPos;
+//                 return true;
+//             }
+//         }
+//         _rayhit = Vector2.zero;
+//         return false;
+     }
+
+	// private float x;
+	// private float y;
+	// private Vector2 returnPos = new Vector2();
+	// Vector2 RoundPositionToPixel(Vector2 _pos){ // probably a very convoluted way of doing it, yes (.__. ')
+	// 	// get decimals of start (so "local pos" inside this tile)
+	// 	// x = _pos.x - ((int)_pos.x); 
+	// 	// y = _pos.y - ((int)_pos.y);
+
+	// 	x = _pos.x;
+	// 	y = _pos.y;
+
+	// 	// make each pixel worth 1
+	// 	x *= 64; 
+	// 	y *= 64;
+
+	// 	// // floor or ceil to nearest int (pixel)
+	// 	x = (x - (int)x < 0.5f) ?  Mathf.FloorToInt(x) : Mathf.CeilToInt(x); 
+	// 	y = (y - (int)y < 0.5f) ?  Mathf.FloorToInt(y) : Mathf.CeilToInt(y);
+
+	// 	// divide it back down to regular size
+	// 	returnPos.x = x / 64;
+	// 	returnPos.y = y / 64;
+
+
+	// 	Debug.Log((returnPos.x - _pos.x) + ", " + (returnPos.y - _pos.y));
+	// 	return returnPos;
+	// }
 }
 

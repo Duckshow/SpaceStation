@@ -3,6 +3,9 @@ using System;
 
 public class Tile : IHeapItem<Tile> {
 
+    public const float RADIUS = 0.5f;
+    public const int RESOLUTION = 64;
+
     public CachedAssets.WallSet.P ExactType;
     public enum Type { Empty, Solid, Diagonal, Door, Airlock }
 	private Type wallType = Type.Empty;

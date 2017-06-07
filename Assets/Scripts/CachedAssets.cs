@@ -601,8 +601,10 @@ public class CachedAssets : MonoBehaviour {
             if (cp != null){
                 for(int i = 0; i < cp.Paths.Length; i++)
                     Instance.ShadowCollider.SetPath(i, cp.Paths[i].Vertices);
+    
+                return Instance.ShadowCollider;
             }
-            return Instance.ShadowCollider;
+            return null;
         }
     }
     public WallSet[] WallSets;

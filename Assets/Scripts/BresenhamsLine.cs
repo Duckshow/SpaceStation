@@ -46,7 +46,7 @@ public class BresenhamsLine : IEnumerable
                 result.y *= (1 / resolution);
                 yield return result;
  
-                if( x == (int)end.x )
+                if( x == Mathf.CeilToInt(end.x) )
                     yield break;
  
                 if( yd >= 0 )
@@ -70,7 +70,7 @@ public class BresenhamsLine : IEnumerable
                 result.y *= (1 / resolution);
                 yield return result;
  
-                if( y == (int)end.y )
+                if( y == Mathf.CeilToInt(end.y) )
                     yield break;
  
                 if( xd >= 0 )

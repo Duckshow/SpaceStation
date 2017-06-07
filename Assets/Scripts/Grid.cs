@@ -48,15 +48,14 @@ public class Grid : MonoBehaviour {
 
 //    private GridGraphics[] gridGraphicsBottom;
 //    private GridGraphics[] gridGraphicsTop;
-    public const int TILE_RESOLUTION = 64;
     public const float WORLD_BOTTOM_HEIGHT = 0.01f;
     public const float WORLD_TOP_HEIGHT = -0.01f;
 
+    public bool GenerateWalls = true;
     public bool DisplayGridGizmos;
     public bool DisplayPaths;
     public bool DisplayWaypoints;
     public Vector2 GridWorldSize;
-    public float NodeRadius;
 
     [HideInInspector]
     public Tile[,] grid; // should make 1D
@@ -77,7 +76,7 @@ public class Grid : MonoBehaviour {
 //        gridGraphicsBottom = new GridGraphics[GridGraphicsBottomRenderers.Length];
 //        gridGraphicsTop = new GridGraphics[GridGraphicsBottomRenderers.Length];
 
-        nodeDiameter = NodeRadius * 2;
+        nodeDiameter = Tile.RADIUS * 2;
         GridSizeX = Mathf.RoundToInt(GridWorldSize.x / nodeDiameter);
         GridSizeY = Mathf.RoundToInt(GridWorldSize.y / nodeDiameter);
 
@@ -97,7 +96,7 @@ public class Grid : MonoBehaviour {
         Vector3 worldBottomLeft = transform.position - (Vector3.right * GridWorldSize.x / 2) - (Vector3.up * GridWorldSize.y / 2) - new Vector3(0, 0.5f, 0); // 0.5f because of the +1 for diagonals
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + NodeRadius) + Vector3.up * (y * nodeDiameter + NodeRadius + 0.5f); // +0.5f for diagonals
+                Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + Tile.RADIUS) + Vector3.up * (y * nodeDiameter + Tile.RADIUS + 0.5f); // +0.5f for diagonals
 
                 grid[x, y] = new Tile(worldPoint, x, y);
             }
@@ -105,7 +104,7 @@ public class Grid : MonoBehaviour {
         // for testing-purposes
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-				if (Random.value > 0.75f) {
+				if (GenerateWalls && Random.value > 0.75f) {
                     grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
                     continue;
                 }
@@ -180,6 +179,17 @@ public class Grid : MonoBehaviour {
             for (int x = 0; x < GridSizeX; x++) {
                 grid[x, y].UpdateWallCornerHider(false);
                 grid[x, y].UpdateFloorCornerHider(false);
+
+                PolygonCollider2D myCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider( grid[x, y].ExactType, grid[x, y].Animator.CurrentFrame);
+                if(myCollider != null){
+                    myCollider.transform.position = grid[x, y].WorldPosition;
+                    for(int i = 0; i < myCollider.pathCount; i++){
+                        for(int j = 1; j < myCollider.GetPath(i).Length; j++){
+                            Debug.DrawLine(myCollider.transform.position + (Vector3)myCollider.GetPath(i)[j - 1], myCollider.transform.position + (Vector3)myCollider.GetPath(i)[j], Color.red, 1);
+                        }
+                    }
+                }
+                Debug.Break();
             }
         }
     }
@@ -227,8 +237,8 @@ public class Grid : MonoBehaviour {
     }
 
     public Tile GetTileFromWorldPoint(Vector3 _worldPosition) {
-        float percentX = (_worldPosition.x - NodeRadius + GridWorldSize.x * 0.5f) / GridWorldSize.x;
-        float percentY = (_worldPosition.y - NodeRadius + GridWorldSize.y * 0.5f) / GridWorldSize.y;
+        float percentX = (_worldPosition.x - Tile.RADIUS + GridWorldSize.x * 0.5f) / GridWorldSize.x;
+        float percentY = (_worldPosition.y - Tile.RADIUS + GridWorldSize.y * 0.5f) / GridWorldSize.y;
         percentX = Mathf.Clamp01(percentX);
         percentY = Mathf.Clamp01(percentY);
 

@@ -126,7 +126,7 @@ public class CachedAssetsEditor : Editor {
         EditorUtility.ClearProgressBar();
     }
     private List<Color32> shadowPixels;
-    private const int TILE_PIXEL_RES = Grid.TILE_RESOLUTION;
+    private const int TILE_PIXEL_RES = Tile.RESOLUTION;
     private const int maxIndexY = (TILE_PIXEL_RES * 2) - 1;
     private const int maxIndexX = TILE_PIXEL_RES - 1;
     private Color32[][] assetPixels;
@@ -430,7 +430,11 @@ public class CachedAssetsEditor : Editor {
 
         for (int i = 0; i < vertices.Length; i++) {
             for (int j = 0; j < vertices[i].Count; j++) {
-                vertices[i][j] /= Grid.TILE_RESOLUTION;
+                newVertex = vertices[i][j];
+                newVertex /= Tile.RESOLUTION;
+                newVertex.x -= Tile.RADIUS;
+                newVertex.y -= Tile.RADIUS;
+                vertices[i][j] = newVertex;
             }
         }
         CachedAssets.WallSet.ColliderPaths cp = new CachedAssets.WallSet.ColliderPaths(vertices.Length);

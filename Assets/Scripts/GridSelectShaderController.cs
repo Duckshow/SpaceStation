@@ -24,7 +24,7 @@ public class GridSelectShaderController : MonoBehaviour {
     }
 
     void Start() {
-        rend.material.mainTexture = new Texture2D((int)Grid.Instance.GridWorldSize.x * Grid.TILE_RESOLUTION, (int)Grid.Instance.GridWorldSize.y * Grid.TILE_RESOLUTION, TextureFormat.RGBA32, false);
+        rend.material.mainTexture = new Texture2D((int)Grid.Instance.GridWorldSize.x * Tile.RESOLUTION, (int)Grid.Instance.GridWorldSize.y * Tile.RESOLUTION, TextureFormat.RGBA32, false);
         rend.material.mainTexture.wrapMode = TextureWrapMode.Clamp;
         rend.material.mainTexture.filterMode = FilterMode.Point;
         rend.transform.localScale = new Vector3((int)Grid.Instance.GridWorldSize.x, (int)Grid.Instance.GridWorldSize.y, 1);

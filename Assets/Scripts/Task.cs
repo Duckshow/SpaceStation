@@ -142,8 +142,8 @@ public class Task {
                 // create a slowdown-effect when approaching nextwaypoint
                 newPosition = Vector3.Lerp(previousWaypoint.CharacterPosition, nextWaypoint.CharacterPosition, Mathf.Clamp01((Time.time - timeAtPrevWaypoint) / (distance / speed)));
                 diff = newPosition - meta.Handler.Owner.transform.position; 
-                if (Vector3.Distance(newPosition, nextWaypoint.CharacterPosition) < Grid.Instance.NodeRadius)
-                    diff *= Mathf.Max(0.1f, Vector3.Distance(newPosition, nextWaypoint.CharacterPosition) / Grid.Instance.NodeRadius);
+                if (Vector3.Distance(newPosition, nextWaypoint.CharacterPosition) < Tile.RADIUS)
+                    diff *= Mathf.Max(0.1f, Vector3.Distance(newPosition, nextWaypoint.CharacterPosition) / Tile.RADIUS);
 
                 meta.Handler.Owner.transform.position += diff;
                 yield return null;
