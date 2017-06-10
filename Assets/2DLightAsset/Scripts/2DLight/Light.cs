@@ -1,0 +1,566 @@
+﻿/****************************************************************************
+Copyright (c) 2014 Martin Ysa
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+ 
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+ 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+****************************************************************************/
+
+using UnityEngine;
+using System.Collections.Generic;
+
+//public class Verts {
+//    public float Angle;
+//    public int Location; // 1 = left end point | 0 = middle | -1 = right endpoint
+//    public Vector3 Pos;
+//    public bool Endpoint;
+//}
+
+public class Light : MonoBehaviour {
+
+    public bool DebugMode = false;
+
+    [Space]
+
+    public string version = "1.0.5"; //release date 09/01/2017
+    public Material lightMaterial;
+    public float lightRadius = 20f;
+    public LayerMask layer;
+    [Range(4, 40)]
+    public int lightSegments = 8;
+
+    //[HideInInspector] public PolygonCollider2D[] allMeshes; // Array for all of the meshes in our scene
+    [HideInInspector]
+    public List<Tile> allTiles = new List<Tile>(); // Array for all of the meshes in our scene
+    [HideInInspector]
+    public List<Verts> allVertices = new List<Verts>(); // Array for all of the vertices in our meshes
+
+    private Mesh lightMesh; // Mesh for our light mesh
+    private new MeshRenderer renderer;
+
+
+    void Start() {
+        SinCosTable.InitSinCos();
+
+        MeshFilter meshFilter = (MeshFilter)gameObject.AddComponent(typeof(MeshFilter));        // Add a Mesh Filter component to the light game object so it can take on a form
+        renderer = gameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;               // Add a Mesh Renderer component to the light game object so the form can become visible
+        renderer.sharedMaterial = lightMaterial;                                                // Add the specified material
+        lightMesh = new Mesh();                                                                 // create a new mesh for our light mesh
+        meshFilter.mesh = lightMesh;                                                            // Set this newly created mesh to the mesh filter
+        lightMesh.name = "Light Mesh";                                                          // Give it a name
+        lightMesh.MarkDynamic();                                                               // Set mesh as dynamic
+    }
+
+    [EasyButtons.Button]
+    public void UpdateLight() {
+        GetAllMeshes();
+        SetLight();
+        RenderLightMesh();
+        ResetBounds();
+    }
+
+    void Update() {
+        GetAllMeshes();
+        SetLight();
+        RenderLightMesh();
+        ResetBounds();
+    }
+
+    private Tile t;
+    void GetAllMeshes() {
+        //-- Step 1: obtain all active meshes in the scene --//
+        //---------------------------------------------------------------------//
+
+        //Collider2D [] allColl2D = Physics2D.OverlapCircleAll(transform.position, lightRadius, layer);
+        //allMeshes = new PolygonCollider2D[allColl2D.Length];
+        //for (int i=0; i<allColl2D.Length; i++)
+        //	allMeshes[i] = (PolygonCollider2D)allColl2D[i];
+
+        allTiles.Clear();
+        for (int y = 0; y < Grid.Instance.GridSizeY; y++) {
+            for (int x = 0; x < Grid.Instance.GridSizeX; x++) {
+                t = Grid.Instance.grid[x, y];
+                if ((t.WorldPosition - (Vector2)transform.position).magnitude <= lightRadius) {
+                    if (CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition) == null)
+                        continue;
+
+                    allTiles.Add(t);
+                }
+            }
+        }
+    }
+
+    private bool sortAngles = false;
+    private bool lows = false; // check si hay menores a -0.5
+    private bool highs = false; // check si hay mayores a 2.0
+    private float magRange = 0.15f;
+    private List<Verts> tempVerts = new List<Verts>();
+    private PolygonCollider2D polCollider;
+    private Verts v;
+    private Vector3 worldPoint;
+    private Vector2 rayHit;
+    private int posLowAngle;
+    private int posHighAngle;
+    private float lowestAngle;
+    private float highestAngle;
+    private Vector3 fromCast;
+    private bool isEndpoint;
+    private Vector2 from;
+    private Vector2 dir;
+    private float mag;
+    private const float CHECK_POINT_LAST_RAY_OFFSET = 0.005f;
+    private Vector2 rayCont;
+    private Vector3 hitPos;
+    private Vector2 newDir;
+    private Verts vL;
+    private int theta;
+    private int amount;
+    private float rangeAngleComparision;
+    private Verts vertex1;
+    private Verts vertex2;
+    void SetLight() {
+        allVertices.Clear();// Since these lists are populated every frame, clear them first to prevent overpopulation
+
+        //--Step 2: Obtain vertices for each mesh --//
+        //---------------------------------------------------------------------//
+
+        magRange = 0.15f;
+        tempVerts.Clear();
+        Debug.Log(allTiles.Count.ToString().Color(Color.cyan));
+        for (int i = 0; i < allTiles.Count; i++) {
+            tempVerts.Clear();
+            //polCollider = allMeshes[i];
+            polCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(allTiles[i].ExactType, allTiles[i].Animator.CurrentFrame, allTiles[i].WorldPosition);
+            
+            // the following variables used to fix sorting bug
+            // the calculated angles are in mixed quadrants (1 and 4)
+            lows = false; // check for minors at -0.5
+            highs = false; // check for majors at 2.0
+
+            //if (((1 << polCollider.transform.gameObject.layer) & layer) != 0) { // check if collider's layer is in the current layermask (I think? :c)
+            for (int j = 0; j < polCollider.GetTotalPointCount(); j++) {    // ...and for every vertex we have of each collider...
+                v = new Verts();
+
+                // Convert vertex to world space
+                worldPoint = polCollider.transform.TransformPoint(polCollider.points[j]);
+
+                //rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
+                //rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
+
+
+                if (Gridcast(transform.position, worldPoint, out rayHit)) {
+                    //v.Pos = rayHit.point;
+                    //if(worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange))
+                    //	v.Endpoint = true;
+                    Debug.Log("Hooooo!");
+                    v.Pos = rayHit;
+                    if (worldPoint.sqrMagnitude >= (rayHit.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.sqrMagnitude + magRange)) {
+                        v.Endpoint = true;
+                        if (DebugMode)
+                            Debug.DrawLine(transform.position, v.Pos, Color.red);
+                    }
+                }
+                else {
+                    Debug.Log("neeeee");
+                    v.Pos = worldPoint;
+                    v.Endpoint = true;
+                    if (DebugMode)
+                        Debug.DrawLine(transform.position, v.Pos, Color.white);
+                }
+
+                //if(DebugMode)
+                //    Debug.DrawLine(transform.position, v.Pos, Color.white);
+
+                //--Convert To local space for build mesh (mesh craft only in local vertex)
+                v.Pos = transform.InverseTransformPoint(v.Pos); // optimization: could we do the Linecast in local space instead?
+                                                                //--Calculate angle
+                v.Angle = GetVectorAngle(true, v.Pos.x, v.Pos.y);
+
+                // -- bookmark if an angle is lower than 0 or higher than 2f --//
+                //-- helper method for fix bug on shape located in 2 or more quadrants
+                if (v.Angle < 0f)
+                    lows = true;
+
+                if (v.Angle > 2f)
+                    highs = true;
+
+                //--Add verts to the main list
+                if ((v.Pos).sqrMagnitude <= lightRadius * lightRadius)
+                    tempVerts.Add(v);
+
+                if (sortAngles == false)
+                    sortAngles = true;
+            }
+            // }
+            return;
+            // Identify the endpoints (left and right)
+            if (tempVerts.Count > 0) {
+                SortList(tempVerts); // sort first
+
+                posLowAngle = 0; // save the indice of left ray
+                posHighAngle = 0; // same last in right side
+
+                if (highs == true && lows == true) {  //-- FIX BUG OF SORTING CUANDRANT 1-4 --//
+                    lowestAngle = -1f; //tempVerts[0].angle; // init with first data
+                    highestAngle = tempVerts[0].Angle;
+
+                    for (int j = 0; j < tempVerts.Count; j++) {
+                        if (tempVerts[j].Angle < 1f && tempVerts[j].Angle > lowestAngle) {
+                            lowestAngle = tempVerts[j].Angle;
+                            posLowAngle = j;
+                        }
+                        if (tempVerts[j].Angle > 2f && tempVerts[j].Angle < highestAngle) {
+                            highestAngle = tempVerts[j].Angle;
+                            posHighAngle = j;
+                        }
+                    }
+                }
+                else {
+                    //-- conventional position of ray points
+                    // save the indice of left ray
+                    posLowAngle = 0;
+                    posHighAngle = tempVerts.Count - 1;
+                }
+
+                tempVerts[posLowAngle].Location = 1; // right
+                tempVerts[posHighAngle].Location = -1; // left
+
+                //--Add vertices to the main mesh's vertices--//
+                allVertices.AddRange(tempVerts);
+
+                // -- r == 0 --> right ray
+                // -- r == 1 --> left ray
+                for (int r = 0; r < 2; r++) {
+                    //-- Cast a ray in same direction continuos mode, start a last point of last ray --//
+                    fromCast = new Vector3();
+                    isEndpoint = false;
+
+                    if (r == 0) {
+                        fromCast = transform.TransformPoint(tempVerts[posLowAngle].Pos);
+                        isEndpoint = tempVerts[posLowAngle].Endpoint;
+                    }
+                    else if (r == 1) {
+                        fromCast = transform.TransformPoint(tempVerts[posHighAngle].Pos);
+                        isEndpoint = tempVerts[posHighAngle].Endpoint;
+                    }
+
+                    if (isEndpoint == true) {
+                        dir = fromCast - transform.position;
+                        mag = lightRadius;// - fromCast.magnitude;
+                        from = (Vector2)fromCast + (dir * CHECK_POINT_LAST_RAY_OFFSET);
+
+                        //rayCont = Physics2D.Raycast(from, dir, mag, layer);
+                        //if (rayCont)
+                        //    hitPos = rayCont.point;
+
+                        if (Gridcast(from, from + (dir.normalized * mag), out rayHit))
+                            hitPos = rayCont;
+
+                        else {
+                            newDir = transform.InverseTransformDirection(dir);  //local p
+                            hitPos = (Vector2)transform.TransformPoint(newDir.normalized * mag); //world p
+                        }
+
+                        if ((hitPos - transform.position).sqrMagnitude > (lightRadius * lightRadius)) {
+                            dir = transform.InverseTransformDirection(dir); //local p
+                            hitPos = transform.TransformPoint(dir.normalized * mag);
+                        }
+
+                        Debug.Log("green");
+                        if(DebugMode)
+                            Debug.DrawLine(fromCast, hitPos, Color.green);
+
+                        vL = new Verts();
+                        vL.Pos = transform.InverseTransformPoint(hitPos);
+                        vL.Angle = GetVectorAngle(true, vL.Pos.x, vL.Pos.y);
+                        allVertices.Add(vL);
+                    }
+                }
+            }
+        }
+        //--Step 3: Generate vectors for light cast--//
+        //---------------------------------------------------------------------//
+
+        theta = 0;
+        amount = 360 / lightSegments;
+        for (int i = 0; i < lightSegments; i++) {
+            theta = amount * i;
+            if (theta == 360)
+                theta = 0;
+
+            v = new Verts();
+            //v.pos = new Vector3((Mathf.Sin(theta)), (Mathf.Cos(theta)), 0); // in radians low performance
+            v.Pos = new Vector3((SinCosTable.sSinArray[theta]), (SinCosTable.sCosArray[theta]), 0); // in degrees (previous calculate)
+            v.Angle = GetVectorAngle(true, v.Pos.x, v.Pos.y);
+            v.Pos *= lightRadius;
+            v.Pos += transform.position;
+
+            //rayHit = Physics2D.Raycast(transform.position, v.Pos - transform.position, lightRadius, layer);
+            //if (!rayHit) {
+            //	v.Pos = transform.InverseTransformPoint(v.Pos);
+            //	allVertices.Add(v);
+            //}
+            if (!Gridcast(transform.position, v.Pos, out rayHit)) {
+                v.Pos = transform.InverseTransformPoint(v.Pos);
+                allVertices.Add(v);
+            }
+        }
+
+        //-- Step 4: Sort each vertex by angle (along sweep ray 0 - 2PI)--//
+        //---------------------------------------------------------------------//
+        if (sortAngles == true) {
+            SortList(allVertices);
+        }
+        //-----------------------------------------------------------------------------
+
+
+        //--auxiliary step (change order vertices close to light first in position when has same direction) --//
+        rangeAngleComparision = 0.00001f;
+        for (int i = 0; i < allVertices.Count - 1; i++) {
+
+            vertex1 = allVertices[i];
+            vertex2 = allVertices[i + 1];
+
+            // -- Compare the local angle of each vertex and decide if we have to make an exchange-- //
+            if (vertex1.Angle >= vertex2.Angle - rangeAngleComparision && vertex1.Angle <= vertex2.Angle + rangeAngleComparision) {
+                if (vertex2.Location == -1) { // Right Ray
+                    if (vertex1.Pos.sqrMagnitude > vertex2.Pos.sqrMagnitude) {
+                        allVertices[i] = vertex2;
+                        allVertices[i + 1] = vertex1;
+                    }
+                }
+
+                // ALREADY DONE!!
+                if (vertex1.Location == 1) { // Left Ray
+                    if (vertex1.Pos.sqrMagnitude < vertex2.Pos.sqrMagnitude) {
+                        allVertices[i] = vertex2;
+                        allVertices[i + 1] = vertex1;
+                    }
+                }
+            }
+        }
+
+    }
+
+    private Vector3[] initVerticesMeshLight;
+    private Vector2[] uvs;
+    private int index;
+    private int[] triangles;
+    void RenderLightMesh() {
+        //-- Step 5: fill the mesh with vertices--//
+        //---------------------------------------------------------------------//
+
+        initVerticesMeshLight = new Vector3[allVertices.Count + 1];
+        initVerticesMeshLight[0] = Vector3.zero;
+
+        for (int i = 0; i < allVertices.Count; i++)
+            initVerticesMeshLight[i + 1] = allVertices[i].Pos;
+
+        lightMesh.Clear();
+        lightMesh.vertices = initVerticesMeshLight;
+
+        uvs = new Vector2[initVerticesMeshLight.Length];
+        for (int i = 0; i < initVerticesMeshLight.Length; i++)
+            uvs[i] = new Vector2(initVerticesMeshLight[i].x, initVerticesMeshLight[i].y);
+
+        lightMesh.uv = uvs;
+
+        // triangles
+        index = 0;
+        triangles = new int[(allVertices.Count * 3)];
+        for (int i = 0; i < (allVertices.Count * 3); i += 3) {
+            triangles[i] = 0;
+            triangles[i + 1] = index + 1;
+
+            if (i == (allVertices.Count * 3) - 3) //-- if is the last vertex (one loop)
+                triangles[i + 2] = 1;
+            else // next next vertex	
+                triangles[i + 2] = index + 2;
+
+            index++;
+        }
+
+        lightMesh.triangles = triangles;
+        //lightMesh.RecalculateNormals();
+        renderer.sharedMaterial = lightMaterial;
+    }
+    private Bounds bounds;
+    void ResetBounds() {
+        bounds = lightMesh.bounds;
+        bounds.center = Vector3.zero;
+        lightMesh.bounds = bounds;
+    }
+    void SortList(List<Verts> list) {
+        list.Sort((item1, item2) => (item2.Angle.CompareTo(item1.Angle)));
+    }
+
+    void DrawLinePerVertex() {
+        for (int i = 0; i < allVertices.Count; i++) {
+            if (i < (allVertices.Count - 1))
+                Debug.DrawLine(allVertices[i].Pos, allVertices[i + 1].Pos, new Color(i * 0.02f, i * 0.02f, i * 0.02f));
+            else
+                Debug.DrawLine(allVertices[i].Pos, allVertices[0].Pos, new Color(i * 0.02f, i * 0.02f, i * 0.02f));
+        }
+    }
+
+    private float angle;
+    float GetVectorAngle(bool pseudo, float x, float y) {
+        angle = 0;
+        if (pseudo == true)
+            angle = PseudoAngle(x, y);
+        else
+            angle = Mathf.Atan2(y, x);
+
+        return angle;
+    }
+
+    float PseudoAngle(float dx, float dy) {
+        // Hight performance for calculate angle on a vector (only for sort)
+        // APROXIMATE VALUES -- NOT EXACT!! //
+        float ax = Mathf.Abs(dx);
+        float ay = Mathf.Abs(dy);
+        float p = dy / (ax + ay);
+        if (dx < 0)
+            p = 2 - p;
+
+        return p;
+    }
+
+    private List<Tile> tiles = new List<Tile>();
+    private BresenhamsLine cast;
+    private Vector2 tilePos;
+    private PolygonCollider2D shadowCollider;
+    private int currentIndex;
+    Color col;
+    private int iterationsInCast = 0;
+    bool Gridcast(Vector2 _start, Vector2 _end, out Vector2 _rayhit) {
+        col = new Color(Random.value, Random.value, Random.value, 1);
+        //Debug.Log(castcount);
+        // find tiles along cast with a shadowcollider
+        tiles.Clear();
+        iterationsInCast = 0;
+        cast = new BresenhamsLine(_start, _end, 1);
+
+        foreach (Vector2 _pos in cast) {
+            tilePos = _pos;
+
+            // subtract because Bresenhams is in whole numbers
+            tilePos.x -= Tile.RADIUS;
+            tilePos.y -= Tile.RADIUS;
+
+            t = Grid.Instance.GetTileFromWorldPoint(tilePos);
+            //try {
+            tiles.Add(t);
+            //}
+            //catch (System.OutOfMemoryException) {
+            //    Debug.Log((_start + " -> " + _end + ": " + tiles.Count).Color(Color.red));
+            //    throw;
+            //}
+
+            //t.SetWallColor(col);
+            //t.SetFloorColor(col);
+
+            // Debug.DrawLine(
+            //    new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS), 
+            //    new Vector2(t.WorldPosition.x + Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS),
+            //    col, Time.deltaTime);
+
+            // Debug.DrawLine(
+            //   new Vector2(t.WorldPosition.x + Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS),
+            //   new Vector2(t.WorldPosition.x + Tile.RADIUS, t.WorldPosition.y + Tile.RADIUS),
+            //   col, Time.deltaTime);
+
+            // Debug.DrawLine(
+            //   new Vector2(t.WorldPosition.x + Tile.RADIUS, t.WorldPosition.y + Tile.RADIUS),
+            //   new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y + Tile.RADIUS),
+            //   col, Time.deltaTime);
+
+            // Debug.DrawLine(
+            //   new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y + Tile.RADIUS),
+            //   new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS),
+            //   col, Time.deltaTime);
+        }
+
+        if (tiles.Count > 0)
+            shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[0].ExactType, tiles[0].Animator.CurrentFrame, tiles[0].WorldPosition);
+
+        Vector2 _curPos = _start;
+        currentIndex = 0;
+        float _goal = ((_end - _start).magnitude * Tile.RESOLUTION); // the distance in amount of tiles, multiplied by the amount of pixels across a tile
+        while (true && iterationsInCast < 100000) { // don't actually need the second Bresenhams, so replaced with While (clean this up a bit later, okay? :P)
+            _curPos = Vector2.Lerp(_start, _end, iterationsInCast / _goal);
+            iterationsInCast++;
+
+            //float val = 0.0078125f; // (1 / 64) / 2 == radius of pixel
+            //Debug.DrawLine(
+            //   new Vector2(_curPos.x - val, _curPos.y - val),
+            //   new Vector2(_curPos.x + val, _curPos.y - val),
+            //   col, Time.deltaTime);
+
+            //Debug.DrawLine(
+            //   new Vector2(_curPos.x + val, _curPos.y - val),
+            //   new Vector2(_curPos.x + val, _curPos.y + val),
+            //   col, Time.deltaTime);
+
+            //Debug.DrawLine(
+            //   new Vector2(_curPos.x + val, _curPos.y + val),
+            //   new Vector2(_curPos.x - val, _curPos.y + val),
+            //   col, Time.deltaTime);
+
+            //Debug.DrawLine(
+            //   new Vector2(_curPos.x - val, _curPos.y + val),
+            //   new Vector2(_curPos.x - val, _curPos.y - val),
+            //   col, Time.deltaTime);
+
+            // if pixel is closer to next collider, set next collider as current
+            if (currentIndex < tiles.Count - 1 && (tiles[currentIndex + 1].WorldPosition - _curPos).magnitude < (tiles[currentIndex].WorldPosition - _curPos).magnitude) {
+                currentIndex++;
+                shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[currentIndex].ExactType, tiles[currentIndex].Animator.CurrentFrame, tiles[currentIndex].WorldPosition);
+                Debug.Log("Next!");
+                //if (shadowCollider != null) {
+                    // for(int i = 0; i < shadowCollider.pathCount; i++){
+                    // 	for(int j = 1; j < shadowCollider.GetPath(i).Length; j++){
+                    // 		Debug.DrawLine(shadowCollider.transform.position + (Vector3)shadowCollider.GetPath(i)[j - 1], shadowCollider.transform.position + (Vector3)shadowCollider.GetPath(i)[j], Color.red, Time.deltaTime);
+                    // 	}
+                    // }
+                //}
+            }
+
+            if (shadowCollider != null && shadowCollider.OverlapPoint(_curPos)) {
+                Debug.Log("Hit!".Color(Color.green));
+                //Debug.Log("Bing!".Color(Color.green));
+                //Debug.Log(p);
+                _rayhit = _curPos;
+                Debug.DrawLine(_start, rayHit, Color.green, 1);
+                return true;
+            }
+
+            if (iterationsInCast / _goal >= 1) {
+                Debug.Log("Miss!".Color(Color.red));
+
+                //Debug.Log("Bing!".Color(Color.red));
+                Debug.DrawLine(_start, _end, Color.red);
+                Debug.Break();
+                _rayhit = Vector2.zero;
+                return false;
+            }
+        }
+
+        throw new System.Exception("Gridcast exceeded 100.000 iterations to reach target! Something is totally wrong or your cast is way too big! D:");
+    }
+}
+

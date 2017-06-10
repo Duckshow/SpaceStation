@@ -40,11 +40,6 @@ public class Grid : MonoBehaviour {
 //        }
 //    }
 
-    [SerializeField] private Texture2D TextureWithGoodImportSettings;
-    [SerializeField] private Texture2D NormalMapWithGoodImportSettings;
-
-    [SerializeField] private MeshRenderer[] GridGraphicsBottomRenderers;
-    [SerializeField] private MeshRenderer[] GridGraphicsTopRenderers;
 
 //    private GridGraphics[] gridGraphicsBottom;
 //    private GridGraphics[] gridGraphicsTop;
@@ -64,8 +59,6 @@ public class Grid : MonoBehaviour {
     public int MaxSize { get { return GridSizeX * GridSizeY; } }
     public int GridSizeX { get; private set; }
     public int GridSizeY { get; private set; }
-    private int sliceSizeX;
-    private int sliceSizeY;
 
 
 
@@ -180,16 +173,15 @@ public class Grid : MonoBehaviour {
                 grid[x, y].UpdateWallCornerHider(false);
                 grid[x, y].UpdateFloorCornerHider(false);
 
-                PolygonCollider2D myCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider( grid[x, y].ExactType, grid[x, y].Animator.CurrentFrame);
+                PolygonCollider2D myCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider( grid[x, y].ExactType, grid[x, y].Animator.CurrentFrame, grid[x, y].WorldPosition);
                 if(myCollider != null){
-                    myCollider.transform.position = grid[x, y].WorldPosition;
                     for(int i = 0; i < myCollider.pathCount; i++){
                         for(int j = 1; j < myCollider.GetPath(i).Length; j++){
                             Debug.DrawLine(myCollider.transform.position + (Vector3)myCollider.GetPath(i)[j - 1], myCollider.transform.position + (Vector3)myCollider.GetPath(i)[j], Color.red, 1);
                         }
                     }
                 }
-                Debug.Break();
+                //Debug.Break();
             }
         }
     }

@@ -596,12 +596,13 @@ public class CachedAssets : MonoBehaviour {
             }
         }
         private ColliderPaths cp;
-        public PolygonCollider2D GetShadowCollider(P _type, int _animationFrame){
+        public PolygonCollider2D GetShadowCollider(P _type, int _animationFrame, Vector2 _worldPosition){
             cp = GetColliderPaths(_type, _animationFrame);
             if (cp != null){
-                for(int i = 0; i < cp.Paths.Length; i++)
+                for (int i = 0; i < cp.Paths.Length; i++) 
                     Instance.ShadowCollider.SetPath(i, cp.Paths[i].Vertices);
-    
+
+                Instance.ShadowCollider.transform.position = _worldPosition;
                 return Instance.ShadowCollider;
             }
             return null;

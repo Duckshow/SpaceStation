@@ -47,7 +47,6 @@ public class TileAnimator {
 
     public TileAnimator(Tile _owner) {
         owner = _owner;
-        Grid.LateUpdateAnimators.Add(this);
         IsFinished = true;
     }
 
@@ -146,6 +145,7 @@ public class TileAnimator {
         IsPaused = false;
 
         IsFinished = false;
+        Grid.LateUpdateAnimators.Add(this);
     }
     public float GetProperWaitTimeForTileAnim(TileAnimation _animBottom, TileAnimation _animTop) {
         return (Mathf.Max(_animBottom.Frames.Length, _animTop.Frames.Length) + 1) / currentFPS;
@@ -159,6 +159,7 @@ public class TileAnimator {
 
     public void StopAnimating() {
         IsFinished = true;
+        Grid.LateUpdateAnimators.Remove(this);
         owner.SetBuildingAllowed(true);
     }
 
@@ -182,6 +183,7 @@ public class TileAnimator {
                 return;
             }
 
+            Grid.LateUpdateAnimators.Remove(this);
             owner.SetBuildingAllowed(true);
         }
     }
@@ -201,6 +203,7 @@ public class TileAnimator {
         IsFinished = CurrentFrame == EndFrame;
         if (IsFinished) {
             TimeFinished = Time.time;
+            Grid.LateUpdateAnimators.Remove(this);
             Iterations++;
         }
     }
