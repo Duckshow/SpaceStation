@@ -135,19 +135,23 @@ public class DynamicLight : MonoBehaviour {
                     // Convert vertex to world space
 					worldPoint = polCollider.transform.TransformPoint(polCollider.points[j]);
 
-                    //rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
-                    rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
+                    rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
+                    //rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
                     if (rayHit){
 						v.Pos = rayHit.point;
 						if(worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange))
+						{
 							v.Endpoint = true;
+                            Debug.DrawLine(transform.position, v.Pos, Color.green);
+						}	
 					}
                     else {
 						v.Pos =  worldPoint;
 						v.Endpoint = true;
+						Debug.DrawLine(transform.position, v.Pos, Color.red);
 					}
 						
-					Debug.DrawLine(transform.position, v.Pos, Color.white);	
+					//Debug.DrawLine(transform.position, v.Pos, Color.white);	
 						
 					//--Convert To local space for build mesh (mesh craft only in local vertex)
 					v.Pos = transform.InverseTransformPoint(v.Pos); // optimization: could we do the Linecast in local space instead?
@@ -240,7 +244,7 @@ public class DynamicLight : MonoBehaviour {
 							hitPos = transform.TransformPoint(dir.normalized * mag);
 						}
 							
-						Debug.DrawLine(fromCast, hitPos, Color.green);	
+						//Debug.DrawLine(fromCast, hitPos, Color.green);	
 							
 						vL = new Verts();
 						vL.Pos = transform.InverseTransformPoint(hitPos);
@@ -250,7 +254,7 @@ public class DynamicLight : MonoBehaviour {
 				}
 			}
 		}
-			
+			Debug.Break();
 		//--Step 3: Generate vectors for light cast--//
 		//---------------------------------------------------------------------//
 			

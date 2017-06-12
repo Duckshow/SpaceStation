@@ -31,8 +31,6 @@ public class CachedAssetsEditor : Editor {
         }
     }
 
-    fajidj // continue here. Somehow the colliders are smaller than what's being generated. Fix iiiit.
-
     private int currentWallSetIndex;
     private const int AMOUNT_OF_SHIT = 93;
     private int shitCount = 0;
@@ -46,79 +44,79 @@ public class CachedAssetsEditor : Editor {
             currentWallSetIndex = i;
 
             thisCA.WallSets[i].wall_Single_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Single);
-            //thisCA.WallSets[i].wall_FourWay_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_FourWay);
-            //thisCA.WallSets[i].wall_Vertical_T_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Vertical_T);
-            //thisCA.WallSets[i].wall_Vertical_M_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Vertical_M);
-            //thisCA.WallSets[i].wall_Vertical_B_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Vertical_B);
-            //thisCA.WallSets[i].wall_Horizontal_L_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Horizontal_L);
-            //thisCA.WallSets[i].wall_Horizontal_M_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Horizontal_M);
-            //thisCA.WallSets[i].wall_Horizontal_R_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Horizontal_R);
+            thisCA.WallSets[i].wall_FourWay_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_FourWay);
+            thisCA.WallSets[i].wall_Vertical_T_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Vertical_T);
+            thisCA.WallSets[i].wall_Vertical_M_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Vertical_M);
+            thisCA.WallSets[i].wall_Vertical_B_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Vertical_B);
+            thisCA.WallSets[i].wall_Horizontal_L_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Horizontal_L);
+            thisCA.WallSets[i].wall_Horizontal_M_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Horizontal_M);
+            thisCA.WallSets[i].wall_Horizontal_R_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Horizontal_R);
 
-            //thisCA.WallSets[i].wall_Corner_TopRight_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Corner_TopRight);
-            //thisCA.WallSets[i].wall_Corner_TopLeft_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Corner_TopLeft);
-            //thisCA.WallSets[i].wall_Corner_BottomRight_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Corner_BottomRight);
-            //thisCA.WallSets[i].wall_Corner_BottomLeft_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Corner_BottomLeft);
-            //thisCA.WallSets[i].wall_Tee_Right_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Tee_Right);
-            //thisCA.WallSets[i].wall_Tee_Left_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Tee_Left);
-            //thisCA.WallSets[i].wall_Tee_Top_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Tee_Top);
-            //thisCA.WallSets[i].wall_Tee_Bottom_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Tee_Bottom);
+            thisCA.WallSets[i].wall_Corner_TopRight_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Corner_TopRight);
+            thisCA.WallSets[i].wall_Corner_TopLeft_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Corner_TopLeft);
+            thisCA.WallSets[i].wall_Corner_BottomRight_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Corner_BottomRight);
+            thisCA.WallSets[i].wall_Corner_BottomLeft_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Corner_BottomLeft);
+            thisCA.WallSets[i].wall_Tee_Right_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Tee_Right);
+            thisCA.WallSets[i].wall_Tee_Left_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Tee_Left);
+            thisCA.WallSets[i].wall_Tee_Top_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Tee_Top);
+            thisCA.WallSets[i].wall_Tee_Bottom_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Tee_Bottom);
 
-            //thisCA.WallSets[i].wall_Diagonal_TopRight_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopRight);
-            //thisCA.WallSets[i].wall_Diagonal_TopRight_T_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopRight_T);
-            //thisCA.WallSets[i].wall_Diagonal_TopRight_R_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopRight_R);
-            //thisCA.WallSets[i].wall_Diagonal_TopRight_TR_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopRight_TR);
-            //thisCA.WallSets[i].wall_Diagonal_TopLeft_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopLeft);
-            //thisCA.WallSets[i].wall_Diagonal_TopLeft_T_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopLeft_T);
-            //thisCA.WallSets[i].wall_Diagonal_TopLeft_L_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopLeft_L);
-            //thisCA.WallSets[i].wall_Diagonal_TopLeft_TL_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopLeft_TL);
-            //thisCA.WallSets[i].wall_Diagonal_BottomRight_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomRight);
-            //thisCA.WallSets[i].wall_Diagonal_BottomRight_B_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomRight_B);
-            //thisCA.WallSets[i].wall_Diagonal_BottomRight_R_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomRight_R);
-            //thisCA.WallSets[i].wall_Diagonal_BottomRight_BR_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomRight_BR);
-            //thisCA.WallSets[i].wall_Diagonal_BottomLeft_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomLeft);
-            //thisCA.WallSets[i].wall_Diagonal_BottomLeft_B_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomLeft_B);
-            //thisCA.WallSets[i].wall_Diagonal_BottomLeft_L_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomLeft_L);
-            //thisCA.WallSets[i].wall_Diagonal_BottomLeft_BL_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomLeft_BL);
+            thisCA.WallSets[i].wall_Diagonal_TopRight_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopRight);
+            thisCA.WallSets[i].wall_Diagonal_TopRight_T_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopRight_T);
+            thisCA.WallSets[i].wall_Diagonal_TopRight_R_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopRight_R);
+            thisCA.WallSets[i].wall_Diagonal_TopRight_TR_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopRight_TR);
+            thisCA.WallSets[i].wall_Diagonal_TopLeft_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopLeft);
+            thisCA.WallSets[i].wall_Diagonal_TopLeft_T_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopLeft_T);
+            thisCA.WallSets[i].wall_Diagonal_TopLeft_L_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopLeft_L);
+            thisCA.WallSets[i].wall_Diagonal_TopLeft_TL_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_TopLeft_TL);
+            thisCA.WallSets[i].wall_Diagonal_BottomRight_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomRight);
+            thisCA.WallSets[i].wall_Diagonal_BottomRight_B_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomRight_B);
+            thisCA.WallSets[i].wall_Diagonal_BottomRight_R_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomRight_R);
+            thisCA.WallSets[i].wall_Diagonal_BottomRight_BR_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomRight_BR);
+            thisCA.WallSets[i].wall_Diagonal_BottomLeft_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomLeft);
+            thisCA.WallSets[i].wall_Diagonal_BottomLeft_B_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomLeft_B);
+            thisCA.WallSets[i].wall_Diagonal_BottomLeft_L_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomLeft_L);
+            thisCA.WallSets[i].wall_Diagonal_BottomLeft_BL_shadow = GenerateShadowCollider(CachedAssets.WallSet.wall_Diagonal_BottomLeft_BL);
 
-            //thisCA.WallSets[i].anim_AirlockHorizontal_Close_B_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockHorizontal_Close_B_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockHorizontal_Close_B_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockHorizontal_Close_B_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Bottom.Frames[j]);
 
-            //thisCA.WallSets[i].anim_AirlockHorizontal_Close_T_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockHorizontal_Close_T_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Close_T_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockHorizontal_Close_T_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Close_T_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockHorizontal_Close_T_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockHorizontal_Close_T_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Close_T_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockHorizontal_Close_T_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Close_T_Bottom.Frames[j]);
 
-            //thisCA.WallSets[i].anim_AirlockHorizontal_Open_B_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockHorizontal_Open_B_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockHorizontal_Open_B_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Open_B_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockHorizontal_Open_B_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockHorizontal_Open_B_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockHorizontal_Open_B_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Open_B_Bottom.Frames[j]);
 
-            //thisCA.WallSets[i].anim_AirlockHorizontal_Open_T_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockHorizontal_Open_T_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Open_T_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockHorizontal_Open_T_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Open_T_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockHorizontal_Open_T_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockHorizontal_Open_T_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Open_T_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockHorizontal_Open_T_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Open_T_Bottom.Frames[j]);
 
-            //thisCA.WallSets[i].anim_AirlockHorizontal_Wait_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockHorizontal_Wait_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Wait_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockHorizontal_Wait_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Wait_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockHorizontal_Wait_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockHorizontal_Wait_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockHorizontal_Wait_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockHorizontal_Wait_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockHorizontal_Wait_Bottom.Frames[j]);
 
-            //thisCA.WallSets[i].anim_AirlockVertical_Close_L_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockVertical_Close_L_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Close_L_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockVertical_Close_L_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Close_L_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockVertical_Close_L_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockVertical_Close_L_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Close_L_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockVertical_Close_L_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Close_L_Bottom.Frames[j]);
 
-            //thisCA.WallSets[i].anim_AirlockVertical_Close_R_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockVertical_Close_R_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Close_R_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockVertical_Close_R_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Close_R_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockVertical_Close_R_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockVertical_Close_R_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Close_R_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockVertical_Close_R_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Close_R_Bottom.Frames[j]);
 
-            //thisCA.WallSets[i].anim_AirlockVertical_Open_L_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockVertical_Open_L_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Open_L_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockVertical_Open_L_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Open_L_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockVertical_Open_L_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockVertical_Open_L_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Open_L_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockVertical_Open_L_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Open_L_Bottom.Frames[j]);
 
-            //thisCA.WallSets[i].anim_AirlockVertical_Open_R_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockVertical_Open_R_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Open_R_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockVertical_Open_R_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Open_R_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockVertical_Open_R_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockVertical_Open_R_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Open_R_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockVertical_Open_R_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Open_R_Bottom.Frames[j]);
 
-            //thisCA.WallSets[i].anim_AirlockVertical_Wait_shadow = new CachedAssets.WallSet.ColliderPaths[CachedAssets.WallSet.anim_AirlockVertical_Wait_Bottom.Frames.Length];
-            //for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Wait_Bottom.Frames.Length; j++)
-            //    thisCA.WallSets[i].anim_AirlockVertical_Wait_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Wait_Bottom.Frames[j]);
+            thisCA.WallSets[i].anim_AirlockVertical_Wait_shadow = new CachedAssets.WallSet.MovableCollider[CachedAssets.WallSet.anim_AirlockVertical_Wait_Bottom.Frames.Length];
+            for (int j = 0; j < CachedAssets.WallSet.anim_AirlockVertical_Wait_Bottom.Frames.Length; j++)
+               thisCA.WallSets[i].anim_AirlockVertical_Wait_shadow[j] = GenerateShadowCollider(CachedAssets.WallSet.anim_AirlockVertical_Wait_Bottom.Frames[j]);
 
             if (stopThePresses){
                 Debug.Log("Collider generation was cancelled!".Color(Color.red));
@@ -161,7 +159,7 @@ public class CachedAssetsEditor : Editor {
     private Color32 pixel_B;
     private Color32 pixel_BL;
     private Vector2 newVertex = new Vector2();
-    CachedAssets.WallSet.ColliderPaths GenerateShadowCollider(CachedAssets.DoubleInt _texturePos) { 
+    CachedAssets.WallSet.MovableCollider GenerateShadowCollider(CachedAssets.DoubleInt _texturePos) { 
         if(stopThePresses)
             return null;
 
@@ -436,20 +434,19 @@ public class CachedAssetsEditor : Editor {
         for (int i = 0; i < vertices.Length; i++) {
             for (int j = 0; j < vertices[i].Count; j++) {
                 newVertex = vertices[i][j];
-                newVertex /= Tile.RESOLUTION;
+                newVertex.x += 1;
+                newVertex.y += 1;
+                newVertex.x = Mathf.RoundToInt(newVertex.x / Tile.RESOLUTION);
+                newVertex.y = Mathf.RoundToInt(newVertex.y / Tile.RESOLUTION);
                 newVertex.x -= Tile.RADIUS;
                 newVertex.y -= Tile.RADIUS;
                 vertices[i][j] = newVertex;
             }
         }
-        CachedAssets.WallSet.ColliderPaths cp = new CachedAssets.WallSet.ColliderPaths(vertices.Length);
+        CachedAssets.WallSet.MovableCollider cp = new CachedAssets.WallSet.MovableCollider(vertices.Length);
         for (int i = 0; i < cp.Paths.Length; i++){
             cp.Paths[i] = new CachedAssets.WallSet.ColliderVertices();
             cp.Paths[i].Vertices = vertices[i].ToArray();
-            for (int j = 0; j < cp.Paths[i].Vertices.Length; j++) {
-                Debug.Log(cp.Paths[i].Vertices[j]);
-            }
-            //Debug.Log(vertices[i].Count); 
         }
         return cp;
     }

@@ -157,7 +157,7 @@ public class Light : MonoBehaviour {
 
                 // Convert vertex to world space
                 worldPoint = polCollider.transform.TransformPoint(polCollider.points[j]);
-
+                Debug.Log(worldPoint);
                 //rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
                 //rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
 
@@ -166,7 +166,6 @@ public class Light : MonoBehaviour {
                     //v.Pos = rayHit.point;
                     //if(worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange))
                     //	v.Endpoint = true;
-                    Debug.Log("Hooooo!");
                     v.Pos = rayHit;
                     if (worldPoint.sqrMagnitude >= (rayHit.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.sqrMagnitude + magRange)) {
                         v.Endpoint = true;
@@ -175,7 +174,6 @@ public class Light : MonoBehaviour {
                     }
                 }
                 else {
-                    Debug.Log("neeeee");
                     v.Pos = worldPoint;
                     v.Endpoint = true;
                     if (DebugMode)
@@ -206,6 +204,9 @@ public class Light : MonoBehaviour {
                     sortAngles = true;
             }
             // }
+
+            for(int b = 0; b <polCollider.GetTotalPointCount(); b++)
+                Debug.Log(polCollider.transform.TransformPoint(polCollider.GetPath(0)[b]).ToString().Color(Color.magenta));
             return;
             // Identify the endpoints (left and right)
             if (tempVerts.Count > 0) {
@@ -530,7 +531,6 @@ public class Light : MonoBehaviour {
             if (currentIndex < tiles.Count - 1 && (tiles[currentIndex + 1].WorldPosition - _curPos).magnitude < (tiles[currentIndex].WorldPosition - _curPos).magnitude) {
                 currentIndex++;
                 shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[currentIndex].ExactType, tiles[currentIndex].Animator.CurrentFrame, tiles[currentIndex].WorldPosition);
-                Debug.Log("Next!");
                 //if (shadowCollider != null) {
                     // for(int i = 0; i < shadowCollider.pathCount; i++){
                     // 	for(int j = 1; j < shadowCollider.GetPath(i).Length; j++){
@@ -546,6 +546,28 @@ public class Light : MonoBehaviour {
                 //Debug.Log(p);
                 _rayhit = _curPos;
                 Debug.DrawLine(_start, rayHit, Color.green, 1);
+
+                float val = 0.015625f; // (1 / 64) / 2 == radius of pixel
+                Debug.DrawLine(
+                  new Vector2(_end.x - val, _end.y - val),
+                  new Vector2(_end.x + val, _end.y - val),
+                  Color.magenta, Time.deltaTime);
+
+                Debug.DrawLine(
+                  new Vector2(_end.x + val, _end.y - val),
+                  new Vector2(_end.x + val, _end.y + val),
+                  Color.magenta, Time.deltaTime);
+
+                Debug.DrawLine(
+                  new Vector2(_end.x + val, _end.y + val),
+                  new Vector2(_end.x - val, _end.y + val),
+                  Color.magenta, Time.deltaTime);
+
+                Debug.DrawLine(
+                  new Vector2(_end.x - val, _end.y + val),
+                  new Vector2(_end.x - val, _end.y - val),
+                  Color.magenta, Time.deltaTime);
+
                 return true;
             }
 
