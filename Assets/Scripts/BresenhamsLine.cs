@@ -5,54 +5,95 @@ using System.Collections.Generic;
 public class BresenhamsLine // : IEnumerable
 {
 
-    public static List<Vector2> DDASuperCover(Vector2 _start, Vector2 _end) {
-        float vx = _end.x - _start.x;
-        float vy = _end.y - _start.y; // get the differences
-        float dx = Mathf.Sqrt(1 + Mathf.Pow((vy / vx), 2)); // length of vector < 1, slope >
-        float dy = Mathf.Sqrt(1 + Mathf.Pow((vx / vy), 2)); // length of vector < 1 / slope, 1 >
+    private static List<Vector2> points = new List<Vector2>();
+    public static List<Vector2> GridRay(Vector2 _start, Vector2 _end){
+        points.Clear();
 
-        float ix = Mathf.Floor(_start.x);
-        float iy = Mathf.Floor(_start.y); // initialize starting positions
+        float DX = _end.x - _start.x;
+        float DY = _end.y - _start.y;
 
-        float sx; // sx is the increment direction
-        float ex; // ex is the distance from _start.x to ix
-        if (vx < 0) {
-            sx = -1;
-            ex = (_start.x - ix) * dx;
-        }
-        else {
-            sx = 1;
-            ex = (ix + 1 - _start.x) * dx; // subtract from 1 instead of 0 to make up for flooring ix
-        }
+        float stepX = Mathf.Sign(DX);
+        float stepY = Mathf.Sign(DY);
 
-        float sy;
-        float ey;
-        if (vy < 0) {
-            sy = -1;
-            ey = (_start.y - iy) * dy;
-        }
-        else {
-            sy = 1;
-            ey = (iy + (1 - _start.y)) * dy;
-        }
+        float progressPerTile_X = Mathf.Abs(1 / DX); // 1 should be (Tile.Radius * 2), but hey, this is faster!
+        float progressPerTile_Y = Mathf.Abs(1 / DY);
 
-        float len = Mathf.Sqrt(Mathf.Pow(vx, 2) + Mathf.Pow(vy, 2));
-        List<Vector2> _points = new List<Vector2>();
-        while (Mathf.Min(ex, ey) <= len) {
-            _points.Add(new Vector2(ix, iy));
+        float progress_X = progressPerTile_X * (float)Frac(_start.x); // _start.x should divide by Tile.Radius * 2 but since it's 1 currently, skip!
+        float progress_Y = progressPerTile_Y * (float)Frac(_start.y); 
 
-            if (ex < ey) {
-                ex += dx;
-                ix += sx;
+        Vector2 pos = _start;
+        int i = 0;
+        points.Add(pos);
+        while(pos != _end && i < 500){
+            i++;
+            if(progress_X < progress_Y){
+                progress_X += progressPerTile_X;
+                pos.x += stepX;
             }
             else {
-                ey += dy;
-                iy += sy;
+                progress_Y += progressPerTile_Y;
+                pos.y += stepY;
             }
+
+            points.Add(pos);
         }
-        _points.Add(new Vector2(ix, iy));
-        return _points;
+        // if(i >= 500)
+        // throw new System.Exception("GridRay appears to have missed its target!");
+
+        return points;
     }
+    public static float Frac(float _val){ 
+        return Mathf.Abs(_val - (float)System.Math.Truncate(_val)); 
+    }
+
+    // public static List<Vector2> DDASuperCover(Vector2 _start, Vector2 _end) {
+    //     float diffX = _end.x - _start.x;
+    //     float diffY = _end.y - _start.y; // get the differences
+    //     float dx = Mathf.Sqrt(1 + Mathf.Pow((diffY / diffX), 2)); // length of vector < 1, slope >
+    //     float dy = Mathf.Sqrt(1 + Mathf.Pow((diffX / diffY), 2)); // length of vector < 1 / slope, 1 >
+
+    //     float flooredStartX = Mathf.Floor(_start.x);
+    //     float flooredStartY = Mathf.Floor(_start.y); // initialize starting positions
+
+    //     float stepX; // sx is the increment direction
+    //     float ex; // ex is the distance from _start.x to ix
+    //     if (diffX < 0) {
+    //         stepX = -1;
+    //         ex = (_start.x - flooredStartX) * dx;
+    //     }
+    //     else {
+    //         stepX = 1;
+    //         ex = (flooredStartX + 1 - _start.x) * dx; // subtract from 1 instead of 0 to make up for flooring ix
+    //     }
+
+    //     float stepY;
+    //     float ey;
+    //     if (diffY < 0) {
+    //         stepY = -1;
+    //         ey = (_start.y - flooredStartY) * dy;
+    //     }
+    //     else {
+    //         stepY = 1;
+    //         ey = (flooredStartY + (1 - _start.y)) * dy;
+    //     }
+
+    //     float length = Mathf.Sqrt(Mathf.Pow(diffX, 2) + Mathf.Pow(diffY, 2));
+    //     List<Vector2> _points = new List<Vector2>();
+    //     while (Mathf.Min(ex, ey) <= length) {
+    //         _points.Add(new Vector2(flooredStartX, flooredStartY));
+
+    //         if (ex < ey) {
+    //             ex += dx;
+    //             flooredStartX += stepX;
+    //         }
+    //         else {
+    //             ey += dy;
+    //             flooredStartY += stepY;
+    //         }
+    //     }
+    //     _points.Add(new Vector2(flooredStartX, flooredStartY));
+    //     return _points;
+    // }
 
 
     //    function line(x0, y0, x1, y1)

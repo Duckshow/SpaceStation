@@ -41,7 +41,7 @@ public class BresenhamTester : MonoBehaviour {
 		//	Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.green);
 		//}
 
-        List<Vector2> newBres = BresenhamsLine.DDASuperCover(StartPos, (StartPos + (Angle * Length)));
+        List<Vector2> newBres = BresenhamsLine.GridRay(StartPos, (StartPos + (Angle * Length)));
         for (int i = 0; i < newBres.Count; i++) {
             Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.cyan);
             Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.cyan);
