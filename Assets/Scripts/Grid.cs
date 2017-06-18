@@ -173,11 +173,11 @@ public class Grid : MonoBehaviour {
                 grid[x, y].UpdateWallCornerHider(false);
                 grid[x, y].UpdateFloorCornerHider(false);
 
-                PolygonCollider2D myCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider( grid[x, y].ExactType, grid[x, y].Animator.CurrentFrame, grid[x, y].WorldPosition);
-                if(myCollider != null){
-                    for(int i = 0; i < myCollider.pathCount; i++){
-                        for(int j = 1; j < myCollider.GetPath(i).Length; j++){
-                            Debug.DrawLine(myCollider.transform.position + (Vector3)myCollider.GetPath(i)[j - 1], myCollider.transform.position + (Vector3)myCollider.GetPath(i)[j], Color.red, 1);
+                CachedAssets.MovableCollider myCollider = new CachedAssets.MovableCollider();
+                if(CachedAssets.Instance.WallSets[0].GetShadowCollider(grid[x, y].ExactType, grid[x, y].Animator.CurrentFrame, grid[x, y].WorldPosition, ref myCollider)) {
+                    for(int i = 0; i < myCollider.Paths.Length; i++){
+                        for(int j = 1; j < myCollider.Paths[i].Vertices.Length; j++){
+                            Debug.DrawLine(myCollider.WorldPosition + myCollider.Paths[i].Vertices[j - 1], myCollider.WorldPosition + myCollider.Paths[i].Vertices[j], Color.red, 1);
                         }
                     }
                 }

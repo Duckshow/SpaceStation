@@ -5,6 +5,7 @@ public class Tile : IHeapItem<Tile> {
 
     public const float RADIUS = 0.5f;
     public const int RESOLUTION = 64;
+    public const float PIXEL_RADIUS = 0.0078125f;
 
     public CachedAssets.WallSet.P ExactType;
     public enum Type { Empty, Solid, Diagonal, Door, Airlock }

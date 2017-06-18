@@ -449,39 +449,6 @@ public class CachedAssets : MonoBehaviour {
         public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Wait).Y, 8);
 
         public Texture2D ShadowMap;
-        [System.Serializable]
-        public class MovableCollider { // workaround for moving a collider and raycasting against it on the same frame
-            public Vector2 WorldPosition;
-            public ColliderVertices[] Paths;
-            public MovableCollider() { }
-            public MovableCollider(int _length) { Paths = new ColliderVertices[_length]; }
-
-            private bool intersect = false;
-            private int j;
-            public bool Intersects(Vector2 _pos){
-
-                intersect = false;
-                for(int p = 0; p < Paths.Length; p++){
-                    j = Paths[p].Vertices.Length - 1;
-                    for(int v = 0; v < Paths[p].Vertices.Length; j = v++){
-                    // stolen from the internets D:
-                     if(((Paths[p].Vertices[v].y <= _pos.y && _pos.y < Paths[p].Vertices[j].y) || (Paths[p].Vertices[j].y <= _pos.y && _pos.y < Paths[p].Vertices[v].y)) &&
-                        (_pos.x < Paths[p].Vertices[j].x - Paths[p].Vertices[v].x) * (_pos.y - Paths[p].Vertices[v].y) / (Paths[p].Vertices[j].y - Paths[p].Vertices[v].y) + Paths[p].Vertices[v].x))
-                        intersect = !intersect;
-                    }daidaiod // something something here
-                    if(intersect)
-                        return true;
-                }
-
-                return false;
-            }
-        }
-        [System.Serializable]
-        public class ColliderVertices{ // workaround for serializing jagged array
-            public Vector2[] Vertices;
-            public ColliderVertices(){ }
-            public ColliderVertices(int _length){ Vertices = new Vector2[_length]; }
-        }
 
         // note: code for generating these can be found in CachedAssetsEditor.cs
         public MovableCollider wall_Single_shadow;
@@ -617,21 +584,91 @@ public class CachedAssets : MonoBehaviour {
                     return null;
             }
         }
-        private MovableCollider cp;
-        public PolygonCollider2D GetShadowCollider(P _type, int _animationFrame, Vector2 _worldPosition){
-            cp = GetColliderPaths(_type, _animationFrame);
-            if (cp != null){
-                for (int i = 0; i < cp.Paths.Length; i++) 
-                    Instance.ShadowCollider.SetPath(i, cp.Paths[i].Vertices);
 
-                Instance.ShadowCollider.transform.position = _worldPosition;
-                return Instance.ShadowCollider;
+        private MovableCollider movColl;
+        public bool GetShadowCollider(P _type, int _animationFrame, Vector2 _worldPosition) {
+            movColl = GetColliderPaths(_type, _animationFrame);
+            return movColl != null;
+        }
+        public bool GetShadowCollider(P _type, int _animationFrame, Vector2 _worldPosition, ref MovableCollider returnCollider){
+            movColl = GetColliderPaths(_type, _animationFrame);
+            if (movColl != null){
+                if (returnCollider == null)
+                    returnCollider = new MovableCollider();
+
+                returnCollider.SetPaths(movColl.Paths);
+                //for (int i = 0; i < cp.Paths.Length; i++) 
+                //    Instance.ShadowCollider.SetPath(i, cp.Paths[i].Vertices);
+
+                returnCollider.WorldPosition = _worldPosition;
+                return true;
             }
-            return null;
+
+            returnCollider = null;
+            return false;
         }
     }
+
+    [System.Serializable]
+    public class MovableCollider { // workaround for moving a collider and raycasting against it on the same frame
+        public Vector2 WorldPosition;
+        public ColliderVertices[] Paths;
+        public MovableCollider() { }
+        public MovableCollider(int _length) { Paths = new ColliderVertices[_length]; }
+
+        public void SetPaths(ColliderVertices[] _p) {
+            if (_p == null) {
+                Paths = new ColliderVertices[0];
+                return;
+            }
+
+            Paths = _p;
+        }
+        public void SetPath(int _path, Vector2[] _vertices) {
+            Paths[_path].Vertices = _vertices;
+        }
+        //private int totalCount;
+        //public int GetTotalPointCount() {
+        //    totalCount = 0;
+        //    for (int i = 0; i < Paths.Length; i++)
+        //        totalCount += Paths[i].Vertices.Length;
+        //    return totalCount;
+        //}
+
+        private bool intersect = false;
+        private Vector2 point;
+        private Vector2[] vertices;
+        private int j;
+        public bool OverlapPointOrAlmost(Vector2 _pos) {
+            point = _pos - WorldPosition;
+            intersect = false;
+            for (int p = 0; p < Paths.Length; p++) {
+                j = Paths[p].Vertices.Length - 1;
+                vertices = Paths[p].Vertices;
+
+                for (int v = 0; v < vertices.Length; j = v++) {
+                    // stolen from the internets D:
+                    if (((vertices[v].y <= point.y && point.y < vertices[j].y) || (vertices[j].y <= point.y && point.y < vertices[v].y)) &&
+                        (point.x < (vertices[j].x - vertices[v].x) * (point.y - vertices[v].y) / (vertices[j].y - vertices[v].y) + vertices[v].x))
+                        intersect = !intersect;
+                }
+
+                if (intersect)
+                    return true;
+            }
+
+            return false;
+        }
+    }
+    [System.Serializable]
+    public class ColliderVertices { // workaround for serializing jagged array
+        public Vector2[] Vertices;
+        public ColliderVertices() { }
+        public ColliderVertices(int _length) { Vertices = new Vector2[_length]; }
+    }
+
     public WallSet[] WallSets;
-    public PolygonCollider2D ShadowCollider;
+    public MovableCollider ShadowCollider;
     public GameObject TilePrefab;
 
     [Header("Character Assets")]

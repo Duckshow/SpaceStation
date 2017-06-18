@@ -23,12 +23,12 @@ THE SOFTWARE.
 using UnityEngine;
 using System.Collections.Generic;
 
-//public class Verts {
-//    public float Angle;
-//    public int Location; // 1 = left end point | 0 = middle | -1 = right endpoint
-//    public Vector3 Pos;
-//    public bool Endpoint;
-//}
+public class Verts {
+    public float Angle;
+    public int Location; // 1 = left end point | 0 = middle | -1 = right endpoint
+    public Vector2 Pos;
+    public bool Endpoint;
+}
 
 public class Light : MonoBehaviour {
 
@@ -95,7 +95,7 @@ public class Light : MonoBehaviour {
             for (int x = 0; x < Grid.Instance.GridSizeX; x++) {
                 t = Grid.Instance.grid[x, y];
                 if ((t.WorldPosition - (Vector2)transform.position).magnitude <= lightRadius) {
-                    if (CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition) == null)
+                    if (CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition) == false)
                         continue;
 
                     allTiles.Add(t);
@@ -109,7 +109,7 @@ public class Light : MonoBehaviour {
     private bool highs = false; // check si hay mayores a 2.0
     private float magRange = 0.15f;
     private List<Verts> tempVerts = new List<Verts>();
-    private PolygonCollider2D polCollider;
+    private CachedAssets.MovableCollider polCollider;
     private Verts v;
     private Vector3 worldPoint;
     private Vector2 rayHit;
@@ -140,11 +140,11 @@ public class Light : MonoBehaviour {
 
         magRange = 0.15f;
         tempVerts.Clear();
-        Debug.Log(allTiles.Count.ToString().Color(Color.cyan));
+        polCollider = new CachedAssets.MovableCollider();
         for (int i = 0; i < allTiles.Count; i++) {
             tempVerts.Clear();
             //polCollider = allMeshes[i];
-            polCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(allTiles[i].ExactType, allTiles[i].Animator.CurrentFrame, allTiles[i].WorldPosition);
+            CachedAssets.Instance.WallSets[0].GetShadowCollider(allTiles[i].ExactType, allTiles[i].Animator.CurrentFrame, allTiles[i].WorldPosition, ref polCollider);
             
             // the following variables used to fix sorting bug
             // the calculated angles are in mixed quadrants (1 and 4)
@@ -152,62 +152,79 @@ public class Light : MonoBehaviour {
             highs = false; // check for majors at 2.0
 
             //if (((1 << polCollider.transform.gameObject.layer) & layer) != 0) { // check if collider's layer is in the current layermask (I think? :c)
-            for (int j = 0; j < polCollider.GetTotalPointCount(); j++) {    // ...and for every vertex we have of each collider...
-                v = new Verts();
+            //for (int j = 0; j < polCollider.GetTotalPointCount(); j++) {    // ...and for every vertex we have of each collider...
 
-                // Convert vertex to world space
-                worldPoint = polCollider.transform.TransformPoint(polCollider.points[j]);
-                Debug.Log(worldPoint);
-                //rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
-                //rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
+            //}
+            if (true) {
+                Gridcast(transform.position, polCollider.Paths[0].Vertices[2], out rayHit);
+            }
+            else {
+                for (int pIndex = 0; pIndex < polCollider.Paths.Length; pIndex++) {
+                    for (int vIndex = 0; vIndex < polCollider.Paths[pIndex].Vertices.Length; vIndex++) {  // ...and for every vertex we have of each collider...
+                        v = new Verts();
 
+                        // Convert vertex to world space
+                        worldPoint = polCollider.WorldPosition + polCollider.Paths[pIndex].Vertices[vIndex];
+                        //for (int x = 0; x < polCollider.Paths[pIndex].Vertices.Length; x++) {
+                        //    Debug.Log((polCollider.WorldPosition + polCollider.Paths[pIndex].Vertices[x]).ToString().Color(Color.green));
+                        //}
+                        //rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
+                        //rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
 
-                if (Gridcast(transform.position, worldPoint, out rayHit)) {
-                    //v.Pos = rayHit.point;
-                    //if(worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange))
-                    //	v.Endpoint = true;
-                    v.Pos = rayHit;
-                    if (worldPoint.sqrMagnitude >= (rayHit.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.sqrMagnitude + magRange)) {
-                        v.Endpoint = true;
-                        if (DebugMode)
-                            Debug.DrawLine(transform.position, v.Pos, Color.red);
+                        if (Gridcast(transform.position, worldPoint, out rayHit)) {
+                            //v.Pos = rayHit.point;
+                            //if(worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange))
+                            //	v.Endpoint = true;
+                            v.Pos = rayHit;
+                            if (worldPoint.sqrMagnitude >= (rayHit.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.sqrMagnitude + magRange)) {
+                                v.Endpoint = true;
+                                if (DebugMode)
+                                    Debug.DrawLine(transform.position, v.Pos, Color.red);
+                            }
+                        }
+                        else {
+                            v.Pos = worldPoint;
+                            v.Endpoint = true;
+                            if (DebugMode)
+                                Debug.DrawLine(transform.position, v.Pos, Color.yellow);
+                        }
+
+                        //if(DebugMode)
+                        //    Debug.DrawLine(transform.position, v.Pos, Color.white);
+
+                        //--Convert To local space for build mesh (mesh craft only in local vertex)
+                        v.Pos = transform.InverseTransformPoint(v.Pos); // optimization: could we do the Linecast in local space instead?
+                                                                        //--Calculate angle
+                        v.Angle = GetVectorAngle(true, v.Pos.x, v.Pos.y);
+
+                        // -- bookmark if an angle is lower than 0 or higher than 2f --//
+                        //-- helper method for fix bug on shape located in 2 or more quadrants
+                        if (v.Angle < 0f)
+                            lows = true;
+
+                        if (v.Angle > 2f)
+                            highs = true;
+
+                        //--Add verts to the main list
+                        if ((v.Pos).sqrMagnitude <= lightRadius * lightRadius)
+                            tempVerts.Add(v);
+
+                        if (sortAngles == false)
+                            sortAngles = true;
                     }
                 }
-                else {
-                    v.Pos = worldPoint;
-                    v.Endpoint = true;
-                    if (DebugMode)
-                        Debug.DrawLine(transform.position, v.Pos, Color.white);
-                }
-
-                //if(DebugMode)
-                //    Debug.DrawLine(transform.position, v.Pos, Color.white);
-
-                //--Convert To local space for build mesh (mesh craft only in local vertex)
-                v.Pos = transform.InverseTransformPoint(v.Pos); // optimization: could we do the Linecast in local space instead?
-                                                                //--Calculate angle
-                v.Angle = GetVectorAngle(true, v.Pos.x, v.Pos.y);
-
-                // -- bookmark if an angle is lower than 0 or higher than 2f --//
-                //-- helper method for fix bug on shape located in 2 or more quadrants
-                if (v.Angle < 0f)
-                    lows = true;
-
-                if (v.Angle > 2f)
-                    highs = true;
-
-                //--Add verts to the main list
-                if ((v.Pos).sqrMagnitude <= lightRadius * lightRadius)
-                    tempVerts.Add(v);
-
-                if (sortAngles == false)
-                    sortAngles = true;
             }
+
             // }
 
-            for(int b = 0; b <polCollider.GetTotalPointCount(); b++)
-                Debug.Log(polCollider.transform.TransformPoint(polCollider.GetPath(0)[b]).ToString().Color(Color.magenta));
+            for (int pIndex = 0; pIndex < polCollider.Paths.Length; pIndex++) {
+                for (int vIndex = 0; vIndex < polCollider.Paths[pIndex].Vertices.Length; vIndex++) {
+                    Debug.Log((polCollider.WorldPosition + polCollider.Paths[pIndex].Vertices[vIndex]).ToString().Color(Color.magenta));
+                }
+            }
+            Debug.Break();
             return;
+
             // Identify the endpoints (left and right)
             if (tempVerts.Count > 0) {
                 SortList(tempVerts); // sort first
@@ -281,7 +298,6 @@ public class Light : MonoBehaviour {
                             hitPos = transform.TransformPoint(dir.normalized * mag);
                         }
 
-                        Debug.Log("green");
                         if(DebugMode)
                             Debug.DrawLine(fromCast, hitPos, Color.green);
 
@@ -308,7 +324,7 @@ public class Light : MonoBehaviour {
             v.Pos = new Vector3((SinCosTable.sSinArray[theta]), (SinCosTable.sCosArray[theta]), 0); // in degrees (previous calculate)
             v.Angle = GetVectorAngle(true, v.Pos.x, v.Pos.y);
             v.Pos *= lightRadius;
-            v.Pos += transform.position;
+            v.Pos += (Vector2)transform.position;
 
             //rayHit = Physics2D.Raycast(transform.position, v.Pos - transform.position, lightRadius, layer);
             //if (!rayHit) {
@@ -442,9 +458,9 @@ public class Light : MonoBehaviour {
     }
 
     private List<Tile> tiles = new List<Tile>();
-    private BresenhamsLine cast;
+    private List<Vector2> cast;
     private Vector2 tilePos;
-    private PolygonCollider2D shadowCollider;
+    private static CachedAssets.MovableCollider sShadowCollider = new CachedAssets.MovableCollider();
     private int currentIndex;
     Color col;
     private int iterationsInCast = 0;
@@ -454,10 +470,10 @@ public class Light : MonoBehaviour {
         // find tiles along cast with a shadowcollider
         tiles.Clear();
         iterationsInCast = 0;
-        cast = new BresenhamsLine(_start, _end, 1);
+        cast = BresenhamsLine.DDASuperCover(_start, _end);
 
-        foreach (Vector2 _pos in cast) {
-            tilePos = _pos;
+        for (int i = 0; i < cast.Count; i++) {
+            tilePos = cast[i];
 
             // subtract because Bresenhams is in whole numbers
             tilePos.x -= Tile.RADIUS;
@@ -472,8 +488,8 @@ public class Light : MonoBehaviour {
             //    throw;
             //}
 
-            //t.SetWallColor(col);
-            //t.SetFloorColor(col);
+            t.SetWallColor(col);
+            t.SetFloorColor(col);
 
             // Debug.DrawLine(
             //    new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS), 
@@ -495,9 +511,13 @@ public class Light : MonoBehaviour {
             //   new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS),
             //   col, Time.deltaTime);
         }
+        col = RUL.RulCol.RandColor();
 
-        if (tiles.Count > 0)
-            shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[0].ExactType, tiles[0].Animator.CurrentFrame, tiles[0].WorldPosition);
+
+        if (tiles.Count > 0) {
+            Debug.Log(tiles[0].GridX + ", " + tiles[0].GridY + " is first!");
+            CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[0].ExactType, tiles[0].Animator.CurrentFrame, tiles[0].WorldPosition, ref sShadowCollider);
+        }
 
         Vector2 _curPos = _start;
         currentIndex = 0;
@@ -506,77 +526,102 @@ public class Light : MonoBehaviour {
             _curPos = Vector2.Lerp(_start, _end, iterationsInCast / _goal);
             iterationsInCast++;
 
-            //float val = 0.0078125f; // (1 / 64) / 2 == radius of pixel
-            //Debug.DrawLine(
-            //   new Vector2(_curPos.x - val, _curPos.y - val),
-            //   new Vector2(_curPos.x + val, _curPos.y - val),
-            //   col, Time.deltaTime);
+            float val = 0.0078125f; // (1 / 64) / 2 == radius of pixel
+            Debug.DrawLine(
+               new Vector2(_curPos.x - val, _curPos.y - val),
+               new Vector2(_curPos.x + val, _curPos.y - val),
+               col, Time.deltaTime);
 
-            //Debug.DrawLine(
-            //   new Vector2(_curPos.x + val, _curPos.y - val),
-            //   new Vector2(_curPos.x + val, _curPos.y + val),
-            //   col, Time.deltaTime);
+            Debug.DrawLine(
+               new Vector2(_curPos.x + val, _curPos.y - val),
+               new Vector2(_curPos.x + val, _curPos.y + val),
+               col, Time.deltaTime);
 
-            //Debug.DrawLine(
-            //   new Vector2(_curPos.x + val, _curPos.y + val),
-            //   new Vector2(_curPos.x - val, _curPos.y + val),
-            //   col, Time.deltaTime);
+            Debug.DrawLine(
+               new Vector2(_curPos.x + val, _curPos.y + val),
+               new Vector2(_curPos.x - val, _curPos.y + val),
+               col, Time.deltaTime);
 
-            //Debug.DrawLine(
-            //   new Vector2(_curPos.x - val, _curPos.y + val),
-            //   new Vector2(_curPos.x - val, _curPos.y - val),
-            //   col, Time.deltaTime);
+            Debug.DrawLine(
+               new Vector2(_curPos.x - val, _curPos.y + val),
+               new Vector2(_curPos.x - val, _curPos.y - val),
+               col, Time.deltaTime);
 
             // if pixel is closer to next collider, set next collider as current
             if (currentIndex < tiles.Count - 1 && (tiles[currentIndex + 1].WorldPosition - _curPos).magnitude < (tiles[currentIndex].WorldPosition - _curPos).magnitude) {
                 currentIndex++;
-                shadowCollider = CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[currentIndex].ExactType, tiles[currentIndex].Animator.CurrentFrame, tiles[currentIndex].WorldPosition);
-                //if (shadowCollider != null) {
-                    // for(int i = 0; i < shadowCollider.pathCount; i++){
-                    // 	for(int j = 1; j < shadowCollider.GetPath(i).Length; j++){
-                    // 		Debug.DrawLine(shadowCollider.transform.position + (Vector3)shadowCollider.GetPath(i)[j - 1], shadowCollider.transform.position + (Vector3)shadowCollider.GetPath(i)[j], Color.red, Time.deltaTime);
-                    // 	}
-                    // }
-                //}
+
+                col = RUL.RulCol.RandColor();
+                Debug.Log(tiles[currentIndex].GridX + ", " + tiles[currentIndex].GridY + " (" + iterationsInCast + ")");
+                //val *= 2; // (1 / 64) / 2 == radius of pixel
+                //Debug.DrawLine(
+                //   new Vector2(_curPos.x - val, _curPos.y - val),
+                //   new Vector2(_curPos.x + val, _curPos.y - val),
+                //   col, Time.deltaTime);
+
+                //Debug.DrawLine(
+                //   new Vector2(_curPos.x + val, _curPos.y - val),
+                //   new Vector2(_curPos.x + val, _curPos.y + val),
+                //   col, Time.deltaTime);
+
+                //Debug.DrawLine(
+                //   new Vector2(_curPos.x + val, _curPos.y + val),
+                //   new Vector2(_curPos.x - val, _curPos.y + val),
+                //   col, Time.deltaTime);
+
+                //Debug.DrawLine(
+                //   new Vector2(_curPos.x - val, _curPos.y + val),
+                //   new Vector2(_curPos.x - val, _curPos.y - val),
+                //   col, Time.deltaTime);
+
+                CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[currentIndex].ExactType, tiles[currentIndex].Animator.CurrentFrame, tiles[currentIndex].WorldPosition, ref sShadowCollider);
+                if (sShadowCollider != null) {
+                    for (int i = 0; i < sShadowCollider.Paths.Length; i++) {
+                        for (int j = 1; j < sShadowCollider.Paths[i].Vertices.Length; j++) {
+                            Debug.DrawLine(sShadowCollider.WorldPosition + sShadowCollider.Paths[i].Vertices[j - 1], sShadowCollider.WorldPosition + sShadowCollider.Paths[i].Vertices[j], col, Time.deltaTime);
+                        }
+                    }
+                }
             }
 
-            if (shadowCollider != null && shadowCollider.OverlapPoint(_curPos)) {
-                Debug.Log("Hit!".Color(Color.green));
+            if (sShadowCollider != null && sShadowCollider.OverlapPointOrAlmost(_curPos)) {
+                //Debug.Log("Hit!".Color(Color.green));
                 //Debug.Log("Bing!".Color(Color.green));
                 //Debug.Log(p);
                 _rayhit = _curPos;
-                Debug.DrawLine(_start, rayHit, Color.green, 1);
+                //Debug.DrawLine(_start, rayHit, Color.green, 1);
 
-                float val = 0.015625f; // (1 / 64) / 2 == radius of pixel
+                //float val = 0.015625f; // (1 / 64) / 2 == radius of pixel
+                val *= 2;
                 Debug.DrawLine(
-                  new Vector2(_end.x - val, _end.y - val),
-                  new Vector2(_end.x + val, _end.y - val),
+                  new Vector2(_curPos.x - val, _curPos.y - val),
+                  new Vector2(_curPos.x + val, _curPos.y - val),
                   Color.magenta, Time.deltaTime);
 
                 Debug.DrawLine(
-                  new Vector2(_end.x + val, _end.y - val),
-                  new Vector2(_end.x + val, _end.y + val),
+                  new Vector2(_curPos.x + val, _curPos.y - val),
+                  new Vector2(_curPos.x + val, _curPos.y + val),
                   Color.magenta, Time.deltaTime);
 
                 Debug.DrawLine(
-                  new Vector2(_end.x + val, _end.y + val),
-                  new Vector2(_end.x - val, _end.y + val),
+                  new Vector2(_curPos.x + val, _curPos.y + val),
+                  new Vector2(_curPos.x - val, _curPos.y + val),
                   Color.magenta, Time.deltaTime);
 
                 Debug.DrawLine(
-                  new Vector2(_end.x - val, _end.y + val),
-                  new Vector2(_end.x - val, _end.y - val),
+                  new Vector2(_curPos.x - val, _curPos.y + val),
+                  new Vector2(_curPos.x - val, _curPos.y - val),
                   Color.magenta, Time.deltaTime);
-
+                Debug.Log("hit!".Color(Color.green));
                 return true;
             }
 
             if (iterationsInCast / _goal >= 1) {
-                Debug.Log("Miss!".Color(Color.red));
+                //Debug.Log("Miss!".Color(Color.red));
 
-                //Debug.Log("Bing!".Color(Color.red));
-                Debug.DrawLine(_start, _end, Color.red);
-                Debug.Break();
+                ////Debug.Log("Bing!".Color(Color.red));
+                //Debug.DrawLine(_start, _end, Color.red);
+                //Debug.Break();
                 _rayhit = Vector2.zero;
                 return false;
             }

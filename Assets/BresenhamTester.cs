@@ -20,42 +20,50 @@ public class BresenhamTester : MonoBehaviour {
 		Debug.DrawLine(StartPos, (StartPos + (Angle * Length)), Color.red);
 
 		resolution = 1 / (float)Resolution;
-		BresenhamsLine bres = new BresenhamsLine(StartPos, (StartPos + (Angle * Length)), Resolution);
-		foreach(Vector2 _p in bres){
-			resPos = new Vector2(_p.x, _p.y);
-            Debug.Log(resPos);
-			Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.cyan);
-			Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.cyan);
-			Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.cyan);
-			Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.cyan);
-		}
+		//BresenhamsLine bres = new BresenhamsLine(StartPos, (StartPos + (Angle * Length)), Resolution);
+		//foreach(Vector2 _p in bres){
+		//	resPos = new Vector2(_p.x, _p.y);
+  //          Debug.Log(resPos);
+		//	Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.cyan);
+		//	Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.cyan);
+		//	Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.cyan);
+		//	Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.cyan);
+		//}
 
-		resolution = 1 / (float)Resolution2;
-		bres = new BresenhamsLine(StartPos, (StartPos + (Angle * Length)), Resolution2);
-		foreach(Vector2 _p in bres){
-			Debug.Log(resPos);
-			resPos = new Vector2(_p.x, _p.y);
-			Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.green);
-			Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.green);
-			Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.green);
-			Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.green);
-		}
-	}
+		//resolution = 1 / (float)Resolution2;
+		//bres = new BresenhamsLine(StartPos, (StartPos + (Angle * Length)), Resolution2);
+		//foreach(Vector2 _p in bres){
+		//	Debug.Log(resPos);
+		//	resPos = new Vector2(_p.x, _p.y);
+		//	Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.green);
+		//	Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.green);
+		//	Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.green);
+		//	Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.green);
+		//}
 
-	// List<Collider2D> results = new List<Collider2D>();
-	// public LayerMask mask;
-	// [EasyButtons.Button]
-	// public void ColliderTest(){
-	// 	results.Clear();
+        List<Vector2> newBres = BresenhamsLine.DDASuperCover(StartPos, (StartPos + (Angle * Length)));
+        for (int i = 0; i < newBres.Count; i++) {
+            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.cyan);
+        }
+    }
 
-	// 	for(int i = 0; i < Colliders.transform.childCount; i++){
-	// 		if((Colliders.transform.GetChild(i).position - transform.position).magnitude < Length)
-	// 			results.Add(Colliders.transform.GetChild(i).GetComponent<Collider2D>());
-	// 	}
+    // List<Collider2D> results = new List<Collider2D>();
+    // public LayerMask mask;
+    // [EasyButtons.Button]
+    // public void ColliderTest(){
+    // 	results.Clear();
 
-		
-	// 	for(int i = 0; i < results.Count; i++){
-	// 		results[i].gameObject.SetActive(true);
-	// 	}
-	// }
+    // 	for(int i = 0; i < Colliders.transform.childCount; i++){
+    // 		if((Colliders.transform.GetChild(i).position - transform.position).magnitude < Length)
+    // 			results.Add(Colliders.transform.GetChild(i).GetComponent<Collider2D>());
+    // 	}
+
+
+    // 	for(int i = 0; i < results.Count; i++){
+    // 		results[i].gameObject.SetActive(true);
+    // 	}
+    // }
 }
