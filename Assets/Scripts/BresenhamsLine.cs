@@ -58,13 +58,15 @@ public class BresenhamsLine // : IEnumerable
         float stepX = Mathf.Sign(diffX); // sx is the increment direction
         float stepY = Mathf.Sign(diffY);
 
-        float offsetX = (roundedStartX - _start.x) * YperX; // ex is the distance from _start.x to flooredStart.x
-        float offsetY = (roundedStartY - _start.y) * XperY;
+        float originalOffsetX = Mathf.Abs(_start.x - roundedStartX); //* YperX; // ex is the distance from _start.x to flooredStart.x
+        float originalOffsetY = Mathf.Abs(_start.y - roundedStartY); // * XperY;
+        float offsetX = Mathf.Abs(_start.x - roundedStartX); //* YperX; // ex is the distance from _start.x to flooredStart.x
+        float offsetY = Mathf.Abs(_start.y - roundedStartY); // * XperY;
 
         float length = Mathf.Sqrt(Mathf.Pow(diffX, 2) + Mathf.Pow(diffY, 2));
         List<Vector2> _points = new List<Vector2>();
 
-        Debug.Log(offsetX + " + " + YperX + ", " + offsetY + " + " + XperY);
+        Debug.Log(_start.x + " - " + roundedStartX + ", " + _start.y + " - " + roundedStartY);
 
         _points.Add(new Vector2(roundedStartX, roundedStartY));
         int amountX = 1;
@@ -79,17 +81,30 @@ public class BresenhamsLine // : IEnumerable
             //    //roundedStartY += stepY;
             //}
 
-            offsetX += (XperY * 0.1f);
-            offsetY += (YperX * 0.1f);
-
-            if (offsetX >= XperY * amountX) {
+            offsetX += 0.1f; pqdpqjp // CURRENT ISSUE: these are added to equally, 
+                                     // so the code thinks the line is going perfectly diagonally. Figure this out .__.'
+            offsetY += 0.1f;
+            // if (offsetX >= XperY * amountY) {
+            //     amountY++;
+            //     roundedStartY += stepY;
+            //     _points.Add(new Vector2(roundedStartX, roundedStartY));
+            // }
+            // if (offsetY >= YperX * amountX) {
+            //     amountX++;
+            //     roundedStartX += stepX;
+            //     _points.Add(new Vector2(roundedStartX, roundedStartY));
+            // }
+            if (Mathf.RoundToInt(((offsetX + 0.5f) * 10) % 10) == 0){
                 amountX++;
-                roundedStartY += stepY;
+                roundedStartX += stepX;
                 _points.Add(new Vector2(roundedStartX, roundedStartY));
             }
-            else if (offsetY >= YperX * amountY) {
+            Debug.Log(Mathf.RoundToInt(((offsetX + 0.5f) * 10) % 10).ToString().Color(Color.cyan));
+            Debug.Log(Mathf.RoundToInt(((offsetY + 0.5f) * 10) % 10).ToString().Color(Color.magenta));
+
+            if (Mathf.RoundToInt(((offsetY + 0.5f) * 10) % 10) == 0){
                 amountY++;
-                roundedStartX += stepX;
+                roundedStartY += stepY;
                 _points.Add(new Vector2(roundedStartX, roundedStartY));
             }
         }
