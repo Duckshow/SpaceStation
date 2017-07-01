@@ -41,18 +41,18 @@ public class BresenhamTester : MonoBehaviour {
         //}
 
         Vector2 start = StartPos + new Vector2(-1, 1);
-        Debug.DrawLine(start, (start + (Angle * Length)), Color.red);
-        List<Vector2> newBres = BresenhamsLine.DDASuperCover(start, (start + (Angle * Length)));
-        for (int i = 0; i < newBres.Count; i++) {
-            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.cyan);
-            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.cyan);
-            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.cyan);
-            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.cyan);
-        }
+        //Debug.DrawLine(start, (start + (Angle * Length)), Color.red);
+        List<Vector2> newBres;// = BresenhamsLine.DDASuperCover(start, (start + (Angle * Length)));
+        //for (int i = 0; i < newBres.Count; i++) {
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.cyan);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.cyan);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.cyan);
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.cyan);
+        //}
 
         start = StartPos + new Vector2(1, 1);
-        Debug.DrawLine(start, (start + (new Vector2(Angle.x * -1, Angle.y * 1) * Length)), Color.red);
-        newBres = BresenhamsLine.DDASuperCover(start, (start + ((new Vector2(Angle.x * -1, Angle.y * 1)) * Length)));
+        Debug.DrawLine(start, (start + (new Vector2(Angle.x * 1, Angle.y * 1) * Length)), Color.red);
+        newBres = BresenhamsLine.DDASuperCover(start, (start + ((new Vector2(Angle.x * 1, Angle.y * 1)) * Length)));
         for (int i = 0; i < newBres.Count; i++) {
             Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.green);
             Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.green);
@@ -60,25 +60,25 @@ public class BresenhamTester : MonoBehaviour {
             Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.green);
         }
 
-        start = StartPos + new Vector2(-1, -1);
-        Debug.DrawLine(start, (start + (new Vector2(Angle.x * 1, Angle.y * -1) * Length)), Color.red);
-        newBres = BresenhamsLine.DDASuperCover(start, (start + ((new Vector2(Angle.x * 1, Angle.y * -1)) * Length)));
-        for (int i = 0; i < newBres.Count; i++) {
-            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.red);
-            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.red);
-            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.red);
-            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.red);
-        }
+        //start = StartPos + new Vector2(-1, -1);
+        //Debug.DrawLine(start, (start + (new Vector2(Angle.x * 1, Angle.y * -1) * Length)), Color.red);
+        //newBres = BresenhamsLine.DDASuperCover(start, (start + ((new Vector2(Angle.x * 1, Angle.y * -1)) * Length)));
+        //for (int i = 0; i < newBres.Count; i++) {
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.red);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.red);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.red);
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.red);
+        //}
 
-        start = StartPos + new Vector2(1, -1);
-        Debug.DrawLine(start, (start + (new Vector2(Angle.x * -1, Angle.y * -1) * Length)), Color.red);
-        newBres = BresenhamsLine.DDASuperCover(start, (start + ((new Vector2(Angle.x * -1, Angle.y * -1)) * Length)));
-        for (int i = 0; i < newBres.Count; i++) {
-            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.magenta);
-            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.magenta);
-            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.magenta);
-            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.magenta);
-        }
+        //start = StartPos + new Vector2(1, -1);
+        //Debug.DrawLine(start, (start + (new Vector2(Angle.x * -1, Angle.y * -1) * Length)), Color.red);
+        //newBres = BresenhamsLine.DDASuperCover(start, (start + ((new Vector2(Angle.x * -1, Angle.y * -1)) * Length)));
+        //for (int i = 0; i < newBres.Count; i++) {
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.magenta);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.magenta);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.magenta);
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.magenta);
+        //}
     }
 
     // List<Collider2D> results = new List<Collider2D>();

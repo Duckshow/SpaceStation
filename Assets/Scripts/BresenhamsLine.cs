@@ -49,8 +49,8 @@ public class BresenhamsLine // : IEnumerable
     public static List<Vector2> DDASuperCover(Vector2 _start, Vector2 _end) {
         float diffX = _end.x - _start.x;
         float diffY = _end.y - _start.y; // get the differences
-        float YperX = Mathf.Sqrt(1 + Mathf.Pow((diffY / diffX), 2)); // something like the amount of Y per X
-        float XperY = Mathf.Sqrt(1 + Mathf.Pow((diffX / diffY), 2)); // something like the amount of X per Y
+        float YperX = Mathf.Sqrt(/*1 + */Mathf.Pow((diffY / diffX), 2)); // something like the amount of Y per X
+        float XperY = Mathf.Sqrt(/*1 + */Mathf.Pow((diffX / diffY), 2)); // something like the amount of X per Y
 
         float roundedStartX = Mathf.Round(_start.x);
         float roundedStartY = Mathf.Round(_start.y); // initialize starting positions
@@ -60,8 +60,8 @@ public class BresenhamsLine // : IEnumerable
 
         float originalOffsetX = Mathf.Abs(_start.x - roundedStartX); //* YperX; // ex is the distance from _start.x to flooredStart.x
         float originalOffsetY = Mathf.Abs(_start.y - roundedStartY); // * XperY;
-        float offsetX = Mathf.Abs(_start.x - roundedStartX); //* YperX; // ex is the distance from _start.x to flooredStart.x
-        float offsetY = Mathf.Abs(_start.y - roundedStartY); // * XperY;
+        float offsetX = (_start.x - roundedStartX) + 0.5f; // * YperX; // ex is the distance from _start.x to flooredStart.x
+        float offsetY = (_start.y - roundedStartY) + 0.5f; // * XperY;
 
         float length = Mathf.Sqrt(Mathf.Pow(diffX, 2) + Mathf.Pow(diffY, 2));
         List<Vector2> _points = new List<Vector2>();
@@ -71,7 +71,19 @@ public class BresenhamsLine // : IEnumerable
         _points.Add(new Vector2(roundedStartX, roundedStartY));
         int amountX = 1;
         int amountY = 1;
-        while (Mathf.Min(offsetX, offsetY) <= length) {
+        float x = 0;
+        float y = 0;
+        Debug.Log("X: " + x);
+        Debug.Log("Y: " + y);
+        float _x = _start.x;
+        float _y = _start.y;
+        float _size = 0.05f;
+        Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
+        Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
+        Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
+        Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
+
+        while (Mathf.Abs(Mathf.Min(x, y)) <= length) {
             //if (offsetX < offsetY) {
             //    offsetX += ratioX;
             //    //roundedStartX += stepX;
@@ -81,9 +93,10 @@ public class BresenhamsLine // : IEnumerable
             //    //roundedStartY += stepY;
             //}
 
-            offsetX += 0.1f; pqdpqjp // CURRENT ISSUE: these are added to equally, 
-                                     // so the code thinks the line is going perfectly diagonally. Figure this out .__.'
-            offsetY += 0.1f;
+            offsetX += (_end - _start).normalized.x * 0.01f; 
+            offsetY += (_end - _start).normalized.y * 0.01f;
+            x += (_end - _start).normalized.x * 0.01f;
+            y += (_end - _start).normalized.y * 0.01f;
             // if (offsetX >= XperY * amountY) {
             //     amountY++;
             //     roundedStartY += stepY;
@@ -94,18 +107,61 @@ public class BresenhamsLine // : IEnumerable
             //     roundedStartX += stepX;
             //     _points.Add(new Vector2(roundedStartX, roundedStartY));
             // }
-            if (Mathf.RoundToInt(((offsetX + 0.5f) * 10) % 10) == 0){
+
+            //if (offsetX > 0.5f){
+            //    offsetX = -0.5f;
+            //    amountX++;
+            //    roundedStartX += stepX;
+            //    _points.Add(new Vector2(roundedStartX, roundedStartY));
+
+            //    _x = _start.x + x;
+            //    _y = _start.y + y;
+            //    Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
+            //    Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
+            //    Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
+            //    Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
+            //}
+
+            //if (offsetY > 0.5f){
+            //    offsetY = -0.5f;
+            //    amountY++;
+            //    roundedStartY += stepY;
+            //    _points.Add(new Vector2(roundedStartX, roundedStartY));
+
+            //    _x = _start.x + x;
+            //    _y = _start.y + y;
+            //    Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
+            //    Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
+            //    Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
+            //    Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
+            //}
+
+            if (offsetX > 1) {
+                offsetX = 0;
                 amountX++;
                 roundedStartX += stepX;
                 _points.Add(new Vector2(roundedStartX, roundedStartY));
-            }
-            Debug.Log(Mathf.RoundToInt(((offsetX + 0.5f) * 10) % 10).ToString().Color(Color.cyan));
-            Debug.Log(Mathf.RoundToInt(((offsetY + 0.5f) * 10) % 10).ToString().Color(Color.magenta));
 
-            if (Mathf.RoundToInt(((offsetY + 0.5f) * 10) % 10) == 0){
+                _x = _start.x + x;
+                _y = _start.y + y;
+                Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
+                Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
+                Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
+                Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
+            }
+
+            if (offsetY > 1) {
+                offsetY = 0;
                 amountY++;
                 roundedStartY += stepY;
                 _points.Add(new Vector2(roundedStartX, roundedStartY));
+
+                _x = _start.x + x;
+                _y = _start.y + y;
+                Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
+                Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
+                Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
+                Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
             }
         }
         //_points.Add(new Vector2(roundedStartX, roundedStartY));
