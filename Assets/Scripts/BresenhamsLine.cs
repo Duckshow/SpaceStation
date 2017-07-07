@@ -46,126 +46,65 @@ public class BresenhamsLine // : IEnumerable
     //    return Mathf.Abs(_val - (float)System.Math.Truncate(_val)); 
     //}
 
-    public static List<Vector2> DDASuperCover(Vector2 _start, Vector2 _end) {
-        float diffX = _end.x - _start.x;
-        float diffY = _end.y - _start.y; // get the differences
-        float YperX = Mathf.Sqrt(/*1 + */Mathf.Pow((diffY / diffX), 2)); // something like the amount of Y per X
-        float XperY = Mathf.Sqrt(/*1 + */Mathf.Pow((diffX / diffY), 2)); // something like the amount of X per Y
+    private static float diffX;
+    private static float diffY;
+    private static float YperX;
+    private static float XperY;
+    private static float roundedStartX;
+    private static float roundedStartY;
+    private static float roundedEndX;
+    private static float roundedEndY;
+    private static float stepX;
+    private static float stepY;
+    private static float x;
+    private static float y;
+    private static List<Vector2> _points = new List<Vector2>();
+    public static List<Vector2> Gridcast(Vector2 _start, Vector2 _end) {
+        // length of ray
+        diffX = _end.x - _start.x;
+        diffY = _end.y - _start.y;
 
-        float roundedStartX = Mathf.Round(_start.x);
-        float roundedStartY = Mathf.Round(_start.y); // initialize starting positions
+        // x- and y-ratios
+        YperX = Mathf.Sqrt(Mathf.Pow((diffY / diffX), 2));
+        XperY = Mathf.Sqrt(Mathf.Pow((diffX / diffY), 2));
 
-        float stepX = Mathf.Sign(diffX); // sx is the increment direction
-        float stepY = Mathf.Sign(diffY);
+        // rounded start and end
+        roundedStartX = Mathf.Round(_start.x);
+        roundedStartY = Mathf.Round(_start.y);
+        roundedEndX = Mathf.Round(_end.x);
+        roundedEndY = Mathf.Round(_end.y);
 
-        float originalOffsetX = Mathf.Abs(_start.x - roundedStartX); //* YperX; // ex is the distance from _start.x to flooredStart.x
-        float originalOffsetY = Mathf.Abs(_start.y - roundedStartY); // * XperY;
-        float offsetX = (_start.x - roundedStartX) + 0.5f; // * YperX; // ex is the distance from _start.x to flooredStart.x
-        float offsetY = (_start.y - roundedStartY) + 0.5f; // * XperY;
+        // increment direction
+        stepX = Mathf.Sign(diffX);
+        stepY = Mathf.Sign(diffY);
 
-        float length = Mathf.Sqrt(Mathf.Pow(diffX, 2) + Mathf.Pow(diffY, 2));
-        List<Vector2> _points = new List<Vector2>();
+        // pos ranging 0-1 to indicate distance to next grid-x or grid-y
+        x = (_start.x - roundedStartX) + 0.5f;
+        y = (_start.y - roundedStartY) + 0.5f;
 
-        Debug.Log(_start.x + " - " + roundedStartX + ", " + _start.y + " - " + roundedStartY);
+        // tiles found
+        List<Vector2> tiles = new List<Vector2>();
+        tiles.Add(new Vector2(roundedStartX, roundedStartY));
 
-        _points.Add(new Vector2(roundedStartX, roundedStartY));
-        int amountX = 1;
-        int amountY = 1;
-        float x = 0;
-        float y = 0;
-        Debug.Log("X: " + x);
-        Debug.Log("Y: " + y);
-        float _x = _start.x;
-        float _y = _start.y;
-        float _size = 0.05f;
-        Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
-        Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
-        Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
-        Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
+        while (roundedStartX != roundedEndX || roundedStartY != roundedEndY) {
+            if (x + (XperY * (1 - y)) > y + (YperX * (1 - x))){ // if the x we'll get from the remaining y is greater than the y we'll get from the remaining x...
+                
+                // move y to where it should be at end of x and zero x because new tile
+                y = Mathf.Clamp01(y + (YperX * (1 - x)));
+                x = 0;
 
-        while (Mathf.Abs(Mathf.Min(x, y)) <= length) {
-            //if (offsetX < offsetY) {
-            //    offsetX += ratioX;
-            //    //roundedStartX += stepX;
-            //}
-            //else {
-            //    offsetY += ratioY;
-            //    //roundedStartY += stepY;
-            //}
-
-            offsetX += (_end - _start).normalized.x * 0.01f; 
-            offsetY += (_end - _start).normalized.y * 0.01f;
-            x += (_end - _start).normalized.x * 0.01f;
-            y += (_end - _start).normalized.y * 0.01f;
-            // if (offsetX >= XperY * amountY) {
-            //     amountY++;
-            //     roundedStartY += stepY;
-            //     _points.Add(new Vector2(roundedStartX, roundedStartY));
-            // }
-            // if (offsetY >= YperX * amountX) {
-            //     amountX++;
-            //     roundedStartX += stepX;
-            //     _points.Add(new Vector2(roundedStartX, roundedStartY));
-            // }
-
-            //if (offsetX > 0.5f){
-            //    offsetX = -0.5f;
-            //    amountX++;
-            //    roundedStartX += stepX;
-            //    _points.Add(new Vector2(roundedStartX, roundedStartY));
-
-            //    _x = _start.x + x;
-            //    _y = _start.y + y;
-            //    Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
-            //    Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
-            //    Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
-            //    Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
-            //}
-
-            //if (offsetY > 0.5f){
-            //    offsetY = -0.5f;
-            //    amountY++;
-            //    roundedStartY += stepY;
-            //    _points.Add(new Vector2(roundedStartX, roundedStartY));
-
-            //    _x = _start.x + x;
-            //    _y = _start.y + y;
-            //    Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
-            //    Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
-            //    Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
-            //    Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
-            //}
-
-            if (offsetX > 1) {
-                offsetX = 0;
-                amountX++;
                 roundedStartX += stepX;
-                _points.Add(new Vector2(roundedStartX, roundedStartY));
-
-                _x = _start.x + x;
-                _y = _start.y + y;
-                Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
-                Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
-                Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
-                Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
+                tiles.Add(new Vector2(roundedStartX, roundedStartY));
             }
+            else{
+                x = Mathf.Clamp01(x + (XperY * (1 - y)));
+                y = 0;
 
-            if (offsetY > 1) {
-                offsetY = 0;
-                amountY++;
                 roundedStartY += stepY;
-                _points.Add(new Vector2(roundedStartX, roundedStartY));
-
-                _x = _start.x + x;
-                _y = _start.y + y;
-                Debug.DrawLine(new Vector3(_x - _size, _y, 0), new Vector3(_x, _y - _size, 0), Color.cyan);
-                Debug.DrawLine(new Vector3(_x, _y - _size, 0), new Vector3(_x + _size, _y, 0), Color.cyan);
-                Debug.DrawLine(new Vector3(_x + _size, _y, 0), new Vector3(_x, _y + _size, 0), Color.cyan);
-                Debug.DrawLine(new Vector3(_x, _y + _size, 0), new Vector3(_x - _size, _y, 0), Color.cyan);
+                tiles.Add(new Vector2(roundedStartX, roundedStartY));
             }
         }
-        //_points.Add(new Vector2(roundedStartX, roundedStartY));
-        return _points;
+        return tiles;
     }
 
 

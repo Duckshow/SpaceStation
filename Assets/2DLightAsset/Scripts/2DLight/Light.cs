@@ -485,7 +485,7 @@ public class Light : MonoBehaviour {
         // find tiles along cast with a shadowcollider
         tiles.Clear();
         iterationsInCast = 0;
-        cast = BresenhamsLine.DDASuperCover(_start, _end);
+        cast = BresenhamsLine.Gridcast(_start, _end);
 
         for (int i = 0; i < cast.Count; i++) {
             tilePos = cast[i];
