@@ -1,8 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
- 
-public class BresenhamsLine // : IEnumerable
+
+using UnityEditor;
+
+public class BresenhamsLine : MonoBehaviour // : IEnumerable
 {
 
     //private static List<Vector2> points = new List<Vector2>();
@@ -46,6 +48,47 @@ public class BresenhamsLine // : IEnumerable
     //    return Mathf.Abs(_val - (float)System.Math.Truncate(_val)); 
     //}
 
+    private static List<Vector2> debugPositions = new List<Vector2>();
+    private static List<Vector2> debugValues1 = new List<Vector2>();
+    private static List<Vector2> debugValues2 = new List<Vector2>();
+    // void OnDrawGizmos(){
+    //     for (int i = 0; i < debugPositions.Count; i++) { 
+    //         Handles.Label(debugPositions[i], "x");
+    //         Handles.Label(debugPositions[i] + new Vector2(0.1f, 0), debugPositions[i] + " == " + debugValues1[i] + ", " + debugValues2[i].x + " == " + debugValues2[i].y);
+    //     }
+    // }
+
+    // private static float debugX;
+    // private static float debugY;
+
+    public static Vector2 lastCastStart;
+    public static Vector2 lastCastEnd;
+
+    public class Overlap {
+        public Vector2 TilePos;
+        public Vector2[] ExtraTilePositions;
+        public Tile Tile;
+        public Tile[] ExtraTiles;
+        public Overlap(Vector2 _tile, Vector2[] _extras = null) {
+            TilePos = _tile;
+            ExtraTilePositions = _extras;
+
+            if (Grid.Instance != null) { // for debugging 
+                Tile = Grid.Instance.GetTileFromWorldPoint(TilePos);
+
+                if (ExtraTilePositions != null){   
+                    ExtraTiles = new Tile[ExtraTilePositions.Length];
+                    for (int i = 0; i < ExtraTilePositions.Length; i++)
+                        ExtraTiles[i] = Grid.Instance.GetTileFromWorldPoint(ExtraTilePositions[i]);    
+                }
+            }
+        }
+    }
+
+    private static bool roundedDownStartX;
+    private static bool roundedDownStartY;
+    private static bool roundedDownEndX;
+    private static bool roundedDownEndY;
     private static float diffX;
     private static float diffY;
     private static float YperX;
@@ -59,52 +102,202 @@ public class BresenhamsLine // : IEnumerable
     private static float x;
     private static float y;
     private static List<Vector2> _points = new List<Vector2>();
-    public static List<Vector2> Gridcast(Vector2 _start, Vector2 _end) {
+    public static List<Overlap> Gridcast(Vector2 _start, Vector2 _end) {
+
+        debugPositions.Clear();
+        debugValues1.Clear();
+        debugValues2.Clear();
+
         // length of ray
         diffX = _end.x - _start.x;
         diffY = _end.y - _start.y;
 
         // x- and y-ratios
-        YperX = Mathf.Sqrt(Mathf.Pow((diffY / diffX), 2));
         XperY = Mathf.Sqrt(Mathf.Pow((diffX / diffY), 2));
+        YperX = Mathf.Sqrt(Mathf.Pow((diffY / diffX), 2));
+        if(diffY == 0)
+            XperY = 1;
+        if (diffX == 0)
+            YperX = 1;
 
         // rounded start and end
-        roundedStartX = Mathf.Round(_start.x);
-        roundedStartY = Mathf.Round(_start.y);
-        roundedEndX = Mathf.Round(_end.x);
-        roundedEndY = Mathf.Round(_end.y);
+        roundedStartX = Mathf.Floor(Mathf.Abs(_start.x)) * Mathf.Sign(_start.x); // special flooring so negative values go up (-10.5 becomes -10, not -11)
+        roundedStartY = Mathf.Floor(Mathf.Abs(_start.y)) * Mathf.Sign(_start.y);
+        roundedEndX = Mathf.Floor(Mathf.Abs(_end.x)) * Mathf.Sign(_end.x);
+        roundedEndY = Mathf.Floor(Mathf.Abs(_end.y)) * Mathf.Sign(_end.y);
+        
 
         // increment direction
-        stepX = Mathf.Sign(diffX);
-        stepY = Mathf.Sign(diffY);
+        stepX = diffX == 0 ? 0 : Mathf.Sign(diffX);
+        stepY = diffY == 0 ? 0 : Mathf.Sign(diffY);
 
         // pos ranging 0-1 to indicate distance to next grid-x or grid-y
-        x = (_start.x - roundedStartX) + 0.5f;
-        y = (_start.y - roundedStartY) + 0.5f;
+        // x = ((_start.x - roundedStartX) * stepX) + 0.5f;
+        // y = ((_start.y - roundedStartY) * stepY) + 0.5f;
+
+        x = Mathf.Abs(_start.x - roundedStartX);
+        if(stepX != 0 && stepX != Mathf.Sign(_start.x))
+            x = 1 - x;
+        y = Mathf.Abs(_start.y - roundedStartY);
+        if(stepY != 0 && stepY != Mathf.Sign(_start.y))
+            y = 1 - y;
+
+        //x = Mathf.Max(0.001f, x);
+        //y = Mathf.Max(0.001f, y);
+
+        //Debug.Log((x + ", " + y).ToString().Color(Color.green));
+       // Debug.Log((_start.x + " (" + stepX + ")" + " (" + x + "), " + _start.y + " (" + stepY + ")" + " (" + y + ")").ToString().Color(Color.cyan));
+        //Debug.Log(_start.x + ", " + roundedStartX);
+
+        // roundedDownStartX = roundedStartX < _start.x;
+        // roundedDownStartY = roundedStartY < _start.y;
+        // roundedDownEndX = roundedEndX < _end.x;
+        // roundedDownEndY = roundedEndY < _end.y;
+        // roundedStartX += roundedDownStartX ? 0.5f : -0.5f;
+        // roundedStartY += roundedDownStartY ? 0.5f : -0.5f;
+        // roundedEndX += roundedDownEndX ? 0.5f : -0.5f;
+        // roundedEndY += roundedDownEndY ? 0.5f : -0.5f;
+
+        roundedStartX += Mathf.Sign(_start.x) * 0.5f;
+        roundedStartY += Mathf.Sign(_start.y) * 0.5f;
+        roundedEndX += Mathf.Sign(_end.x) * 0.5f;
+        roundedEndY += Mathf.Sign(_end.y) * 0.5f;
+
+
+        // Debug.Log(x.ToString().Color(Color.cyan));
+        // Debug.Log(y.ToString().Color(Color.cyan));
+
+        // debugX = _start.x;
+        // debugY = _start.y;
 
         // tiles found
-        List<Vector2> tiles = new List<Vector2>();
-        tiles.Add(new Vector2(roundedStartX, roundedStartY));
+        List<Overlap> tiles = new List<Overlap>();
+        tiles.Add(new Overlap(new Vector2(roundedStartX, roundedStartY)));
 
-        while (roundedStartX != roundedEndX || roundedStartY != roundedEndY) {
-            if (x + (XperY * (1 - y)) > y + (YperX * (1 - x))){ // if the x we'll get from the remaining y is greater than the y we'll get from the remaining x...
-                
-                // move y to where it should be at end of x and zero x because new tile
-                y = Mathf.Clamp01(y + (YperX * (1 - x)));
-                x = 0;
+        int douche = 0;
+        // used for making sure that the last tile also does diagonal stuff
+        float currentTileX = roundedStartX;
+        float currentTileY = roundedStartY;
+        float futureX = 0;
+        float futureY = 0;
+        float totalX = _start.x; //roundedStartX + (-0.5f * stepX);
+        float totalY = _start.y;// roundedStartY + (-0.5f * stepY);
+        bool forceAnotherIteration = false;
+        while (((roundedStartX != roundedEndX || roundedStartY != roundedEndY) && douche < 10000)/* || forceAnotherIteration*/)
+        {
+            if (roundedStartX != roundedStartY && (stepX > 0 && roundedStartX > roundedEndX || stepX < 0 && roundedStartX < roundedEndX)) { 
+                Debug.LogErrorFormat("Gridcast failed! ({0} -> {1}, {2}/{3} | {4} ({5}), {6} ({7})".Color(Color.red), _start.ToString(), _end.ToString(), futureX.ToString(), futureY.ToString(), x.ToString(), XperY.ToString(), y.ToString(), YperX.ToString());
+                break;
+            }
+            if (roundedStartY != roundedEndY && (stepY > 0 && roundedStartY > roundedEndY || stepY < 0 && roundedStartY < roundedEndY)) { 
+                Debug.LogErrorFormat("Gridcast failed! ({0} -> {1}, {2}/{3} | {4} ({5}), {6} ({7})".Color(Color.red), _start.ToString(), _end.ToString(), futureX.ToString(), futureY.ToString(), x.ToString(), XperY.ToString(), y.ToString(), YperX.ToString());
+                break;
+            }
+            
+            forceAnotherIteration = false;
+            //Debug.Log("(" + currentTileX + ", " + currentTileY + ") - (" + roundedEndX + ", " + roundedEndY + ")");
+            douche++;
+            currentTileX = roundedStartX;
+            currentTileY = roundedStartY;
+
+            // truncate predicted x/y to three decimal points (tried two, but appears to cause noticeable inaccuracy)
+            // futureX = Mathf.Round((x + (XperY * (1 - y))) * 1000) / 1000f;
+            // futureY = Mathf.Round((y + (YperX * (1 - x))) * 1000) / 1000f;
+            futureX = x + (XperY * (1 - y));
+            futureY = y + (YperX * (1 - x));
+            if(float.IsNaN(futureX) || float.IsInfinity(futureX))
+                futureX = 0;
+            if (float.IsNaN(futureY) || float.IsInfinity(futureY))
+                futureY = 0;
+
+            totalX = stepX > 0 ? totalX + (Mathf.Clamp01(futureX) - x) : totalX - (Mathf.Clamp01(futureX) - x);
+            totalY = stepY > 0 ? totalY + (Mathf.Clamp01(futureY) - y) : totalY - (Mathf.Clamp01(futureY) - y);
+
+            if (futureX >= 0.999f && futureY >= 0.999f){ // exiting tile diagonally (approximate, because rays shot at vertices always seem to miss :/ )
+
+                tiles.Add(new Overlap(
+                    new Vector2(roundedStartX + stepX, roundedStartY + stepY),
+                    new Vector2[] {
+                        new Vector2(roundedStartX + stepX, roundedStartY),
+                        new Vector2(roundedStartX, roundedStartY + stepY)
+                    })
+                );
+
+                debugPositions.Add(new Vector2(totalX, totalY));
+                debugValues1.Add(new Vector2(roundedEndX + Mathf.Clamp01(futureX), roundedEndY + Mathf.Clamp01(futureY)));
+                debugValues2.Add(new Vector2(1, 1));
 
                 roundedStartX += stepX;
-                tiles.Add(new Vector2(roundedStartX, roundedStartY));
+                roundedStartY += stepY;
+                forceAnotherIteration = true;
+
+                // can't be zeroed like the others, since x/y might not be exactly 1, as we're approximating diagonal overlapping
+                x = 1 - futureX;
+                y = 1 - futureY;
+
+                // check if the extra neighbours we added was the end
+                if (currentTileX + stepX == roundedEndX && currentTileY == roundedEndY)
+                    break;
+                if (currentTileX == roundedEndX && currentTileY + stepY == roundedEndY)
+                    break;
             }
-            else{
-                x = Mathf.Clamp01(x + (XperY * (1 - y)));
+            else if (futureX >= 1)
+            { // if the x we'll get from the remaining y is greater than the y we'll get from the remaining x...
+
+                // debugX += 1 - x;
+                // debugY += YperX * (1 - x);
+                debugPositions.Add(new Vector2(totalX, totalY));
+                debugValues1.Add(new Vector2(roundedEndX + Mathf.Clamp01(futureX), roundedEndY + Mathf.Clamp01(futureY)));
+                debugValues2.Add(new Vector2(Mathf.Clamp01(futureX), Mathf.Clamp01(futureY)));
+
+                // move y to where it should be at end of x and zero x because new tile
+                x = 0;
+                y = Mathf.Clamp01(futureY);
+
+
+                roundedStartX += stepX;
+                tiles.Add(new Overlap(new Vector2(roundedStartX, roundedStartY)));
+            }
+            else
+            { // y + (YperX * (1 - x)) > 1
+
+                // debugX += -(XperY * (1 - y));
+                // debugY += 1 - y;
+                debugPositions.Add(new Vector2(totalX, totalY));
+                debugValues1.Add(new Vector2(roundedEndX + Mathf.Clamp01(futureX), roundedEndY + Mathf.Clamp01(futureY)));
+                debugValues2.Add(new Vector2(Mathf.Clamp01(futureX), Mathf.Clamp01(futureY)));
+
+                x = Mathf.Clamp01(futureX);
                 y = 0;
 
+
                 roundedStartY += stepY;
-                tiles.Add(new Vector2(roundedStartX, roundedStartY));
+                tiles.Add(new Overlap(new Vector2(roundedStartX, roundedStartY)));
             }
         }
+        if (douche >= 10000)
+            Debug.LogErrorFormat("Hmm, still douching.");
+        //else
+            //Debug.LogFormat("{0}/{1} | {2} ({3}), {4} ({5})".Color(Color.cyan), futureX.ToString(), futureY.ToString(), x.ToString(), XperY.ToString(), y.ToString(), YperX.ToString());
+
+        //futureX = Mathf.Round((x + (XperY * (1 - y))) * 1000) / 1000f;
+
+
+        // Vector2 v;
+        // for (int i = 0; i < tiles.Count; i++){
+        //     v = tiles[i];
+        //     v.x += roundedDownStartX ? 0.5f : -0.5f;
+        //     v.y += roundedDownStartY ? 0.5f : -0.5f;
+        //     tiles[i] = v;
+        // }
+
+        lastCastStart = _start;
+        lastCastEnd = _end;
         return tiles;
+    }
+    public static List<BresenhamsLine.Overlap> ReplayGridcast() {
+        Debug.Log("Replaying: (" + lastCastStart + ") -> (" + lastCastEnd + ")");
+        return Gridcast(lastCastStart, lastCastEnd);
     }
 
 

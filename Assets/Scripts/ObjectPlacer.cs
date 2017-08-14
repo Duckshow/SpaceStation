@@ -460,12 +460,12 @@ public class ObjectPlacer {
             throw new System.NotImplementedException(_ObjectToPlace_ + " has " + uvc.Length + " UVControllers, but only 2 are supported currently!");
 
         for (int i = 0; i < Mathf.Min(2, uvc.Length); i++) {
-            if (uvc[i].SortingLayer == UVController.SortingLayerEnum.Bottom) {
+            if (uvc[i].GridSorting == UVController.GridSortingEnum.Bottom) {
                 if (AssetBottom != null)
                     throw new System.Exception(_ObjectToPlace_ + " had more than 1 UVController of the same SortingLayer!");
                 AssetBottom = uvc[i].Coordinates;
             }
-            else if (uvc[i].SortingLayer == UVController.SortingLayerEnum.Top) {
+            else if (uvc[i].GridSorting == UVController.GridSortingEnum.Top) {
                 if (AssetTop != null)
                     throw new System.Exception(_ObjectToPlace_ + " had more than 1 UVController of the same SortingLayer!");
 

@@ -23,6 +23,8 @@ THE SOFTWARE.
 using UnityEngine;
 using System.Collections.Generic;
 
+using UnityEditor; // for debug-gizmos only
+
 public class Verts {
     public float Angle;
     public int Location; // 1 = left end point | 0 = middle | -1 = right endpoint
@@ -30,7 +32,7 @@ public class Verts {
     public bool Endpoint;
 }
 
-public class Light : MonoBehaviour {
+public class CustomLight : MonoBehaviour {
 
     public bool DebugMode = false;
 
@@ -42,6 +44,7 @@ public class Light : MonoBehaviour {
     public LayerMask layer;
     [Range(4, 40)]
     public int lightSegments = 8;
+    public Transform MeshTransform;
 
     //[HideInInspector] public PolygonCollider2D[] allMeshes; // Array for all of the meshes in our scene
     [HideInInspector]
@@ -51,18 +54,45 @@ public class Light : MonoBehaviour {
 
     private Mesh lightMesh; // Mesh for our light mesh
     private new MeshRenderer renderer;
+    private Light myDefaultLight;
+    private CanInspect myInspector;
 
 
+    void OnEnable() {
+        if(myInspector == null)
+            myInspector = GetComponent<CanInspect>();
+
+        myInspector.PostPickUp += PostPickUp;
+        myInspector.PostPutDown += PostPutDown;
+
+        if(myDefaultLight == null)
+            myDefaultLight = GetComponentInChildren<Light>();
+    }
+    void OnDisable() {
+        myInspector.PostPickUp -= PostPickUp;
+        myInspector.PostPutDown -= PostPutDown;
+    }
     void Start() {
         SinCosTable.InitSinCos();
 
-        MeshFilter meshFilter = (MeshFilter)gameObject.AddComponent(typeof(MeshFilter));        // Add a Mesh Filter component to the light game object so it can take on a form
-        renderer = gameObject.AddComponent(typeof(MeshRenderer)) as MeshRenderer;               // Add a Mesh Renderer component to the light game object so the form can become visible
+        MeshFilter meshFilter = MeshTransform.GetComponent<MeshFilter>();        // Add a Mesh Filter component to the light game object so it can take on a form
+        renderer = MeshTransform.GetComponent<MeshRenderer>();               // Add a Mesh Renderer component to the light game object so the form can become visible
         renderer.sharedMaterial = lightMaterial;                                                // Add the specified material
         lightMesh = new Mesh();                                                                 // create a new mesh for our light mesh
         meshFilter.mesh = lightMesh;                                                            // Set this newly created mesh to the mesh filter
         lightMesh.name = "Light Mesh";                                                          // Give it a name
-        lightMesh.MarkDynamic();                                                               // Set mesh as dynamic
+        lightMesh.MarkDynamic();      
+
+        if(myInspector.CurrentState == CanInspect.State.Default)
+            UpdateLight();
+    }
+    void PostPickUp(){ // TODO: would be good if picked-up objects were visible and jumped between tiles when moving. that way the light can update as it's moved as well.
+        if(lightMesh != null)
+            lightMesh.Clear();
+        isUpToDate = true;
+    }
+    void PostPutDown() {
+        isUpToDate = false;
     }
 
     [EasyButtons.Button]
@@ -71,16 +101,22 @@ public class Light : MonoBehaviour {
         SetLight();
         RenderLightMesh();
         ResetBounds();
+        myDefaultLight.range = lightRadius;// * 4;
+        isUpToDate = true;
     }
 
+    private bool isUpToDate = false;
     void Update() {
-        GetAllMeshes();
-        SetLight();
-        RenderLightMesh();
-        ResetBounds();
+        if(myInspector.CurrentState == CanInspect.State.Contained)
+            return;
+        if(isUpToDate)
+            return;
+
+        UpdateLight();
     }
 
     private Tile t;
+    private bool breakLoops = false;
     void GetAllMeshes() {
         //-- Step 1: obtain all active meshes in the scene --//
         //---------------------------------------------------------------------//
@@ -94,12 +130,25 @@ public class Light : MonoBehaviour {
         for (int y = 0; y < Grid.Instance.GridSizeY; y++) {
             for (int x = 0; x < Grid.Instance.GridSizeX; x++) {
                 t = Grid.Instance.grid[x, y];
-                if ((t.WorldPosition - (Vector2)transform.position).magnitude <= lightRadius) {
-                    if (CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition) == false)
-                        continue;
+                if(!CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition, ref sShadowCollider))
+                    continue;
 
-                    allTiles.Add(t);
+                breakLoops = false;
+                for (int j = 0; j < sShadowCollider.Paths.Length; j++){
+                    for (int k = 0; k < sShadowCollider.Paths[j].Vertices.Length; k++){
+                        if (((t.WorldPosition + sShadowCollider.Paths[j].Vertices[k]) - (Vector2)transform.position).magnitude <= lightRadius) {
+                            allTiles.Add(t);
+                            breakLoops = true;
+                        }
+
+                        if (breakLoops)
+                            break;
+                    }
+
+                    if(breakLoops) 
+                        break;
                 }
+
             }
         }
     }
@@ -155,25 +204,25 @@ public class Light : MonoBehaviour {
             //for (int j = 0; j < polCollider.GetTotalPointCount(); j++) {    // ...and for every vertex we have of each collider...
 
             //}
-            //if (true) {
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), out rayHit);
-            //}
-            //else {
+            // if (true) {
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
+            // }
+            // else {
                 for (int pIndex = 0; pIndex < polCollider.Paths.Length; pIndex++) {
                     for (int vIndex = 0; vIndex < polCollider.Paths[pIndex].Vertices.Length; vIndex++) {  // ...and for every vertex we have of each collider...
                         v = new Verts();
@@ -186,7 +235,7 @@ public class Light : MonoBehaviour {
                         //rayHit = Physics2D.Raycast(transform.position, worldPoint - transform.position, (worldPoint - transform.position).magnitude, layer);
                         //rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
 
-                        if (Gridcast(transform.position, worldPoint, false, out rayHit)) {
+                        if (Gridcast(transform.position, worldPoint, true, out rayHit)) {
                             //v.Pos = rayHit.point;
                             //if(worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange))
                             //	v.Endpoint = true;
@@ -221,13 +270,14 @@ public class Light : MonoBehaviour {
                             highs = true;
 
                         //--Add verts to the main list
-                        if ((v.Pos).sqrMagnitude <= lightRadius * lightRadius)
+                        if ((v.Pos).magnitude <= lightRadius)
                             tempVerts.Add(v);
 
                         if (sortAngles == false)
                             sortAngles = true;
-                    }
+                    //break;
                 }
+            }
             //}
 
             // }
@@ -237,7 +287,7 @@ public class Light : MonoBehaviour {
             //        Debug.Log((polCollider.WorldPosition + polCollider.Paths[pIndex].Vertices[vIndex]).ToString().Color(Color.magenta));
             //    }
             //}
-            Debug.Break();
+           // Debug.Break();
             //return;
 
             // Identify the endpoints (left and right)
@@ -300,21 +350,38 @@ public class Light : MonoBehaviour {
                         //if (rayCont)
                         //    hitPos = rayCont.point;
 
-                        if (Gridcast(from + new Vector2(0.5f, 0.5f), from + (dir.normalized * mag) + new Vector2(0.5f, 0.5f), true, out rayHit))
-                            hitPos = rayCont;
+                        int debugger = -1;
+                        // if (!IsPossibleToGridcastFurther(from, dir)) { 
+                        //     hitPos = from;
+                        //     debugger = 0;
+                        // }
 
+                        if (Gridcast(from/* + new Vector2(0.5f, 0.5f)*/, from + (dir.normalized * mag)/* + new Vector2(0.5f, 0.5f)*/, true, out rayHit)) { 
+                            hitPos = rayHit;
+                            debugger = 1;
+
+                            if (Vector2.Distance(hitPos, transform.position) > lightRadius){
+                                dir = transform.InverseTransformDirection(dir); //local p
+                                hitPos = transform.TransformPoint(dir.normalized * mag); // world p
+                                //debugger = 3;
+                            }
+                        }
                         else {
                             newDir = transform.InverseTransformDirection(dir);  //local p
                             hitPos = (Vector2)transform.TransformPoint(newDir.normalized * mag); //world p
+                            debugger = 2;
                         }
 
-                        if ((hitPos - transform.position).sqrMagnitude > (lightRadius * lightRadius)) {
-                            dir = transform.InverseTransformDirection(dir); //local p
-                            hitPos = transform.TransformPoint(dir.normalized * mag);
+                        if (DebugMode) { 
+                            if(debugger == 0)
+                                Debug.DrawLine(fromCast, hitPos, Color.green);
+                            if (debugger == 1)
+                                Debug.DrawLine(fromCast, hitPos, Color.cyan);
+                            if (debugger == 2)
+                                Debug.DrawLine(fromCast, hitPos, Color.red);
+                            if (debugger == 3)
+                                Debug.DrawLine(fromCast, hitPos, Color.magenta);
                         }
-
-                        if(DebugMode)
-                            Debug.DrawLine(fromCast, hitPos, Color.green);
 
                         vL = new Verts();
                         vL.Pos = transform.InverseTransformPoint(hitPos);
@@ -346,10 +413,11 @@ public class Light : MonoBehaviour {
             //	v.Pos = transform.InverseTransformPoint(v.Pos);
             //	allVertices.Add(v);
             //}
-            if (!Gridcast(transform.position, v.Pos, false, out rayHit)) {
+            if (Gridcast(transform.position, v.Pos, false, out rayHit))
+                v.Pos = transform.InverseTransformPoint(rayHit);
+            else
                 v.Pos = transform.InverseTransformPoint(v.Pos);
-                allVertices.Add(v);
-            }
+            allVertices.Add(v);
         }
 
         //-- Step 4: Sort each vertex by angle (along sweep ray 0 - 2PI)--//
@@ -429,6 +497,7 @@ public class Light : MonoBehaviour {
         lightMesh.triangles = triangles;
         //lightMesh.RecalculateNormals();
         renderer.sharedMaterial = lightMaterial;
+        renderer.material.SetFloat("_UVScale", 1 / lightRadius);
     }
     private Bounds bounds;
     void ResetBounds() {
@@ -438,6 +507,27 @@ public class Light : MonoBehaviour {
     }
     void SortList(List<Verts> list) {
         list.Sort((item1, item2) => (item2.Angle.CompareTo(item1.Angle)));
+        //list.Sort(new VertCompare());
+    }
+    public class VertCompare : IComparer<Verts>{
+        private float previousMagnitude;
+        private float prevMag;
+
+        public int Compare(Verts v1, Verts v2){
+            prevMag = previousMagnitude;
+            previousMagnitude = v1.Pos.magnitude;
+
+            if (v1.Angle == v2.Angle) {
+                return 1;
+                // if(prevMag - v1.Pos.magnitude < prevMag - v2.Pos.magnitude)
+                //     return -1;
+                // else
+                //     return 1;
+            }
+            //return (int)Mathf.Sign(v1.Pos.magnitude - v2.Pos.magnitude);
+
+            return (int)Mathf.Sign(v1.Angle - v2.Angle);
+        }
     }
 
     void DrawLinePerVertex() {
@@ -472,49 +562,41 @@ public class Light : MonoBehaviour {
         return p;
     }
 
-    private List<Tile> tiles = new List<Tile>();
-    private List<Vector2> cast;
+    private List<BresenhamsLine.Overlap> cast;
     private Vector2 tilePos;
     private static CachedAssets.MovableCollider sShadowCollider = new CachedAssets.MovableCollider();
+    private static CachedAssets.MovableCollider[] sExtraShadowColliders;
     private int currentIndex;
     Color col;
     private int iterationsInCast = 0;
+    private int goal = 0;
     bool Gridcast(Vector2 _start, Vector2 _end, bool debug, out Vector2 _rayhit) {
         col = new Color(Random.value, Random.value, Random.value, 1);
         //Debug.Log(castcount);
         // find tiles along cast with a shadowcollider
-        tiles.Clear();
-        iterationsInCast = 0;
         cast = BresenhamsLine.Gridcast(_start, _end);
 
-        for (int i = 0; i < cast.Count; i++) {
-            tilePos = cast[i];
+        //for (int i = 0; i < cast.Count; i++) {
+            //Color32 _col = Color.Lerp(Color.red, Color.blue, ((float)i / (float)cast.Count));
+            // if (debug) {
+            //     if (i == 0)
+            //         _col = Color.green;
+            //     else if (i == cast.Count - 1)
+            //         _col = Color.yellow;
 
-            // subtract because Bresenhams is in whole numbers
-            // tilePos.x -= Tile.RADIUS;
-            // tilePos.y -= Tile.RADIUS;
+            //     cast[i].Tile.SetWallColor(_col);
+            //     cast[i].Tile.SetFloorColor(_col);
+            // }
 
-            t = Grid.Instance.GetTileFromWorldPoint(tilePos);
-            //try {
-            tiles.Add(t);
-            //}
-            //catch (System.OutOfMemoryException) {
-            //    Debug.Log((_start + " -> " + _end + ": " + tiles.Count).Color(Color.red));
-            //    throw;
-            //}
-
-            Color32 _col = Color.Lerp(Color.red, Color.blue, ((float)i / (float)cast.Count));
-            if (debug) {
-                //Debug.Log(cast.Count);
-                //Debug.Log(((float)i / (float)cast.Count));
-                if (i == 0)
-                    _col = Color.green;
-                else if (i == cast.Count - 1)
-                    _col = Color.yellow;
-
-                t.SetWallColor(_col);
-                t.SetFloorColor(_col);
-            }
+            // if (cast[i].ExtraTiles != null){
+            //     for (int j = 0; j < cast[i].ExtraTiles.Length; j++){
+            //         if (debug){
+            //             cast[i].ExtraTiles[j].SetWallColor(_col);
+            //             cast[i].ExtraTiles[j].SetFloorColor(_col);
+            //         }
+            //     }    
+            // }
+            
 
             // Debug.DrawLine(
             //    new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS), 
@@ -535,126 +617,232 @@ public class Light : MonoBehaviour {
             //   new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y + Tile.RADIUS),
             //   new Vector2(t.WorldPosition.x - Tile.RADIUS, t.WorldPosition.y - Tile.RADIUS),
             //   col, Time.deltaTime);
-        }
+        //}
         col = new Color(Random.value, Random.value, Random.value, 1);
 
 
-        if (tiles.Count > 0) {
-            // Debug.Log(tiles[0].GridX + ", " + tiles[0].GridY + " is first!");
-            CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[0].ExactType, tiles[0].Animator.CurrentFrame, tiles[0].WorldPosition, ref sShadowCollider);
+        if (cast.Count > 0) {
+            CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[0].Tile.ExactType, cast[0].Tile.Animator.CurrentFrame, cast[0].Tile.WorldPosition, ref sShadowCollider);
+            // if (sShadowCollider != null){
+            //     for (int i = 0; i < sShadowCollider.Paths.Length; i++){
+            //         for (int j = 1; j < sShadowCollider.Paths[i].Vertices.Length; j++){
+            //             Debug.DrawLine(sShadowCollider.WorldPosition + sShadowCollider.Paths[i].Vertices[j - 1], sShadowCollider.WorldPosition + sShadowCollider.Paths[i].Vertices[j], col, Time.deltaTime);
+            //         }
+            //     }
+            // }
+
+            if (cast[0].ExtraTiles != null){
+                sExtraShadowColliders = new CachedAssets.MovableCollider[cast[0].ExtraTiles.Length];
+                for (int i = 0; i < cast[0].ExtraTiles.Length; i++){
+                    CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[0].ExtraTiles[i].ExactType, cast[0].ExtraTiles[i].Animator.CurrentFrame, cast[0].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
+                    // if (sExtraShadowColliders[i] == null)
+                    //     continue;
+
+                    // for (int j = 0; j < sExtraShadowColliders[i].Paths.Length; j++){
+                    //     for (int k = 1; k < sExtraShadowColliders[i].Paths[j].Vertices.Length; k++){
+                    //         Debug.DrawLine(sExtraShadowColliders[i].WorldPosition + sExtraShadowColliders[i].Paths[j].Vertices[k - 1], sExtraShadowColliders[i].WorldPosition + sExtraShadowColliders[i].Paths[j].Vertices[k], col, Time.deltaTime);
+                    //     }
+                    // }
+                }
+            }
         }
 
         Vector2 _curPos = _start;
+
         currentIndex = 0;
-        float _goal = ((_end - _start).magnitude * Tile.RESOLUTION); // the distance in amount of tiles, multiplied by the amount of pixels across a tile
-        while (true && iterationsInCast < 100000) { // don't actually need the second Bresenhams, so replaced with While (clean this up a bit later, okay? :P)
-            _curPos = Vector2.Lerp(_start, _end, iterationsInCast / _goal);
+        iterationsInCast = 0;
+        goal = Mathf.RoundToInt(((_end - _start).magnitude + 1) * Tile.RESOLUTION); // the distance in amount of tiles, multiplied by the amount of pixels across a tile
+        while (iterationsInCast <= goal || currentIndex < cast.Count) { // don't actually need the second Bresenhams, so replaced with While (clean this up a bit later, okay? :P)
+            _curPos = Vector2.Lerp(_start, _end, (float)iterationsInCast / (float)goal);
             iterationsInCast++;
 
-            float val = 0.0078125f; // (1 / 64) / 2 == radius of pixel
-            Debug.DrawLine(
-               new Vector2(_curPos.x - val, _curPos.y - val),
-               new Vector2(_curPos.x + val, _curPos.y - val),
-               col, Time.deltaTime);
+            // float val = 0.0078125f; // (1 / 64) / 2 == radius of pixel
+            // Debug.DrawLine(
+            //    new Vector2(_curPos.x - val, _curPos.y - val),
+            //    new Vector2(_curPos.x + val, _curPos.y - val),
+            //    col, Time.deltaTime);
 
-            Debug.DrawLine(
-               new Vector2(_curPos.x + val, _curPos.y - val),
-               new Vector2(_curPos.x + val, _curPos.y + val),
-               col, Time.deltaTime);
+            // Debug.DrawLine(
+            //    new Vector2(_curPos.x + val, _curPos.y - val),
+            //    new Vector2(_curPos.x + val, _curPos.y + val),
+            //    col, Time.deltaTime);
 
-            Debug.DrawLine(
-               new Vector2(_curPos.x + val, _curPos.y + val),
-               new Vector2(_curPos.x - val, _curPos.y + val),
-               col, Time.deltaTime);
+            // Debug.DrawLine(
+            //    new Vector2(_curPos.x + val, _curPos.y + val),
+            //    new Vector2(_curPos.x - val, _curPos.y + val),
+            //    col, Time.deltaTime);
 
-            Debug.DrawLine(
-               new Vector2(_curPos.x - val, _curPos.y + val),
-               new Vector2(_curPos.x - val, _curPos.y - val),
-               col, Time.deltaTime);
+            // Debug.DrawLine(
+            //    new Vector2(_curPos.x - val, _curPos.y + val),
+            //    new Vector2(_curPos.x - val, _curPos.y - val),
+            //    col, Time.deltaTime);
 
             // if pixel is closer to next collider, set next collider as current
-            if (currentIndex < tiles.Count - 1 && (tiles[currentIndex + 1].WorldPosition - _curPos).magnitude < (tiles[currentIndex].WorldPosition - _curPos).magnitude) {
+            if (currentIndex < cast.Count - 1 && (cast[currentIndex + 1].Tile.WorldPosition - _curPos).magnitude <= (cast[currentIndex].Tile.WorldPosition - _curPos).magnitude) {
                 currentIndex++;
 
                 col = new Color(Random.value, Random.value, Random.value, 1);
 
                 //Debug.Log(tiles[currentIndex].GridX + ", " + tiles[currentIndex].GridY + " (" + iterationsInCast + ")");
-                val *= 2; // (1 / 64) / 2 == radius of pixel
-                Debug.DrawLine(
-                  new Vector2(_curPos.x - val, _curPos.y - val),
-                  new Vector2(_curPos.x + val, _curPos.y - val),
-                  col, Time.deltaTime);
+                // val *= 2; // (1 / 64) / 2 == radius of pixel
+                // Debug.DrawLine(
+                //   new Vector2(_curPos.x - val, _curPos.y - val),
+                //   new Vector2(_curPos.x + val, _curPos.y - val),
+                //   col, Time.deltaTime);
 
-                Debug.DrawLine(
-                  new Vector2(_curPos.x + val, _curPos.y - val),
-                  new Vector2(_curPos.x + val, _curPos.y + val),
-                  col, Time.deltaTime);
+                // Debug.DrawLine(
+                //   new Vector2(_curPos.x + val, _curPos.y - val),
+                //   new Vector2(_curPos.x + val, _curPos.y + val),
+                //   col, Time.deltaTime);
 
-                Debug.DrawLine(
-                  new Vector2(_curPos.x + val, _curPos.y + val),
-                  new Vector2(_curPos.x - val, _curPos.y + val),
-                  col, Time.deltaTime);
+                // Debug.DrawLine(
+                //   new Vector2(_curPos.x + val, _curPos.y + val),
+                //   new Vector2(_curPos.x - val, _curPos.y + val),
+                //   col, Time.deltaTime);
 
-                Debug.DrawLine(
-                  new Vector2(_curPos.x - val, _curPos.y + val),
-                  new Vector2(_curPos.x - val, _curPos.y - val),
-                  col, Time.deltaTime);
+                // Debug.DrawLine(
+                //   new Vector2(_curPos.x - val, _curPos.y + val),
+                //   new Vector2(_curPos.x - val, _curPos.y - val),
+                //   col, Time.deltaTime);
 
-                CachedAssets.Instance.WallSets[0].GetShadowCollider(tiles[currentIndex].ExactType, tiles[currentIndex].Animator.CurrentFrame, tiles[currentIndex].WorldPosition, ref sShadowCollider);
-                if (sShadowCollider != null) {
-                    for (int i = 0; i < sShadowCollider.Paths.Length; i++) {
-                        for (int j = 1; j < sShadowCollider.Paths[i].Vertices.Length; j++) {
-                            Debug.DrawLine(sShadowCollider.WorldPosition + sShadowCollider.Paths[i].Vertices[j - 1], sShadowCollider.WorldPosition + sShadowCollider.Paths[i].Vertices[j], col, Time.deltaTime);
-                        }
+                CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[currentIndex].Tile.ExactType, cast[currentIndex].Tile.Animator.CurrentFrame, cast[currentIndex].Tile.WorldPosition, ref sShadowCollider);
+                // if (sShadowCollider != null) {
+                //     for (int i = 0; i < sShadowCollider.Paths.Length; i++) {
+                //         for (int j = 1; j < sShadowCollider.Paths[i].Vertices.Length; j++) {
+                //             Debug.DrawLine(sShadowCollider.WorldPosition + sShadowCollider.Paths[i].Vertices[j - 1], sShadowCollider.WorldPosition + sShadowCollider.Paths[i].Vertices[j], col, Time.deltaTime);
+                //         }
+                //     }
+                // }
+
+                if (cast[currentIndex].ExtraTiles != null){
+                    sExtraShadowColliders = new CachedAssets.MovableCollider[cast[currentIndex].ExtraTiles.Length];
+                    for (int i = 0; i < cast[currentIndex].ExtraTiles.Length; i++){
+                        CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[currentIndex].ExtraTiles[i].ExactType, cast[currentIndex].ExtraTiles[i].Animator.CurrentFrame, cast[currentIndex].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
+                        // if (sExtraShadowColliders[i] == null)
+                        //     continue;
+
+                        // for (int j = 0; j < sExtraShadowColliders[i].Paths.Length; j++){
+                        //     for (int k = 1; k < sExtraShadowColliders[i].Paths[j].Vertices.Length; k++){
+                        //         Debug.DrawLine(sExtraShadowColliders[i].WorldPosition + sExtraShadowColliders[i].Paths[j].Vertices[k - 1], sExtraShadowColliders[i].WorldPosition + sExtraShadowColliders[i].Paths[j].Vertices[k], col, Time.deltaTime);
+                        //     }
+                        // }
                     }
                 }
+
                 col = new Color(Random.value, Random.value, Random.value, 1);
             }
+            // else if (currentIndex == cast.Count - 1/* && iterationsInCast / _goal >= 1*/)
+            //     currentIndex++;
 
-            if (sShadowCollider != null && sShadowCollider.OverlapPointOrAlmost(_curPos)) {
+            float closest = 1000;
+            if (sShadowCollider != null && sShadowCollider.OverlapPointOrAlmost(_curPos, out closest)) {
                 //Debug.Log("Hit!".Color(Color.green));
                 //Debug.Log("Bing!".Color(Color.green));
                 //Debug.Log(p);
                 _rayhit = _curPos;
+                hits.Add(_curPos);
+                hitsDistance.Add(closest);
                 //Debug.DrawLine(_start, rayHit, Color.green, 1);
 
                 //float val = 0.015625f; // (1 / 64) / 2 == radius of pixel
-                val *= 2;
-                Debug.DrawLine(
-                  new Vector2(_curPos.x - val, _curPos.y - val),
-                  new Vector2(_curPos.x + val, _curPos.y - val),
-                  Color.magenta, Time.deltaTime);
+                // val *= 2;
+                // Debug.DrawLine(
+                //   new Vector2(_curPos.x - val, _curPos.y - val),
+                //   new Vector2(_curPos.x + val, _curPos.y - val),
+                //   Color.magenta, Time.deltaTime);
 
-                Debug.DrawLine(
-                  new Vector2(_curPos.x + val, _curPos.y - val),
-                  new Vector2(_curPos.x + val, _curPos.y + val),
-                  Color.magenta, Time.deltaTime);
+                // Debug.DrawLine(
+                //   new Vector2(_curPos.x + val, _curPos.y - val),
+                //   new Vector2(_curPos.x + val, _curPos.y + val),
+                //   Color.magenta, Time.deltaTime);
 
-                Debug.DrawLine(
-                  new Vector2(_curPos.x + val, _curPos.y + val),
-                  new Vector2(_curPos.x - val, _curPos.y + val),
-                  Color.magenta, Time.deltaTime);
+                // Debug.DrawLine(
+                //   new Vector2(_curPos.x + val, _curPos.y + val),
+                //   new Vector2(_curPos.x - val, _curPos.y + val),
+                //   Color.magenta, Time.deltaTime);
 
-                Debug.DrawLine(
-                  new Vector2(_curPos.x - val, _curPos.y + val),
-                  new Vector2(_curPos.x - val, _curPos.y - val),
-                  Color.magenta, Time.deltaTime);
+                // Debug.DrawLine(
+                //   new Vector2(_curPos.x - val, _curPos.y + val),
+                //   new Vector2(_curPos.x - val, _curPos.y - val),
+                //   Color.magenta, Time.deltaTime);
                 //Debug.Log("hit!".Color(Color.green));
                 return true;
             }
+            if (sExtraShadowColliders != null){
+                for (int i = 0; i < sExtraShadowColliders.Length; i++){
+                    if (sExtraShadowColliders[i] != null && sExtraShadowColliders[i].OverlapPointOrAlmost(_curPos, out closest)){
+                        _rayhit = _curPos;
+                        hits.Add(_curPos);
+                        hitsDistance.Add(closest);
 
-            if (iterationsInCast / _goal >= 1) {
+                        // Debug.DrawLine(
+                        // new Vector2(_curPos.x - val, _curPos.y - val),
+                        // new Vector2(_curPos.x + val, _curPos.y - val),
+                        // Color.magenta, Time.deltaTime);
+
+                        // Debug.DrawLine(
+                        // new Vector2(_curPos.x + val, _curPos.y - val),
+                        // new Vector2(_curPos.x + val, _curPos.y + val),
+                        // Color.magenta, Time.deltaTime);
+
+                        // Debug.DrawLine(
+                        // new Vector2(_curPos.x + val, _curPos.y + val),
+                        // new Vector2(_curPos.x - val, _curPos.y + val),
+                        // Color.magenta, Time.deltaTime);
+
+                        // Debug.DrawLine(
+                        // new Vector2(_curPos.x - val, _curPos.y + val),
+                        // new Vector2(_curPos.x - val, _curPos.y - val),
+                        // Color.magenta, Time.deltaTime);
+                        //Debug.Log("hit!".Color(Color.green));
+                        return true;
+                    }
+                }
+            }
+
+            if ((float)iterationsInCast / (float)goal > 1/* && currentIndex >= cast.Count - 1*/) {
                 //Debug.Log("Miss!".Color(Color.red));
 
-                ////Debug.Log("Bing!".Color(Color.red));
+                //Debug.Log("Bing!".Color(Color.red));
                 //Debug.DrawLine(_start, _end, Color.red);
                 //Debug.Break();
                 _rayhit = Vector2.zero;
+                nonHits.Add(_curPos);
+                nonHitsDistance.Add(closest);
+                nonHitsHadCollider.Add(sShadowCollider != null && sExtraShadowColliders != null && sExtraShadowColliders.Length > 0);
                 return false;
             }
         }
 
         throw new System.Exception("Gridcast exceeded 100.000 iterations to reach target! Something is totally wrong or your cast is way too big! D:");
     }
+
+    Vector2 testPos;
+    bool IsPossibleToGridcastFurther(Vector2 _start, Vector2 _dir) {
+        testPos = _start + (_dir * 0.01f);
+
+        t = Grid.Instance.GetTileFromWorldPoint(testPos);
+        CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition, ref sShadowCollider);
+
+        float closest = 0;
+        return sShadowCollider != null && sShadowCollider.OverlapPointOrAlmost(testPos, out closest);
+    }
+
+    List<Vector2> hits = new List<Vector2>();
+    List<float> hitsDistance = new List<float>();
+    List<Vector2> nonHits = new List<Vector2>();
+    List<bool> nonHitsHadCollider = new List<bool>();
+    List<float> nonHitsDistance = new List<float>();
+
+    // void OnDrawGizmos(){
+    //     for (int i = 0; i < hits.Count; i++) { 
+    //         Handles.Label(hits[i], "x");
+    //         Handles.Label(hits[i] + new Vector2(0.1f, 0), "Hit: " + hitsDistance[i]);
+    //     }
+    //     for (int i = 0; i < nonHits.Count; i++){
+    //         Handles.Label(nonHits[i], "x");
+    //         Handles.Label(nonHits[i] + new Vector2(0.1f, 0), "No hit: " + nonHitsDistance[i] + ", collider: " + nonHitsHadCollider[i]);
+    //     }
+    // }
 }
 

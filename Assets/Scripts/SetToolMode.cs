@@ -16,7 +16,7 @@ public class SetToolMode : MonoBehaviour {
         MyToggle = GetComponent<Toggle>();
     }
     void Start() {
-		if(ExtraStuff != null)
+		if(Mouse.Instance.BuildMode != ToggleMode && ExtraStuff != null)
 			ExtraStuff.SetActive (false);
     }
     void OnEnable() {

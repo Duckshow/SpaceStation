@@ -97,7 +97,7 @@ public class Grid : MonoBehaviour {
         // for testing-purposes
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-				if (GenerateWalls && Random.value > 0.75f) {
+				if (GenerateWalls && Random.value > 0.9f) {
                     grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
                     continue;
                 }

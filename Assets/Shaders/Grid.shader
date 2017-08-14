@@ -18,10 +18,15 @@ Shader "Custom/Grid" {
 	}
 
 	SubShader {
-		Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+		Tags {"IgnoreProjector"="True" "RenderType"="Transparent" "Queue"="Geometry" } 
 		LOD 400
 		ZTest LEqual
 		ZWrite On
+
+		Stencil {
+			Ref 1
+			Pass replace
+		}
 
 		CGPROGRAM
 		#pragma surface surf BlinnPhong alpha:fade

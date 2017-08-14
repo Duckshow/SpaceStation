@@ -33,6 +33,10 @@ public class CanInspect : MonoBehaviour {
 	private CanClick Clickable;
     [HideInInspector] public TileObject MyTileObject;
 
+    public delegate void InspectEvent();
+    public InspectEvent PostPickUp;
+    public InspectEvent PostPutDown;
+
 
     void Awake() {
         if (!hasSetup)
@@ -88,7 +92,10 @@ public class CanInspect : MonoBehaviour {
         MyTileObject.SetParent(null);
 		Hide (true);
 		GUIManager.Instance.OpenNewWindow(this, State.PickedUp, Window_ObjectPlacer);
-	}
+
+        if(PostPickUp != null)
+            PostPickUp();
+    }
 	public void PutDown(Tile _tile/*, Tile.TileOrientation _orientation*/){
 		GUIManager.Instance.CloseInfoWindow(this);
 
@@ -96,7 +103,10 @@ public class CanInspect : MonoBehaviour {
         MyTileObject.SetGridPosition(_tile);
         //transform.eulerAngles = Tile.GetEulerFromOrientation(_orientation);
 		Hide (false);
-	}
+
+        if(PostPutDown != null)
+            PostPutDown();
+    }
 	public void PutOffGrid(TileObject _parent, Vector3 _localPos, bool _hide){
 		GUIManager.Instance.CloseInfoWindow(this);
 

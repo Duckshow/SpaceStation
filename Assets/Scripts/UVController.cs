@@ -1,26 +1,19 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-public class UVController : MonoBehaviour {
-
-    private const byte LAYERS_PER_POS_Y = 10;
+public class UVController : MeshSorter {
 
 	public CachedAssets.DoubleInt Coordinates;
     public CachedAssets.DoubleInt TemporaryCoordinates;
 
     //public Tile.Type Type;
     public Tile.TileOrientation Orientation;
-	public enum SortingLayerEnum { Floor, FloorCorners, Bottom, Top, TopCorners }
-	public SortingLayerEnum SortingLayer;
 
     private MeshFilter myMeshFilter;
-    private MeshRenderer myRenderer;
     private Vector2[] myMeshUVs;
 
 	private static int sCachedPropertyColor = -1;
 	private static int sCachedPropertyAllColors = -1;
-    private bool hasStarted = false;
     private bool isHidden = false;
-
 
     private byte colorIndex_0;
     private byte colorIndex_1;
@@ -47,21 +40,15 @@ public class UVController : MonoBehaviour {
 	private Color32 myVertexColor;
 
 
-    void Start() {
-        if (!hasStarted)
-            Setup();
+    void Awake() {
+        SortingLayer = MeshSorter.SortingLayerEnum.Grid;
     }
 
-    public void Setup() {
-        if (hasStarted && Application.isPlaying)
-            return;
-
-        hasStarted = true;
+    public override void Setup() {
+        base.Setup();
 
         myMeshFilter = GetComponent<MeshFilter>();
-        myRenderer = GetComponent<MeshRenderer>();
-        myRenderer.sortingLayerName = "Grid";
-		myMeshUVs = myMeshFilter.sharedMesh != null ? myMeshFilter.sharedMesh.uv : myMeshFilter.mesh.uv;
+        myMeshUVs = myMeshFilter.sharedMesh != null ? myMeshFilter.sharedMesh.uv : myMeshFilter.mesh.uv;
 
 		if(sCachedPropertyColor == -1)
 	        sCachedPropertyColor = Shader.PropertyToID("_Color");
@@ -103,7 +90,6 @@ public class UVController : MonoBehaviour {
             return;
         }
 
-
         myMeshUVs[0].x = (Tile.RESOLUTION * _assetIndices.X) / CachedAssets.WallSet.TEXTURE_SIZE_X;
         myMeshUVs[0].y = (Tile.RESOLUTION * _assetIndices.Y) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
 
@@ -133,6 +119,9 @@ public class UVController : MonoBehaviour {
     }
 
     public void ChangeColor(Color _color) {
+        if (!hasStarted)
+            Setup();
+
         myRenderer.material.SetColor(sCachedPropertyColor, _color);
     }
 
@@ -198,38 +187,5 @@ public class UVController : MonoBehaviour {
     }
     public void ResetUVColor() {
         SetUVColor(setColorIndex_0, setColorIndex_1, setColorIndex_2, setColorIndex_3, setColorIndex_4, setColorIndex_5, setVertexColor.r, setVertexColor.g, setVertexColor.b, setVertexColor.a, false);
-    }
-
-    public static int GetSortOrderFromGridY(int _gridY) { return (Grid.Instance.GridSizeY * LAYERS_PER_POS_Y) - (_gridY * LAYERS_PER_POS_Y); }
-    public int GetSortOrder() { return (customSortOrder.HasValue ? (int)customSortOrder : regularSortOrder); }
-    private int regularSortOrder = 0;
-    public void Sort(int _gridY) {
-        if (!hasStarted)
-            Setup();
-
-        regularSortOrder = GetSortOrderFromGridY(_gridY);
-		// if (SortingLayer == SortingLayerEnum.Floor)
-		// 	regularSortOrder -= 2;
-        // else 
-        if(SortingLayer == SortingLayerEnum.FloorCorners)
-            regularSortOrder += 1;
-        else if(SortingLayer == SortingLayerEnum.Bottom)
-            regularSortOrder += 2;
-		else if (SortingLayer == SortingLayerEnum.Top)
-            regularSortOrder += 8; // hack to account for 5 transforms in an actor
-        else if(SortingLayer == SortingLayerEnum.TopCorners)
-            regularSortOrder += 9;
-
-        if(!customSortOrder.HasValue)
-            myRenderer.sortingOrder = regularSortOrder;
-    }
-    private int? customSortOrder = null;
-    public void SortCustom(int _customSortOrder) {
-        customSortOrder = _customSortOrder;
-        myRenderer.sortingOrder = _customSortOrder;
-    }
-    public void RemoveCustomSort() {
-        customSortOrder = null;
-        myRenderer.sortingOrder = regularSortOrder;
     }
 }

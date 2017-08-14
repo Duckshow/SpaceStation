@@ -5,79 +5,128 @@ using UnityEngine;
 public class BresenhamTester : MonoBehaviour {
 
 	public Vector2 StartPos;
-	public Vector2 Angle;
-	public float Length;
+    public Vector2 EndPos;
+
+    [Space]
+    public Vector2 Angle;
+    public bool UseAngle = false;
+    
+    [Space]
+    public float Length;
 	public int Resolution;
 	public int Resolution2;
 
-	private float resolution;
+    private Vector2 end;
+    private float resolution;
 	private Vector2 resPos;
 
 
 	[EasyButtons.Button]
 	public void DrawLine(){
-		
+        Vector2 start = StartPos;
+        end = UseAngle ? (start + (Angle * Length)) : EndPos;
+        resolution = 1 / (float)Resolution;
 
-		resolution = 1 / (float)Resolution;
-        //BresenhamsLine bres = new BresenhamsLine(StartPos, (StartPos + (Angle * Length)), Resolution);
-        //foreach(Vector2 _p in bres){
-        //	resPos = new Vector2(_p.x, _p.y);
-        //          Debug.Log(resPos);
-        //	Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.cyan);
-        //	Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.cyan);
-        //	Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.cyan);
-        //	Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.cyan);
-        //}
-
-        //resolution = 1 / (float)Resolution2;
-        //bres = new BresenhamsLine(StartPos, (StartPos + (Angle * Length)), Resolution2);
-        //foreach(Vector2 _p in bres){
-        //	Debug.Log(resPos);
-        //	resPos = new Vector2(_p.x, _p.y);
-        //	Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.green);
-        //	Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y - (resolution * 0.5f)), new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.green);
-        //	Debug.DrawLine(new Vector2(resPos.x + (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), Color.green);
-        //	Debug.DrawLine(new Vector2(resPos.x - (resolution * 0.5f), resPos.y + (resolution * 0.5f)), new Vector2(resPos.x - (resolution * 0.5f), resPos.y - (resolution * 0.5f)), Color.green);
-        //}
-
-        Vector2 start = StartPos + new Vector2(-1, 1);
-        Debug.DrawLine(start, (start + (Angle * Length)), Color.red);
-        List<Vector2> newBres = BresenhamsLine.Gridcast(start, (start + (Angle * Length)));
+        Debug.DrawLine(start, end, Color.red);
+        List<BresenhamsLine.Overlap> newBres = BresenhamsLine.Gridcast(start, end);
         for (int i = 0; i < newBres.Count; i++) {
-           Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.cyan);
-           Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.cyan);
-           Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.cyan);
-           Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), Color.cyan);
+            
+            if (newBres[i].ExtraTilePositions != null){
+                for (int j = 0; j < newBres[i].ExtraTilePositions.Length; j++){
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), Color.cyan);
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), Color.cyan);
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), Color.cyan);
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), Color.cyan);
+                }
+            }
         }
 
-        start = StartPos + new Vector2(1, 1);
-        Debug.DrawLine(start, (start + (new Vector2(Angle.x * -1, Angle.y * 1) * Length)), Color.red);
-        newBres = BresenhamsLine.Gridcast(start, (start + ((new Vector2(Angle.x * 1, Angle.y * 1)) * Length)));
-        for (int i = 0; i < newBres.Count; i++) {
-            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.green);
-            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.green);
-            Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.green);
-            Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.green);
-        }
+        // start = StartPos + new Vector2(1, 1);
+        // Debug.DrawLine(start, (start + (new Vector2(Angle.x * -1, Angle.y * 1) * Length)), Color.red);
+        // newBres = BresenhamsLine.Gridcast(start, (start + ((new Vector2(Angle.x * -1, Angle.y * 1)) * Length)));
+        // for (int i = 0; i < newBres.Count; i++) {
+        //     Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.green);
+        //     Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.green);
+        //     Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.green);
+        //     Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.green);
+        // }
 
-        start = StartPos + new Vector2(-1, -1);
-        Debug.DrawLine(start, (start + (new Vector2(Angle.x * 1, Angle.y * -1) * Length)), Color.red);
-        newBres = BresenhamsLine.Gridcast(start, (start + ((new Vector2(Angle.x * 1, Angle.y * -1)) * Length)));
-        for (int i = 0; i < newBres.Count; i++) {
-           Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.red);
-           Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.red);
-           Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.red);
-           Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.red);
-        }
+        // start = StartPos + new Vector2(-1, -1);
+        // Debug.DrawLine(start, (start + (new Vector2(Angle.x * 1, Angle.y * -1) * Length)), Color.red);
+        // newBres = BresenhamsLine.Gridcast(start, (start + ((new Vector2(Angle.x * 1, Angle.y * -1)) * Length)));
+        // for (int i = 0; i < newBres.Count; i++) {
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.red);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.red);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.red);
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.red);
+        // }
 
-        start = StartPos + new Vector2(1, -1);
-        Debug.DrawLine(start, (start + (new Vector2(Angle.x * -1, Angle.y * -1) * Length)), Color.red);
-        newBres = BresenhamsLine.Gridcast(start, (start + ((new Vector2(Angle.x * -1, Angle.y * -1)) * Length)));
-        for (int i = 0; i < newBres.Count; i++) {
-           Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.magenta);
-           Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.magenta);
-           Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.magenta);
-           Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.magenta);
+        // start = StartPos + new Vector2(1, -1);
+        // Debug.DrawLine(start, (start + (new Vector2(Angle.x * -1, Angle.y * -1) * Length)), Color.red);
+        // newBres = BresenhamsLine.Gridcast(start, (start + ((new Vector2(Angle.x * -1, Angle.y * -1)) * Length)));
+        // for (int i = 0; i < newBres.Count; i++) {
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.magenta);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.magenta);
+        //    Debug.DrawLine(new Vector2(newBres[i].x + (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), Color.magenta);
+        //    Debug.DrawLine(new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y + (resolution * 0.5f)), new Vector2(newBres[i].x - (resolution * 0.5f), newBres[i].y - (resolution * 0.5f)), Color.magenta);
+        // }
+    }
+    [EasyButtons.Button]
+    public void DrawRandomLine()
+    {
+        resolution = 1 / (float)Resolution;
+
+        Vector2 start = StartPos + new Vector2(Random.value, Random.value);
+        Vector2 angle = new Vector2(Random.value, Random.value);
+        if(Random.value > 0.5f)
+            angle.x *= -1;
+        if (Random.value > 0.5f)
+            angle.y *= -1;
+
+        Debug.Log("Line: " + start + ", with angle: " + angle);
+        Debug.DrawLine(start, (start + (angle * Length)), Color.red);
+        List<BresenhamsLine.Overlap> newBres = BresenhamsLine.Gridcast(start, (start + (angle * Length)));
+       for (int i = 0; i < newBres.Count; i++){
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), Color.cyan);
+
+            if (newBres[i].ExtraTilePositions != null){
+                for (int j = 0; j < newBres[i].ExtraTilePositions.Length; j++){
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), Color.cyan);
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), Color.cyan);
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), Color.cyan);
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), Color.cyan);
+                }    
+            }
+        }
+    }
+    [EasyButtons.Button]
+    public void ReplayLine(){
+        resolution = 1 / (float)Resolution;
+        
+        Debug.DrawLine(BresenhamsLine.lastCastStart, BresenhamsLine.lastCastEnd, Color.red);
+        List<BresenhamsLine.Overlap> newBres = BresenhamsLine.ReplayGridcast();
+        for (int i = 0; i < newBres.Count; i++){
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), Color.cyan);
+            Debug.DrawLine(new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), Color.cyan);
+
+            if (newBres[i].ExtraTilePositions != null){
+                for (int j = 0; j < newBres[i].ExtraTilePositions.Length; j++){
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), Color.cyan);
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), Color.cyan);
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x + (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), Color.cyan);
+                    Debug.DrawLine(new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y + (resolution * 0.5f)), new Vector2(newBres[i].ExtraTilePositions[j].x - (resolution * 0.5f), newBres[i].ExtraTilePositions[j].y - (resolution * 0.5f)), Color.cyan);
+                }
+                
+            }
         }
     }
 

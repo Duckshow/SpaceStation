@@ -639,22 +639,33 @@ public class CachedAssets : MonoBehaviour {
         private Vector2 point;
         private Vector2[] vertices;
         private int j;
-        public bool OverlapPointOrAlmost(Vector2 _pos) {
+        private const float VERTEX_HIT_DISTANCE = 0.01f;
+        public bool OverlapPointOrAlmost(Vector2 _pos, out float closest) {
             point = _pos - WorldPosition;
             intersect = false;
+            closest = 10000;
             for (int p = 0; p < Paths.Length; p++) {
                 j = Paths[p].Vertices.Length - 1;
                 vertices = Paths[p].Vertices;
 
+                // is point inside collider?
                 for (int v = 0; v < vertices.Length; j = v++) {
                     // stolen from the internets D:
                     if (((vertices[v].y <= point.y && point.y < vertices[j].y) || (vertices[j].y <= point.y && point.y < vertices[v].y)) &&
                         (point.x < (vertices[j].x - vertices[v].x) * (point.y - vertices[v].y) / (vertices[j].y - vertices[v].y) + vertices[v].x))
                         intersect = !intersect;
                 }
-
                 if (intersect)
                     return true;
+
+                // is point super-close to any of the vertices?
+                for (int v = 0; v < vertices.Length; v++) { 
+                    if((point - vertices[v]).magnitude < closest)
+                        closest = (point - vertices[v]).magnitude;
+
+                    if ((point - vertices[v]).magnitude < VERTEX_HIT_DISTANCE)
+                        return true;
+                }
             }
 
             return false;

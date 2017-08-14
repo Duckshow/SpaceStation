@@ -353,14 +353,17 @@ public class Tile : IHeapItem<Tile> {
 		_Orientation_ = _newOrientation;
 
         BottomQuad.Orientation = _newOrientation;
-		BottomQuad.SortingLayer = UVController.SortingLayerEnum.Bottom;
+        BottomQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        BottomQuad.GridSorting = MeshSorter.GridSortingEnum.Bottom;
         BottomQuad.Sort(GridY);
 
         TopQuad.Orientation = _newOrientation;
-		TopQuad.SortingLayer = UVController.SortingLayerEnum.Top;
+        TopQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        TopQuad.GridSorting = MeshSorter.GridSortingEnum.Top;
         TopQuad.Sort(GridY);
 
-        WallCornerHider.SortingLayer = UVController.SortingLayerEnum.TopCorners;
+        WallCornerHider.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        WallCornerHider.GridSorting = MeshSorter.GridSortingEnum.TopCorners;
         WallCornerHider.Sort(GridY);
 
         ForceActorStopWhenPassingThis = false;
@@ -553,10 +556,12 @@ public class Tile : IHeapItem<Tile> {
 		_FloorOrientation_ = _newOrientation;
 
 		FloorQuad.Orientation = _newOrientation;
-		FloorQuad.SortingLayer = UVController.SortingLayerEnum.Floor;
+        FloorQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        FloorQuad.GridSorting = MeshSorter.GridSortingEnum.Floor;
 		FloorQuad.Sort(GridY);
 
-        FloorCornerHider.SortingLayer = UVController.SortingLayerEnum.FloorCorners;
+        FloorCornerHider.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        FloorCornerHider.GridSorting = MeshSorter.GridSortingEnum.FloorCorners;
         FloorCornerHider.Sort(GridY);
 
         //ForceActorStopWhenPassingThis = false; // if floor actually needs this, it has to be its own - otherwise breaks airlocks and such!
