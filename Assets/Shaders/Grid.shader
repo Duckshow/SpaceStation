@@ -25,6 +25,7 @@ Shader "Custom/Grid" {
 
 		Stencil {
 			Ref 1
+			Comp always
 			Pass replace
 		}
 
