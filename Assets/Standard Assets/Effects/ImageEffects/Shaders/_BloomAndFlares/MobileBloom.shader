@@ -209,7 +209,7 @@ Shader "Hidden/FastBloom" {
 	// 0
 	Stencil {
 		Ref 1
-		Comp always
+		Comp equal
 		Pass keep
 	}
 	Pass {
@@ -225,7 +225,7 @@ Shader "Hidden/FastBloom" {
 	// 1
 	Stencil {
 		Ref 1
-		Comp always
+		Comp equal
 		Pass keep
 	}
 	Pass { 
@@ -242,7 +242,7 @@ Shader "Hidden/FastBloom" {
 	// 2
 	Stencil {
 		Ref 1
-		Comp always
+		Comp equal
 		Pass keep
 	}
 	Pass {
@@ -260,7 +260,7 @@ Shader "Hidden/FastBloom" {
 	// 3	
 	Stencil {
 		Ref 1
-		Comp always
+		Comp equal
 		Pass keep
 	}
 	Pass {		
@@ -279,7 +279,7 @@ Shader "Hidden/FastBloom" {
 	// 4
 	Stencil {
 		Ref 1
-		Comp always
+		Comp equal
 		Pass keep
 	}
 	Pass {
@@ -297,7 +297,7 @@ Shader "Hidden/FastBloom" {
 	// 5
 	Stencil {
 		Ref 1
-		Comp always
+		Comp equal
 		Pass keep
 	}
 	Pass {		
