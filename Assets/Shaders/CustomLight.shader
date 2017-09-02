@@ -6,7 +6,7 @@
 	}
 
 	SubShader {
-		Tags { "RenderType"="Geometry" "Queue" = "Transparent+50" }
+		Tags { "RenderType"="Transparent" "Queue" = "Transparent+50" }
 
 		// shared grabpass (only runs once, so no changes)
 		GrabPass{"_OriginalTexture"}
@@ -26,8 +26,8 @@
 			ZWrite On
 			AlphaTest Off
 			Lighting Off
-			ColorMask RGB
-			//Blend SrcAlpha OneMinusSrcAlpha
+			ColorMask RGBA
+			Blend SrcAlpha OneMinusSrcAlpha
 
 			CGPROGRAM
 			#pragma fragment frag
@@ -78,7 +78,8 @@
 					return val;
 
 				// else add this light to existing light, clamped to avoid overexposure
-				return min(val + col, org);
+				return min(col + (max(val - col, 0)), org);
+				return min(col + (val * (1 - col)), org);
 			}
 
 			ENDCG
