@@ -206,12 +206,6 @@ Shader "Hidden/FastBloom" {
 	SubShader {
 	  ZTest Off Cull Off ZWrite Off Blend Off
 	  
-	// 0
-	Stencil {
-		Ref 1
-		Comp equal
-		Pass keep
-	}
 	Pass {
 	
 		CGPROGRAM
@@ -222,12 +216,6 @@ Shader "Hidden/FastBloom" {
 		 
 		}
 
-	// 1
-	Stencil {
-		Ref 1
-		Comp equal
-		Pass keep
-	}
 	Pass { 
 	
 		CGPROGRAM
@@ -239,12 +227,6 @@ Shader "Hidden/FastBloom" {
 		 
 		}
 
-	// 2
-	Stencil {
-		Ref 1
-		Comp equal
-		Pass keep
-	}
 	Pass {
 		ZTest Always
 		Cull Off
@@ -257,12 +239,6 @@ Shader "Hidden/FastBloom" {
 		ENDCG 
 		}	
 		
-	// 3	
-	Stencil {
-		Ref 1
-		Comp equal
-		Pass keep
-	}
 	Pass {		
 		ZTest Always
 		Cull Off
@@ -276,12 +252,6 @@ Shader "Hidden/FastBloom" {
 		}	
 
 	// alternate blur
-	// 4
-	Stencil {
-		Ref 1
-		Comp equal
-		Pass keep
-	}
 	Pass {
 		ZTest Always
 		Cull Off
@@ -294,12 +264,6 @@ Shader "Hidden/FastBloom" {
 		ENDCG
 		}	
 		
-	// 5
-	Stencil {
-		Ref 1
-		Comp equal
-		Pass keep
-	}
 	Pass {		
 		ZTest Always
 		Cull Off
