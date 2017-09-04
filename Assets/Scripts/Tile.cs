@@ -149,6 +149,11 @@ public class Tile : IHeapItem<Tile> {
 
 	public int ThingsUsingThis = 0;
 
+    [System.NonSerialized] public ulong Lights_Angle;
+    [System.NonSerialized] public ulong Lights_Distance;
+    [System.NonSerialized] public ulong Lights_Intensity;
+    [System.NonSerialized] public ulong Lights_Color;
+
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY) {
         WorldPosition = _worldPos;

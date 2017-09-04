@@ -138,6 +138,7 @@ public class CustomLight : MonoBehaviour {
                     for (int k = 0; k < sShadowCollider.Paths[j].Vertices.Length; k++){
                         if (((t.WorldPosition + sShadowCollider.Paths[j].Vertices[k]) - (Vector2)transform.position).magnitude <= lightRadius) {
                             allTiles.Add(t);
+                            ReportLightInfoToTile(t);
                             breakLoops = true;
                         }
 
@@ -148,9 +149,31 @@ public class CustomLight : MonoBehaviour {
                     if(breakLoops) 
                         break;
                 }
-
             }
         }
+    }
+
+    bool stopthetrain = false;
+    void ReportLightInfoToTile(Tile _t) {
+// if(stopthetrain)
+// return;
+//         float _dot = Vector2.Dot(Vector2.right, ((Vector2)transform.position - _t.WorldPosition).normalized);
+//         int _angle = Mathf.RoundToInt(Vector2.Angle(_t.WorldPosition, (Vector2)transform.position));
+//         if(_dot < 0)
+//             _angle = 360 - _angle;
+
+//         _t.SetFloorColor(Color.magenta);
+//         _t.SetWallColor(Color.magenta);
+//         Debug.Log(_dot + " <- " + ((Vector2)transform.position - _t.WorldPosition).normalized);
+//         Debug.Log("Vector2.Angle(" + (Vector2)transform.position + ", " + _t.WorldPosition + ") == " + _angle);
+//         stopthetrain = true;
+//         Debug.Break();
+
+        // tile is affected by six other lights (max), so this one will be ignored
+        // if(Mathf.Floor(Mathf.Log10(_t.Lights_Angle) + 1) >= 6)
+        //     return;
+
+        //_t.Lights_Angle = int.Parse(_t.Lights_Angle.ToString() + ());
     }
 
     private bool sortAngles = false;
