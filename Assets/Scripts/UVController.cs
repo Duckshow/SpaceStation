@@ -54,7 +54,7 @@ public class UVController : MeshSorter {
 	        sCachedPropertyColor = Shader.PropertyToID("_Color");
 		ChangeAsset(Coordinates, false);
 
-		if (sCachedPropertyAllColors == -1) {
+		if (sCachedPropertyAllColors == -1) { // this is only to prevent array being sent more than once
 			sCachedPropertyAllColors = Shader.PropertyToID("_allColors");
 			myRenderer.sharedMaterial.SetVectorArray (sCachedPropertyAllColors, ColoringTool.sAllColorsForShaders);
 		}

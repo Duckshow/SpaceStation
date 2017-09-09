@@ -30,12 +30,14 @@ public class ColorPaletteButton : MonoBehaviour {
 
     [EasyButtons.Button]
     public void Reload() {
-#if UNITY_EDITOR
-        ColorIndex = (byte)transform.GetSiblingIndex();
-        myImage.color = FindObjectOfType<Mouse>().Coloring.AllColors [ColorIndex];
-	#else
-		myImage.color = Mouse.Instance.Coloring.AllColors [ColorIndex];
-	#endif
+        if (!Application.isPlaying) {
+            ColorIndex = (byte)transform.GetSiblingIndex();
+            myImage.color = FindObjectOfType<Mouse>().Coloring.AllColors[ColorIndex];
+        }
+        else {
+            ColorIndex = (byte)transform.GetSiblingIndex();
+            myImage.color = Mouse.Instance.Coloring.AllColors [ColorIndex];
+        }
 
 		if (ColorAssignButton.sActiveButton != null && ColorAssignButton.sActiveButton.AssignedColorIndex == ColorIndex) {
 			SelectedButtonImage.transform.SetParent (transform);

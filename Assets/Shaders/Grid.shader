@@ -10,6 +10,11 @@ Shader "Custom/Grid" {
 		_MainTex2("Bugfix (Don't assign)", 2D) = "white" {} 
 		_MainTex3("Bugfix (Don't assign)", 2D) = "white" {} 
 		_MainTex4("Bugfix (Don't assign)", 2D) = "white" {}
+		_Angles("Angles (Don't assign)", 2D) = "white" {}
+		_Colors("Colors (Don't assign)", 2D) = "white" {}
+		_Ranges("Ranges (Don't assign)", 2D) = "white" {}
+		_Distances("Distances (Don't assign)", 2D) = "white" {}
+		_Intensities("Intensities (Don't assign)", 2D) = "white" {}
 		_PalletteMap ("Pallette", 2D) = "white" {}
 		_BumpMap ("Normal", 2D) = "bump" {}
 		//_SpecMap ("Specular", 2D) = "white" {}
@@ -34,6 +39,11 @@ Shader "Custom/Grid" {
 		#pragma target 3.0
 
 		sampler2D _MainTex;
+		sampler2D _Angles;
+		sampler2D _Colors;
+		sampler2D _Ranges;
+		sampler2D _Distances;
+		sampler2D _Intensities;
 		sampler2D _PalletteMap;
 		sampler2D _BumpMap;
 		//sampler2D _SpecMap;
@@ -52,6 +62,11 @@ Shader "Custom/Grid" {
 
 		struct Input {
 			float2 uv_MainTex;
+			float2 uv_Angles;
+			float2 uv_Colors;
+			float2 uv_Ranges;
+			float2 uv_Distances;
+			float2 uv_Intensities;
 			float2 uv_PalletteMap;
 			float2 uv_BumpMap;
 			//float2 uv_SpecMap;

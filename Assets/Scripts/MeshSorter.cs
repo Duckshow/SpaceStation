@@ -11,6 +11,7 @@ public class MeshSorter : MonoBehaviour {
 
     protected bool hasStarted = false;
     protected MeshRenderer myRenderer;
+    public MeshRenderer Renderer { get { return myRenderer; } }
 
 
     void Start(){

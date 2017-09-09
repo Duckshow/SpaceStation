@@ -34,6 +34,8 @@ public class Verts {
 
 public class CustomLight : MonoBehaviour {
 
+    private static List<CustomLight> AllLights = new List<CustomLight>();
+
     public bool DebugMode = false;
 
     [Space]
@@ -41,6 +43,8 @@ public class CustomLight : MonoBehaviour {
     public string version = "1.0.5"; //release date 09/01/2017
     public Material lightMaterial;
     public float lightRadius = 20f;
+    public int Intensity = 1;
+    public byte LightColor = 40; // bright yellow
     public LayerMask layer;
     [Range(4, 40)]
     public int lightSegments = 8;
@@ -59,6 +63,8 @@ public class CustomLight : MonoBehaviour {
 
 
     void OnEnable() {
+        AllLights.Add(this);
+
         if(myInspector == null)
             myInspector = GetComponent<CanInspect>();
 
@@ -71,6 +77,8 @@ public class CustomLight : MonoBehaviour {
     void OnDisable() {
         myInspector.PostPickUp -= PostPickUp;
         myInspector.PostPutDown -= PostPutDown;
+
+        AllLights.Remove(this);
     }
     void Start() {
         SinCosTable.InitSinCos();
@@ -83,37 +91,173 @@ public class CustomLight : MonoBehaviour {
         lightMesh.name = "Light Mesh";                                                          // Give it a name
         lightMesh.MarkDynamic();      
 
-        if(myInspector.CurrentState == CanInspect.State.Default)
-            UpdateLight();
+        //if(myInspector.CurrentState == CanInspect.State.Default)
+        //    UpdateLight();
     }
     void PostPickUp(){ // TODO: would be good if picked-up objects were visible and jumped between tiles when moving. that way the light can update as it's moved as well.
-        if(lightMesh != null)
-            lightMesh.Clear();
-        isUpToDate = true;
+                       //if(lightMesh != null)
+                       //    lightMesh.Clear();
+
+        //isUpToDate = true;
+        UpdateAllLights();
     }
     void PostPutDown() {
-        isUpToDate = false;
+        //isUpToDate = false;
+        UpdateAllLights();
     }
 
+    private static Texture2D TextureLightAngles;
+    private static Texture2D TextureLightColors;
+    private static Texture2D TextureLightRanges;
+    private static Texture2D TextureLightDistances;
+    private static Texture2D TextureLightIntensities;
+    private static Color32[] ClearTextureArray;
+    private static Color32[] ReportedAngles;
+    private static Color32[] ReportedColors;
+    private static Color32[] ReportedRanges;
+    private static Color32[] ReportedDistances;
+    private static Color32[] ReportedIntensities;
+    private static int shaderPropertyAngles;
+    private static int shaderPropertyColors;
+    private static int shaderPropertyRanges;
+    private static int shaderPropertyDistances;
+    private static int shaderPropertyIntensities;
+    private static Material GridMaterial;
     [EasyButtons.Button]
-    public void UpdateLight() {
+    public void UpdateAllLights() {
+
+        // create textures and arrays
+        if (ClearTextureArray == null)
+            ClearTextureArray = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        if (ReportedAngles == null)
+            ReportedAngles = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        if (ReportedColors == null)
+            ReportedColors = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        if (ReportedRanges == null)
+            ReportedRanges = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        if (ReportedDistances == null)
+            ReportedDistances = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        if (ReportedIntensities == null)
+            ReportedIntensities = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        if (TextureLightAngles == null)
+            TextureLightAngles = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+        if (TextureLightColors == null)
+            TextureLightColors = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+        if (TextureLightRanges == null)
+            TextureLightRanges = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+        if (TextureLightDistances == null)
+            TextureLightDistances = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+        if (TextureLightIntensities == null)
+            TextureLightIntensities = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+
+        // find material and propertyIDs
+        if (GridMaterial == null)
+            GridMaterial = Grid.Instance.grid[0, 0].BottomQuad.Renderer.sharedMaterial;
+        if (shaderPropertyAngles == 0)
+            shaderPropertyAngles = Shader.PropertyToID("_Angles");
+        if (shaderPropertyColors == 0)
+            shaderPropertyColors = Shader.PropertyToID("_Colors");
+        if (shaderPropertyRanges == 0)
+            shaderPropertyRanges = Shader.PropertyToID("_Ranges");
+        if (shaderPropertyDistances == 0)
+            shaderPropertyDistances = Shader.PropertyToID("_Distances");
+        if (shaderPropertyIntensities == 0)
+            shaderPropertyIntensities = Shader.PropertyToID("_Intensities");
+
+        // clear everything old
+        ReportedAngles = ClearTextureArray;
+        ReportedColors = ClearTextureArray;
+        ReportedRanges = ClearTextureArray;
+        ReportedDistances = ClearTextureArray;
+        ReportedIntensities = ClearTextureArray;
+        //ClearAllTileLightInfo();
+
+        // get to business
+        for (int i = 0; i < AllLights.Count; i++) {
+            if (AllLights[i].lightMesh != null)
+                AllLights[i].lightMesh.Clear();
+
+            if (AllLights[i].myInspector.CurrentState != CanInspect.State.Default)
+                continue;
+
+            AllLights[i].UpdateLight();
+        }
+
+        // apply arrays to textures
+        TextureLightAngles.SetPixels32(ReportedAngles);
+        TextureLightColors.SetPixels32(ReportedColors);
+        TextureLightRanges.SetPixels32(ReportedRanges);
+        TextureLightDistances.SetPixels32(ReportedDistances);
+        TextureLightIntensities.SetPixels32(ReportedIntensities);
+
+        // apply textures to shader
+        GridMaterial.SetTexture(shaderPropertyAngles, TextureLightAngles);
+        GridMaterial.SetTexture(shaderPropertyColors, TextureLightColors);
+        GridMaterial.SetTexture(shaderPropertyRanges, TextureLightRanges);
+        GridMaterial.SetTexture(shaderPropertyDistances, TextureLightDistances);
+        GridMaterial.SetTexture(shaderPropertyIntensities, TextureLightIntensities);
+
+        dawd // I think I'm finished with the CPU side of things. Start looking at the shader-stuff. (oh, apparently the grid-shader is a surface shader, so I have to rewrite the whole thing.
+
+        //if (Tile.GRID_LIGHTS_ANGLES == null)
+        //    Tile.GRID_LIGHTS_ANGLES = new ulong[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        //if (Tile.GRID_LIGHTS_COLORS == null)
+        //    Tile.GRID_LIGHTS_COLORS = new ulong[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        //if (Tile.GRID_LIGHTS_RANGES == null)
+        //    Tile.GRID_LIGHTS_RANGES = new ulong[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        //if (Tile.GRID_LIGHTS_DISTANCES == null)
+        //    Tile.GRID_LIGHTS_DISTANCES = new ulong[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        //if (Tile.GRID_LIGHTS_INTENSITIES == null)
+        //    Tile.GRID_LIGHTS_INTENSITIES = new ulong[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+
+        //int xy = 0;
+        //for (int y = 0; y < Grid.Instance.GridSizeY; y++) {
+        //    for (int x = 0; x < Grid.Instance.GridSizeX; x++) {
+        //        xy = (Grid.Instance.GridSizeX * y) + 1;
+        //        Tile.GRID_LIGHTS_ANGLES[xy] = Grid.Instance.grid[x, y].Lights_Angle;
+        //        Tile.GRID_LIGHTS_COLORS[xy] = Grid.Instance.grid[x, y].Lights_Color;
+        //        Tile.GRID_LIGHTS_RANGES[xy] = Grid.Instance.grid[x, y].Lights_Range;
+        //        Tile.GRID_LIGHTS_DISTANCES[xy] = Grid.Instance.grid[x, y].Lights_Distance;
+        //        Tile.GRID_LIGHTS_INTENSITIES[xy] = Grid.Instance.grid[x, y].Lights_Intensity;
+        //    }
+        //}
+
+
+
+        //int xy = 0;
+        //for (int y = 0; y < Grid.Instance.GridSizeY; y++) {
+        //    for (int x = 0; x < Grid.Instance.GridSizeX; x++) {
+        //        xy = (Grid.Instance.GridSizeX * y) + 1;
+        //        TextureLightAngles.GetPixel(x, y).r =;
+
+        //        Tile.GRID_LIGHTS_ANGLES[xy] = Grid.Instance.grid[x, y].Lights_Angle;
+        //        Tile.GRID_LIGHTS_COLORS[xy] = Grid.Instance.grid[x, y].Lights_Color;
+        //        Tile.GRID_LIGHTS_RANGES[xy] = Grid.Instance.grid[x, y].Lights_Range;
+        //        Tile.GRID_LIGHTS_DISTANCES[xy] = Grid.Instance.grid[x, y].Lights_Distance;
+        //        Tile.GRID_LIGHTS_INTENSITIES[xy] = Grid.Instance.grid[x, y].Lights_Intensity;
+        //    }
+        //}
+    }
+
+    void UpdateLight() { // shouldn't call this by itself. must update ALL lights.
         GetAllMeshes();
+        ReportLightInfoToTilesHit();
         SetLight();
         RenderLightMesh();
         ResetBounds();
         myDefaultLight.range = lightRadius;// * 4;
-        isUpToDate = true;
+        //isUpToDate = true;
     }
 
-    private bool isUpToDate = false;
-    void Update() {
-        if(myInspector.CurrentState == CanInspect.State.Contained)
-            return;
-        if(isUpToDate)
-            return;
+    //private bool isUpToDate = false;
+    //void Update() {
+    //    if(myInspector.CurrentState == CanInspect.State.Contained)
+    //        return;
+    //    if(isUpToDate)
+    //        return;
 
-        UpdateLight();
-    }
+    //    UpdateLight();
+    //}
 
     private Tile t;
     private bool breakLoops = false;
@@ -138,7 +282,6 @@ public class CustomLight : MonoBehaviour {
                     for (int k = 0; k < sShadowCollider.Paths[j].Vertices.Length; k++){
                         if (((t.WorldPosition + sShadowCollider.Paths[j].Vertices[k]) - (Vector2)transform.position).magnitude <= lightRadius) {
                             allTiles.Add(t);
-                            ReportLightInfoToTile(t);
                             breakLoops = true;
                         }
 
@@ -151,29 +294,6 @@ public class CustomLight : MonoBehaviour {
                 }
             }
         }
-    }
-
-    bool stopthetrain = false;
-    void ReportLightInfoToTile(Tile _t) {
-// if(stopthetrain)
-// return;
-//         float _dot = Vector2.Dot(Vector2.right, ((Vector2)transform.position - _t.WorldPosition).normalized);
-//         int _angle = Mathf.RoundToInt(Vector2.Angle(_t.WorldPosition, (Vector2)transform.position));
-//         if(_dot < 0)
-//             _angle = 360 - _angle;
-
-//         _t.SetFloorColor(Color.magenta);
-//         _t.SetWallColor(Color.magenta);
-//         Debug.Log(_dot + " <- " + ((Vector2)transform.position - _t.WorldPosition).normalized);
-//         Debug.Log("Vector2.Angle(" + (Vector2)transform.position + ", " + _t.WorldPosition + ") == " + _angle);
-//         stopthetrain = true;
-//         Debug.Break();
-
-        // tile is affected by six other lights (max), so this one will be ignored
-        // if(Mathf.Floor(Mathf.Log10(_t.Lights_Angle) + 1) >= 6)
-        //     return;
-
-        //_t.Lights_Angle = int.Parse(_t.Lights_Angle.ToString() + ());
     }
 
     private bool sortAngles = false;
@@ -204,7 +324,10 @@ public class CustomLight : MonoBehaviour {
     private float rangeAngleComparision;
     private Verts vertex1;
     private Verts vertex2;
+    private bool gridcastHit = false;
+    private List<Tile> gridcastHits = new List<Tile>();
     void SetLight() {
+        gridcastHits.Clear();
         allVertices.Clear();// Since these lists are populated every frame, clear them first to prevent overpopulation
 
         //--Step 2: Obtain vertices for each mesh --//
@@ -246,6 +369,7 @@ public class CustomLight : MonoBehaviour {
             //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
             // }
             // else {
+            gridcastHit = false;
                 for (int pIndex = 0; pIndex < polCollider.Paths.Length; pIndex++) {
                     for (int vIndex = 0; vIndex < polCollider.Paths[pIndex].Vertices.Length; vIndex++) {  // ...and for every vertex we have of each collider...
                         v = new Verts();
@@ -259,7 +383,8 @@ public class CustomLight : MonoBehaviour {
                         //rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
 
                         if (Gridcast(transform.position, worldPoint, true, out rayHit)) {
-                            //v.Pos = rayHit.point;
+                        gridcastHit = true;    
+                        //v.Pos = rayHit.point;
                             //if(worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange))
                             //	v.Endpoint = true;
                             v.Pos = rayHit;
@@ -268,8 +393,8 @@ public class CustomLight : MonoBehaviour {
                                 if (DebugMode)
                                     Debug.DrawLine(transform.position, v.Pos, Color.red);
                             }
-                        }
-                        else {
+                    }
+                    else {
                             v.Pos = worldPoint;
                             v.Endpoint = true;
                             if (DebugMode)
@@ -301,6 +426,9 @@ public class CustomLight : MonoBehaviour {
                     //break;
                 }
             }
+
+            if (gridcastHit)
+                gridcastHits.Add(allTiles[i]);
             //}
 
             // }
@@ -476,8 +604,175 @@ public class CustomLight : MonoBehaviour {
                 }
             }
         }
-
     }
+
+    //void ClearAllTileLightInfo() {
+    //    for (int y = 0; y < Grid.Instance.GridSizeY; y++) {
+    //        for (int x = 0; x < Grid.Instance.GridSizeX; x++) {
+    //            Grid.Instance.grid[x, y].Lights_Angle = 0;
+    //            Grid.Instance.grid[x, y].Lights_Color = 0;
+    //            Grid.Instance.grid[x, y].Lights_Range = 0;
+    //            Grid.Instance.grid[x, y].Lights_Distance = 0;
+    //            Grid.Instance.grid[x, y].Lights_Intensity = 0;
+    //        }
+    //    }
+    //}
+
+    void ReportLightInfoToTilesHit() {
+        for (int i = 0; i < gridcastHits.Count; i++)
+            ReportLightInfoToTile(gridcastHits[i]);
+    }
+
+    //bool stopthetrain = false;
+
+    byte reportAngle;
+    byte reportColor;
+    byte reportRange;
+    byte reportDistance;
+    byte reportIntensity;
+    float lightLevel;
+    Color32 cachedAngles;
+    Color32 cachedColors;
+    Color32 cachedRanges;
+    Color32 cachedIntensities;
+    Color32 cachedDistances;
+    byte overwriteChannel;
+    Vector2 C;
+    float tan;
+    int deg;
+    void ReportLightInfoToTile(Tile _t) {
+        reportAngle = 0;
+        reportColor = 0;
+        reportRange = 0;
+        reportDistance = 0;
+        reportIntensity = 0;
+
+        //if (stopthetrain)
+        //    return;
+
+        // tile is affected by six other lights (max), so this one will be ignored
+        //if (MathfExtensions.Digits(_t.Lights_Angle) >= 18)
+        //    return;
+
+        // range
+        reportRange = (byte)lightRadius;
+        //ConcatLightUlong(Mathf.RoundToInt(lightRadius), ref _t.Lights_Range);
+
+        // distance
+        reportDistance = (byte)Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_t.WorldPosition, transform.position)), 255);
+        //int _dist = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_t.WorldPosition, transform.position)), 999);
+        //ConcatLightUlong(_dist, ref _t.Lights_Distance);
+
+        // intensity
+        reportIntensity = (byte)Intensity;
+        //ConcatLightUlong(Intensity, ref _t.Lights_Intensity);
+
+        // how strongly this tile is hit by the light
+        lightLevel = reportIntensity * (1 - (reportDistance / reportRange));
+        cachedIntensities = ReportedIntensities[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        cachedDistances = ReportedDistances[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        cachedRanges = ReportedRanges[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        overwriteChannel = 0;
+        if (lightLevel > (cachedIntensities.r * (1 - (cachedDistances.r / cachedRanges.r))))
+            overwriteChannel = 1;
+        else if (lightLevel > (cachedIntensities.g * (1 - (cachedDistances.g / cachedRanges.g))))
+            overwriteChannel = 2;
+        else if (lightLevel > (cachedIntensities.b * (1 - (cachedDistances.b / cachedRanges.b))))
+            overwriteChannel = 3;
+        else if (lightLevel > (cachedIntensities.a * (1 - (cachedDistances.a / cachedRanges.a))))
+            overwriteChannel = 4;
+
+        if (overwriteChannel == 0)
+            return;
+
+        // angle (0-360)
+        C = (Vector2)transform.position - _t.WorldPosition;
+        tan = Mathf.Atan2(C.y, C.x);
+        deg = Mathf.RoundToInt(90 + (tan * Mathf.Rad2Deg));
+        if (deg < 0)
+            deg += 360;
+        reportAngle = (byte)(((float)deg / (float)360) * 255); // convert degrees to byte
+        //ConcatLightUlong(_deg, ref _t.Lights_Angle);
+
+        // color
+        reportColor = LightColor;
+        //ConcatLightUlong(LightColor, ref _t.Lights_Color);
+
+        cachedAngles = ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        cachedColors = ReportedColors[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        switch (overwriteChannel) {
+            case 1:
+                cachedAngles.r = reportAngle;
+                cachedColors.r = reportColor;
+                cachedRanges.r = reportRange;
+                cachedDistances.r = reportDistance;
+                cachedIntensities.r = reportIntensity;
+                break;
+            case 2:
+                cachedAngles.g = reportAngle;
+                cachedColors.g = reportColor;
+                cachedRanges.g = reportRange;
+                cachedDistances.g = reportDistance;
+                cachedIntensities.g = reportIntensity;
+                break;
+            case 3:
+                cachedAngles.b = reportAngle;
+                cachedColors.b = reportColor;
+                cachedRanges.b = reportRange;
+                cachedDistances.b = reportDistance;
+                cachedIntensities.b = reportIntensity;
+                break;
+            case 4:
+                cachedAngles.a = reportAngle;
+                cachedColors.a = reportColor;
+                cachedRanges.a = reportRange;
+                cachedDistances.a = reportDistance;
+                cachedIntensities.a = reportIntensity;
+                break;
+        }
+        ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedAngles;
+        ReportedColors[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedColors;
+        ReportedRanges[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedRanges;
+        ReportedDistances[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDistances;
+        ReportedIntensities[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedIntensities;
+
+        //_t.SetFloorColor(Color.magenta);
+        //_t.SetWallColor(Color.magenta);
+        ////stopthetrain = true;
+        //Debug.Break();
+    }
+
+    //string concatThis;
+    //int digits1;
+    //int digits2;
+    //void ConcatLightUlong(int val, ref ulong lightUlong) {
+    //    concatThis = "";
+    //    digits1 = MathfExtensions.Digits(lightUlong);
+    //    if (digits1 == 1) {
+    //        digits2 = MathfExtensions.Digits(val);
+    //        if (digits2 == 1)
+    //            concatThis = "100" + val.ToString();
+    //        else if (digits2 == 2)
+    //            concatThis = "10" + val.ToString();
+    //        else if (digits2 == 3)
+    //            concatThis = "1" + val.ToString();
+
+    //        lightUlong = ulong.Parse(concatThis);
+    //    }
+    //    else if (digits1 >= 4) {
+    //        digits2 = MathfExtensions.Digits(val);
+    //        if (digits2 == 1)
+    //            concatThis = "00" + val.ToString();
+    //        else if (digits2 == 2)
+    //            concatThis = "0" + val.ToString();
+    //        else
+    //            concatThis = val.ToString();
+
+    //        lightUlong = ulong.Parse(lightUlong.ToString() + concatThis);
+    //    }
+    //    else
+    //        throw new System.Exception("lightUlong somehow has 2-3 digits! D:");
+    //}
 
     private Vector3[] initVerticesMeshLight;
     private Vector2[] uvs;

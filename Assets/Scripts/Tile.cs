@@ -149,10 +149,21 @@ public class Tile : IHeapItem<Tile> {
 
 	public int ThingsUsingThis = 0;
 
-    [System.NonSerialized] public ulong Lights_Angle;
-    [System.NonSerialized] public ulong Lights_Distance;
-    [System.NonSerialized] public ulong Lights_Intensity;
-    [System.NonSerialized] public ulong Lights_Color;
+    //public static ulong[] GRID_LIGHTS_ANGLES;
+    //public static ulong[] GRID_LIGHTS_COLORS;
+    //public static ulong[] GRID_LIGHTS_DISTANCES;
+    //public static ulong[] GRID_LIGHTS_INTENSITIES;
+    //public static ulong[] GRID_LIGHTS_RANGES;
+    //[System.NonSerialized] public ulong Lights_Angle;
+    //[System.NonSerialized] public ulong Lights_Color;
+    //[System.NonSerialized] public ulong Lights_Distance;
+    //[System.NonSerialized] public ulong Lights_Intensity;
+    //[System.NonSerialized] public ulong Lights_Range;
+    [System.NonSerialized] public Color32 Lights_Angle;
+    [System.NonSerialized] public Color32 Lights_Color;
+    [System.NonSerialized] public Color32 Lights_Distance;
+    [System.NonSerialized] public Color32 Lights_Intensity;
+    [System.NonSerialized] public Color32 Lights_Range;
 
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY) {

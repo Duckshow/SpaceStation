@@ -11,28 +11,34 @@ public class Test : MonoBehaviour {
     }
 	
 	void Update () {
-        float _dot = Vector2.Dot(Vector2.right, ((Vector2)light.transform.position - (Vector2)transform.position).normalized);
-        // int _angle = Mathf.RoundToInt(Vector2.Angle((Vector2)transform.position, (Vector2)light.transform.position));
-        // if (_dot < 0)
-        //     _angle = 360 - _angle;
+        // angle (0-360)
+  //      Vector2 C = light.transform.position - transform.position;
+  //      float _angle = Mathf.Atan2(C.y, C.x);
+  //      int _deg = Mathf.RoundToInt(90 + (_angle * Mathf.Rad2Deg));
+		//if(_deg < 0)
+  //          _deg += 360;
 
+  //      ulong degrees = 0;
+  //      int _digits = MathfExtensions.Digits(_deg);
+		//if(_digits == 1)
+  //          degrees = MathfExtensions.Concatenate(100, _deg);
+		//else if(_digits == 2)
+  //          degrees = MathfExtensions.Concatenate(10, _deg);
+		//else if (_digits == 3)
+  //          degrees = MathfExtensions.Concatenate(1, _deg);
 
-        Vector2 C = light.transform.position - transform.position;
-        float _angle = Mathf.Atan2(C.y, C.x);
-        int _deg = Mathf.RoundToInt(90 + (_angle * Mathf.Rad2Deg));
-		if(_deg < 0)
-            _deg += 360;
+  //      // distance
+  //      int _dist = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(transform.position, light.transform.position)), 999);
+  //      ulong distance = 0;
+  //      _digits = MathfExtensions.Digits(_dist);
+  //      if (_digits == 1)
+  //          distance = MathfExtensions.Concatenate(100, _dist);
+  //      else if (_digits == 2)
+  //          distance = MathfExtensions.Concatenate(10, _dist);
+  //      else if (_digits == 3)
+  //          distance = MathfExtensions.Concatenate(1, _dist);
 
-		dwji // PLACEHOLDER: just proof-of-concept. The 1 is to hold 0s in place. 1 must only be added on the first concatenated value.
-        int _digits = MathfExtensions.Digits(_deg);
-		if(_digits == 1)
-            _deg = MathfExtensions.Concatenate(100, _deg);
-		else if(_digits == 2)
-            _deg = MathfExtensions.Concatenate(10, _deg);
-		else if (_digits == 3)
-            _deg = MathfExtensions.Concatenate(1, _deg);
-
-        Debug.Log(_deg);
-        Debug.DrawLine(transform.position, light.transform.position, Color.red, Time.deltaTime);
+  //      Debug.Log(distance);
+  //      Debug.DrawLine(transform.position, light.transform.position, Color.red, Time.deltaTime);
     }
 }

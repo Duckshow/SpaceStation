@@ -10,9 +10,18 @@ public static class Extensions {
 
 public static class MathfExtensions { 
     public static int Digits(int val) {
-        return Mathf.FloorToInt(Mathf.Log10(val) + 1);
+        return Mathf.Max(Mathf.FloorToInt(Mathf.Log10(val) + 1), 1);
     }
-    public static int Concatenate(int val1, int val2) { 
+    public static int Digits(ulong val) {
+        return Mathf.Max(Mathf.FloorToInt(Mathf.Log10(val) + 1), 1);
+    }
+    public static int ConcatToInt(int val1, int val2) {
         return int.Parse(val1.ToString() + val2.ToString());
+    }
+    public static ulong ConcatToUlong(int val1, int val2) {
+        return ulong.Parse(val1.ToString() + val2.ToString());
+    }
+    public static ulong ConcatToUlong(ulong val1, ulong val2) { 
+        return ulong.Parse(val1.ToString() + val2.ToString());
     }
 }
