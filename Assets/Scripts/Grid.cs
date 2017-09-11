@@ -74,6 +74,7 @@ public class Grid : MonoBehaviour {
         GridSizeY = Mathf.RoundToInt(GridWorldSize.y / nodeDiameter);
 
         CreateGrid();
+        CustomLight.UpdateAllLights();
     }
 
     public static List<TileAnimator> LateUpdateAnimators = new List<TileAnimator>();

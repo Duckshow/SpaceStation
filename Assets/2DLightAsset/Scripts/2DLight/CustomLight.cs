@@ -58,7 +58,6 @@ public class CustomLight : MonoBehaviour {
 
     private Mesh lightMesh; // Mesh for our light mesh
     private new MeshRenderer renderer;
-    private Light myDefaultLight;
     private CanInspect myInspector;
 
 
@@ -71,16 +70,6 @@ public class CustomLight : MonoBehaviour {
         myInspector.PostPickUp += PostPickUp;
         myInspector.PostPutDown += PostPutDown;
 
-        if(myDefaultLight == null)
-            myDefaultLight = GetComponentInChildren<Light>();
-    }
-    void OnDisable() {
-        myInspector.PostPickUp -= PostPickUp;
-        myInspector.PostPutDown -= PostPutDown;
-
-        AllLights.Remove(this);
-    }
-    void Start() {
         SinCosTable.InitSinCos();
 
         MeshFilter meshFilter = MeshTransform.GetComponent<MeshFilter>();        // Add a Mesh Filter component to the light game object so it can take on a form
@@ -94,6 +83,13 @@ public class CustomLight : MonoBehaviour {
         //if(myInspector.CurrentState == CanInspect.State.Default)
         //    UpdateLight();
     }
+    void OnDisable() {
+        myInspector.PostPickUp -= PostPickUp;
+        myInspector.PostPutDown -= PostPutDown;
+
+        AllLights.Remove(this);
+    }
+
     void PostPickUp(){ // TODO: would be good if picked-up objects were visible and jumped between tiles when moving. that way the light can update as it's moved as well.
                        //if(lightMesh != null)
                        //    lightMesh.Clear();
@@ -106,31 +102,41 @@ public class CustomLight : MonoBehaviour {
         UpdateAllLights();
     }
 
-    private static Texture2D TextureLightAngles;
+    //private static Texture2D TextureLightAngles;
+    private static Texture2D TextureLightDotXs;
+    private static Texture2D TextureLightDotYs;
     private static Texture2D TextureLightColors;
     private static Texture2D TextureLightRanges;
     private static Texture2D TextureLightDistances;
     private static Texture2D TextureLightIntensities;
     private static Color32[] ClearTextureArray;
-    private static Color32[] ReportedAngles;
+    //private static Color32[] ReportedAngles;
+    private static Color32[] ReportedDotXs;
+    private static Color32[] ReportedDotYs;
     private static Color32[] ReportedColors;
     private static Color32[] ReportedRanges;
     private static Color32[] ReportedDistances;
     private static Color32[] ReportedIntensities;
-    private static int shaderPropertyAngles;
+    //private static int shaderPropertyAngles;
+    private static int shaderPropertyDotX;
+    private static int shaderPropertyDotY;
     private static int shaderPropertyColors;
     private static int shaderPropertyRanges;
     private static int shaderPropertyDistances;
     private static int shaderPropertyIntensities;
     private static Material GridMaterial;
     [EasyButtons.Button]
-    public void UpdateAllLights() {
+    public static void UpdateAllLights() {
 
         // create textures and arrays
         if (ClearTextureArray == null)
             ClearTextureArray = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
-        if (ReportedAngles == null)
-            ReportedAngles = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        // if (ReportedAngles == null)
+        //     ReportedAngles = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        if (ReportedDotXs == null)
+            ReportedDotXs = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+        if (ReportedDotYs == null)
+            ReportedDotYs = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
         if (ReportedColors == null)
             ReportedColors = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
         if (ReportedRanges == null)
@@ -139,8 +145,12 @@ public class CustomLight : MonoBehaviour {
             ReportedDistances = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
         if (ReportedIntensities == null)
             ReportedIntensities = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
-        if (TextureLightAngles == null)
-            TextureLightAngles = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+        // if (TextureLightAngles == null)
+        //     TextureLightAngles = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+        if (TextureLightDotXs == null)
+            TextureLightDotXs = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+        if (TextureLightDotYs == null)
+            TextureLightDotYs = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
         if (TextureLightColors == null)
             TextureLightColors = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
         if (TextureLightRanges == null)
@@ -153,8 +163,12 @@ public class CustomLight : MonoBehaviour {
         // find material and propertyIDs
         if (GridMaterial == null)
             GridMaterial = Grid.Instance.grid[0, 0].BottomQuad.Renderer.sharedMaterial;
-        if (shaderPropertyAngles == 0)
-            shaderPropertyAngles = Shader.PropertyToID("_Angles");
+        // if (shaderPropertyAngles == 0)
+        //     shaderPropertyAngles = Shader.PropertyToID("_Angles");
+        if (shaderPropertyDotX == 0)
+            shaderPropertyDotX = Shader.PropertyToID("_DotXs");
+        if (shaderPropertyDotY == 0)
+            shaderPropertyDotY = Shader.PropertyToID("_DotYs");
         if (shaderPropertyColors == 0)
             shaderPropertyColors = Shader.PropertyToID("_Colors");
         if (shaderPropertyRanges == 0)
@@ -165,7 +179,9 @@ public class CustomLight : MonoBehaviour {
             shaderPropertyIntensities = Shader.PropertyToID("_Intensities");
 
         // clear everything old
-        ReportedAngles = ClearTextureArray;
+        //ReportedAngles = ClearTextureArray;
+        ReportedDotXs = ClearTextureArray;
+        ReportedDotYs = ClearTextureArray;
         ReportedColors = ClearTextureArray;
         ReportedRanges = ClearTextureArray;
         ReportedDistances = ClearTextureArray;
@@ -183,21 +199,26 @@ public class CustomLight : MonoBehaviour {
             AllLights[i].UpdateLight();
         }
 
+        diwwx // keep working in the light-shader. Everything is white currently and I think it might be because I'm using UVs for the MainTex
+        // and that texture is a lot bigger.
+
         // apply arrays to textures
-        TextureLightAngles.SetPixels32(ReportedAngles);
+        //TextureLightAngles.SetPixels32(ReportedAngles);
+        TextureLightDotXs.SetPixels32(ReportedDotXs);
+        TextureLightDotYs.SetPixels32(ReportedDotYs);
         TextureLightColors.SetPixels32(ReportedColors);
         TextureLightRanges.SetPixels32(ReportedRanges);
         TextureLightDistances.SetPixels32(ReportedDistances);
         TextureLightIntensities.SetPixels32(ReportedIntensities);
 
         // apply textures to shader
-        GridMaterial.SetTexture(shaderPropertyAngles, TextureLightAngles);
+        //GridMaterial.SetTexture(shaderPropertyAngles, TextureLightAngles);
+        GridMaterial.SetTexture(shaderPropertyDotX, TextureLightDotXs);
+        GridMaterial.SetTexture(shaderPropertyDotY, TextureLightDotYs);
         GridMaterial.SetTexture(shaderPropertyColors, TextureLightColors);
         GridMaterial.SetTexture(shaderPropertyRanges, TextureLightRanges);
         GridMaterial.SetTexture(shaderPropertyDistances, TextureLightDistances);
         GridMaterial.SetTexture(shaderPropertyIntensities, TextureLightIntensities);
-
-        dawd // I think I'm finished with the CPU side of things. Start looking at the shader-stuff. (oh, apparently the grid-shader is a surface shader, so I have to rewrite the whole thing.
 
         //if (Tile.GRID_LIGHTS_ANGLES == null)
         //    Tile.GRID_LIGHTS_ANGLES = new ulong[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
@@ -245,7 +266,7 @@ public class CustomLight : MonoBehaviour {
         SetLight();
         RenderLightMesh();
         ResetBounds();
-        myDefaultLight.range = lightRadius;// * 4;
+        //myDefaultLight.range = lightRadius;// * 4;
         //isUpToDate = true;
     }
 
@@ -625,23 +646,29 @@ public class CustomLight : MonoBehaviour {
 
     //bool stopthetrain = false;
 
-    byte reportAngle;
+    //byte reportAngle;
+    float reportDotX;
+    float reportDotY;
     byte reportColor;
     byte reportRange;
     byte reportDistance;
     byte reportIntensity;
     float lightLevel;
-    Color32 cachedAngles;
-    Color32 cachedColors;
-    Color32 cachedRanges;
-    Color32 cachedIntensities;
-    Color32 cachedDistances;
+    //Color32 cachedAngles;
+    Color cachedDotXs;
+    Color cachedDotYs;
+    Color cachedColors;
+    Color cachedRanges;
+    Color cachedIntensities;
+    Color cachedDistances;
     byte overwriteChannel;
-    Vector2 C;
-    float tan;
-    int deg;
+    // Vector2 C;
+    // float tan;
+    // int deg;
     void ReportLightInfoToTile(Tile _t) {
-        reportAngle = 0;
+        //reportAngle = 0;
+        reportDotX = 0;
+        reportDotY = 0;
         reportColor = 0;
         reportRange = 0;
         reportDistance = 0;
@@ -668,69 +695,96 @@ public class CustomLight : MonoBehaviour {
         //ConcatLightUlong(Intensity, ref _t.Lights_Intensity);
 
         // how strongly this tile is hit by the light
-        lightLevel = reportIntensity * (1 - (reportDistance / reportRange));
-        cachedIntensities = ReportedIntensities[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
-        cachedDistances = ReportedDistances[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        lightLevel = reportIntensity * (1 - ((float)reportDistance / (float)reportRange));
+
+        // determine which (if any) color channel to overwrite (only the four strongest lights affect a tile)
         cachedRanges = ReportedRanges[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        cachedDistances = ReportedDistances[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        cachedIntensities = ReportedIntensities[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
         overwriteChannel = 0;
-        if (lightLevel > (cachedIntensities.r * (1 - (cachedDistances.r / cachedRanges.r))))
+        if (cachedIntensities.r == 0 || lightLevel > (cachedIntensities.r * (1 - (cachedDistances.r / cachedRanges.r))))
             overwriteChannel = 1;
-        else if (lightLevel > (cachedIntensities.g * (1 - (cachedDistances.g / cachedRanges.g))))
+        else if (cachedIntensities.g == 0 || lightLevel > (cachedIntensities.g * (1 - (cachedDistances.g / cachedRanges.g))))
             overwriteChannel = 2;
-        else if (lightLevel > (cachedIntensities.b * (1 - (cachedDistances.b / cachedRanges.b))))
+        else if (cachedIntensities.b == 0 || lightLevel > (cachedIntensities.b * (1 - (cachedDistances.b / cachedRanges.b))))
             overwriteChannel = 3;
-        else if (lightLevel > (cachedIntensities.a * (1 - (cachedDistances.a / cachedRanges.a))))
+        else if (cachedIntensities.a == 0 || lightLevel > (cachedIntensities.a * (1 - (cachedDistances.a / cachedRanges.a))))
             overwriteChannel = 4;
 
+        // if no channel was found, return. Else, get the remaining values and apply them.
         if (overwriteChannel == 0)
             return;
-
         // angle (0-360)
-        C = (Vector2)transform.position - _t.WorldPosition;
-        tan = Mathf.Atan2(C.y, C.x);
-        deg = Mathf.RoundToInt(90 + (tan * Mathf.Rad2Deg));
-        if (deg < 0)
-            deg += 360;
-        reportAngle = (byte)(((float)deg / (float)360) * 255); // convert degrees to byte
+        // C = (Vector2)transform.position - _t.WorldPosition;
+        // tan = Mathf.Atan2(C.y, C.x);
+        // deg = Mathf.RoundToInt(90 + (tan * Mathf.Rad2Deg));
+        // if (deg < 0)
+        //     deg += 360;
+        //reportAngle = (byte)(((float)deg / (float)360) * 255); // convert degrees to byte
         //ConcatLightUlong(_deg, ref _t.Lights_Angle);
+
+        // dot x
+        reportDotX = Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position));
+        reportDotX = (reportDotX + 1) * 0.5f;
+        
+        // dot y
+        reportDotY = Vector2.Dot(Vector2.down, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position));
+        reportDotY = (reportDotY + 1) * 0.5f;
 
         // color
         reportColor = LightColor;
         //ConcatLightUlong(LightColor, ref _t.Lights_Color);
 
-        cachedAngles = ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        // get the remaining cached values (affected by previous lights this frame)
+        //cachedAngles = ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        cachedDotXs = ReportedDotXs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+        cachedDotYs = ReportedDotYs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
         cachedColors = ReportedColors[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+       
+        // overwrite the proper channel
         switch (overwriteChannel) {
             case 1:
-                cachedAngles.r = reportAngle;
+                //cachedAngles.r = reportAngle;
+                cachedDotXs.r = reportDotX;
+                cachedDotYs.r = reportDotY;
                 cachedColors.r = reportColor;
                 cachedRanges.r = reportRange;
                 cachedDistances.r = reportDistance;
                 cachedIntensities.r = reportIntensity;
                 break;
             case 2:
-                cachedAngles.g = reportAngle;
+                //cachedAngles.g = reportAngle;
+                cachedDotXs.g = reportDotX;
+                cachedDotYs.g = reportDotY;
                 cachedColors.g = reportColor;
                 cachedRanges.g = reportRange;
                 cachedDistances.g = reportDistance;
                 cachedIntensities.g = reportIntensity;
                 break;
             case 3:
-                cachedAngles.b = reportAngle;
+                //cachedAngles.b = reportAngle;
+                cachedDotXs.b = reportDotX;
+                cachedDotYs.b = reportDotY;
                 cachedColors.b = reportColor;
                 cachedRanges.b = reportRange;
                 cachedDistances.b = reportDistance;
                 cachedIntensities.b = reportIntensity;
                 break;
             case 4:
-                cachedAngles.a = reportAngle;
+                //cachedAngles.a = reportAngle;
+                cachedDotXs.a = reportDotX;
+                cachedDotYs.a = reportDotY;
                 cachedColors.a = reportColor;
                 cachedRanges.a = reportRange;
                 cachedDistances.a = reportDistance;
                 cachedIntensities.a = reportIntensity;
                 break;
         }
-        ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedAngles;
+
+        // add the values to their arrays
+        //ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedAngles;
+        ReportedDotXs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDotXs;
+        ReportedDotYs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDotYs;
         ReportedColors[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedColors;
         ReportedRanges[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedRanges;
         ReportedDistances[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDistances;

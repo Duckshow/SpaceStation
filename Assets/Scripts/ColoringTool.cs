@@ -5,6 +5,11 @@ using System.Collections.Generic;
 [System.Serializable]
 public class ColoringTool : BuilderBase {
 
+	public const byte COLOR_WHITE = 1; // actual white is 0, but soo bright
+    public const byte COLOR_GREY = 8;
+    public const byte COLOR_RED = 124;
+    public const byte COLOR_ORANGE = 36;
+
     public Texture2D Palette;
 	public Color[] AllColors = new Color[128];
 	public static List<Vector4> sAllColorsForShaders = new List<Vector4> ();
@@ -90,10 +95,10 @@ public class ColoringTool : BuilderBase {
         return true;
 	}
 
-    protected override void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, Color _newColor) {
-        _tile.SetFloorColor(_newColor);
-        _tile.SetWallColor(_newColor);
-        base.ApplySettingsToGhost(_tile, _applyToGrid, _newColor);
+    protected override void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, byte _newColorIndex) {
+        // _tile.SetFloorColor(_newColorIndex, !_applyToGrid);
+        // _tile.SetWallColor(_newColorIndex, !_applyToGrid);
+        base.ApplySettingsToGhost(_tile, _applyToGrid, _newColorIndex);
     }
 
     protected override void ApplyCurrentTool() {

@@ -8,14 +8,10 @@ public class BuilderBase {
 	protected enum ModeEnum { Default, Room, Fill, Diagonal, Door, Airlock, ObjectPlacing }
 	protected ModeEnum Mode = ModeEnum.Default;
 
-	[UnityEngine.Serialization.FormerlySerializedAs("Color_NewWall")]
-	[SerializeField] protected Color Color_New = Color.white;
-	[UnityEngine.Serialization.FormerlySerializedAs("Color_RemoveWall")]
-	[SerializeField] protected Color Color_Remove = Color.red;
-	[UnityEngine.Serialization.FormerlySerializedAs("Color_AlreadyExistingWall")]
-	[SerializeField] protected Color Color_AlreadyExisting = Color.grey;
-	[UnityEngine.Serialization.FormerlySerializedAs("Color_BlockedWall")]
-	[SerializeField] protected Color Color_Blocked = (Color.yellow + Color.red) * 0.5f;
+	[SerializeField] protected byte ColorIndex_New = ColoringTool.COLOR_WHITE;
+	[SerializeField] protected byte ColorIndex_AlreadyExisting = ColoringTool.COLOR_GREY;
+	[SerializeField] protected byte ColorIndex_Remove = ColoringTool.COLOR_RED;
+	[SerializeField] protected byte ColorIndex_Blocked = ColoringTool.COLOR_ORANGE;
 
 	[System.NonSerialized] public bool IsActive = false;
 
@@ -104,7 +100,7 @@ public class BuilderBase {
                 OnNewRound();
 			}
 			
-			//// click
+			// click
 			//if (Mouse.StateLeft == Mouse.MouseStateEnum.Click || isDeleting)
 			//	mouseGhostIsDirty = true;
 
@@ -569,7 +565,7 @@ public class BuilderBase {
         return true;
     }
 
-	protected virtual void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, Color _newColor) {
+	protected virtual void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, byte _newColorIndex) {
 		// mark tile for changes
 		if (_applyToGrid)
 			selectedTiles.Add(_tile);

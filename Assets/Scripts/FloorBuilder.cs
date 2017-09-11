@@ -18,8 +18,8 @@ public class FloorBuilder : BuilderBase {
 		for (int i = 0; i < modifiedTiles.Count; i++) {
 			modifiedTiles[i].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
             modifiedTiles[i].ResetTempSettingsFloor();
-            modifiedTiles[i].SetFloorColor(Color.white);
-            modifiedTiles[i].SetWallColor(Color.white);
+            modifiedTiles[i].ResetFloorColor();
+            modifiedTiles[i].ResetWallColor();
         }
 
         base.ResetModifiedTiles ();
@@ -28,8 +28,8 @@ public class FloorBuilder : BuilderBase {
 		for (int i = 0; i < selectedTiles.Count; i++) {
 			selectedTiles[i].SetFloorType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
             selectedTiles[i].ResetTempSettingsFloor();
-			selectedTiles[i].SetFloorColor(Color.white);
-            selectedTiles[i].SetWallColor(Color.white);
+			selectedTiles[i].ResetFloorColor();
+            selectedTiles[i].ResetWallColor();
         }
 
         base.ResetSelectedTiles ();
@@ -213,14 +213,14 @@ public class FloorBuilder : BuilderBase {
 
 		// is building even allowed?
 		if (!_tile._BuildingAllowed_) {
-			ApplySettingsToGhost(_tile, false, Color_Blocked);
+			ApplySettingsToGhost(_tile, false, ColorIndex_Blocked);
             return false;
 		}
 
         // deleting old tiles
         if (isDeleting) {
             if (_tile._FloorType_ == Tile.Type.Empty) { // can't delete empty tiles
-                ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
+                ApplySettingsToGhost(_tile, false, ColorIndex_AlreadyExisting);
                 return false;
             }
 
@@ -231,19 +231,19 @@ public class FloorBuilder : BuilderBase {
             //			}
 
 
-            //// add ghosts for connected diagonals - but is any of them blocked from doing so?
+            // add ghosts for connected diagonals - but is any of them blocked from doing so?
             //if (!AddGhostsForConnectedDiagonals(_tile)) {
             //    ApplySettingsToGhost(_tile, false, Color_Blocked);
             //    return false;
             //}
 
-			ApplySettingsToGhost(_tile, true, Color_Remove);
+			ApplySettingsToGhost(_tile, true, ColorIndex_Remove);
 			return true;
 		}
 
         // is the tile below not free of walls?
         if (_tile._WallType_ != Tile.Type.Empty && _tile._WallType_ != Tile.Type.Diagonal || _tile._Orientation_ != Tile.GetReverseDirection(_tile.TempOrientation)) {
-            ApplySettingsToGhost(_tile, false, Color_Blocked);
+            ApplySettingsToGhost(_tile, false, ColorIndex_Blocked);
             return false;
         }
 
@@ -307,19 +307,19 @@ public class FloorBuilder : BuilderBase {
 
         // is there already an identical floor in place?
         if (_tile._FloorType_ == _tile.TempType && _tile._FloorOrientation_ == _tile.TempOrientation) {
-            ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
+            ApplySettingsToGhost(_tile, false, ColorIndex_AlreadyExisting);
             return false;
         }
 
         // all's good
-        ApplySettingsToGhost(_tile, true, Color_New);
+        ApplySettingsToGhost(_tile, true, ColorIndex_New);
         return true;
     }
 
-    protected override void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, Color _newColor) {
-        _tile.SetFloorColor(_newColor);
-        _tile.SetWallColor(Color_AlreadyExisting);
-        base.ApplySettingsToGhost(_tile, _applyToGrid, _newColor);
+    protected override void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, byte _newColorIndex) {
+        _tile.SetFloorColor(_newColorIndex, true);
+        _tile.SetWallColor(ColorIndex_AlreadyExisting, true);
+        base.ApplySettingsToGhost(_tile, _applyToGrid, _newColorIndex);
     }
 
     protected override void ApplyCurrentTool() {

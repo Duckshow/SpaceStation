@@ -26,6 +26,8 @@ system like everything else which is pretty shit.
 
 
 == Known bugs ==
+Building-tools currently seem to skyrocket in the profiler (750 kb GC collect at one point and then memory-crash!)
+
 The Idling-task is completely broken and can't find any paths.
 
 Sitting down on a chair by a TV and eating, then getting bored while eating, may cause the unit to schedule a task to watch tv, but it's already sitting

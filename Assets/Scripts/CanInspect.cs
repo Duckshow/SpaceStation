@@ -63,7 +63,7 @@ public class CanInspect : MonoBehaviour {
 
     void Start() {
         //Renderer.material.SetColor("_OutlineColor", new Color32(0, 0, 0, 0));
-        MyUVC.ChangeColor(Color.white);
+        MyUVC.ChangeColor(ColoringTool.COLOR_WHITE);
     }
 
 	void LateUpdate(){
@@ -118,7 +118,7 @@ public class CanInspect : MonoBehaviour {
 
     public void ShowOutline(bool _true) {
         byte alpha = _true ? OUTLINE_ALPHA_SELECTED : (byte)0;
-        MyUVC.ChangeColor(_true ? Color.grey : Color.white);
+        MyUVC.ChangeColor(_true ? ColoringTool.COLOR_GREY : ColoringTool.COLOR_WHITE);
         //Renderer.material.SetColor("_OutlineColor", new Color32(0, 0, 0, alpha));
     }
 

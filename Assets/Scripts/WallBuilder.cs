@@ -94,8 +94,8 @@ public class WallBuilder : BuilderBase {
 		for (int i = 0; i < modifiedTiles.Count; i++) {
 			modifiedTiles[i].SetTileType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
             modifiedTiles[i].ResetTempSettingsWall();
-            modifiedTiles[i].SetWallColor(Color.white);
-            modifiedTiles[i].SetFloorColor(Color.white);
+            modifiedTiles[i].ResetFloorColor();
+            modifiedTiles[i].ResetWallColor();
 		}
 
 		base.ResetModifiedTiles (_includingMouse);
@@ -104,8 +104,8 @@ public class WallBuilder : BuilderBase {
 		for (int i = 0; i < selectedTiles.Count; i++) {
 			selectedTiles[i].SetTileType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
             selectedTiles[i].ResetTempSettingsWall();
-            selectedTiles[i].SetWallColor(Color.white);
-            selectedTiles[i].SetFloorColor(Color.white);
+            selectedTiles[i].ResetFloorColor();
+            selectedTiles[i].ResetWallColor();
 		}
 
 		base.ResetSelectedTiles ();
@@ -337,35 +337,35 @@ public class WallBuilder : BuilderBase {
 
 		// is building even allowed?
 		if (!_tile._BuildingAllowed_) {
-			ApplySettingsToGhost(_tile, false, Color_Blocked);
+			ApplySettingsToGhost(_tile, false, ColorIndex_Blocked);
 			return false;
 		}
         // is the tile occupied?
         if (_tile.IsOccupiedByObject) {
-            ApplySettingsToGhost(_tile, false, Color_Blocked);
+            ApplySettingsToGhost(_tile, false, ColorIndex_Blocked);
             return false;
         }
 
 		// deleting old tiles
 		if (isDeleting) {
             if (_tile._WallType_ == Tile.Type.Empty) { // empty tiles can't be deleted
-                ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
+                ApplySettingsToGhost(_tile, false, ColorIndex_AlreadyExisting);
                 return false;
             }
 
-            //// add ghosts for connected diagonals - but is any of them blocked from doing so?
+            // add ghosts for connected diagonals - but is any of them blocked from doing so?
             //if (!AddGhostsForConnectedDiagonals(_tile)) {
             //    ApplySettingsToGhost(_tile, false, Color_Blocked);
             //    return false;
             //}
 
-            //// add ghosts for connected doors and airlocks - but is any of them blocked from doing so?
+            // add ghosts for connected doors and airlocks - but is any of them blocked from doing so?
             //if (!AddGhostsForConnectedDoors(_tile)) {
             //    ApplySettingsToGhost(_tile, false, Color_Blocked);
             //    return false;
             //}
 
-            ApplySettingsToGhost(_tile, true, Color_Remove);
+            ApplySettingsToGhost(_tile, true, ColorIndex_Remove);
 			return true;
 		}
 
@@ -472,25 +472,25 @@ public class WallBuilder : BuilderBase {
 
         // is the tile below a type of door and we're in a different mode currently? (special exception because nicer interaction)
         if ((Mode != ModeEnum.Door && _tile._WallType_ == Tile.Type.Door) || (Mode != ModeEnum.Airlock && _tile._WallType_ == Tile.Type.Airlock)) {
-            ApplySettingsToGhost(_tile, false, Color_Blocked);
+            ApplySettingsToGhost(_tile, false, ColorIndex_Blocked);
             return false;
         }
 
         // is there already an identical wall in place?
         if (_tile._WallType_ == _tile.TempType && _tile._Orientation_ == _tile.TempOrientation) {
-            ApplySettingsToGhost(_tile, false, Color_AlreadyExisting);
+            ApplySettingsToGhost(_tile, false, ColorIndex_AlreadyExisting);
             return false;
         }
 
         // all's good
-        ApplySettingsToGhost(_tile, true, Color_New);
+        ApplySettingsToGhost(_tile, true, ColorIndex_New);
         return true;
 	}
 
-    protected override void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, Color _newColor) {
-        _tile.SetFloorColor(Color_AlreadyExisting);
-        _tile.SetWallColor(_newColor);
-        base.ApplySettingsToGhost(_tile, _applyToGrid, _newColor);
+    protected override void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, byte _newColorIndex) {
+        _tile.SetFloorColor(ColorIndex_AlreadyExisting, true);
+        _tile.SetWallColor(_newColorIndex, true);
+        base.ApplySettingsToGhost(_tile, _applyToGrid, _newColorIndex);
     }
 
     protected override void ApplyCurrentTool() {

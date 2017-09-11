@@ -59,7 +59,7 @@ public class UVController : MeshSorter {
 			myRenderer.sharedMaterial.SetVectorArray (sCachedPropertyAllColors, ColoringTool.sAllColorsForShaders);
 		}
 
-		SetUVColor (1, 2, 2, 2, 2, 2, 2, 2, 2, 2, false);
+		SetUVColor (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
     }
 
     public void StopTempMode() {
@@ -118,11 +118,11 @@ public class UVController : MeshSorter {
         isHidden = _b;
     }
 
-    public void ChangeColor(Color _color) {
+    public void ChangeColor(byte _colorIndex) {
         if (!hasStarted)
             Setup();
 
-        myRenderer.material.SetColor(sCachedPropertyColor, _color);
+        SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, true);
     }
 
     private static List<Vector2> sUVColors_0 = new List<Vector2>();

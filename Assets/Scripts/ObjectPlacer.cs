@@ -28,10 +28,10 @@ public class ObjectPlacer {
 
 
 
-    [SerializeField] private Color Color_New = Color.white;
-    [SerializeField] private Color Color_Remove = Color.red;
-    [SerializeField] private Color Color_AlreadyExisting = Color.grey;
-    [SerializeField] private Color Color_Blocked = (Color.yellow + Color.red) * 0.5f;
+    [SerializeField] private byte ColorIndex_New = ColoringTool.COLOR_WHITE;
+    [SerializeField] private byte ColorIndex_AlreadyExisting = ColoringTool.COLOR_GREY;
+    [SerializeField] private byte ColorIndex_Remove = ColoringTool.COLOR_RED;
+    [SerializeField] private byte ColorIndex_Blocked = ColoringTool.COLOR_ORANGE;
 
     [System.NonSerialized]
     public bool IsActive = false;
@@ -68,9 +68,9 @@ public class ObjectPlacer {
             BottomQuad.ChangeAsset(_bottomIndices, false);
             TopQuad.ChangeAsset(_topIndices, false);
         }
-        public void SetColor(Color _color) {
-            BottomQuad.ChangeColor(_color);
-            TopQuad.ChangeColor(_color);
+        public void SetColor(byte _colorIndex) {
+            BottomQuad.ChangeColor(_colorIndex);
+            TopQuad.ChangeColor(_colorIndex);
         }
         public void SetActive(bool _b) {
             BottomQuad.gameObject.SetActive(_b);
@@ -321,17 +321,17 @@ public class ObjectPlacer {
 		if (isDeleting) {
 			// is building even allowed?
 			if (!mouseTile._BuildingAllowed_ && mouseTile._FloorType_ != Tile.Type.Empty) { // empty tiles allowed for deletion bc it looks better
-				ApplySettingsToGhost(false, Color_Blocked);
+				ApplySettingsToGhost(false, ColorIndex_Blocked);
 				return;
 			}
 
 			// is the tile being used for something currently?
 			if (mouseTile.ThingsUsingThis > 0) {
-				ApplySettingsToGhost(false, Color_Blocked);
+				ApplySettingsToGhost(false, ColorIndex_Blocked);
 				return;
 			}
 
-			ApplySettingsToGhost(true, Color_Remove);
+			ApplySettingsToGhost(true, ColorIndex_Remove);
 			return;
 		}
 
@@ -340,27 +340,27 @@ public class ObjectPlacer {
 
 		// is building even allowed?
 		if (!mouseTile._BuildingAllowed_) {
-			ApplySettingsToGhost(false, Color_Blocked);
+			ApplySettingsToGhost(false, ColorIndex_Blocked);
 			return;
 		}
 		// is the tile below covered by some kind of wall?
 		if (mouseTile._WallType_ != Tile.Type.Empty) {
-			ApplySettingsToGhost(false, Color_Blocked);
+			ApplySettingsToGhost(false, ColorIndex_Blocked);
 			return;
 		}
 		// is the tile below without floor?
 		if (mouseTile._FloorType_ == Tile.Type.Empty) {
-			ApplySettingsToGhost(false, Color_Blocked);
+			ApplySettingsToGhost(false, ColorIndex_Blocked);
 			return;
 		}
         // is the tile below occupied by another object (or actor)?
 		if (mouseTile.IsOccupiedByObject) {
             if (mouseTile.OccupyingInspectable != null) {
-                ApplySettingsToGhost(false, Color.clear);
+                ApplySettingsToGhost(false, ColoringTool.COLOR_WHITE, hide: true);
                 return;
             }
 
-            ApplySettingsToGhost(false, Color_Blocked);
+            ApplySettingsToGhost(false, ColorIndex_Blocked);
 			return;
 		}
 //		// is the tile below without floor?
@@ -370,13 +370,13 @@ public class ObjectPlacer {
 //		}
 
 		// all's good
-		ApplySettingsToGhost(true, Color_New);
+		ApplySettingsToGhost(true, ColorIndex_New);
 	}
-    private void ApplySettingsToGhost(bool _applyToGrid, Color _newColor) {
+    private void ApplySettingsToGhost(bool _applyToGrid, byte _newColorIndex, bool hide = false) {
         // apply color and position
-        Ghost.SetActive(true);
-        Ghost.SetColor(_newColor);
         Ghost.SetPosition(new Vector2(mouseTile.GridX, mouseTile.GridY));
+        Ghost.SetActive(!hide);
+        Ghost.SetColor(_newColorIndex);
 
         // mark tile for changes
         if (_applyToGrid) {

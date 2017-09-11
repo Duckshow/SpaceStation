@@ -149,22 +149,6 @@ public class Tile : IHeapItem<Tile> {
 
 	public int ThingsUsingThis = 0;
 
-    //public static ulong[] GRID_LIGHTS_ANGLES;
-    //public static ulong[] GRID_LIGHTS_COLORS;
-    //public static ulong[] GRID_LIGHTS_DISTANCES;
-    //public static ulong[] GRID_LIGHTS_INTENSITIES;
-    //public static ulong[] GRID_LIGHTS_RANGES;
-    //[System.NonSerialized] public ulong Lights_Angle;
-    //[System.NonSerialized] public ulong Lights_Color;
-    //[System.NonSerialized] public ulong Lights_Distance;
-    //[System.NonSerialized] public ulong Lights_Intensity;
-    //[System.NonSerialized] public ulong Lights_Range;
-    [System.NonSerialized] public Color32 Lights_Angle;
-    [System.NonSerialized] public Color32 Lights_Color;
-    [System.NonSerialized] public Color32 Lights_Distance;
-    [System.NonSerialized] public Color32 Lights_Intensity;
-    [System.NonSerialized] public Color32 Lights_Range;
-
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY) {
         WorldPosition = _worldPos;
@@ -917,14 +901,28 @@ public class Tile : IHeapItem<Tile> {
         FloorQuad.StopTempMode();
         UpdateFloorCornerHider(false);
     }
-    public void SetFloorColor(Color32 _color32) {
-        FloorQuad.ChangeColor(_color32);
-		FloorCornerHider.ChangeColor (_color32);
+    public void SetFloorColor(byte _colorIndex, bool temporary) {
+        FloorQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
+        FloorCornerHider.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
+        // FloorQuad.ChangeColor(_colorIndex);
+        // FloorCornerHider.ChangeColor (_colorIndex);
     }
-    public void SetWallColor(Color32 _color32) {
-        BottomQuad.ChangeColor(_color32);
-        TopQuad.ChangeColor(_color32);
-        WallCornerHider.ChangeColor(_color32);
+    public void ResetFloorColor(){
+        FloorQuad.ResetUVColor();
+        FloorCornerHider.ResetUVColor();
+    }
+    public void SetWallColor(byte _colorIndex, bool temporary) {
+        BottomQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
+        TopQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
+        WallCornerHider.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
+        // BottomQuad.ChangeColor(_colorIndex);
+        // TopQuad.ChangeColor(_colorIndex);
+        // WallCornerHider.ChangeColor(_colorIndex);
+    }
+    public void ResetWallColor(){
+        BottomQuad.ResetUVColor();
+        TopQuad.ResetUVColor();
+        WallCornerHider.ResetUVColor();
     }
 
     public void OnActorApproachingTile(TileOrientation _direction) {
