@@ -1,10 +1,12 @@
+// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+
 Shader "Custom/Grid" {
 	Properties {
 		_MainTex ("Main Texture", 2D) = "white" {}
 		_MainTex1("Bugfix (Don't assign)", 2D) = "white" {} 
 		_MainTex2("Bugfix (Don't assign)", 2D) = "white" {} 
 		_MainTex3("Bugfix (Don't assign)", 2D) = "white" {}
-		//_Angles("Angles (Don't assign)", 2D) = "white" {}
+		////_Angles("Angles (Don't assign)", 2D) = "white" {}
 		_DotXs("DotXs (Don't assign)", 2D) = "white" {}
 		_DotYs("DotYs (Don't assign)", 2D) = "white" {}
 		_Colors("Colors (Don't assign)", 2D) = "white" {}
@@ -38,7 +40,7 @@ Shader "Custom/Grid" {
 			//#pragma alpha:fade
 			#pragma fragment frag
 			#pragma target 3.0
-
+			#include "UnityCG.cginc"
 
 			sampler2D _MainTex;
 			sampler2D _NormalMap;
@@ -82,6 +84,7 @@ Shader "Custom/Grid" {
 
 			struct v2f {
 				float4 pos : POSITION;
+				float4 worldPos : NORMAL;
 				fixed4 vColor : COLOR;
 				half2 uv : TEXCOORD0;
 				half2 uv1 : TEXCOORD1;
@@ -89,10 +92,10 @@ Shader "Custom/Grid" {
 				half2 uv3 : TEXCOORD3;
 			};
 
-
 			v2f vert(appData v) {
 				v2f o;
 				o.pos = UnityObjectToClipPos(v.vertex);
+				o.worldPos = mul(unity_ObjectToWorld, v.vertex);
 				o.vColor = v.vColor;
 				o.uv = half2(v.texcoord.x, v.texcoord.y);
 				o.uv1 = half2(v.texcoord1.x, v.texcoord1.y);
@@ -109,13 +112,6 @@ Shader "Custom/Grid" {
 				nrmTex = tex2D(_NormalMap, i.uv);
 				emTex = tex2D(_EmissiveMap, i.uv);
 				palTex = tex2D(_PalletteMap, i.uv);
-				//anglesTex = tex2D(_Angles, i.uv);
-				dotXsTex = tex2D(_DotXs, i.uv);
-				dotYsTex = tex2D(_DotYs, i.uv);
-				colorsTex = tex2D(_Colors, i.uv);
-				rangesTex = tex2D(_Ranges, i.uv);
-				distancesTex = tex2D(_Distances, i.uv);
-				intensitiesTex = tex2D(_Intensities, i.uv);
 
 				if(palTex.r > 0.9f)
 					colorToUse = _allColors[floor(i.uv1.x)];
@@ -138,13 +134,50 @@ Shader "Custom/Grid" {
 				else if (palTex.r > 0.0f)
 					colorToUse = _allColors[floor(i.vColor.a * 255)];
 
-				// normals: R (0->1 == left->right), G (0->1 == down->up), B (?)
+				// normals: R (0->1 == down->up), A (0->1 == left->right)
+
+				half2 gridUV = (ceil(i.worldPos) + 23.5) / 47.5;
+				//anglesTex = tex2D(_Angles, gridUV);
+				dotXsTex = tex2D(_DotXs, gridUV);
+				dotYsTex = tex2D(_DotYs, gridUV);
+				colorsTex = tex2D(_Colors, gridUV);
+				rangesTex = tex2D(_Ranges, gridUV);
+				distancesTex = tex2D(_Distances, gridUV);
+				intensitiesTex = tex2D(_Intensities, gridUV);
+
+				 finalColor.rgb = (tex.rgb * colorToUse.rgb);
+				
+				// float nrmVal = abs(nrmTex.r - 0.5) > abs(nrmTex.r - 0.5) ? (nrmTex.r - 0.5) * 2 : (nrmTex.a - 0.5) * 2; 
+				// float dotVal = abs(dotXsTex.r - 0.5) > abs(dotYsTex.r - 0.5) ? dotXsTex.r : dotYsTex.r;
+				// finalColor.rgb *= 1 - max(dotVal - nrmVal, 0);
+
+				float nrmVal = nrmTex.r * (nrmTex.a < 0.5) ? -1 : 1;
+
+				float dotVal = dotYsTex.r * (dotXsTex.r <= 0.5) ? -1 : 1;
 
 
-				finalColor.rgb = (tex.rgb * colorToUse.rgb);
-				finalColor.rgb *= 1 - (((nrmTex.r - dotXsTex.r) + (nrmTex.g - dotYsTex.r)) * 0.5);
-				finalColor = dotXsTex.r;
+				finalColor.rgb *= 1 - (nrmTex.r - dotYsTex.r) + (nrmTex.a - dotXsTex.r);
+				//finalColor.rgb = nrmTex.a < 0.6 ? fixed3(1, 0, 0) : fixed3(0, 1, 0);
 
+				// fixed angle = ((nrmTex.r * sign(nrmTex.a - nrmTex.r)) + 1) * 0.5;
+				// fixed lightAngle = (((1 - dotXsTex.r) * sign((1 - dotYsTex.r) - (1 - dotXsTex.r))) + 1) * 0.5;
+				// fixed light = abs(min(angle, lightAngle) - max(angle, lightAngle)) < 0.5 ? 1 : 0;
+				// finalColor.rgb = light;
+
+				// fixed nrmVal = abs(nrmTex.r - 0.5) > abs(nrmTex.a - 0.5) ? nrmTex.r : nrmTex.a;
+				// fixed dotVal = abs(dotXsTex.r - 0.5) > abs(dotYsTex.r - 0.5) ? dotXsTex.r : dotYsTex.r;
+				// finalColor.rgb *= abs(nrmVal - dotVal) < 0.5 ? 1 : 0;
+				// finalColor = abs(nrmVal - dotVal) < 0.5 ? 1 : 0;
+				// finalColor = nrmVal;
+				//finalColor = dotVal;
+				//finalColor = abs(nrmVal - dotVal);
+
+
+				// finalColor.rgb *= 1 - ((max(dotXsTex.r - nrmTex.r, 0) + max(dotYsTex.r - nrmTex.a, 0)) * 0.5);
+				//finalColor.rgb = dotXsTex.r;
+	/*			finalColor.rg = gridUV;
+				finalColor.b = 0;*/
+				//finalColor.rgb = (tex.rgb + dotXsTex.r) * 0.5;
 
 				//finalColor.rgb = tex.rgb * colorToUse.rgb;
 				finalColor.a = tex.a;
