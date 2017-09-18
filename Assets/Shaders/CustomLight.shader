@@ -65,6 +65,10 @@
 			fixed4 frag(v2f i) : COLOR {
 				// original pixel color
 				fixed4 org = tex2Dproj(_OriginalTexture, i.grabPos);
+				return org;
+
+
+				
 				fixed4 orgWithColor = (org + _Color) * 0.5;
 				
 				// current pixel color
@@ -79,7 +83,6 @@
 
 				// else add this light to existing light, clamped to avoid overexposure
 				return min(col + (max(val - col, 0)), org);
-				return min(col + (val * (1 - col)), org);
 			}
 
 			ENDCG

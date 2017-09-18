@@ -145,48 +145,75 @@ Shader "Custom/Grid" {
 				distancesTex = tex2D(_Distances, gridUV);
 				intensitiesTex = tex2D(_Intensities, gridUV);
 
-				 finalColor.rgb = (tex.rgb * colorToUse.rgb);
+				finalColor.rgb = (tex.rgb * colorToUse.rgb);
 				
-				// float nrmVal = abs(nrmTex.r - 0.5) > abs(nrmTex.r - 0.5) ? (nrmTex.r - 0.5) * 2 : (nrmTex.a - 0.5) * 2; 
-				// float dotVal = abs(dotXsTex.r - 0.5) > abs(dotYsTex.r - 0.5) ? dotXsTex.r : dotYsTex.r;
-				// finalColor.rgb *= 1 - max(dotVal - nrmVal, 0);
-
-				float nrmVal = nrmTex.r * (nrmTex.a < 0.5) ? -1 : 1;
-
-				float dotVal = dotYsTex.r * (dotXsTex.r <= 0.5) ? -1 : 1;
+				if(!any(intensitiesTex))
+					finalColor.rgba = 0;
 
 
-				finalColor.rgb *= 1 - (nrmTex.r - dotYsTex.r) + (nrmTex.a - dotXsTex.r);
-				//finalColor.rgb = nrmTex.a < 0.6 ? fixed3(1, 0, 0) : fixed3(0, 1, 0);
+				fixed mod = 0;
+				fixed nrmUpDown = nrmTex.r * 2 - 1;
+				fixed nrmLeftRight = nrmTex.a * 2 - 1;
+				fixed dotX = dotXsTex.r * 2 - 1;
+				fixed dotY = dotYsTex.r * 2 - 1;
 
-				// fixed angle = ((nrmTex.r * sign(nrmTex.a - nrmTex.r)) + 1) * 0.5;
-				// fixed lightAngle = (((1 - dotXsTex.r) * sign((1 - dotYsTex.r) - (1 - dotXsTex.r))) + 1) * 0.5;
-				// fixed light = abs(min(angle, lightAngle) - max(angle, lightAngle)) < 0.5 ? 1 : 0;
-				// finalColor.rgb = light;
-
-				// fixed nrmVal = abs(nrmTex.r - 0.5) > abs(nrmTex.a - 0.5) ? nrmTex.r : nrmTex.a;
-				// fixed dotVal = abs(dotXsTex.r - 0.5) > abs(dotYsTex.r - 0.5) ? dotXsTex.r : dotYsTex.r;
-				// finalColor.rgb *= abs(nrmVal - dotVal) < 0.5 ? 1 : 0;
-				// finalColor = abs(nrmVal - dotVal) < 0.5 ? 1 : 0;
-				// finalColor = nrmVal;
-				//finalColor = dotVal;
-				//finalColor = abs(nrmVal - dotVal);
-
-
-				// finalColor.rgb *= 1 - ((max(dotXsTex.r - nrmTex.r, 0) + max(dotYsTex.r - nrmTex.a, 0)) * 0.5);
-				//finalColor.rgb = dotXsTex.r;
-	/*			finalColor.rg = gridUV;
-				finalColor.b = 0;*/
-				//finalColor.rgb = (tex.rgb + dotXsTex.r) * 0.5;
-
-				//finalColor.rgb = tex.rgb * colorToUse.rgb;
+				
+				mod += 1 - saturate(abs((nrmLeftRight - dotX) + (nrmUpDown - dotY)));
+				mod = dotXsTex.r; dwao // the dot appears to be slightly off when diagonal. Find out why! It's messing with the lighting >:c
+				// same as above
+				// mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.g * 2) - 1)))));
+				// mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.b * 2) - 1)))));
+				// mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.a * 2) - 1)))));
+				finalColor = mod;
 				finalColor.a = tex.a;
 				return finalColor;
 
-				// o.Albedo = (tex.rgb * _Color.rgb * colorToUse.rgb);
-				// o.Alpha = tex.a * _Color.a;
-				// o.Normal = UnpackNormal(tex2D(_BumpMap, IN.uv_BumpMap));
-				// o.Emission = emTex.rgb;
+				// fixed mod = 0;
+
+				// // find the dominant axis and convert that value from 0->1 to -1->1
+				// fixed nrmVal = abs(0.5 - nrmTex.a) > abs(0.5 - nrmTex.r) ? (nrmTex.a * 2 + 1) : (nrmTex.r * 2 + 1);
+				// fixed dotVal = abs(0.5 - dotXsTex.r) > abs(0.5 - dotYsTex.r) ? (dotXsTex.r * 2 + 1) : (dotYsTex.r * 2 + 1);
+
+				// finalColor.rgb = abs(
+				// 				nrmVal - // convert normal and find diff between normal and dot
+				// 				dotVal // convert Dot from 0->1 to -1->1
+				// 			);
+				// finalColor.a = tex.a;
+				// return finalColor;
+
+				// mod = saturate( // clamp between 0-1 to prevent overexposure
+				// 	mod + (
+				// 		1 - round( // round diff and invert. Angles within 0.5 diff return 1, else return 0
+				// 			abs(
+				// 				((nrmTex.a * 2) - 1) - // convert normal and find diff between normal and dot
+				// 				((dotVal * 2) - 1) // convert Dot from 0->1 to -1->1
+				// 			)
+				// 		)
+				// 	)
+				// );
+				// // same as above
+				// // mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.g * 2) - 1)))));
+				// // mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.b * 2) - 1)))));
+				// // mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.a * 2) - 1)))));
+				// finalColor *= mod;
+				// finalColor.a = tex.a;
+				// return finalColor;
+
+
+
+				// fixed mod = 0;
+				// if(intensitiesTex.r > 0)
+				// 	mod += round(abs(dotYsTex.r - nrmTex.r)) + round(abs(dotXsTex.r - nrmTex.a));
+				// if(intensitiesTex.g > 0)
+				// 	mod += round(abs(dotYsTex.g - nrmTex.r)) + round(abs(dotXsTex.g - nrmTex.a));
+				// if(intensitiesTex.b > 0)
+				// 	mod += round(abs(dotYsTex.b - nrmTex.r)) + round(abs(dotXsTex.b - nrmTex.a));
+				// if(intensitiesTex.a > 0)
+				// 	mod += round(abs(dotYsTex.a - nrmTex.r)) + round(abs(dotXsTex.a - nrmTex.a));
+				
+				// finalColor *= 1 - mod;
+				// finalColor.a = tex.a;
+				// return finalColor;
 			}
 
 			// struct Input {
