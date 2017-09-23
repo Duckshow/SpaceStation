@@ -757,7 +757,9 @@ public class CustomLight : MonoBehaviour {
 
         // dot x
         reportDotX = (byte)(((Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + 1) * 0.5f) * 255);
-        
+        // Debug.DrawLine(_t.WorldPosition, (Vector2)transform.position, Color.red, Mathf.Infinity);
+        // Debug.Log(Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + ", " + ((Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + 1) * 0.5f));
+
         // dot y
         reportDotY = (byte)(((Vector2.Dot(Vector2.down, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + 1) * 0.5f) * 255);
 

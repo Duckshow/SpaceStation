@@ -86,53 +86,44 @@ Shader "Custom/Grid" {
 				float4 pos : POSITION;
 				float4 worldPos : NORMAL;
 				fixed4 vColor : COLOR;
-				half2 uv : TEXCOORD0;
+				half2 uv  : TEXCOORD0;
 				half2 uv1 : TEXCOORD1;
 				half2 uv2 : TEXCOORD2;
 				half2 uv3 : TEXCOORD3;
 			};
 
+			uniform fixed colorIndices [10];
 			v2f vert(appData v) {
 				v2f o;
 				o.pos = UnityObjectToClipPos(v.vertex);
 				o.worldPos = mul(unity_ObjectToWorld, v.vertex);
 				o.vColor = v.vColor;
-				o.uv = half2(v.texcoord.x, v.texcoord.y);
+				o.uv = 	half2(v.texcoord.x, v.texcoord.y);
 				o.uv1 = half2(v.texcoord1.x, v.texcoord1.y);
 				o.uv2 = half2(v.texcoord2.x, v.texcoord2.y);
 				o.uv3 = half2(v.texcoord3.x, v.texcoord3.y);
 				return o;
 			}
 
-
 			fixed4 frag(v2f i) : COLOR {
-				//return tex2D(_MainTex, i.pos);
-
 				tex = tex2D(_MainTex, i.uv);
 				nrmTex = tex2D(_NormalMap, i.uv);
 				emTex = tex2D(_EmissiveMap, i.uv);
 				palTex = tex2D(_PalletteMap, i.uv);
+				
+				colorIndices[0] = floor(i.uv1.x);
+				colorIndices[1] = floor(i.uv1.y);
+				colorIndices[2] = floor(i.uv2.x);
+				colorIndices[3] = floor(i.uv2.y);
+				colorIndices[4] = floor(i.uv3.x);
+				colorIndices[5] = floor(i.uv3.y);
+				colorIndices[6] = floor(i.vColor.r * 255);
+				colorIndices[7] = floor(i.vColor.g * 255);
+				colorIndices[8] = floor(i.vColor.b * 255);
+				colorIndices[9] = floor(i.vColor.a * 255);
 
-				if(palTex.r > 0.9f)
-					colorToUse = _allColors[floor(i.uv1.x)];
-				else if(palTex.r > 0.8f)
-					colorToUse = _allColors[floor(i.uv1.y)];
-				else if(palTex.r > 0.7f)
-					colorToUse = _allColors[floor(i.uv2.x)];
-				else if(palTex.r > 0.6f)
-					colorToUse = _allColors[floor(i.uv2.y)];
-				else if (palTex.r > 0.5f)
-					colorToUse = _allColors[floor(i.uv3.x)];
-				else if (palTex.r > 0.4f)
-					colorToUse = _allColors[floor(i.uv3.y)];
-				else if (palTex.r > 0.3f)
-					colorToUse = _allColors[floor(i.vColor.r * 255)];
-				else if (palTex.r > 0.2f)
-					colorToUse = _allColors[floor(i.vColor.g * 255)];
-				else if (palTex.r > 0.1f)
-					colorToUse = _allColors[floor(i.vColor.b * 255)];
-				else if (palTex.r > 0.0f)
-					colorToUse = _allColors[floor(i.vColor.a * 255)];
+				fixed indexToUse = 10 - floor(palTex.r * 10);
+				colorToUse = _allColors[colorIndices[indexToUse]];
 
 				// normals: R (0->1 == down->up), A (0->1 == left->right)
 
@@ -145,138 +136,45 @@ Shader "Custom/Grid" {
 				distancesTex = tex2D(_Distances, gridUV);
 				intensitiesTex = tex2D(_Intensities, gridUV);
 
-				finalColor.rgb = (tex.rgb * colorToUse.rgb);
 				
-				if(!any(intensitiesTex))
-					finalColor.rgba = 0;
+				fixed mod0 = 	
+					1 -	min(									// invert the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
+						ceil(									// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
+							abs(nrmTex.r) +						// add normals together
+							abs(nrmTex.g)
+						),
+						saturate( 								// clamp01 so we don't get weird values and invert
+							floor( 								// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
+								0.01 + 							// tolerance (prevents some weirdness)
+								max( 							// max val tells us true diff
+									abs(
+										(nrmTex.r * 2 - 1) - 	// get diff between nrm, dot
+										(dotXsTex.r * 2 - 1) 	// convert nrm, dot from 0->1 to -1->1
+									), 
+									abs(
+										(nrmTex.g * 2 - 1) - 
+										(dotYsTex.r * 2 - 1)
+									)
+								)
+							)
+						)
+					);
+				mod0 *= intensitiesTex.r;						// apply intensity
+				fixed mod1 = 1 - saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.g * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.g * 2 - 1))))); 
+				mod1 *= intensitiesTex.g;
+				fixed mod2 = 1 - saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.b * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.b * 2 - 1))))); 
+				mod2 *= intensitiesTex.b;
+				fixed mod3 = 1 - saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.a * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.a * 2 - 1))))); 
+				mod3 *= intensitiesTex.a;
 
+				mod0 = saturate(mod0 + mod1 + mod2 + mod3);
 
-				fixed mod = 0;
-				fixed nrmUpDown = nrmTex.r * 2 - 1;
-				fixed nrmLeftRight = nrmTex.a * 2 - 1;
-				fixed dotX = dotXsTex.r * 2 - 1;
-				fixed dotY = dotYsTex.r * 2 - 1;
-
-				
-				mod += 1 - saturate(abs((nrmLeftRight - dotX) + (nrmUpDown - dotY)));
-				mod = dotXsTex.r; dwao // the dot appears to be slightly off when diagonal. Find out why! It's messing with the lighting >:c
-				// same as above
-				// mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.g * 2) - 1)))));
-				// mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.b * 2) - 1)))));
-				// mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.a * 2) - 1)))));
-				finalColor = mod;
+				// final apply
+				finalColor.rgb = (tex.rgb * colorToUse.rgb) * mod0;
 				finalColor.a = tex.a;
 				return finalColor;
-
-				// fixed mod = 0;
-
-				// // find the dominant axis and convert that value from 0->1 to -1->1
-				// fixed nrmVal = abs(0.5 - nrmTex.a) > abs(0.5 - nrmTex.r) ? (nrmTex.a * 2 + 1) : (nrmTex.r * 2 + 1);
-				// fixed dotVal = abs(0.5 - dotXsTex.r) > abs(0.5 - dotYsTex.r) ? (dotXsTex.r * 2 + 1) : (dotYsTex.r * 2 + 1);
-
-				// finalColor.rgb = abs(
-				// 				nrmVal - // convert normal and find diff between normal and dot
-				// 				dotVal // convert Dot from 0->1 to -1->1
-				// 			);
-				// finalColor.a = tex.a;
-				// return finalColor;
-
-				// mod = saturate( // clamp between 0-1 to prevent overexposure
-				// 	mod + (
-				// 		1 - round( // round diff and invert. Angles within 0.5 diff return 1, else return 0
-				// 			abs(
-				// 				((nrmTex.a * 2) - 1) - // convert normal and find diff between normal and dot
-				// 				((dotVal * 2) - 1) // convert Dot from 0->1 to -1->1
-				// 			)
-				// 		)
-				// 	)
-				// );
-				// // same as above
-				// // mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.g * 2) - 1)))));
-				// // mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.b * 2) - 1)))));
-				// // mod = saturate(mod + (1 - round(abs(((nrmTex.a * 2) - 1) - ((dotXsTex.a * 2) - 1)))));
-				// finalColor *= mod;
-				// finalColor.a = tex.a;
-				// return finalColor;
-
-
-
-				// fixed mod = 0;
-				// if(intensitiesTex.r > 0)
-				// 	mod += round(abs(dotYsTex.r - nrmTex.r)) + round(abs(dotXsTex.r - nrmTex.a));
-				// if(intensitiesTex.g > 0)
-				// 	mod += round(abs(dotYsTex.g - nrmTex.r)) + round(abs(dotXsTex.g - nrmTex.a));
-				// if(intensitiesTex.b > 0)
-				// 	mod += round(abs(dotYsTex.b - nrmTex.r)) + round(abs(dotXsTex.b - nrmTex.a));
-				// if(intensitiesTex.a > 0)
-				// 	mod += round(abs(dotYsTex.a - nrmTex.r)) + round(abs(dotXsTex.a - nrmTex.a));
-				
-				// finalColor *= 1 - mod;
-				// finalColor.a = tex.a;
-				// return finalColor;
 			}
-
-			// struct Input {
-			// 	float2 uv_MainTex;
-			// 	float2 uv_Angles;
-			// 	float2 uv_Colors;
-			// 	float2 uv_Ranges;
-			// 	float2 uv_Distances;
-			// 	float2 uv_Intensities;
-			// 	float2 uv_PalletteMap;
-			// 	float2 uv_BumpMap;
-			// 	float2 uv_EmissiveMap;
-			// 	float4 vColor : COLOR; // interpolated vertex color
-			// 	float2 uv2_MainTex2;
-			// 	float2 uv3_MainTex3;
-			// 	float2 uv4_MainTex4;
-			// };
-
-			// // I think the way the color works is that I set vertex-color to say which color index I want
-			// // but for details on a tile, I set different UVs to say the same thing!
-			// void surf (Input IN, inout SurfaceOutput o) {
-			// 	tex = tex2D(_MainTex, IN.uv_MainTex);
-			// 	emTex = tex2D(_EmissiveMap, IN.uv_EmissiveMap);
-			// 	palTex = tex2D(_PalletteMap, IN.uv_PalletteMap);
-
-			// 	if(palTex.r > 0.9f){
-			// 		colorToUse = _allColors[floor(IN.uv2_MainTex2.x)];
-			// 	}
-			// 	else if(palTex.r > 0.8f){
-			// 		colorToUse = _allColors[floor(IN.uv2_MainTex2.y)];
-			// 	}
-			// 	else if(palTex.r > 0.7f){
-			// 		colorToUse = _allColors[floor(IN.uv3_MainTex3.x)];
-			// 	}
-			// 	else if(palTex.r > 0.6f){
-			// 		colorToUse = _allColors[floor(IN.uv3_MainTex3.y)];
-			// 	}
-			// 	else if (palTex.r > 0.5f) {
-			// 		colorToUse = _allColors[floor(IN.uv4_MainTex4.x)];
-			// 	}
-			// 	else if (palTex.r > 0.4f) {
-			// 		colorToUse = _allColors[floor(IN.uv4_MainTex4.y)];
-			// 	}
-			// 	else if (palTex.r > 0.3f) {
-			// 		colorToUse = _allColors[floor(IN.vColor.r * 255)];
-			// 	}
-			// 	else if (palTex.r > 0.2f) {
-			// 		colorToUse = _allColors[floor(IN.vColor.g * 255)];
-			// 	}
-			// 	else if (palTex.r > 0.1f) {
-			// 		colorToUse = _allColors[floor(IN.vColor.b * 255)];
-			// 	}
-			// 	else if (palTex.r > 0.0f) {
-			// 		colorToUse = _allColors[floor(IN.vColor.a * 255)];
-			// 	}
-
-			// 	o.Albedo = (tex.rgb * _Color.rgb * colorToUse.rgb);
-			// 	o.Alpha = tex.a * _Color.a;
-			// 	o.Normal = UnpackNormal(tex2D(_BumpMap, IN.uv_BumpMap));
-			// 	o.Emission = emTex.rgb;
-			// }
 			ENDCG
 		}
 	}
-	//FallBack "Legacy Shaders/Transparent/VertexLit"
 }

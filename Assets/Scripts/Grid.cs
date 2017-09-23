@@ -97,7 +97,13 @@ public class Grid : MonoBehaviour {
         // for testing-purposes
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-				if (GenerateWalls && Random.value > 0.9f) {
+                // generate one wall in the center
+				// if (GenerateWalls && y == (GridSizeY * 0.5f) && x == (GridSizeX * 0.5f)) {
+                //     grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
+                //     continue;
+                // }
+                // generate walls randomly
+                if (GenerateWalls && Random.value > 0.9f) {
                     grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
                     continue;
                 }
