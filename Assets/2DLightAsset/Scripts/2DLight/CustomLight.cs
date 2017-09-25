@@ -312,7 +312,9 @@ public class CustomLight : MonoBehaviour {
 
     private Tile t;
     private bool breakLoops = false;
+    private List<Tile> tilesInRange = new List<Tile>();
     void GetAllMeshes() {
+        tilesInRange.Clear();
         //-- Step 1: obtain all active meshes in the scene --//
         //---------------------------------------------------------------------//
 
@@ -325,14 +327,18 @@ public class CustomLight : MonoBehaviour {
         for (int y = 0; y < Grid.Instance.GridSizeY; y++) {
             for (int x = 0; x < Grid.Instance.GridSizeX; x++) {
                 t = Grid.Instance.grid[x, y];
-                if(!CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition, ref sShadowCollider))
+                if (!CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition, ref sShadowCollider)) { 
+                    if((t.WorldPosition - (Vector2)transform.position).magnitude < lightRadius)
+                        tilesInRange.Add(t);
                     continue;
+                }
 
                 breakLoops = false;
                 for (int j = 0; j < sShadowCollider.Paths.Length; j++){
                     for (int k = 0; k < sShadowCollider.Paths[j].Vertices.Length; k++){
                         if (((t.WorldPosition + sShadowCollider.Paths[j].Vertices[k]) - (Vector2)transform.position).magnitude <= lightRadius) {
                             allTiles.Add(t);
+                            tilesInRange.Add(t);
                             breakLoops = true;
                         }
 
@@ -375,10 +381,10 @@ public class CustomLight : MonoBehaviour {
     private float rangeAngleComparision;
     private Verts vertex1;
     private Verts vertex2;
-    private bool gridcastHit = false;
-    private List<Tile> gridcastHits = new List<Tile>();
+    //private bool gridcastHit = false;
+    //private List<Tile> gridcastHits = new List<Tile>();
     void SetLight() {
-        gridcastHits.Clear();
+        //gridcastHits.Clear();
         allVertices.Clear();// Since these lists are populated every frame, clear them first to prevent overpopulation
 
         //--Step 2: Obtain vertices for each mesh --//
@@ -420,7 +426,7 @@ public class CustomLight : MonoBehaviour {
             //    Gridcast(transform.position, (Vector2)transform.position + new Vector2(Random.Range(-10, 10), Random.Range(-10, 10)), true, out rayHit);
             // }
             // else {
-            gridcastHit = false;
+            //gridcastHit = false;
                 for (int pIndex = 0; pIndex < polCollider.Paths.Length; pIndex++) {
                     for (int vIndex = 0; vIndex < polCollider.Paths[pIndex].Vertices.Length; vIndex++) {  // ...and for every vertex we have of each collider...
                         v = new Verts();
@@ -434,7 +440,7 @@ public class CustomLight : MonoBehaviour {
                         //rayHit = Physics2D.Linecast(transform.position, worldPoint, layer);
 
                         if (Gridcast(transform.position, worldPoint, true, out rayHit)) {
-                        gridcastHit = true;    
+                        //gridcastHit = true;    
                         //v.Pos = rayHit.point;
                             //if(worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange))
                             //	v.Endpoint = true;
@@ -477,8 +483,8 @@ public class CustomLight : MonoBehaviour {
                     //break;
                 }
             }
-            if (gridcastHit)
-                gridcastHits.Add(allTiles[i]);
+            // if (gridcastHit)
+            //     gridcastHits.Add(allTiles[i]);
 
 
 
@@ -672,8 +678,8 @@ public class CustomLight : MonoBehaviour {
     //}
 
     void ReportLightInfoToTilesHit() {
-        for (int i = 0; i < gridcastHits.Count; i++)
-            ReportLightInfoToTile(gridcastHits[i]);
+        for (int i = 0; i < tilesInRange.Count; i++)
+            ReportLightInfoToTile(tilesInRange[i]);
     }
 
     //bool stopthetrain = false;

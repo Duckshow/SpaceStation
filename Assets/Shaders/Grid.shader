@@ -14,7 +14,7 @@ Shader "Custom/Grid" {
 		_Distances("Distances (Don't assign)", 2D) = "white" {}
 		_Intensities("Intensities (Don't assign)", 2D) = "white" {}
 		_PalletteMap ("Pallette", 2D) = "white" {}
-		_NormalMap ("Normal", 2D) = "bump" {}
+		_AbnormalMap ("Normal", 2D) = "white" {}
 		_EmissiveMap ("Emissive", 2D) = "white" {}
 		_Emission ("Emission (Lightmapper)", Float) = 1.0
 	}
@@ -28,13 +28,8 @@ Shader "Custom/Grid" {
 		ColorMask RGBA
 		Blend SrcAlpha OneMinusSrcAlpha
 
-		Stencil {
-			Ref 1
-			Comp always
-			Pass replace
-		}
-
 		Pass {
+
 			CGPROGRAM
 			#pragma vertex vert 
 			//#pragma alpha:fade
@@ -43,9 +38,8 @@ Shader "Custom/Grid" {
 			#include "UnityCG.cginc"
 
 			sampler2D _MainTex;
-			sampler2D _NormalMap;
+			sampler2D _AbnormalMap;
 			sampler2D _PalletteMap;
-			sampler2D _BumpMap;
 			sampler2D _EmissiveMap;
 			//sampler2D _Angles;
 			sampler2D _DotXs;
@@ -107,7 +101,7 @@ Shader "Custom/Grid" {
 
 			fixed4 frag(v2f i) : COLOR {
 				tex = tex2D(_MainTex, i.uv);
-				nrmTex = tex2D(_NormalMap, i.uv);
+				nrmTex = tex2D(_AbnormalMap, i.uv);
 				emTex = tex2D(_EmissiveMap, i.uv);
 				palTex = tex2D(_PalletteMap, i.uv);
 				
@@ -136,38 +130,40 @@ Shader "Custom/Grid" {
 				distancesTex = tex2D(_Distances, gridUV);
 				intensitiesTex = tex2D(_Intensities, gridUV);
 
-				
-				fixed mod0 = 	
-					1 -	min(									// invert the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
-						ceil(									// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
-							abs(nrmTex.r) +						// add normals together
-							abs(nrmTex.g)
-						),
-						saturate( 								// clamp01 so we don't get weird values and invert
-							floor( 								// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
-								0.01 + 							// tolerance (prevents some weirdness)
-								max( 							// max val tells us true diff
-									abs(
-										(nrmTex.r * 2 - 1) - 	// get diff between nrm, dot
-										(dotXsTex.r * 2 - 1) 	// convert nrm, dot from 0->1 to -1->1
-									), 
-									abs(
-										(nrmTex.g * 2 - 1) - 
-										(dotYsTex.r * 2 - 1)
+				fixed4 mod0 = 
+				_allColors[colorsTex.r * 255] *								// multiply with the light-color
+				intensitiesTex.r * (1 - (distancesTex.r / rangesTex.r)) * (	// multiply with the total falloff (intensity * distance in relation to range)
+					1 - min(												// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
+							floor(nrmTex.a),
+							min(											// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
+								ceil(										// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
+									abs(nrmTex.r) +							// add normals together
+									abs(nrmTex.g)
+								),
+								saturate( 									// clamp01 so we don't get weird values and invert
+									floor( 									// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
+										0.01 + 								// tolerance (prevents some weirdness)
+										max( 								// max val tells us true diff
+											abs(
+												(nrmTex.r * 2 - 1) - 		// get diff between nrm, dot
+												(dotXsTex.r * 2 - 1) 		// convert nrm, dot from 0->1 to -1->1
+											), 
+											abs(
+												(nrmTex.g * 2 - 1) - 
+												(dotYsTex.r * 2 - 1)
+											)
+										)
 									)
 								)
 							)
 						)
 					);
-				mod0 *= intensitiesTex.r;						// apply intensity
-				fixed mod1 = 1 - saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.g * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.g * 2 - 1))))); 
-				mod1 *= intensitiesTex.g;
-				fixed mod2 = 1 - saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.b * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.b * 2 - 1))))); 
-				mod2 *= intensitiesTex.b;
-				fixed mod3 = 1 - saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.a * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.a * 2 - 1))))); 
-				mod3 *= intensitiesTex.a;
+				fixed4 mod1 = _allColors[colorsTex.g * 255] * intensitiesTex.g * (1 - (distancesTex.g / rangesTex.g)) * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.g * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.g * 2 - 1)))))))); 
+				fixed4 mod2 = _allColors[colorsTex.b * 255] * intensitiesTex.b * (1 - (distancesTex.b / rangesTex.b)) * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.b * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.b * 2 - 1)))))))); 
+				fixed4 mod3 = _allColors[colorsTex.a * 255] * intensitiesTex.a * (1 - (distancesTex.a / rangesTex.a)) * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.a * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.a * 2 - 1)))))))); 
 
-				mod0 = saturate(mod0 + mod1 + mod2 + mod3);
+				// mush together
+				mod0 += mod1 + mod2 + mod3;
 
 				// final apply
 				finalColor.rgb = (tex.rgb * colorToUse.rgb) * mod0;
