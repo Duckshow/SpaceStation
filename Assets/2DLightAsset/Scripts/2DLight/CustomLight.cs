@@ -132,8 +132,20 @@ public class CustomLight : MonoBehaviour {
     private static int shaderPropertyDistances;
     private static int shaderPropertyIntensities;
     private static Material GridMaterial;
+
+    private static bool[,] sGridColliderArray;
+
     [EasyButtons.Button]
     public static void UpdateAllLights() {
+
+        if(sGridColliderArray == null)
+            sGridColliderArray = new bool[Grid.Instance.GridSizeX, Grid.Instance.GridSizeY];
+        for (int x = 0; x < Grid.Instance.GridSizeX; x++){
+            for (int y = 0; y < Grid.Instance.GridSizeY; y++){
+                sGridColliderArray[x, y] = CachedAssets.Instance.WallSets[0].GetShadowCollider(Grid.Instance.grid[x, y].ExactType, Grid.Instance.grid[x, y].Animator.CurrentFrame);
+            }
+        }
+
 
         // create textures and arrays
         if (ClearTextureArray == null)
@@ -684,191 +696,297 @@ public class CustomLight : MonoBehaviour {
 
     //bool stopthetrain = false;
 
-    //byte reportAngle;
-    byte reportDotX;
-    byte reportDotY;
-    byte reportColor;
-    byte reportRange;
-    byte reportDistance;
-    byte reportIntensity;
-    float lightLevel;
-    //Color32 cachedAngles;
-    Color32 cachedDotXs;
-    Color32 cachedDotYs;
-    Color32 cachedColors;
-    Color32 cachedRanges;
-    Color32 cachedIntensities;
-    Color32 cachedDistances;
-    byte overwriteChannel;
-    // Vector2 C;
-    // float tan;
-    // int deg;
-    void ReportLightInfoToTile(Tile _t) {
-        //reportAngle = 0;
-        reportDotX = 0;
-        reportDotY = 0;
-        reportColor = 0;
-        reportRange = 0;
-        reportDistance = 0;
-        reportIntensity = 0;
+    // //byte reportAngle;
+    // byte reportDotX;
+    // byte reportDotY;
+    // byte reportColor;
+    // byte reportRange;
+    // byte reportDistance;
+    // byte reportIntensity;
+    // float lightLevel;
+    // //Color32 cachedAngles;
+    // Color32 cachedDotXs;
+    // Color32 cachedDotYs;
+    // Color32 cachedColors;
+    // Color32 cachedRanges;
+    // Color32 cachedIntensities;
+    // Color32 cachedDistances;
+    // byte overwriteChannel;
+    // // Vector2 C;
+    // // float tan;
+    // // int deg;
+    // void ReportLightInfoToTile(Tile _t) {
+    //     //reportAngle = 0;
+    //     reportDotX = 0;
+    //     reportDotY = 0;
+    //     reportColor = 0;
+    //     reportRange = 0;
+    //     reportDistance = 0;
+    //     reportIntensity = 0;
 
-        //if (stopthetrain)
-        //    return;
+    //     //if (stopthetrain)
+    //     //    return;
 
-        // tile is affected by six other lights (max), so this one will be ignored
-        //if (MathfExtensions.Digits(_t.Lights_Angle) >= 18)
-        //    return;
+    //     // tile is affected by six other lights (max), so this one will be ignored
+    //     //if (MathfExtensions.Digits(_t.Lights_Angle) >= 18)
+    //     //    return;
 
-        // range
-        reportRange = (byte)lightRadius;
-        //ConcatLightUlong(Mathf.RoundToInt(lightRadius), ref _t.Lights_Range);
+    //     // range
+    //     reportRange = (byte)lightRadius;
+    //     //ConcatLightUlong(Mathf.RoundToInt(lightRadius), ref _t.Lights_Range);
 
-        // distance
-        reportDistance = (byte)Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_t.WorldPosition, transform.position)), 255);
-        //int _dist = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_t.WorldPosition, transform.position)), 999);
-        //ConcatLightUlong(_dist, ref _t.Lights_Distance);
+    //     // distance
+    //     reportDistance = (byte)Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_t.WorldPosition, transform.position)), 255);
+    //     //int _dist = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_t.WorldPosition, transform.position)), 999);
+    //     //ConcatLightUlong(_dist, ref _t.Lights_Distance);
 
-        // intensity
-        reportIntensity = (byte)(Intensity * 255);
-        //ConcatLightUlong(Intensity, ref _t.Lights_Intensity);
+    //     // intensity
+    //     reportIntensity = (byte)(Intensity * 255);
+    //     //ConcatLightUlong(Intensity, ref _t.Lights_Intensity);
 
-        // how strongly this tile is hit by the light
-        lightLevel = reportIntensity * (1 - ((float)reportDistance / (float)reportRange));
+    //     // how strongly this tile is hit by the light
+    //     lightLevel = reportIntensity * (1 - ((float)reportDistance / (float)reportRange));
 
-        // determine which (if any) color channel to overwrite (only the four strongest lights affect a tile)
-        cachedRanges = ReportedRanges[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
-        cachedDistances = ReportedDistances[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
-        cachedIntensities = ReportedIntensities[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
-        overwriteChannel = 0;
-        if (cachedIntensities.r == 0 || lightLevel > (cachedIntensities.r * (1 - (cachedDistances.r / cachedRanges.r))))
-            overwriteChannel = 1;
-        else if (cachedIntensities.g == 0 || lightLevel > (cachedIntensities.g * (1 - (cachedDistances.g / cachedRanges.g))))
-            overwriteChannel = 2;
-        else if (cachedIntensities.b == 0 || lightLevel > (cachedIntensities.b * (1 - (cachedDistances.b / cachedRanges.b))))
-            overwriteChannel = 3;
-        else if (cachedIntensities.a == 0 || lightLevel > (cachedIntensities.a * (1 - (cachedDistances.a / cachedRanges.a))))
-            overwriteChannel = 4;
+    //     // determine which (if any) color channel to overwrite (only the four strongest lights affect a tile)
+    //     cachedRanges = ReportedRanges[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+    //     cachedDistances = ReportedDistances[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+    //     cachedIntensities = ReportedIntensities[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+    //     overwriteChannel = 0;
+    //     if (cachedIntensities.r == 0 || lightLevel > (cachedIntensities.r * (1 - (cachedDistances.r / cachedRanges.r))))
+    //         overwriteChannel = 1;
+    //     else if (cachedIntensities.g == 0 || lightLevel > (cachedIntensities.g * (1 - (cachedDistances.g / cachedRanges.g))))
+    //         overwriteChannel = 2;
+    //     else if (cachedIntensities.b == 0 || lightLevel > (cachedIntensities.b * (1 - (cachedDistances.b / cachedRanges.b))))
+    //         overwriteChannel = 3;
+    //     else if (cachedIntensities.a == 0 || lightLevel > (cachedIntensities.a * (1 - (cachedDistances.a / cachedRanges.a))))
+    //         overwriteChannel = 4;
 
-        // if no channel was found, return. Else, get the remaining values and apply them.
-        if (overwriteChannel == 0)
-            return;
-        // angle (0-360)
-        // C = (Vector2)transform.position - _t.WorldPosition;
-        // tan = Mathf.Atan2(C.y, C.x);
-        // deg = Mathf.RoundToInt(90 + (tan * Mathf.Rad2Deg));
-        // if (deg < 0)
-        //     deg += 360;
-        //reportAngle = (byte)(((float)deg / (float)360) * 255); // convert degrees to byte
-        //ConcatLightUlong(_deg, ref _t.Lights_Angle);
+    //     // if no channel was found, return. Else, get the remaining values and apply them.
+    //     if (overwriteChannel == 0)
+    //         return;
+    //     // angle (0-360)
+    //     // C = (Vector2)transform.position - _t.WorldPosition;
+    //     // tan = Mathf.Atan2(C.y, C.x);
+    //     // deg = Mathf.RoundToInt(90 + (tan * Mathf.Rad2Deg));
+    //     // if (deg < 0)
+    //     //     deg += 360;
+    //     //reportAngle = (byte)(((float)deg / (float)360) * 255); // convert degrees to byte
+    //     //ConcatLightUlong(_deg, ref _t.Lights_Angle);
 
-        // dot x
-        reportDotX = (byte)(((Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + 1) * 0.5f) * 255);
-        // Debug.DrawLine(_t.WorldPosition, (Vector2)transform.position, Color.red, Mathf.Infinity);
-        // Debug.Log(Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + ", " + ((Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + 1) * 0.5f));
+    //     // dot x
+    //     reportDotX = (byte)(((Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + 1) * 0.5f) * 255);
+    //     // Debug.DrawLine(_t.WorldPosition, (Vector2)transform.position, Color.red, Mathf.Infinity);
+    //     // Debug.Log(Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + ", " + ((Vector2.Dot(Vector2.left, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + 1) * 0.5f));
 
-        // dot y
-        reportDotY = (byte)(((Vector2.Dot(Vector2.down, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + 1) * 0.5f) * 255);
+    //     // dot y
+    //     reportDotY = (byte)(((Vector2.Dot(Vector2.down, Vector3.Normalize(_t.WorldPosition - (Vector2)transform.position)) + 1) * 0.5f) * 255);
 
-        //_t.SetWallColor(ColoringTool.COLOR_ORANGE, false);
-        //_t.SetFloorColor(ColoringTool.COLOR_ORANGE, false);
+    //     //_t.SetWallColor(ColoringTool.COLOR_ORANGE, false);
+    //     //_t.SetFloorColor(ColoringTool.COLOR_ORANGE, false);
 
-        // color
-        reportColor = LightColor;
-        //ConcatLightUlong(LightColor, ref _t.Lights_Color);
+    //     // color
+    //     reportColor = LightColor;
+    //     //ConcatLightUlong(LightColor, ref _t.Lights_Color);
 
-        // get the remaining cached values (affected by previous lights this frame)
-        //cachedAngles = ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
-        cachedDotXs = ReportedDotXs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
-        cachedDotYs = ReportedDotYs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
-        cachedColors = ReportedColors[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+    //     // get the remaining cached values (affected by previous lights this frame)
+    //     //cachedAngles = ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+    //     cachedDotXs = ReportedDotXs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+    //     cachedDotYs = ReportedDotYs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
+    //     cachedColors = ReportedColors[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX];
 
-        // overwrite the proper channel
-        switch (overwriteChannel) {
-            case 1:
-                //cachedAngles.r = reportAngle;
-                cachedDotXs.r = reportDotX;
-                cachedDotYs.r = reportDotY;
-                cachedColors.r = reportColor;
-                cachedRanges.r = reportRange;
-                cachedDistances.r = reportDistance;
-                cachedIntensities.r = reportIntensity;
-                break;
-            case 2:
-                //cachedAngles.g = reportAngle;
-                cachedDotXs.g = reportDotX;
-                cachedDotYs.g = reportDotY;
-                cachedColors.g = reportColor;
-                cachedRanges.g = reportRange;
-                cachedDistances.g = reportDistance;
-                cachedIntensities.g = reportIntensity;
-                break;
-            case 3:
-                //cachedAngles.b = reportAngle;
-                cachedDotXs.b = reportDotX;
-                cachedDotYs.b = reportDotY;
-                cachedColors.b = reportColor;
-                cachedRanges.b = reportRange;
-                cachedDistances.b = reportDistance;
-                cachedIntensities.b = reportIntensity;
-                break;
-            case 4:
-                //cachedAngles.a = reportAngle;
-                cachedDotXs.a = reportDotX;
-                cachedDotYs.a = reportDotY;
-                cachedColors.a = reportColor;
-                cachedRanges.a = reportRange;
-                cachedDistances.a = reportDistance;
-                cachedIntensities.a = reportIntensity;
-                break;
+    //     // overwrite the proper channel
+    //     switch (overwriteChannel) {
+    //         case 1:
+    //             //cachedAngles.r = reportAngle;
+    //             cachedDotXs.r = reportDotX;
+    //             cachedDotYs.r = reportDotY;
+    //             cachedColors.r = reportColor;
+    //             cachedRanges.r = reportRange;
+    //             cachedDistances.r = reportDistance;
+    //             cachedIntensities.r = reportIntensity;
+    //             break;
+    //         case 2:
+    //             //cachedAngles.g = reportAngle;
+    //             cachedDotXs.g = reportDotX;
+    //             cachedDotYs.g = reportDotY;
+    //             cachedColors.g = reportColor;
+    //             cachedRanges.g = reportRange;
+    //             cachedDistances.g = reportDistance;
+    //             cachedIntensities.g = reportIntensity;
+    //             break;
+    //         case 3:
+    //             //cachedAngles.b = reportAngle;
+    //             cachedDotXs.b = reportDotX;
+    //             cachedDotYs.b = reportDotY;
+    //             cachedColors.b = reportColor;
+    //             cachedRanges.b = reportRange;
+    //             cachedDistances.b = reportDistance;
+    //             cachedIntensities.b = reportIntensity;
+    //             break;
+    //         case 4:
+    //             //cachedAngles.a = reportAngle;
+    //             cachedDotXs.a = reportDotX;
+    //             cachedDotYs.a = reportDotY;
+    //             cachedColors.a = reportColor;
+    //             cachedRanges.a = reportRange;
+    //             cachedDistances.a = reportDistance;
+    //             cachedIntensities.a = reportIntensity;
+    //             break;
+    //     }
+
+    //     // add the values to their arrays
+    //     //ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedAngles;
+    //     ReportedDotXs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDotXs;
+    //     ReportedDotYs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDotYs;
+    //     ReportedColors[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedColors;
+    //     ReportedRanges[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedRanges;
+    //     ReportedDistances[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDistances;
+    //     ReportedIntensities[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedIntensities;
+
+    //     //_t.SetFloorColor(Color.magenta);
+    //     //_t.SetWallColor(Color.magenta);
+    //     ////stopthetrain = true;
+    //     //Debug.Break();
+
+    // }
+
+    private static Vector2 CORNER_OFFSET = new Vector2(-0.5f, -0.5f);
+    private static Vector2 CORNER_OFFSET_OUTSIDE_GRID = new Vector2(0.5f, -0.5f);
+    void SetLightingForAllVertices() { 
+        for (int x = 0; x < Grid.Instance.GridSizeX + 1; x++){ // +1 because we're getting each corner
+            for (int y = 0; y < Grid.Instance.GridSizeY + 1; y++){
+
+                // get lighting for the bottom-left corner (if outside grid, use bottom-right corner of the neighbour inside the grid)
+                Color32 light;
+                if(x < Grid.Instance.GridSizeX && y < Grid.Instance.GridSizeY)
+                    light = GetLightingForPosition(Grid.Instance.grid[x, y].WorldPosition + CORNER_OFFSET, x, y);
+                else
+                    light = GetLightingForPosition(Grid.Instance.grid[Mathf.Min(x, Grid.Instance.GridSizeX - 1), Mathf.Min(y, Grid.Instance.GridSizeY - 1)].WorldPosition + -CORNER_OFFSET_OUTSIDE_GRID, x, y);
+
+                if(x >= 0 && y >= 0)
+                    Grid.Instance.grid[x - 1, y - 1].FloorQuad.SetVertexColor(1, light); // THE 1 IS COMPLETE GUESSWORK D:
+                if (x >= 0 && y < Grid.Instance.GridSizeY)
+                    Grid.Instance.grid[x - 1, y].FloorQuad.SetVertexColor(2, light); // THE 2 IS COMPLETE GUESSWORK D:
+                if (x < Grid.Instance.GridSizeX && y < Grid.Instance.GridSizeY)
+                    Grid.Instance.grid[x, y].FloorQuad.SetVertexColor(3, light); // THE 3 IS COMPLETE GUESSWORK D:
+                if (x < Grid.Instance.GridSizeX && y >= 0)
+                    Grid.Instance.grid[x, y - 1].FloorQuad.SetVertexColor(0, light); // THE 0 IS COMPLETE GUESSWORK D:
+            }
+        }
+    }
+    static byte newDotX;
+    static byte newDotY;
+    static byte newColor;
+    static byte newRange;
+    static byte newDistance;
+    static byte newIntensity;
+    static float newLightLevel;
+    static Color32 oldDotXs;
+    static Color32 oldDotYs;
+    static Color32 oldColors;
+    static Color32 oldRanges;
+    static Color32 oldIntensities;
+    static Color32 oldDistances;
+    static byte overwriteChannel;
+    static Color32 GetLightingForPosition(Vector2 _pos, int _indexX, int _indexY){
+        dadpj // TODO: clear Reported-arrays here, and make sure they're used correctly elsewhere
+
+        for (int i = 0; i < AllLights.Count; i++){
+            newDotX = 0;
+            newDotY = 0;
+            newColor = 0;
+            newRange = 0;
+            newDistance = 0;
+            newIntensity = 0;
+
+            newRange = (byte)AllLights[i].lightRadius;
+            newDistance = (byte)Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_pos, AllLights[i].transform.position)), 255);
+            newIntensity = (byte)(AllLights[i].Intensity * 255);
+            newLightLevel = newIntensity * (1 - ((float)newDistance / (float)newRange));
+            int _index1D = (_indexY * Grid.Instance.GridSizeX) + _indexX;
+            oldRanges = ReportedRanges[_index1D];
+            oldDistances = ReportedDistances[_index1D];
+            oldIntensities = ReportedIntensities[_index1D];
+
+            // if not lit at all, skip
+            if(oldIntensities.r + oldIntensities.g + oldIntensities.b + oldIntensities.a == 0)
+                continue;
+
+            float oldLightLevelR = oldIntensities.r * (1 - (oldDistances.r / oldRanges.r));
+            float oldLightLevelG = oldIntensities.g * (1 - (oldDistances.g / oldRanges.g));
+            float oldLightLevelB = oldIntensities.b * (1 - (oldDistances.b / oldRanges.b));
+            float oldLightLevelA = oldIntensities.a * (1 - (oldDistances.a / oldRanges.a));
+
+            // determine which (if any) color channel to overwrite (only the four strongest lights affect a tile)
+            overwriteChannel = 0;
+            if      (newLightLevel > oldLightLevelR)
+                overwriteChannel = 1;
+            else if (newLightLevel > oldLightLevelG)
+                overwriteChannel = 2;
+            else if (newLightLevel > oldLightLevelB)
+                overwriteChannel = 3;
+            else if (newLightLevel > oldLightLevelA)
+                overwriteChannel = 4;
+
+            // if the light isn't strong enough to overpower a previous one, skip. Else, get the remaining values and apply them.
+            if (overwriteChannel == 0)
+                continue;
+
+            // get the remaining values needed
+            newDotX = (byte)(((Vector2.Dot(Vector2.left, Vector3.Normalize(_pos - (Vector2)AllLights[i].transform.position)) + 1) * 0.5f) * 255);
+            newDotY = (byte)(((Vector2.Dot(Vector2.down, Vector3.Normalize(_pos - (Vector2)AllLights[i].transform.position)) + 1) * 0.5f) * 255);
+            newColor = AllLights[i].LightColor;
+            oldDotXs = ReportedDotXs[_index1D];
+            oldDotYs = ReportedDotYs[_index1D];
+            oldColors = ReportedColors[_index1D];
+
+            // overwrite the proper channel
+            switch (overwriteChannel){
+                case 1:
+                    oldDotXs.r = newDotX;
+                    oldDotYs.r = newDotY;
+                    oldColors.r = newColor;
+                    oldRanges.r = newRange;
+                    oldDistances.r = newDistance;
+                    oldIntensities.r = newIntensity;
+                    break;
+                case 2:
+                    oldDotXs.g = newDotX;
+                    oldDotYs.g = newDotY;
+                    oldColors.g = newColor;
+                    oldRanges.g = newRange;
+                    oldDistances.g = newDistance;
+                    oldIntensities.g = newIntensity;
+                    break;
+                case 3:
+                    oldDotXs.b = newDotX;
+                    oldDotYs.b = newDotY;
+                    oldColors.b = newColor;
+                    oldRanges.b = newRange;
+                    oldDistances.b = newDistance;
+                    oldIntensities.b = newIntensity;
+                    break;
+                case 4:
+                    oldDotXs.a = newDotX;
+                    oldDotYs.a = newDotY;
+                    oldColors.a = newColor;
+                    oldRanges.a = newRange;
+                    oldDistances.a = newDistance;
+                    oldIntensities.a = newIntensity;
+                    break;
+            }
+
+            // add the values to their arrays
+            ReportedDotXs[_index1D] = oldDotXs;
+            ReportedDotYs[_index1D] = oldDotYs;
+            ReportedColors[_index1D] = oldColors;
+            ReportedRanges[_index1D] = oldRanges;
+            ReportedDistances[_index1D] = oldDistances;
+            ReportedIntensities[_index1D] = oldIntensities;
         }
 
-        // add the values to their arrays
-        //ReportedAngles[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedAngles;
-        ReportedDotXs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDotXs;
-        ReportedDotYs[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDotYs;
-        ReportedColors[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedColors;
-        ReportedRanges[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedRanges;
-        ReportedDistances[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedDistances;
-        ReportedIntensities[(_t.GridY * Grid.Instance.GridSizeX) + _t.GridX] = cachedIntensities;
-
-        //_t.SetFloorColor(Color.magenta);
-        //_t.SetWallColor(Color.magenta);
-        ////stopthetrain = true;
-        //Debug.Break();
-
+        // TODO: Use Reported-arrays here to compute the final lighting-color and return that
     }
-
-    //string concatThis;
-    //int digits1;
-    //int digits2;
-    //void ConcatLightUlong(int val, ref ulong lightUlong) {
-    //    concatThis = "";
-    //    digits1 = MathfExtensions.Digits(lightUlong);
-    //    if (digits1 == 1) {
-    //        digits2 = MathfExtensions.Digits(val);
-    //        if (digits2 == 1)
-    //            concatThis = "100" + val.ToString();
-    //        else if (digits2 == 2)
-    //            concatThis = "10" + val.ToString();
-    //        else if (digits2 == 3)
-    //            concatThis = "1" + val.ToString();
-
-    //        lightUlong = ulong.Parse(concatThis);
-    //    }
-    //    else if (digits1 >= 4) {
-    //        digits2 = MathfExtensions.Digits(val);
-    //        if (digits2 == 1)
-    //            concatThis = "00" + val.ToString();
-    //        else if (digits2 == 2)
-    //            concatThis = "0" + val.ToString();
-    //        else
-    //            concatThis = val.ToString();
-
-    //        lightUlong = ulong.Parse(lightUlong.ToString() + concatThis);
-    //    }
-    //    else
-    //        throw new System.Exception("lightUlong somehow has 2-3 digits! D:");
-    //}
 
     private Vector3[] initVerticesMeshLight;
     private Vector2[] uvs;

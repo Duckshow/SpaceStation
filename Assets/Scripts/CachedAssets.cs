@@ -586,7 +586,7 @@ public class CachedAssets : MonoBehaviour {
         }
 
         private MovableCollider movColl;
-        public bool GetShadowCollider(P _type, int _animationFrame, Vector2 _worldPosition) {
+        public bool GetShadowCollider(P _type, int _animationFrame) {
             movColl = GetColliderPaths(_type, _animationFrame);
             return movColl != null;
         }

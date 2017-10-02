@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Linq;
 using System.Collections.Generic;
 public class UVController : MeshSorter {
 
@@ -35,9 +36,6 @@ public class UVController : MeshSorter {
     private byte setColorIndex_7;
     private byte setColorIndex_8;
     private byte setColorIndex_9;
-
-	private Color32 setVertexColor;
-	private Color32 myVertexColor;
 
 
     void Awake() {
@@ -125,13 +123,17 @@ public class UVController : MeshSorter {
         SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, true);
     }
 
+    // vector2 since we're storing colors as UV and UVs are vector2 :c
     private static List<Vector2> sUVColors_0 = new List<Vector2>();
     private static List<Vector2> sUVColors_1 = new List<Vector2>();
     private static List<Vector2> sUVColors_2 = new List<Vector2>();
-    private static List<Color32> sVertexColors = new List<Color32>();
+    private static List<Vector2> sUVColors_3 = new List<Vector2>();
+    private static List<Vector2> sUVColors_4 = new List<Vector2>();
     private static Vector2 sUVColor_0 = new Vector2();
     private static Vector2 sUVColor_1 = new Vector2();
     private static Vector2 sUVColor_2 = new Vector2();
+    private static Vector2 sUVColor_3 = new Vector2();
+    private static Vector2 sUVColor_4 = new Vector2();
     public void SetUVColor(byte _color0, byte _color1, byte _color2, byte _color3, byte _color4, byte _color5, byte _color6, byte _color7, byte _color8, byte _color9, bool _temporarily) {
         if (!_temporarily) {
 			setColorIndex_0 = _color0;
@@ -140,11 +142,10 @@ public class UVController : MeshSorter {
 			setColorIndex_3 = _color3;
 			setColorIndex_4 = _color4;
 			setColorIndex_5 = _color5;
-
-            setVertexColor.r = _color6;
-            setVertexColor.g = _color7;
-            setVertexColor.b = _color8;
-            setVertexColor.a = _color9;
+            setColorIndex_6 = _color6;
+            setColorIndex_7 = _color7;
+            setColorIndex_8 = _color8;
+            setColorIndex_9 = _color9;
         }
 
         colorIndex_0 = _color0;
@@ -161,31 +162,39 @@ public class UVController : MeshSorter {
         sUVColors_0.Clear();
         sUVColors_1.Clear();
         sUVColors_2.Clear();
-        sUVColor_0.x = colorIndex_0;
+        sUVColors_3.Clear();
+        sUVColors_4.Clear();
+        sUVColor_0.x = colorIndex_0; // non-alloc, instead of doing new Vector2() all the time
         sUVColor_0.y = colorIndex_1;
         sUVColor_1.x = colorIndex_2;
         sUVColor_1.y = colorIndex_3;
         sUVColor_2.x = colorIndex_4;
         sUVColor_2.y = colorIndex_5;
+        sUVColor_3.x = colorIndex_6;
+        sUVColor_3.y = colorIndex_7;
+        sUVColor_4.x = colorIndex_8;
+        sUVColor_4.y = colorIndex_9;
         for (int i = 0; i < myMeshFilter.mesh.uv.Length; i++) {
             sUVColors_0.Add(sUVColor_0);
             sUVColors_1.Add(sUVColor_1);
             sUVColors_2.Add(sUVColor_2);
+            sUVColors_3.Add(sUVColor_3);
+            sUVColors_4.Add(sUVColor_4);
         }
-        myMeshFilter.mesh.SetUVs(1, sUVColors_0);
-        myMeshFilter.mesh.SetUVs(2, sUVColors_1);
-        myMeshFilter.mesh.SetUVs(3, sUVColors_2);
-
-        myVertexColor.r = colorIndex_6;
-        myVertexColor.g = colorIndex_7;
-        myVertexColor.b = colorIndex_8;
-        myVertexColor.a = colorIndex_9;
-        sVertexColors.Clear();
-        for (int i = 0; i < myMeshFilter.mesh.vertexCount; i++)
-            sVertexColors.Add(myVertexColor);
-        myMeshFilter.mesh.SetColors(sVertexColors);
+        myMeshFilter.mesh.SetUVs(0, sUVColors_0);
+        myMeshFilter.mesh.SetUVs(1, sUVColors_1);
+        myMeshFilter.mesh.SetUVs(2, sUVColors_2);
+        myMeshFilter.mesh.SetUVs(3, sUVColors_3);
+        myMeshFilter.mesh.SetUVs(4, sUVColors_4);
     }
     public void ResetUVColor() {
         SetUVColor(setColorIndex_0, setColorIndex_1, setColorIndex_2, setColorIndex_3, setColorIndex_4, setColorIndex_5, setVertexColor.r, setVertexColor.g, setVertexColor.b, setVertexColor.a, false);
+    }
+
+    private static List<Color32> sVertexColors = new List<Color32>();
+    public void SetVertexColor(byte _specificVertex, Color32 _color){
+        sVertexColors = myMeshFilter.mesh.colors32.ToList();
+        sVertexColors[_specificVertex] = _color;
+        myMeshFilter.mesh.SetColors(sVertexColors);
     }
 }
