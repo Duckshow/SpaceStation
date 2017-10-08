@@ -6,13 +6,12 @@ Shader "Custom/Grid" {
 		_MainTex1("Bugfix (Don't assign)", 2D) = "white" {} 
 		_MainTex2("Bugfix (Don't assign)", 2D) = "white" {} 
 		_MainTex3("Bugfix (Don't assign)", 2D) = "white" {}
-		////_Angles("Angles (Don't assign)", 2D) = "white" {}
 		_DotXs("DotXs (Don't assign)", 2D) = "white" {}
 		_DotYs("DotYs (Don't assign)", 2D) = "white" {}
-		_Colors("Colors (Don't assign)", 2D) = "white" {}
-		_Ranges("Ranges (Don't assign)", 2D) = "white" {}
-		_Distances("Distances (Don't assign)", 2D) = "white" {}
-		_Intensities("Intensities (Don't assign)", 2D) = "white" {}
+		// _Colors("Colors (Don't assign)", 2D) = "white" {}
+		// _Ranges("Ranges (Don't assign)", 2D) = "white" {}
+		// _Distances("Distances (Don't assign)", 2D) = "white" {}
+		// _Intensities("Intensities (Don't assign)", 2D) = "white" {}
 		_NrmMap ("Abnormal", 2D) = "white" {}
 		_PalletteMap ("Pallette", 2D) = "white" {}
 		_EmissiveMap ("Emissive", 2D) = "white" {}
@@ -41,13 +40,12 @@ Shader "Custom/Grid" {
 			sampler2D _NrmMap;
 			sampler2D _PalletteMap;
 			sampler2D _EmissiveMap;
-			//sampler2D _Angles;
 			sampler2D _DotXs;
 			sampler2D _DotYs;
-			sampler2D _Colors;
-			sampler2D _Ranges;
-			sampler2D _Distances;
-			sampler2D _Intensities;
+			// sampler2D _Colors;
+			// sampler2D _Ranges;
+			// sampler2D _Distances;
+			// sampler2D _Intensities;
 			fixed _Emission;
 
 			uniform fixed4 _allColors[128];
@@ -57,33 +55,33 @@ Shader "Custom/Grid" {
 			fixed4 nrmTex;
 			fixed4 emTex;
 			fixed4 palTex;
-			//fixed4 anglesTex;
 			fixed4 dotXsTex;
 			fixed4 dotYsTex;
-			fixed4 colorsTex;
-			fixed4 rangesTex;
-			fixed4 distancesTex;
-			fixed4 intensitiesTex;
+			// fixed4 colorsTex;
+			// fixed4 rangesTex;
+			// fixed4 distancesTex;
+			// fixed4 intensitiesTex;
 
 			fixed4 finalColor;
+
 
 			struct appData {
 				float4 vertex : POSITION;
 				float4 vColor : COLOR; // vertex color
-				half2 texcoord : TEXCOORD0;
-				half2 texcoord1 : TEXCOORD1;
-				half2 texcoord2 : TEXCOORD2;
-				half2 texcoord3 : TEXCOORD3;
+				float2 uv : TEXCOORD0;
+				float4 uv12 : TEXCOORD1;
+				float4 uv34 : TEXCOORD2;
+				float2 uv5 : TEXCOORD3;
 			};
 
 			struct v2f {
 				float4 pos : POSITION;
 				float4 worldPos : NORMAL;
 				fixed4 vColor : COLOR;
-				half2 uv  : TEXCOORD0;
-				half2 uv1 : TEXCOORD1;
-				half2 uv2 : TEXCOORD2;
-				half2 uv3 : TEXCOORD3;
+				float2 uv  : TEXCOORD0;
+				float4 uv12 : TEXCOORD1;
+				float4 uv34 : TEXCOORD2;
+				float2 uv5 : TEXCOORD3;
 			};
 
 			uniform fixed colorIndices [10];
@@ -92,10 +90,10 @@ Shader "Custom/Grid" {
 				o.pos = UnityObjectToClipPos(v.vertex);
 				o.worldPos = mul(unity_ObjectToWorld, v.vertex);
 				o.vColor = v.vColor;
-				o.uv = 	half2(v.texcoord.x, v.texcoord.y);
-				o.uv1 = half2(v.texcoord1.x, v.texcoord1.y);
-				o.uv2 = half2(v.texcoord2.x, v.texcoord2.y);
-				o.uv3 = half2(v.texcoord3.x, v.texcoord3.y);
+				o.uv = float2(v.uv.x, v.uv.y);
+				o.uv12 = float4(v.uv12.x, v.uv12.y, v.uv12.z, v.uv12.w);
+				o.uv34 = float4(v.uv34.x, v.uv34.y, v.uv34.z, v.uv34.w);
+				o.uv5 = float2(v.uv5.x, v.uv5.y);
 				return o;
 			}
 
@@ -105,16 +103,16 @@ Shader "Custom/Grid" {
 				emTex = tex2D(_EmissiveMap, i.uv);
 				palTex = tex2D(_PalletteMap, i.uv);
 				
-				colorIndices[0] = floor(i.uv1.x);
-				colorIndices[1] = floor(i.uv1.y);
-				colorIndices[2] = floor(i.uv2.x);
-				colorIndices[3] = floor(i.uv2.y);
-				colorIndices[4] = floor(i.uv3.x);
-				colorIndices[5] = floor(i.uv3.y);
-				colorIndices[6] = floor(i.vColor.r * 255);
-				colorIndices[7] = floor(i.vColor.g * 255);
-				colorIndices[8] = floor(i.vColor.b * 255);
-				colorIndices[9] = floor(i.vColor.a * 255);
+				colorIndices[0] = floor(i.uv12.x);
+				colorIndices[1] = floor(i.uv12.y);
+				colorIndices[2] = floor(i.uv12.z);
+				colorIndices[3] = floor(i.uv12.w);
+				colorIndices[4] = floor(i.uv34.x);
+				colorIndices[5] = floor(i.uv34.y);
+				colorIndices[6] = floor(i.uv34.z);
+				colorIndices[7] = floor(i.uv34.w);
+				colorIndices[8] = floor(i.uv5.x);
+				colorIndices[9] = floor(i.uv5.y);
 
 				fixed indexToUse = 10 - floor(palTex.r * 10);
 				colorToUse = _allColors[colorIndices[indexToUse]];
@@ -125,15 +123,14 @@ Shader "Custom/Grid" {
 				//anglesTex = tex2D(_Angles, gridUV);
 				dotXsTex = tex2D(_DotXs, gridUV);
 				dotYsTex = tex2D(_DotYs, gridUV);
-				colorsTex = tex2D(_Colors, gridUV);
-				rangesTex = tex2D(_Ranges, gridUV);
-				distancesTex = tex2D(_Distances, gridUV);
-				intensitiesTex = tex2D(_Intensities, gridUV);
+				// colorsTex = tex2D(_Colors, gridUV);
+				// rangesTex = tex2D(_Ranges, gridUV);
+				// distancesTex = tex2D(_Distances, gridUV);
+				// intensitiesTex = tex2D(_Intensities, gridUV);
 
 				fixed4 mod0 = 
 				max(0, 															// make sure it's over zero (not sure how, but that happens >.>)
-					_allColors[colorsTex.r * 255] *								// multiply with the light-color
-					intensitiesTex.r * (1 - (distancesTex.r / rangesTex.r)) * (	// multiply with the total falloff (intensity * distance in relation to range)
+					i.vColor * (												// multiply with the vertex color (total lighting color set in CustomLight.cs)
 						1 - min(												// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
 								floor(nrmTex.a),
 								min(											// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
@@ -160,9 +157,10 @@ Shader "Custom/Grid" {
 							)
 					)
 				);
-				fixed4 mod1 = max(0, _allColors[colorsTex.g * 255] * intensitiesTex.g * (1 - (distancesTex.g / rangesTex.g)) * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.g * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.g * 2 - 1))))))))); 
-				fixed4 mod2 = max(0, _allColors[colorsTex.b * 255] * intensitiesTex.b * (1 - (distancesTex.b / rangesTex.b)) * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.b * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.b * 2 - 1))))))))); 
-				fixed4 mod3 = max(0, _allColors[colorsTex.a * 255] * intensitiesTex.a * (1 - (distancesTex.a / rangesTex.a)) * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.a * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.a * 2 - 1))))))))); 
+				fixed4 mod1 = max(0, i.vColor * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.g * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.g * 2 - 1))))))))); 
+				fixed4 mod2 = max(0, i.vColor * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.b * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.b * 2 - 1))))))))); 
+				fixed4 mod3 = max(0, i.vColor * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.a * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.a * 2 - 1))))))))); 
+
 
 				// mush together
 				mod0 += mod1 + mod2 + mod3;
