@@ -127,7 +127,6 @@ Shader "Custom/Grid" {
 				// rangesTex = tex2D(_Ranges, gridUV);
 				// distancesTex = tex2D(_Distances, gridUV);
 				// intensitiesTex = tex2D(_Intensities, gridUV);
-
 				fixed4 mod0 = 
 				max(0, 															// make sure it's over zero (not sure how, but that happens >.>)
 					i.vColor * (												// multiply with the vertex color (total lighting color set in CustomLight.cs)
