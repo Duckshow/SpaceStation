@@ -28,7 +28,7 @@ public class BresenhamTester : MonoBehaviour {
         resolution = 1 / (float)Resolution;
 
         Debug.DrawLine(start, end, Color.red);
-        List<BresenhamsLine.Overlap> newBres = BresenhamsLine.Gridcast(start, end);
+        List<BresenhamsLine.OverlapWithTiles> newBres = BresenhamsLine.Gridcast(start, end);
         for (int i = 0; i < newBres.Count; i++) {
             Debug.DrawLine(new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), Color.cyan);
             Debug.DrawLine(new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), Color.cyan);
@@ -89,7 +89,7 @@ public class BresenhamTester : MonoBehaviour {
 
         Debug.Log("Line: " + start + ", with angle: " + angle);
         Debug.DrawLine(start, (start + (angle * Length)), Color.red);
-        List<BresenhamsLine.Overlap> newBres = BresenhamsLine.Gridcast(start, (start + (angle * Length)));
+        List<BresenhamsLine.OverlapWithTiles> newBres = BresenhamsLine.Gridcast(start, (start + (angle * Length)));
        for (int i = 0; i < newBres.Count; i++){
             Debug.DrawLine(new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), Color.cyan);
             Debug.DrawLine(new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), Color.cyan);
@@ -111,7 +111,7 @@ public class BresenhamTester : MonoBehaviour {
         resolution = 1 / (float)Resolution;
         
         Debug.DrawLine(BresenhamsLine.lastCastStart, BresenhamsLine.lastCastEnd, Color.red);
-        List<BresenhamsLine.Overlap> newBres = BresenhamsLine.ReplayGridcast();
+        List<BresenhamsLine.OverlapWithTiles> newBres = BresenhamsLine.ReplayGridcast();
         for (int i = 0; i < newBres.Count; i++){
             Debug.DrawLine(new Vector2(newBres[i].TilePos.x - (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), Color.cyan);
             Debug.DrawLine(new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y - (resolution * 0.5f)), new Vector2(newBres[i].TilePos.x + (resolution * 0.5f), newBres[i].TilePos.y + (resolution * 0.5f)), Color.cyan);

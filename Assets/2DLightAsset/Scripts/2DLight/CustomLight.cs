@@ -542,10 +542,23 @@ public class CustomLight : MonoBehaviour {
             }
         }
     }
-    static float GetAngle(Vector2 _pos1, Vector2 _pos2, Vector2 _referenceAngle, int maxAngle) {
+    static float GetAngle(Vector2 _pos1, Vector2 _pos2, Vector2 _referenceAngle, int maxAngle) { // TODO: replace with GetAngleClockwise!
         return maxAngle * (0.5f * (1 + Vector2.Dot(
                                             _referenceAngle, 
                                             Vector3.Normalize(_pos1 - _pos2))));
+    }
+    static float GetAngleClockwise(Vector2 _pos1, Vector2 _pos2, int _maxAngle){
+        // gets the angle between _pos1 and _pos2, ranging from 0 to _maxAngle.
+        // the angle goes all-the-way-around, like a clock and unlike a dot-product.
+
+        float _vertical     = (0.5f * (1 + Vector2.Dot(Vector2.down,   Vector3.Normalize(_pos1 - _pos2))));
+        float _horizontal   =              Vector2.Dot(Vector2.right, Vector3.Normalize(_pos1 - _pos2));
+
+        _vertical = (_vertical * (_maxAngle * 0.5f));
+        if (_horizontal < 0)
+            _vertical = Mathf.Abs(_vertical - _maxAngle);
+
+        return _vertical;
     }
 
     static Color32 GetTotalVertexLighting(Vector2 _pos, out Vector4 _dominantLightIndices){
@@ -683,7 +696,6 @@ public class CustomLight : MonoBehaviour {
 
         return angle;
     }
-
     float PseudoAngle(float dx, float dy) {
         // Height performance for calculate angle on a vector (only for sort)
         // APROXIMATE VALUES -- NOT EXACT!! //
@@ -696,50 +708,44 @@ public class CustomLight : MonoBehaviour {
         return p;
     }
 
-    private List<BresenhamsLine.Overlap> cast;
-    private Vector2 tilePos;
     private static CachedAssets.MovableCollider sShadowCollider = new CachedAssets.MovableCollider();
     private static CachedAssets.MovableCollider[] sExtraShadowColliders;
-    private int currentIndex;
-    private int iterationsInCast = 0;
-    private int goal = 0;
     bool Gridcast(Vector2 _start, Vector2 _end, bool debug, out Vector2 _rayhit) {
 
         // calculate indices to iterate over
-        cast = BresenhamsLine.Gridcast(_start, _end);
+        List<BresenhamsLine.OverlapWithTiles> _cast = BresenhamsLine.Gridcast(_start, _end);
 
         // get colliders at start position
-        if (cast.Count > 0) {
-            CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[0].Tile.ExactType, cast[0].Tile.Animator.CurrentFrame, cast[0].Tile.WorldPosition, ref sShadowCollider);
+        if (_cast.Count > 0) {
+            CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[0].Tile.ExactType, _cast[0].Tile.Animator.CurrentFrame, _cast[0].Tile.WorldPosition, ref sShadowCollider);
 
-            if (cast[0].ExtraTiles != null){
-                sExtraShadowColliders = new CachedAssets.MovableCollider[cast[0].ExtraTiles.Length];
-                for (int i = 0; i < cast[0].ExtraTiles.Length; i++)
-                    CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[0].ExtraTiles[i].ExactType, cast[0].ExtraTiles[i].Animator.CurrentFrame, cast[0].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
+            if (_cast[0].ExtraTiles != null){
+                sExtraShadowColliders = new CachedAssets.MovableCollider[_cast[0].ExtraTiles.Length];
+                for (int i = 0; i < _cast[0].ExtraTiles.Length; i++)
+                    CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[0].ExtraTiles[i].ExactType, _cast[0].ExtraTiles[i].Animator.CurrentFrame, _cast[0].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
             }
         }
 
-       
        // use approximate pixel positions to iterate through cast and test each pixel for shadowcollider
-        currentIndex = 0;
-        iterationsInCast = 0;
-        goal = Mathf.RoundToInt(((_end - _start).magnitude + 1) * Tile.RESOLUTION); // the distance in amount of tiles, multiplied by the amount of pixels across a tile
+        int _currentIndex = 0;
+        int _iterationsInCast = 0;
+        int _goal = Mathf.RoundToInt(((_end - _start).magnitude + 1) * Tile.RESOLUTION); // the distance in amount of tiles, multiplied by the amount of pixels across a tile
         Vector2 _curPos = _start;
-        while (iterationsInCast <= goal || currentIndex < cast.Count) {
-            _curPos = Vector2.Lerp(_start, _end, (float)iterationsInCast / (float)goal);
-            iterationsInCast++;
+        while (_iterationsInCast <= _goal || _currentIndex < _cast.Count) {
+            _curPos = Vector2.Lerp(_start, _end, (float)_iterationsInCast / (float)_goal);
+            _iterationsInCast++;
 
             // if pixel is closer to next collider, set next collider as current
-            if (currentIndex < cast.Count - 1 && (cast[currentIndex + 1].Tile.WorldPosition - _curPos).magnitude <= (cast[currentIndex].Tile.WorldPosition - _curPos).magnitude) {
-                currentIndex++;
+            if (_currentIndex < _cast.Count - 1 && (_cast[_currentIndex + 1].Tile.WorldPosition - _curPos).magnitude <= (_cast[_currentIndex].Tile.WorldPosition - _curPos).magnitude) {
+                _currentIndex++;
 
-                CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[currentIndex].Tile.ExactType, cast[currentIndex].Tile.Animator.CurrentFrame, cast[currentIndex].Tile.WorldPosition, ref sShadowCollider);
+                CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[_currentIndex].Tile.ExactType, _cast[_currentIndex].Tile.Animator.CurrentFrame, _cast[_currentIndex].Tile.WorldPosition, ref sShadowCollider);
 
                 // get extra colliders (happens if pixel is (more-or-less) in a corner)
-                if (cast[currentIndex].ExtraTiles != null){
-                    sExtraShadowColliders = new CachedAssets.MovableCollider[cast[currentIndex].ExtraTiles.Length];
-                    for (int i = 0; i < cast[currentIndex].ExtraTiles.Length; i++)
-                        CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[currentIndex].ExtraTiles[i].ExactType, cast[currentIndex].ExtraTiles[i].Animator.CurrentFrame, cast[currentIndex].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
+                if (_cast[_currentIndex].ExtraTiles != null){
+                    sExtraShadowColliders = new CachedAssets.MovableCollider[_cast[_currentIndex].ExtraTiles.Length];
+                    for (int i = 0; i < _cast[_currentIndex].ExtraTiles.Length; i++)
+                        CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[_currentIndex].ExtraTiles[i].ExactType, _cast[_currentIndex].ExtraTiles[i].Animator.CurrentFrame, _cast[_currentIndex].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
                 }
             }
 
@@ -764,7 +770,7 @@ public class CustomLight : MonoBehaviour {
             }
 
             // done, so no hit
-            if ((float)iterationsInCast / (float)goal > 1) {
+            if ((float)_iterationsInCast / (float)_goal > 1) {
                 _rayhit = Vector2.zero;
                 nonHits.Add(_curPos);
                 nonHitsDistance.Add(closest);
@@ -775,87 +781,48 @@ public class CustomLight : MonoBehaviour {
 
         throw new System.Exception("Gridcast exceeded 100.000 iterations to reach target! Something is totally wrong or your cast is way too big! D:");
     }
-    // bool GridcastSimple(Vector2 _start, CachedAssets.DoubleInt _startTileCoords, Vector2 _end, out Vector2 _rayhit){
-    //     // find tiles along cast with a shadowcollider
-    //     cast = BresenhamsLine.Gridcast(_start, _end);
+    bool GridcastSimple(Vector2 _start, CachedAssets.DoubleInt _startTileCoords, Vector2 _end, CachedAssets.DoubleInt _endTileCoords){
+        // _start and _end local to grid (zero is in bottom left)
+        Vector2 _startLocal = new Vector2(_startTileCoords.X + (_start.x - Mathf.Round(_start.x)), _startTileCoords.Y + (_start.y - Mathf.Round(_start.y)));
+        Vector2 _endLocal = new Vector2(_endTileCoords.X + (_end.x - Mathf.Round(_end.x)), _endTileCoords.Y + (_end.y - Mathf.Round(_end.y)));
 
-    //     Vector2 _tilePos = Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition;
-    //     float _diffX = _start.x - _tilePos.x;
-    //     float _diffY = _start.y - _tilePos.y;
-    //     int _euler = (int)GetAngle(_start, _tilePos, Vector2.up, 360);
-    //     bool _canHitStartTile = false;
-    //     if (_diffX > 0 && _diffY < 0){ // TL
-    //         if(_euler < )
-    //     }
-    //     else if (_diffX < 0 && _diffY < 0){ // TR{
-            
-    //     }
-    //     else if (_diffX < 0 && _diffY > 0){ // BR
-            
-    //     }
-    //     else if (_diffX > 0 && _diffY > 0){ // BL
-            
-    //     }
-    //     if (cast.Count > 0){
-    //         CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[0].Tile.ExactType, cast[0].Tile.Animator.CurrentFrame, cast[0].Tile.WorldPosition, ref sShadowCollider);
+        // find tiles along cast with a shadowcollider
+        List<BresenhamsLine.OverlapSimple> _cast = BresenhamsLine.GridcastSimple(_startLocal, _endLocal);
 
-    //         if (cast[0].ExtraTiles != null){
-    //             sExtraShadowColliders = new CachedAssets.MovableCollider[cast[0].ExtraTiles.Length];
-    //             for (int i = 0; i < cast[0].ExtraTiles.Length; i++)
-    //                 CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[0].ExtraTiles[i].ExactType, cast[0].ExtraTiles[i].Animator.CurrentFrame, cast[0].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
-    //         }
-    //     }
+        // determine if the cast should be able to hit its own collider or not (assuming we're shooting from a corner because that's what I'm using it for currently >.>)
+        bool _canHitStartTile = false;
+        Vector2 _tilePos = Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition;
+        float _diffX = _start.x - _tilePos.x;
+        float _diffY = _start.y - _tilePos.y;
+        int _euler = (int)GetAngleClockwise(_start, _tilePos, 360);
+        if (_diffX > 0 && _diffY < 0) // TL corner of tile
+            _canHitStartTile = _euler > 90 && _euler < 180;
+        else if (_diffX < 0 && _diffY < 0) // TR corner of tile
+            _canHitStartTile = _euler > 180 && _euler < 270;
+        else if (_diffX < 0 && _diffY > 0) // BR corner of tile
+            _canHitStartTile = _euler > 270;
+        else if (_diffX > 0 && _diffY > 0) // BL corner of tile
+            _canHitStartTile = _euler > 0 && _euler < 90;
 
-    //     Vector2 _curPos = _start;
+        // stop hitting yourself
+        if(_canHitStartTile && sGridColliderArray[(int)_cast[0].Pos.x, (int)_cast[0].Pos.y])
+            return true;
+        for (int i = 1; i < _cast.Count; i++){
+            // check if hit tile
+            if(sGridColliderArray[(int)_cast[i].Pos.x, (int)_cast[i].Pos.y])
+                return true;
 
-    //     currentIndex = 0;
-    //     iterationsInCast = 0;
-    //     goal = Mathf.RoundToInt(((_end - _start).magnitude + 1) * Tile.RESOLUTION); // the distance in amount of tiles, multiplied by the amount of pixels across a tile
-    //     while (iterationsInCast <= goal || currentIndex < cast.Count){ // don't actually need the second Bresenhams, so replaced with While (clean this up a bit later, okay? :P)
-    //         _curPos = Vector2.Lerp(_start, _end, (float)iterationsInCast / (float)goal);
-    //         iterationsInCast++;
+            // else check if hit any equally close tiles
+            else if (_cast[i].ExtraPositions != null){
+                for (int j = 0; j < _cast[i].ExtraPositions.Length; j++){
+                    if(sGridColliderArray[(int)_cast[i].ExtraPositions[j].x, (int)_cast[i].ExtraPositions[j].y])
+                        return true;
+                }
+            }
+        }
 
-    //         // if pixel is closer to next collider, set next collider as current
-    //         if (currentIndex < cast.Count - 1 && (cast[currentIndex + 1].Tile.WorldPosition - _curPos).magnitude <= (cast[currentIndex].Tile.WorldPosition - _curPos).magnitude){
-    //             currentIndex++;
-
-    //             CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[currentIndex].Tile.ExactType, cast[currentIndex].Tile.Animator.CurrentFrame, cast[currentIndex].Tile.WorldPosition, ref sShadowCollider);
-    //             if (cast[currentIndex].ExtraTiles != null){
-    //                 sExtraShadowColliders = new CachedAssets.MovableCollider[cast[currentIndex].ExtraTiles.Length];
-    //                 for (int i = 0; i < cast[currentIndex].ExtraTiles.Length; i++)
-    //                     CachedAssets.Instance.WallSets[0].GetShadowCollider(cast[currentIndex].ExtraTiles[i].ExactType, cast[currentIndex].ExtraTiles[i].Animator.CurrentFrame, cast[currentIndex].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
-    //             }
-    //         }
-
-    //         float closest = 1000;
-    //         if (sShadowCollider != null && sShadowCollider.OverlapPointOrAlmost(_curPos, out closest)){
-    //             _rayhit = _curPos;
-    //             hits.Add(_curPos);
-    //             hitsDistance.Add(closest);
-    //             return true;
-    //         }
-    //         if (sExtraShadowColliders != null){
-    //             for (int i = 0; i < sExtraShadowColliders.Length; i++){
-    //                 if (sExtraShadowColliders[i] != null && sExtraShadowColliders[i].OverlapPointOrAlmost(_curPos, out closest)){
-    //                     _rayhit = _curPos;
-    //                     hits.Add(_curPos);
-    //                     hitsDistance.Add(closest);
-    //                     return true;
-    //                 }
-    //             }
-    //         }
-
-    //         if ((float)iterationsInCast / (float)goal > 1){
-    //             _rayhit = Vector2.zero;
-    //             nonHits.Add(_curPos);
-    //             nonHitsDistance.Add(closest);
-    //             nonHitsHadCollider.Add(sShadowCollider != null && sExtraShadowColliders != null && sExtraShadowColliders.Length > 0);
-    //             return false;
-    //         }
-    //     }
-
-    //     throw new System.Exception("Gridcast exceeded 100.000 iterations to reach target! Something is totally wrong or your cast is way too big! D:");
-    // }
+        return false;
+    }
 
     Vector2 testPos;
     bool IsPossibleToGridcastFurther(Vector2 _start, Vector2 _dir) {

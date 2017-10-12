@@ -11,8 +11,7 @@ public class Test : MonoBehaviour
 
     private CustomLight light;
 
-    void Start()
-    {
+    void Start(){
         light = FindObjectOfType<CustomLight>();
     }
 
@@ -20,18 +19,14 @@ public class Test : MonoBehaviour
     float tan;
     int deg;
     byte reportAngle;
-    void Update()
-    {
-        // tan = (((Vector2.Dot(Vector2.left, Vector3.Normalize((Vector2)light.transform.position - (Vector2)transform.position)) + 1) * 0.5f));
-        // Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
-        // Debug.Log(tan);
-
-        Debug.Log((int)GetAngleVertical(transform.position, light.transform.position, 360));
-    }
+    // void Update(){
+    //     tan = (((Vector2.Dot(Vector2.left, Vector3.Normalize((Vector2)light.transform.position - (Vector2)transform.position)) + 1) * 0.5f));
+    //     Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
+    //     Debug.Log(tan);
+    // }
 
     [EasyButtons.Button]
-    public void PrintValues()
-    {
+    public void PrintValues(){
         ClearLogConsole();
 
         Vector2 nrmT = new Vector2(0, 1);
@@ -80,26 +75,5 @@ public class Test : MonoBehaviour
         System.Type logEntries = assembly.GetType("UnityEditorInternal.LogEntries");
         MethodInfo clearConsoleMethod = logEntries.GetMethod("Clear");
         clearConsoleMethod.Invoke(new object(), null);
-    }
-
-    static float GetAngleHorizontal(Vector2 _pos1, Vector2 _pos2, int _maxAngle){
-        float _horizontal    = 0.5f * (1 + Vector2.Dot(Vector2.left, Vector3.Normalize(_pos1 - _pos2)));
-        float _vertical      =             Vector2.Dot(Vector2.up,   Vector3.Normalize(_pos1 - _pos2));
-
-        _horizontal *= _maxAngle * 0.5f;
-        if(_vertical < 0)
-            _horizontal -= _maxAngle * 0.5f;
-
-        return _horizontal;
-    }
-    static float GetAngleVertical(Vector2 _pos1, Vector2 _pos2, int _maxAngle){
-        float _vertical     = (0.5f * (1 + Vector2.Dot(Vector2.up,   Vector3.Normalize(_pos1 - _pos2))));
-        float _horizontal   =              Vector2.Dot(Vector2.right, Vector3.Normalize(_pos1 - _pos2));
-admwp // I'm trying to get an angle between 0-360 to use to determine whether a simple gridcast will hit its own collider or not.
-        _vertical = (_vertical * _maxAngle);
-        if (_horizontal < 0)
-            _vertical -= _maxAngle;
-
-        return _vertical;
     }
 }
