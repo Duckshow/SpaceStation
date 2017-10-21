@@ -37,9 +37,6 @@ public class BresenhamsLine : MonoBehaviour {
         }
     }
 
-    // length of cast
-    private static Vector2 length = new Vector2();
-    
     // x- and y-ratios (how much x will move per y and vice versa)
     private static float YperX;
     private static float XperY;
@@ -49,9 +46,6 @@ public class BresenhamsLine : MonoBehaviour {
     private static Vector2 roundedCurrent = new Vector2();
     private static Vector2 roundedEnd = new Vector2();
     private static Vector2 roundedPrevious;
-
-    // direction (-1, 0, 1)
-    private static Vector2 step = new Vector2();
 
     // progress (0-1) to next column in grid
     private static Vector2 prog = new Vector2();
@@ -65,20 +59,16 @@ public class BresenhamsLine : MonoBehaviour {
     private static List<OverlapSimple> overlaps = new List<OverlapSimple>();
 
     static bool abort = false;
+    private enum NextStepEnum { X, Y, Diag }
     public static List<OverlapSimple> GridcastSimple(Vector2 _start, Vector2 _end) {
         if(abort)
             return null;
 
-        // setup length of ray
-        length = _end - _start;
 
-        // setup ratios
-        XperY = Mathf.Sqrt(Mathf.Pow((length.x / length.y), 2));
-        YperX = Mathf.Sqrt(Mathf.Pow((length.y / length.x), 2));
-        if(length.y == 0)
-            XperY = 1;
-        if (length.x == 0)
-            YperX = 1;
+        // direction (-1, 0, 1)
+        Vector2 length = _end - _start;
+        Vector2 step = new Vector2(length.x == 0 ? 0 : Mathf.Sign(length.x), length.y == 0 ? 0 : Mathf.Sign(length.y));
+        Debug.Log(step);
 
         // setup start
         roundedStart.x = Mathf.Floor(Mathf.Abs(_start.x)) * Mathf.Sign(_start.x); // special flooring so negative values go up (-10.5 becomes -10, not -11)
@@ -89,19 +79,25 @@ public class BresenhamsLine : MonoBehaviour {
         // setup goal
         roundedEnd.x = Mathf.Floor(Mathf.Abs(_end.x)) * Mathf.Sign(_end.x);
         roundedEnd.y = Mathf.Floor(Mathf.Abs(_end.y)) * Mathf.Sign(_end.y);
-        roundedEnd.x += Mathf.Sign(_end.x) * 0.5f;
-        roundedEnd.y += Mathf.Sign(_end.y) * 0.5f;
 
-        // setup direction
-        step.x = length.x == 0 ? 0 : Mathf.Sign(length.x);
-        step.y = length.y == 0 ? 0 : Mathf.Sign(length.y);
+        float _diffX = Mathf.Abs(_end.x) - Mathf.Floor(_end.x);
+        float _diffY = Mathf.Abs(_end.y) - Mathf.Floor(_end.y);
+        if(_diffX == 0 || _diffX == 1)
+            roundedEnd.x += step.x * 0.5f;
+        else
+            roundedEnd.x += Mathf.Sign(_end.x) * 0.5f;
+
+        if(_diffY == 0 || _diffY == 1)
+            roundedEnd.y += step.y * 0.5f;
+        else
+            roundedEnd.y += Mathf.Sign(_end.y) * 0.5f;
 
         // setup progress at start
-        prog.x = Mathf.Abs(_start.x - roundedStart.x);
-        if(step.x != 0 && step.x != Mathf.Sign(_start.x))
+        prog.x = Mathf.Abs(_start.x - roundedStart.x) + 0.5f;
+        if(step.x != 0 && step.x != Mathf.Sign(_start.x - roundedStart.x))
             prog.x = 1 - prog.x;
-        prog.y = Mathf.Abs(_start.y - roundedStart.y);
-        if(step.y != 0 && step.y != Mathf.Sign(_start.y))
+        prog.y = Mathf.Abs(_start.y - roundedStart.y) + 0.5f;
+        if(step.y != 0 && step.y != Mathf.Sign(_start.y - roundedStart.y))
             prog.y = 1 - prog.y;
 
         // setup tiles found
@@ -117,32 +113,16 @@ public class BresenhamsLine : MonoBehaviour {
 
         // predict and iterate over tiles that will be hit by cast and add to list
         while (roundedCurrent.x != roundedEnd.x || roundedCurrent.y != roundedEnd.y){
-            if (roundedCurrent.x != roundedCurrent.y && (step.x > 0 && roundedCurrent.x > roundedEnd.x || step.x < 0 && roundedCurrent.x < roundedEnd.x)) { 
-                Debug.LogErrorFormat("Gridcast failed! ({0} -> {1}, {2}/{3} | {4} ({5}), {6} ({7})".Color(Color.red), _start.ToString(), _end.ToString(), future.x.ToString(), future.y.ToString(), prog.x.ToString(), XperY.ToString(), prog.y.ToString(), YperX.ToString());
-
-                Debug.DrawLine(_start, _end, Color.red, Mathf.Infinity);
-                Debug.DrawLine(roundedCurrent + new Vector2(-0.5f, 0.5f), roundedCurrent + new Vector2(0.5f, 0.5f), Color.magenta, Mathf.Infinity);
-                Debug.DrawLine(roundedCurrent + new Vector2(0.5f, 0.5f), roundedCurrent + new Vector2(0.5f, -0.5f), Color.magenta, Mathf.Infinity);
-                Debug.DrawLine(roundedCurrent + new Vector2(0.5f, -0.5f), roundedCurrent + new Vector2(-0.5f, -0.5f), Color.magenta, Mathf.Infinity);
-                Debug.DrawLine(roundedCurrent + new Vector2(-0.5f, -0.5f), roundedCurrent + new Vector2(-0.5f, 0.5f), Color.magenta, Mathf.Infinity);
-                abort = true;
-                return null;
-                break;
-            }
-            if (roundedCurrent.y != roundedEnd.y && (step.y > 0 && roundedCurrent.y > roundedEnd.y || step.y < 0 && roundedCurrent.y < roundedEnd.y)) { 
-                Debug.LogErrorFormat("Gridcast failed! ({0} -> {1}, {2}/{3} | {4} ({5}), {6} ({7})".Color(Color.red), _start.ToString(), _end.ToString(), future.x.ToString(), future.y.ToString(), prog.x.ToString(), XperY.ToString(), prog.y.ToString(), YperX.ToString());
-
-                Debug.DrawLine(_start, _end, Color.red, Mathf.Infinity);
-                Debug.DrawLine(roundedCurrent + new Vector2(-0.5f, 0.5f), roundedCurrent + new Vector2(0.5f, 0.5f), Color.magenta, Mathf.Infinity);
-                Debug.DrawLine(roundedCurrent + new Vector2(0.5f, 0.5f), roundedCurrent + new Vector2(0.5f, -0.5f), Color.magenta, Mathf.Infinity);
-                Debug.DrawLine(roundedCurrent + new Vector2(0.5f, -0.5f), roundedCurrent + new Vector2(-0.5f, -0.5f), Color.magenta, Mathf.Infinity);
-                Debug.DrawLine(roundedCurrent + new Vector2(-0.5f, -0.5f), roundedCurrent + new Vector2(-0.5f, 0.5f), Color.magenta, Mathf.Infinity);
-                abort = true;
-                return null;
-                break;
-            }
-            
             roundedPrevious = roundedCurrent;
+
+            // update ratios
+            Vector2 _distance = _end - total;
+            XperY = Mathf.Sqrt(Mathf.Pow((_distance.x / _distance.y), 2));
+            YperX = Mathf.Sqrt(Mathf.Pow((_distance.y / _distance.x), 2));
+            if(_distance.y == 0)
+                XperY = 1;
+            if (_distance.x == 0)
+                YperX = 1;
 
             // predict future x/y using ratio and progress
             future.x = prog.x + (XperY * (1 - prog.y));
@@ -155,54 +135,159 @@ public class BresenhamsLine : MonoBehaviour {
             total.x = step.x > 0 ? total.x + (Mathf.Clamp01(future.x) - prog.x) : total.x - (Mathf.Clamp01(future.x) - prog.x);
             total.y = step.y > 0 ? total.y + (Mathf.Clamp01(future.y) - prog.y) : total.y - (Mathf.Clamp01(future.y) - prog.y);
 
-            if (future.x >= 0.999f && future.y >= 0.999f){
-                // if exiting this tile through a corner (approximate, because rays shot at vertices always seem to miss :/ )
+            NextStepEnum _next = NextStepEnum.Diag;
+            if (future.x > 1 && future.y < 1)
+                _next = NextStepEnum.X;
+            else if (future.x < 1 && future.y > 1)
+                _next = NextStepEnum.Y;
 
-                // add next tile and both diagonal neighbours (since we're passing right between them)
-                overlaps.Add(new OverlapSimple(
-                    roundedCurrent + step,
-                    new Vector2[] {
-                        new Vector2(roundedCurrent.x + step.x, roundedCurrent.y),
-                        new Vector2(roundedCurrent.x, roundedCurrent.y + step.y)
-                    })
-                );
-                roundedCurrent += step;
+            switch (_next){
+                case NextStepEnum.Diag: 
+                     if (roundedCurrent.x == roundedEnd.x) { 
+                        ErrorDump(_start, _end, step);
+                        abort = true;
+                        return null;
+                        break;
+                    }
+                    if (roundedCurrent.y == roundedEnd.y) { 
+                        ErrorDump(_start, _end, step);
+                        abort = true;
+                        return null;
+                        break;
+                    }
 
-                // x/y might not be exactly 1 (since we're approximating future) so we can't zero neither x nor y like we do below
-                prog = Vector2.one - future;
+                    // if exiting this tile through a corner (approximate, because rays shot at vertices always seem to miss :/ )
+                    // add next tile and both diagonal neighbours (since we're passing right between them)
+                    overlaps.Add(new OverlapSimple(
+                        roundedCurrent + step,
+                        new Vector2[] {
+                            new Vector2(roundedCurrent.x + step.x, roundedCurrent.y),
+                            new Vector2(roundedCurrent.x, roundedCurrent.y + step.y)
+                        })
+                    );
+                    roundedCurrent += step;
 
-                // check if the extra neighbours we added was the end
-                if (roundedPrevious.x + step.x == roundedEnd.x && roundedPrevious.y == roundedEnd.y)
-                    break;
-                if (roundedPrevious.x == roundedEnd.x && roundedPrevious.y + step.y == roundedEnd.y)
-                    break;
+                    // x/y might not be exactly 1 (since we're approximating future) so we can't zero neither x nor y like we do below
+                    prog = Vector2.one - future;
+
+                    // check if the extra neighbours we added was the end
+                    if (roundedPrevious.x + step.x == roundedEnd.x && roundedPrevious.y == roundedEnd.y)
+                        break;
+                    if (roundedPrevious.x == roundedEnd.x && roundedPrevious.y + step.y == roundedEnd.y)
+                        break;
+                break;
+                case NextStepEnum.X:  
+                     if (roundedCurrent.x == roundedEnd.x) { 
+                        ErrorDump(_start, _end, step);
+                        abort = true;
+                        return null;
+                        break;
+                    }
+
+                    // if the x we'll get from the remaining y is greater than the y we'll get from the remaining x...
+                    // move y to where it should be at end of x and zero x because new tile
+                    prog.x = 0;
+                    prog.y = future.y;
+
+                    roundedCurrent.x += step.x;
+                    overlaps.Add(new OverlapSimple(roundedCurrent));
+                break;
+                case NextStepEnum.Y:
+                    if (roundedCurrent.y == roundedEnd.y) { 
+                        ErrorDump(_start, _end, step);
+                        abort = true;
+                        return null;
+                        break;
+                    }
+
+                    // if the y we'll get from the remaining x is greater than the x we'll get from the remaining y...
+                    // move x to where it should be at end of y and zero y because new tile
+                    
+                    prog.x = future.x;
+                    prog.y = 0;
+
+                    roundedCurrent.y += step.y;
+                    overlaps.Add(new OverlapSimple(roundedCurrent));
+                break;
             }
-            else if (future.x >= 1){ 
-                // if the x we'll get from the remaining y is greater than the y we'll get from the remaining x...
-                // move y to where it should be at end of x and zero x because new tile
+
+            // if (future.x >= 0.999f && future.y >= 0.999f){
+            //     // if exiting this tile through a corner (approximate, because rays shot at vertices always seem to miss :/ )
+
+            //     // add next tile and both diagonal neighbours (since we're passing right between them)
+            //     overlaps.Add(new OverlapSimple(
+            //         roundedCurrent + step,
+            //         new Vector2[] {
+            //             new Vector2(roundedCurrent.x + step.x, roundedCurrent.y),
+            //             new Vector2(roundedCurrent.x, roundedCurrent.y + step.y)
+            //         })
+            //     );
+            //     roundedCurrent += step;
+
+            //     // x/y might not be exactly 1 (since we're approximating future) so we can't zero neither x nor y like we do below
+            //     prog = Vector2.one - future;
+
+            //     // check if the extra neighbours we added was the end
+            //     if (roundedPrevious.x + step.x == roundedEnd.x && roundedPrevious.y == roundedEnd.y)
+            //         break;
+            //     if (roundedPrevious.x == roundedEnd.x && roundedPrevious.y + step.y == roundedEnd.y)
+            //         break;
+            // }
+            // else if (future.x >= 1){ 
+            //     // if the x we'll get from the remaining y is greater than the y we'll get from the remaining x...
+            //     // move y to where it should be at end of x and zero x because new tile
                 
-                prog.x = 0;
-                prog.y = Mathf.Clamp01(future.y);
+            //     prog.x = 0;
+            //     prog.y = Mathf.Clamp01(future.y);
 
-                roundedCurrent.x += step.x;
-                overlaps.Add(new OverlapSimple(roundedCurrent));
-            }
-            else { 
-                // if the y we'll get from the remaining x is greater than the x we'll get from the remaining y...
-                // move x to where it should be at end of y and zero y because new tile
+            //     roundedCurrent.x += step.x;
+            //     overlaps.Add(new OverlapSimple(roundedCurrent));
+            // }
+            // else { 
+            //     // if the y we'll get from the remaining x is greater than the x we'll get from the remaining y...
+            //     // move x to where it should be at end of y and zero y because new tile
                 
-                prog.x = Mathf.Clamp01(future.x);
-                prog.y = 0;
+            //     prog.x = Mathf.Clamp01(future.x);
+            //     prog.y = 0;
 
-                roundedCurrent.y += step.y;
-                overlaps.Add(new OverlapSimple(roundedCurrent));
-            }
+            //     roundedCurrent.y += step.y;
+            //     overlaps.Add(new OverlapSimple(roundedCurrent));
+            // }
         }
 
         lastCastStart = _start;
         lastCastEnd = _end;
         return overlaps;
     }
+    private static void ErrorDump(Vector2 _start, Vector2 _end, Vector2 _step){
+        Debug.LogErrorFormat(("Gridcast failed! \n"+
+        "Start: {0}, {1} \n"+
+        "End: {2}, {3}\n"+
+        "Future X, Y: {4}, {5}\n"+
+        "Progress: {6}, {7}\n"+
+        "XPerY: {8}\n"+
+        "YPerX: {9}\n"+
+        "WorldPos: {10}, {11}\n"+
+        "Step: {12}, {12}\n"+
+        "RoundedCurrent: {13}, {14}\n"+
+        "RoundedEnd: {15}, {16}").Color(Color.black), 
+        _start.x.ToString(), _start.y.ToString(), 
+        _end.x.ToString(), _end.y.ToString(), 
+        future.x.ToString(), future.y.ToString(), 
+        prog.x.ToString(), prog.y.ToString(), 
+        XperY.ToString(), YperX.ToString(), 
+        total.x.ToString(), total.y.ToString(),
+        _step.x.ToString(), _step.y.ToString(),
+        roundedCurrent.x.ToString(), roundedCurrent.y.ToString(),
+        roundedEnd.x.ToString(), roundedEnd.y.ToString());
+
+        Debug.DrawLine(_start, _end, Color.red, Mathf.Infinity);
+        Debug.DrawLine(roundedCurrent + new Vector2(-0.5f, 0.5f), roundedCurrent + new Vector2(0.5f, 0.5f), Color.magenta, Mathf.Infinity);
+        Debug.DrawLine(roundedCurrent + new Vector2(0.5f, 0.5f), roundedCurrent + new Vector2(0.5f, -0.5f), Color.magenta, Mathf.Infinity);
+        Debug.DrawLine(roundedCurrent + new Vector2(0.5f, -0.5f), roundedCurrent + new Vector2(-0.5f, -0.5f), Color.magenta, Mathf.Infinity);
+        Debug.DrawLine(roundedCurrent + new Vector2(-0.5f, -0.5f), roundedCurrent + new Vector2(-0.5f, 0.5f), Color.magenta, Mathf.Infinity);
+    }
+
     private static List<OverlapWithTiles> overlapsWithTiles = new List<OverlapWithTiles>();
     public static List<OverlapWithTiles> Gridcast(Vector2 _start, Vector2 _end) {
         overlapsWithTiles.Clear();
