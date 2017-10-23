@@ -71,10 +71,10 @@ public class TileObject : MonoBehaviour {
 
     public void Sort() {
         for (int i = 0; i < MyUVControllers.Length; i++)
-            MyUVControllers[i].Sort(MyTile.GridY);
+            MyUVControllers[i].Sort(MyTile.GridCoord.Y);
 
         if(MyUVControllers.Length == 0)
-            transform.position = new Vector3(transform.position.x, transform.position.y, -(Grid.Instance.GridSizeY - MyTile.GridY) * 0.5f);
-            gridY = MyTile.GridY;
+            transform.position = new Vector3(transform.position.x, transform.position.y, -(Grid.Instance.GridSizeY - MyTile.GridCoord.Y) * 0.5f);
+            gridY = MyTile.GridCoord.Y;
     }
 }

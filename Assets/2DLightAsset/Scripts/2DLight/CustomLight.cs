@@ -475,20 +475,16 @@ public class CustomLight : MonoBehaviour {
         if(ReportedDotYs == null)
             ReportedDotYs = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
 
+        // iterate over grid and apply lighting to tiles' BL corners (and intersecting vertices). to get outer edge, iterate outside grid and use TR corner.
         for (int x = 0; x < Grid.Instance.GridSizeX + 1; x++){ // +1 because we're getting each corner
             for (int y = 0; y < Grid.Instance.GridSizeY + 1; y++){
 
-
-                // TODO: cast against light
-
-
-                // get lighting from all lights for the bottom-left corner (if outside grid, use bottom-right corner of the neighbour inside the grid)
+                Vector2 _offset = (x < Grid.Instance.GridSizeX && y < Grid.Instance.GridSizeY) ? CORNER_OFFSET : CORNER_OFFSET_OUTSIDE_GRID;
                 int _safeX = Mathf.Min(x, Grid.Instance.GridSizeX - 1);
                 int _safeY = Mathf.Min(y, Grid.Instance.GridSizeY - 1);
-                Vector2 _offset = (x < Grid.Instance.GridSizeX && y < Grid.Instance.GridSizeY) ? CORNER_OFFSET : CORNER_OFFSET_OUTSIDE_GRID;
 
                 Vector4 _lights; // the 4 most dominant lights
-                Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[_safeX, _safeY].WorldPosition + _offset, out _lights);
+                Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[_safeX, _safeY].WorldPosition + _offset, Grid.Instance.grid[_safeX, _safeY].GridCoord, out _lights);
 
                 // apply vertex color to all vertices in this corner
                 // THE INT IS COMPLETE GUESSWORK D:
@@ -561,13 +557,16 @@ public class CustomLight : MonoBehaviour {
         return _vertical;
     }
 
-    static Color32 GetTotalVertexLighting(Vector2 _pos, out Vector4 _dominantLightIndices){
+    static Color32 GetTotalVertexLighting(Vector2 _pos, CachedAssets.DoubleInt _tilePos, out Vector4 _dominantLightIndices){
 
         // four because we can only store Dot-info for four lights (mostly bc performance) and then any higher number makes little sense
         _dominantLightIndices = new Vector4();
         Vector4 dominantLightLevels = new Vector4();
         Vector4 dominantLightColors = new Vector4(); // todo: make a QuadrupleInt
         for (int i = 0; i < AllLights.Count; i++){ // optimization: can I lower the amount of lights I'm iterating over? Maybe by using a tree?
+            if (GridcastSimple(_pos, _tilePos, AllLights[i].transform.position, AllLights[i].myInspector.MyTileObject.MyTile.GridCoord))
+                continue;
+            
             float newRange = AllLights[i].lightRadius;
             float newDistance = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_pos, AllLights[i].transform.position)), 255);
             float newIntensity = AllLights[i].Intensity * 255;
@@ -781,7 +780,7 @@ public class CustomLight : MonoBehaviour {
 
         throw new System.Exception("Gridcast exceeded 100.000 iterations to reach target! Something is totally wrong or your cast is way too big! D:");
     }
-    bool GridcastSimple(Vector2 _start, CachedAssets.DoubleInt _startTileCoords, Vector2 _end, CachedAssets.DoubleInt _endTileCoords){
+    static bool GridcastSimple(Vector2 _start, CachedAssets.DoubleInt _startTileCoords, Vector2 _end, CachedAssets.DoubleInt _endTileCoords){
         // _start and _end local to grid (zero is in bottom left)
         Vector2 _startLocal = new Vector2(_startTileCoords.X + (_start.x - Mathf.Round(_start.x)), _startTileCoords.Y + (_start.y - Mathf.Round(_start.y)));
         Vector2 _endLocal = new Vector2(_endTileCoords.X + (_end.x - Mathf.Round(_end.x)), _endTileCoords.Y + (_end.y - Mathf.Round(_end.y)));

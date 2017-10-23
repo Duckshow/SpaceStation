@@ -59,7 +59,7 @@ public class Pathfinding : MonoBehaviour {
                     break;
                 }
 
-                foreach (Tile neighbour in grid.GetNeighbours(currentNode.GridX, currentNode.GridY)) {
+                foreach (Tile neighbour in grid.GetNeighbours(currentNode.GridCoord.X, currentNode.GridCoord.Y)) {
                     if (!neighbour.Walkable)
                         continue;
                     if (neighbour.IsOccupiedByObject && neighbour != targetNode)
@@ -181,8 +181,8 @@ public class Pathfinding : MonoBehaviour {
     }
 
     int GetDistance(Tile nodeA, Tile nodeB) {
-        int distX = Mathf.Abs(nodeA.GridX - nodeB.GridX);
-        int distY = Mathf.Abs(nodeA.GridY - nodeB.GridY);
+        int distX = Mathf.Abs(nodeA.GridCoord.X - nodeB.GridCoord.X);
+        int distY = Mathf.Abs(nodeA.GridCoord.Y - nodeB.GridCoord.Y);
 
         if (distX > distY)
             return 14 * distY + 10 * (distX - distY);

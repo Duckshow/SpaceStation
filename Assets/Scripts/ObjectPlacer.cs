@@ -56,7 +56,7 @@ public class ObjectPlacer {
         private Vector3 newPos;
         public void SetPosition(Vector3 _value) {
 			if (Grid.Instance != null)
-				newPos = new Vector3 (Grid.Instance.grid [0, 0].WorldPosition.x + _value.x, Grid.Instance.grid [0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
+				newPos = new Vector3 (Grid.Instance.grid [0, 0].WorldPosition.x + _value.x /*TODO: <-- this seems awfully weird*/, Grid.Instance.grid [0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
 			else
 				newPos = Vector3.zero;
 
@@ -213,15 +213,15 @@ public class ObjectPlacer {
     }
     private void ControlMouseGhost() {
         // find current tile
-        oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridX, mouseTile.GridY);
+        oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridCoord.X, mouseTile.GridCoord.Y);
         mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
-        mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridX || oldMouseGridPos.y != mouseTile.GridY;
+        mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridCoord.X || oldMouseGridPos.y != mouseTile.GridCoord.Y;
         if (mouseGhostHasNewTile)
             mouseGhostIsDirty = true;
 
         // set ghost-transform
-        Ghost.SetPosition(new Vector3(mouseTile.GridX, mouseTile.GridY, Grid.WORLD_BOTTOM_HEIGHT));
+        Ghost.SetPosition(new Vector3(mouseTile.GridCoord.X, mouseTile.GridCoord.Y, Grid.WORLD_BOTTOM_HEIGHT));
         Ghost.Orientation = TryRotateMouseGhost();
 
         if (mouseGhostIsDirty) {
@@ -282,7 +282,7 @@ public class ObjectPlacer {
         selectedTilesNewOrientation.Clear();
 
         Ghost.SetActive(true);
-        Ghost.SetPosition(new Vector2(mouseTile.GridX, mouseTile.GridY));
+        Ghost.SetPosition(new Vector2(mouseTile.GridCoord.X, mouseTile.GridCoord.Y));
         SetGhostGraphics(mouseTile, _snapToNeighbours);
         Evaluate();
     }
@@ -374,7 +374,7 @@ public class ObjectPlacer {
 	}
     private void ApplySettingsToGhost(bool _applyToGrid, byte _newColorIndex, bool hide = false) {
         // apply color and position
-        Ghost.SetPosition(new Vector2(mouseTile.GridX, mouseTile.GridY));
+        Ghost.SetPosition(new Vector2(mouseTile.GridCoord.X, mouseTile.GridCoord.Y));
         Ghost.SetActive(!hide);
         Ghost.SetColor(_newColorIndex);
 

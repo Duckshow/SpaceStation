@@ -170,10 +170,10 @@ public class BuilderBase {
     Tile.TileOrientation prevMouseOrientation;
 	private void ControlMouseGhost() {
 		// find current tile
-		oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridX, mouseTile.GridY);
+		oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridCoord.X, mouseTile.GridCoord.Y);
 		mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
-		mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridX || oldMouseGridPos.y != mouseTile.GridY;
+		mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridCoord.X || oldMouseGridPos.y != mouseTile.GridCoord.Y;
 		if (modeWasChanged)
 			mouseGhostHasNewTile = true; // have to force my way into the sprite-update stuff below
 		if (mouseGhostHasNewTile){
@@ -273,8 +273,8 @@ public class BuilderBase {
 			// get tile distance
 			oldDistX = distX;
 			oldDistY = distY;
-			distX = mouseTile.GridX - startTile.GridX;
-			distY = mouseTile.GridY - startTile.GridY;
+			distX = mouseTile.GridCoord.X - startTile.GridCoord.X;
+			distY = mouseTile.GridCoord.Y - startTile.GridCoord.Y;
 			hasMoved = !(oldDistX == distX && oldDistY == distY);
 
 			// if hasn't moved, early-out
@@ -284,8 +284,8 @@ public class BuilderBase {
 			distXAbs = Mathf.Min(Mathf.Abs(distX), MAX_TILES_AXIS);
 			distYAbs = Mathf.Min(Mathf.Abs(distY), MAX_TILES_AXIS);
 
-			ghostTile_GridX = startTile.GridX;
-			ghostTile_GridY = startTile.GridY;
+			ghostTile_GridX = startTile.GridCoord.X;
+			ghostTile_GridY = startTile.GridCoord.Y;
 		}
 
         ResetModifiedTiles();
@@ -301,8 +301,8 @@ public class BuilderBase {
 			case ModeEnum.Door:
 			case ModeEnum.Airlock:
 			case ModeEnum.ObjectPlacing:
-				ghostTile_GridX = mouseTile.GridX;
-				ghostTile_GridY = mouseTile.GridY;
+				ghostTile_GridX = mouseTile.GridCoord.X;
+				ghostTile_GridY = mouseTile.GridCoord.Y;
 
 				AddNextGhost (ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
                 SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
@@ -312,8 +312,8 @@ public class BuilderBase {
 				// drag-Modes
 			case ModeEnum.Default:
 				if (!_hasClicked) {
-					ghostTile_GridX = mouseTile.GridX;
-					ghostTile_GridY = mouseTile.GridY;
+					ghostTile_GridX = mouseTile.GridCoord.X;
+					ghostTile_GridY = mouseTile.GridCoord.Y;
 
 					AddNextGhost (ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
                     SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
@@ -329,9 +329,9 @@ public class BuilderBase {
 					for (int i = 0; i <= highestAxisValue; i++) {
 						// determine the offset from the _startTile
 						if (distXAbs >= distYAbs || isGoingDiagonal)
-							ghostTile_GridX = distX < 0 ? startTile.GridX - i : startTile.GridX + i;
+							ghostTile_GridX = distX < 0 ? startTile.GridCoord.X - i : startTile.GridCoord.X + i;
 						if (distYAbs >= distXAbs || isGoingDiagonal)
-							ghostTile_GridY = distY < 0 ? startTile.GridY - i : startTile.GridY + i;
+							ghostTile_GridY = distY < 0 ? startTile.GridCoord.Y - i : startTile.GridCoord.Y + i;
 
 						// if outside grid, break
 						if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
@@ -345,9 +345,9 @@ public class BuilderBase {
                     for (int i = 0; i <= highestAxisValue; i++) {
                         // determine the offset from the _startTile
                         if (distXAbs >= distYAbs || isGoingDiagonal)
-                            ghostTile_GridX = distX < 0 ? startTile.GridX - i : startTile.GridX + i;
+                            ghostTile_GridX = distX < 0 ? startTile.GridCoord.X - i : startTile.GridCoord.X + i;
                         if (distYAbs >= distXAbs || isGoingDiagonal)
-                            ghostTile_GridY = distY < 0 ? startTile.GridY - i : startTile.GridY + i;
+                            ghostTile_GridY = distY < 0 ? startTile.GridCoord.Y - i : startTile.GridCoord.Y + i;
 
                         // if outside grid, break
                         if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
@@ -361,9 +361,9 @@ public class BuilderBase {
                     for (int i = 0; i <= highestAxisValue; i++) {
 						// determine the offset from the _startTile
 						if (distXAbs >= distYAbs || isGoingDiagonal)
-							ghostTile_GridX = distX < 0 ? startTile.GridX - i : startTile.GridX + i;
+							ghostTile_GridX = distX < 0 ? startTile.GridCoord.X - i : startTile.GridCoord.X + i;
 						if (distYAbs >= distXAbs || isGoingDiagonal)
-							ghostTile_GridY = distY < 0 ? startTile.GridY - i : startTile.GridY + i;
+							ghostTile_GridY = distY < 0 ? startTile.GridCoord.Y - i : startTile.GridCoord.Y + i;
 
 						// if outside grid, break
 						if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
@@ -378,8 +378,8 @@ public class BuilderBase {
 				break;
 			case ModeEnum.Room:
 				if (!_hasClicked) {
-					ghostTile_GridX = mouseTile.GridX;
-					ghostTile_GridY = mouseTile.GridY;
+					ghostTile_GridX = mouseTile.GridCoord.X;
+					ghostTile_GridY = mouseTile.GridCoord.Y;
 
                     AddNextGhost(ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
                     SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
@@ -400,8 +400,8 @@ public class BuilderBase {
 							if (!_isOnEdgeX && !_isOnEdgeY)
 								continue;
 
-							ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
-							ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
+							ghostTile_GridX = distX < 0 ? startTile.GridCoord.X - x : startTile.GridCoord.X + x;
+							ghostTile_GridY = distY < 0 ? startTile.GridCoord.Y - y : startTile.GridCoord.Y + y;
 
 							// if outside grid, continue (would break, but orka)
 							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
@@ -422,8 +422,8 @@ public class BuilderBase {
 							if (!_isOnEdgeX && !_isOnEdgeY)
 								continue;
 
-							ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
-							ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
+							ghostTile_GridX = distX < 0 ? startTile.GridCoord.X - x : startTile.GridCoord.X + x;
+							ghostTile_GridY = distY < 0 ? startTile.GridCoord.Y - y : startTile.GridCoord.Y + y;
 
 							// if outside grid, continue (would break, but orka)
 							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
@@ -444,8 +444,8 @@ public class BuilderBase {
                             if (!_isOnEdgeX && !_isOnEdgeY)
                                 continue;
 
-                            ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
-                            ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
+                            ghostTile_GridX = distX < 0 ? startTile.GridCoord.X - x : startTile.GridCoord.X + x;
+                            ghostTile_GridY = distY < 0 ? startTile.GridCoord.Y - y : startTile.GridCoord.Y + y;
 
                             // if outside grid, continue (would break, but orka)
                             if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
@@ -462,8 +462,8 @@ public class BuilderBase {
 				break;
 			case ModeEnum.Fill:
 				if (!_hasClicked) {
-					ghostTile_GridX = mouseTile.GridX;
-					ghostTile_GridY = mouseTile.GridY;
+					ghostTile_GridX = mouseTile.GridCoord.X;
+					ghostTile_GridY = mouseTile.GridCoord.Y;
 
                     AddNextGhost(ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
                     SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
@@ -474,8 +474,8 @@ public class BuilderBase {
 					// first pass
 					for (int y = 0; y <= distYAbs; y++) {
 						for (int x = 0; x <= distXAbs; x++) {
-							ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
-							ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
+							ghostTile_GridX = distX < 0 ? startTile.GridCoord.X - x : startTile.GridCoord.X + x;
+							ghostTile_GridY = distY < 0 ? startTile.GridCoord.Y - y : startTile.GridCoord.Y + y;
 
 							// if outside grid, continue (would break, but orka)
 							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
@@ -489,8 +489,8 @@ public class BuilderBase {
 					// second pass
 					for (int y = 0; y <= distYAbs; y++) {
 						for (int x = 0; x <= distXAbs; x++) {
-							ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
-							ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
+							ghostTile_GridX = distX < 0 ? startTile.GridCoord.X - x : startTile.GridCoord.X + x;
+							ghostTile_GridY = distY < 0 ? startTile.GridCoord.Y - y : startTile.GridCoord.Y + y;
 
 							// if outside grid, continue (would break, but orka)
 							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)
@@ -504,8 +504,8 @@ public class BuilderBase {
                     // third pass
                     for (int y = 0; y <= distYAbs; y++) {
                         for (int x = 0; x <= distXAbs; x++) {
-                            ghostTile_GridX = distX < 0 ? startTile.GridX - x : startTile.GridX + x;
-                            ghostTile_GridY = distY < 0 ? startTile.GridY - y : startTile.GridY + y;
+                            ghostTile_GridX = distX < 0 ? startTile.GridCoord.X - x : startTile.GridCoord.X + x;
+                            ghostTile_GridY = distY < 0 ? startTile.GridCoord.Y - y : startTile.GridCoord.Y + y;
 
                             // if outside grid, continue (would break, but orka)
                             if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.Instance.GridSizeX)

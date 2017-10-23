@@ -253,7 +253,7 @@ public class Grid : MonoBehaviour {
         if (_tile.Walkable && !_tile.IsOccupiedByObject)
             return _tile;
 
-        List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
+        List<Tile> _neighbours = GetNeighbours(_tile.GridCoord.X, _tile.GridCoord.Y);
         int _lastCount = 0;
 
         while (_neighbours.Count < (GridSizeX * GridSizeY)) {
@@ -272,7 +272,7 @@ public class Grid : MonoBehaviour {
             // iterate over _neighbours - if their neighbours aren't in _neighbours, add them.
             List<Tile> _newNeighbours = new List<Tile>();
             for (int i = _prevLastCount; i < _lastCount; i++) {
-                _newNeighbours = GetNeighbours(_neighbours[i].GridX, _neighbours[i].GridY);
+                _newNeighbours = GetNeighbours(_neighbours[i].GridCoord.X, _neighbours[i].GridCoord.Y);
                 for (int j = 0; j < _newNeighbours.Count; j++) {
                     if (_neighbours.Contains(_newNeighbours[j]))
                         continue;
@@ -287,7 +287,7 @@ public class Grid : MonoBehaviour {
         if (_tile._WallType_ == Tile.Type.Empty && !_tile.IsOccupiedByObject)
             return _tile;
 
-        List<Tile> _neighbours = GetNeighbours(_tile.GridX, _tile.GridY);
+        List<Tile> _neighbours = GetNeighbours(_tile.GridCoord.X, _tile.GridCoord.Y);
         int _lastCount = 0;
 
         while (_neighbours.Count < (GridSizeX * GridSizeY)) {
@@ -306,7 +306,7 @@ public class Grid : MonoBehaviour {
             // iterate over _neighbours - if their neighbours aren't in _neighbours, add them.
             List<Tile> _newNeighbours = new List<Tile>();
             for (int i = _prevLastCount; i < _lastCount; i++) {
-                _newNeighbours = GetNeighbours(_neighbours[i].GridX, _neighbours[i].GridY);
+                _newNeighbours = GetNeighbours(_neighbours[i].GridCoord.X, _neighbours[i].GridCoord.Y);
                 for (int j = 0; j < _newNeighbours.Count; j++) {
                     if (_neighbours.Contains(_newNeighbours[j]))
                         continue;
@@ -335,30 +335,30 @@ public class Grid : MonoBehaviour {
     
     // checks if two normal walls are diagonally aligned, because you shouldn't be able to walk though there
     public bool IsNeighbourBlockedDiagonally(Tile _tile, Tile _neighbour) {
-        int _xDiff = _neighbour.GridX - _tile.GridX;
-        int _yDiff = _neighbour.GridY - _tile.GridY;
+        int _xDiff = _neighbour.GridCoord.X - _tile.GridCoord.X;
+        int _yDiff = _neighbour.GridCoord.Y - _tile.GridCoord.Y;
         Tile _nonDiagonalNeighbour1 = null;
         Tile _nonDiagonalNeighbour2 = null;
 
         // bottom left
         if (_xDiff == -1 && _yDiff == -1) {
-            _nonDiagonalNeighbour1 = grid[_tile.GridX, _tile.GridY - 1];
-            _nonDiagonalNeighbour2 = grid[_tile.GridX - 1, _tile.GridY];
+            _nonDiagonalNeighbour1 = grid[_tile.GridCoord.X, _tile.GridCoord.Y - 1];
+            _nonDiagonalNeighbour2 = grid[_tile.GridCoord.X - 1, _tile.GridCoord.Y];
         }
         // bottom right
         else if (_xDiff == 1 && _yDiff == -1) {
-            _nonDiagonalNeighbour1 = grid[_tile.GridX, _tile.GridY - 1];
-            _nonDiagonalNeighbour2 = grid[_tile.GridX + 1, _tile.GridY];
+            _nonDiagonalNeighbour1 = grid[_tile.GridCoord.X, _tile.GridCoord.Y - 1];
+            _nonDiagonalNeighbour2 = grid[_tile.GridCoord.X + 1, _tile.GridCoord.Y];
         }
         // top left
         else if (_xDiff == -1 && _yDiff == 1) {
-            _nonDiagonalNeighbour1 = grid[_tile.GridX, _tile.GridY + 1];
-            _nonDiagonalNeighbour2 = grid[_tile.GridX - 1, _tile.GridY];
+            _nonDiagonalNeighbour1 = grid[_tile.GridCoord.X, _tile.GridCoord.Y + 1];
+            _nonDiagonalNeighbour2 = grid[_tile.GridCoord.X - 1, _tile.GridCoord.Y];
         }
         // top right
         else if (_xDiff == 1 && _yDiff == 1) {
-            _nonDiagonalNeighbour1 = grid[_tile.GridX, _tile.GridY + 1];
-            _nonDiagonalNeighbour2 = grid[_tile.GridX + 1, _tile.GridY];
+            _nonDiagonalNeighbour1 = grid[_tile.GridCoord.X, _tile.GridCoord.Y + 1];
+            _nonDiagonalNeighbour2 = grid[_tile.GridCoord.X + 1, _tile.GridCoord.Y];
         }
         // not even diagonal
         else {
