@@ -46,7 +46,9 @@ public class UVController : MeshSorter {
         base.Setup();
 
         myMeshFilter = GetComponent<MeshFilter>();
-        myMeshUVs = myMeshFilter.sharedMesh != null ? myMeshFilter.sharedMesh.uv : myMeshFilter.mesh.uv;
+        if(myMeshFilter.sharedMesh == null)
+            myMeshFilter.sharedMesh = GenerateMesh();
+        myMeshUVs = myMeshFilter.sharedMesh.uv;
 
 		if(sCachedPropertyColor == -1)
 	        sCachedPropertyColor = Shader.PropertyToID("_Color");
@@ -60,11 +62,55 @@ public class UVController : MeshSorter {
 		SetUVColor (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
     }
 
+    Mesh GenerateMesh(){
+        Mesh mesh = new Mesh();
+        mesh.vertices = new Vector3[] {
+            new Vector3(-0.5f, -1, 0),
+            new Vector3(-0.5f, 0, 0),
+            new Vector3(-0.5f, 0, 0), // duplicate to stop vertex color spilling into tile above
+            new Vector3(-0.5f, 1, 0),
+            new Vector3(0.5f, 1, 0),
+            new Vector3(0.5f, 0, 0),
+            new Vector3(0.5f, 0, 0), // duplicate again
+            new Vector3(0.5f, -1, 0)
+        };
+        mesh.uv = new Vector2[]{
+            new Vector2(0, 0),
+            new Vector2(0, 0.5f),
+            new Vector2(0, 0.5f),
+            new Vector2(0, 1),
+            new Vector2(1, 1),
+            new Vector2(1, 0.5f),
+            new Vector2(1, 0.5f),
+            new Vector2(1, 0)
+        };
+        mesh.triangles = new int[]{
+            0,
+            6,
+            7,
+
+            0,
+            1,
+            6,
+
+            2,
+            4,
+            5,
+
+            2,
+            3,
+            4
+        };
+        return mesh;
+    }
+
     public void StopTempMode() {
         TemporaryCoordinates = null;
         ChangeAsset(Coordinates, false);
     }
     public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, bool _temporary) {
+        if(!Application.isPlaying)
+            return;
 
         if (_temporary)
             TemporaryCoordinates = _assetIndices;
@@ -72,39 +118,37 @@ public class UVController : MeshSorter {
 	    	Coordinates = _assetIndices;
 
         if (_assetIndices == null) {
-            //if (_temporary) {
-            //    TemporaryCoordinates = null;
-            //    _assetIndices = Coordinates;
-            //    _temporary = false;
-            //}
-
-            //if (_assetIndices == null && !_temporary) {
-            //    Coordinates = null;
-            //    myRenderer.enabled = false;
-            //    return;
-            //}
-
             myRenderer.enabled = false;
             return;
         }
 
+        // BL
         myMeshUVs[0].x = (Tile.RESOLUTION * _assetIndices.X) / CachedAssets.WallSet.TEXTURE_SIZE_X;
         myMeshUVs[0].y = (Tile.RESOLUTION * _assetIndices.Y) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
 
-        myMeshUVs[1].x = (Tile.RESOLUTION * (_assetIndices.X + 1)) / CachedAssets.WallSet.TEXTURE_SIZE_X;
-        myMeshUVs[1].y = (Tile.RESOLUTION * (_assetIndices.Y + 2)) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
+        // TR
+        myMeshUVs[4].x = (Tile.RESOLUTION * (_assetIndices.X + 1)) / CachedAssets.WallSet.TEXTURE_SIZE_X;
+        myMeshUVs[4].y = (Tile.RESOLUTION * (_assetIndices.Y + 2)) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
 
-        myMeshUVs[2].x = myMeshUVs[1].x;
-        myMeshUVs[2].y = myMeshUVs[0].y;
+        // L
+        myMeshUVs[1].x = myMeshUVs[0].x;
+        myMeshUVs[1].y = (Tile.RESOLUTION * (_assetIndices.Y + 1)) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
+        myMeshUVs[2] = myMeshUVs[1];
 
+        // TL
         myMeshUVs[3].x = myMeshUVs[0].x;
-        myMeshUVs[3].y = myMeshUVs[1].y;
+        myMeshUVs[3].y = myMeshUVs[4].y;
 
-        if(Application.isPlaying)
-            myMeshFilter.mesh.uv = myMeshUVs;
-        else
-            myMeshFilter.sharedMesh.uv = myMeshUVs;
+        // R
+        myMeshUVs[5].x = myMeshUVs[4].x;
+        myMeshUVs[5].y = myMeshUVs[1].y;
+        myMeshUVs[6] = myMeshUVs[5];
 
+        // BR
+        myMeshUVs[7].x = myMeshUVs[4].x;
+        myMeshUVs[7].y = myMeshUVs[0].y;
+
+        myMeshFilter.mesh.uv = myMeshUVs;
         if(!isHidden)
             myRenderer.enabled = true;
     }

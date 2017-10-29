@@ -15,7 +15,7 @@ public class TileObject : MonoBehaviour {
         SetGridPosition(Grid.Instance.GetClosestFreeNode(transform.position));
 	}
 
-    public void SetGridPosition(Tile _tile) {
+    public void SetGridPosition(Tile _tile, bool _setPosition = true) {
         if (Parent != null)
             return;
 
@@ -25,7 +25,8 @@ public class TileObject : MonoBehaviour {
         }
 
         MyTile = _tile;
-        transform.position = GetComponent<Actor>() ? MyTile.CharacterPositionWorld : MyTile.DefaultPositionWorld;
+        if(_setPosition)
+            transform.position = GetComponent<Actor>() ? MyTile.CharacterPositionWorld : MyTile.DefaultPositionWorld;
 
         if (isActive) {
             MyTile.IsOccupiedByObject = true;

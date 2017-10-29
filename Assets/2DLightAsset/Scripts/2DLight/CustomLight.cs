@@ -485,36 +485,36 @@ public class CustomLight : MonoBehaviour {
 
                 Vector4 _lights; // the 4 most dominant lights
                 Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[_safeX, _safeY].WorldPosition + _offset, Grid.Instance.grid[_safeX, _safeY].GridCoord, out _lights);
+                _finalColor.a = 255;
 
                 // apply vertex color to all vertices in this corner
-                // THE INT IS COMPLETE GUESSWORK D:
+                if (x < Grid.Instance.GridSizeX && y < Grid.Instance.GridSizeY) { 
+                    Grid.Instance.grid[x, y].FloorQuad.                 SetVertexColor(0, _finalColor);
+                    Grid.Instance.grid[x, y].FloorCornerHider.          SetVertexColor(0, _finalColor);
+                    Grid.Instance.grid[x, y].BottomQuad.                SetVertexColor(0, _finalColor);
+                    Grid.Instance.grid[x, y].TopQuad.                   SetVertexColor(0, _finalColor);
+                    Grid.Instance.grid[x, y].WallCornerHider.           SetVertexColor(0, _finalColor);
+                }
                 if (x < Grid.Instance.GridSizeX && y > 0) { 
-                    Grid.Instance.grid[x, y - 1].FloorQuad.SetVertexColor(0, _finalColor);
-                    Grid.Instance.grid[x, y - 1].FloorCornerHider.SetVertexColor(0, _finalColor);
-                    Grid.Instance.grid[x, y - 1].BottomQuad.SetVertexColor(0, _finalColor);
-                    Grid.Instance.grid[x, y - 1].TopQuad.SetVertexColor(0, _finalColor);
-                    Grid.Instance.grid[x, y - 1].WallCornerHider.SetVertexColor(0, _finalColor);
+                    Grid.Instance.grid[x, y - 1].FloorQuad.             SetVertexColor(1, _finalColor);
+                    Grid.Instance.grid[x, y - 1].FloorCornerHider.      SetVertexColor(1, _finalColor);
+                    Grid.Instance.grid[x, y - 1].BottomQuad.            SetVertexColor(1, _finalColor);
+                    Grid.Instance.grid[x, y - 1].TopQuad.               SetVertexColor(1, _finalColor);
+                    Grid.Instance.grid[x, y - 1].WallCornerHider.       SetVertexColor(1, _finalColor);
                 }
                 if (x > 0 && y > 0) { 
-                    Grid.Instance.grid[x - 1, y - 1].FloorQuad.SetVertexColor(1, _finalColor);
-                    Grid.Instance.grid[x - 1, y - 1].FloorCornerHider.SetVertexColor(1, _finalColor);
-                    Grid.Instance.grid[x - 1, y - 1].BottomQuad.SetVertexColor(1, _finalColor);
-                    Grid.Instance.grid[x - 1, y - 1].TopQuad.SetVertexColor(1, _finalColor);
-                    Grid.Instance.grid[x - 1, y - 1].WallCornerHider.SetVertexColor(1, _finalColor);
+                    Grid.Instance.grid[x - 1, y - 1].FloorQuad.         SetVertexColor(6, _finalColor);
+                    Grid.Instance.grid[x - 1, y - 1].FloorCornerHider.  SetVertexColor(6, _finalColor);
+                    Grid.Instance.grid[x - 1, y - 1].BottomQuad.        SetVertexColor(6, _finalColor);
+                    Grid.Instance.grid[x - 1, y - 1].TopQuad.           SetVertexColor(6, _finalColor);
+                    Grid.Instance.grid[x - 1, y - 1].WallCornerHider.   SetVertexColor(6, _finalColor);
                 }
                 if (x > 0 && y < Grid.Instance.GridSizeY) { 
-                    Grid.Instance.grid[x - 1, y].FloorQuad.SetVertexColor(2, _finalColor);
-                    Grid.Instance.grid[x - 1, y].FloorCornerHider.SetVertexColor(2, _finalColor);
-                    Grid.Instance.grid[x - 1, y].BottomQuad.SetVertexColor(2, _finalColor);
-                    Grid.Instance.grid[x - 1, y].TopQuad.SetVertexColor(2, _finalColor);
-                    Grid.Instance.grid[x - 1, y].WallCornerHider.SetVertexColor(2, _finalColor);
-                }
-                if (x < Grid.Instance.GridSizeX && y < Grid.Instance.GridSizeY) { 
-                    Grid.Instance.grid[x, y].FloorQuad.SetVertexColor(3, _finalColor);
-                    Grid.Instance.grid[x, y].FloorCornerHider.SetVertexColor(3, _finalColor);
-                    Grid.Instance.grid[x, y].BottomQuad.SetVertexColor(3, _finalColor);
-                    Grid.Instance.grid[x, y].TopQuad.SetVertexColor(3, _finalColor);
-                    Grid.Instance.grid[x, y].WallCornerHider.SetVertexColor(3, _finalColor);
+                    Grid.Instance.grid[x - 1, y].FloorQuad.             SetVertexColor(7, _finalColor);
+                    Grid.Instance.grid[x - 1, y].FloorCornerHider.      SetVertexColor(7, _finalColor);
+                    Grid.Instance.grid[x - 1, y].BottomQuad.            SetVertexColor(7, _finalColor);
+                    Grid.Instance.grid[x - 1, y].TopQuad.               SetVertexColor(7, _finalColor);
+                    Grid.Instance.grid[x - 1, y].WallCornerHider.       SetVertexColor(7, _finalColor);
                 }
 
 
@@ -566,7 +566,7 @@ public class CustomLight : MonoBehaviour {
         for (int i = 0; i < AllLights.Count; i++){ // optimization: can I lower the amount of lights I'm iterating over? Maybe by using a tree?
             if (GridcastSimple(_pos, _tilePos, AllLights[i].transform.position, AllLights[i].myInspector.MyTileObject.MyTile.GridCoord))
                 continue;
-            
+
             float newRange = AllLights[i].lightRadius;
             float newDistance = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_pos, AllLights[i].transform.position)), 255);
             float newIntensity = AllLights[i].Intensity * 255;

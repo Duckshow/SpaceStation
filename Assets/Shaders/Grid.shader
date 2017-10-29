@@ -8,10 +8,6 @@ Shader "Custom/Grid" {
 		_MainTex3("Bugfix (Don't assign)", 2D) = "white" {}
 		_DotXs("DotXs (Don't assign)", 2D) = "white" {}
 		_DotYs("DotYs (Don't assign)", 2D) = "white" {}
-		// _Colors("Colors (Don't assign)", 2D) = "white" {}
-		// _Ranges("Ranges (Don't assign)", 2D) = "white" {}
-		// _Distances("Distances (Don't assign)", 2D) = "white" {}
-		// _Intensities("Intensities (Don't assign)", 2D) = "white" {}
 		_NrmMap ("Abnormal", 2D) = "white" {}
 		_PalletteMap ("Pallette", 2D) = "white" {}
 		_EmissiveMap ("Emissive", 2D) = "white" {}
@@ -42,10 +38,7 @@ Shader "Custom/Grid" {
 			sampler2D _EmissiveMap;
 			sampler2D _DotXs;
 			sampler2D _DotYs;
-			// sampler2D _Colors;
-			// sampler2D _Ranges;
-			// sampler2D _Distances;
-			// sampler2D _Intensities;
+
 			fixed _Emission;
 
 			uniform fixed4 _allColors[128];
@@ -57,10 +50,6 @@ Shader "Custom/Grid" {
 			fixed4 palTex;
 			fixed4 dotXsTex;
 			fixed4 dotYsTex;
-			// fixed4 colorsTex;
-			// fixed4 rangesTex;
-			// fixed4 distancesTex;
-			// fixed4 intensitiesTex;
 
 			fixed4 finalColor;
 
@@ -102,7 +91,9 @@ Shader "Custom/Grid" {
 				nrmTex = tex2D(_NrmMap, i.uv);
 				emTex = tex2D(_EmissiveMap, i.uv);
 				palTex = tex2D(_PalletteMap, i.uv);
-				
+
+				return i.vColor;
+
 				colorIndices[0] = floor(i.uv12.x);
 				colorIndices[1] = floor(i.uv12.y);
 				colorIndices[2] = floor(i.uv12.z);
@@ -120,13 +111,8 @@ Shader "Custom/Grid" {
 				// normals: R (0->1 == down->up), A (0->1 == left->right)
 
 				half2 gridUV = (ceil(i.worldPos) + 23.5) / 47.5;
-				//anglesTex = tex2D(_Angles, gridUV);
 				dotXsTex = tex2D(_DotXs, gridUV);
 				dotYsTex = tex2D(_DotYs, gridUV);
-				// colorsTex = tex2D(_Colors, gridUV);
-				// rangesTex = tex2D(_Ranges, gridUV);
-				// distancesTex = tex2D(_Distances, gridUV);
-				// intensitiesTex = tex2D(_Intensities, gridUV);
 				fixed4 mod0 = 
 				max(0, 															// make sure it's over zero (not sure how, but that happens >.>)
 					i.vColor * (												// multiply with the vertex color (total lighting color set in CustomLight.cs)
@@ -166,39 +152,6 @@ Shader "Custom/Grid" {
 
 				// final apply
 				finalColor.rgb = (tex.rgb * colorToUse.rgb) * mod0;
-
-
-
-				// finalColor.rgb = _allColors[colorsTex.r * 255] *								// multiply with the light-color
-				// intensitiesTex.r * (1 - (distancesTex.r / rangesTex.r)) * (	// multiply with the total falloff (intensity * distance in relation to range)
-				// 	1 - min(												// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
-				// 			floor(nrmTex.a),
-				// 			min(											// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
-				// 				ceil(										// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
-				// 					abs(nrmTex.r) +							// add normals together
-				// 					abs(nrmTex.g)
-				// 				),
-				// 				saturate( 									// clamp01 so we don't get weird values and invert
-				// 					floor( 									// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
-				// 						0.01 + 								// tolerance (prevents some weirdness)
-				// 						max( 								// max val tells us true diff
-				// 							abs(
-				// 								(nrmTex.r * 2 - 1) - 		// get diff between nrm, dot
-				// 								(dotXsTex.r * 2 - 1) 		// convert nrm, dot from 0->1 to -1->1
-				// 							), 
-				// 							abs(
-				// 								(nrmTex.g * 2 - 1) - 
-				// 								(dotYsTex.r * 2 - 1)
-				// 							)
-				// 						)
-				// 					)
-				// 				)
-				// 			)
-				// 		)
-				// 	);
-				
-				
-				
 				finalColor.a = tex.a;
 				return finalColor;
 			}

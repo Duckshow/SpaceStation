@@ -6,6 +6,9 @@ public class UVControllerEditor : Editor {
 	public override void OnInspectorGUI() {
 		base.OnInspectorGUI ();
 
+		if(!Application.isPlaying)
+			return;
+			
 		uvc = (UVController)target;
 		if (GUI.changed) {
 			uvc.Setup ();
