@@ -99,9 +99,24 @@ public class BresenhamsLine : MonoBehaviour {
         if(step.y != 0 && step.y != Mathf.Sign(_start.y - roundedStart.y))
             prog.y = 1 - prog.y;
 
-        // setup tiles found
+        // add start tile to hits (and neighbours if starting on the edge)
         overlaps.Clear();
-        overlaps.Add(new OverlapSimple(roundedStart));
+        if (prog.x == 0 && prog.y == 0){
+            overlaps.Add(new OverlapSimple(
+                roundedStart,
+                new Vector2[] {
+                    new Vector2(roundedStart.x - step.x, roundedStart.y),
+                    new Vector2(roundedStart.x, roundedStart.y - step.y),
+                    new Vector2(roundedStart.x - step.x, roundedStart.y - step.y)
+                })
+            );
+        }
+        else if (prog.x == 0)
+            overlaps.Add(new OverlapSimple(roundedStart, new Vector2[] { new Vector2(roundedStart.x - step.x, roundedStart.y) }));
+        else if (prog.y == 0)
+            overlaps.Add(new OverlapSimple(roundedStart, new Vector2[] { new Vector2(roundedStart.x, roundedStart.y - step.y) }));
+        else
+            overlaps.Add(new OverlapSimple(roundedStart));
 
         // setup variables for loop
         roundedCurrent = roundedStart; // used for making sure that the last tile also finds diagonal neighbours

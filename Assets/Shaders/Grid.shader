@@ -92,8 +92,6 @@ Shader "Custom/Grid" {
 				emTex = tex2D(_EmissiveMap, i.uv);
 				palTex = tex2D(_PalletteMap, i.uv);
 
-				return i.vColor;
-
 				colorIndices[0] = floor(i.uv12.x);
 				colorIndices[1] = floor(i.uv12.y);
 				colorIndices[2] = floor(i.uv12.z);
@@ -114,33 +112,35 @@ Shader "Custom/Grid" {
 				dotXsTex = tex2D(_DotXs, gridUV);
 				dotYsTex = tex2D(_DotYs, gridUV);
 				fixed4 mod0 = 
-				max(0, 															// make sure it's over zero (not sure how, but that happens >.>)
-					i.vColor * (												// multiply with the vertex color (total lighting color set in CustomLight.cs)
-						1 - min(												// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
-								floor(nrmTex.a),
-								min(											// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
-									ceil(										// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
-										abs(nrmTex.r) +							// add normals together
-										abs(nrmTex.g)
-									),
-									saturate( 									// clamp01 so we don't get weird values and invert
-										floor( 									// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
-											0.01 + 								// tolerance (prevents some weirdness)
-											max( 								// max val tells us true diff
-												abs(
-													(nrmTex.r * 2 - 1) - 		// get diff between nrm, dot
-													(dotXsTex.r * 2 - 1) 		// convert nrm, dot from 0->1 to -1->1
-												), 
-												abs(
-													(nrmTex.g * 2 - 1) - 
-													(dotYsTex.r * 2 - 1)
+				max(0, 																// make sure it's over zero (not sure how, but that happens >.>)
+					//0.5f * (														// divide in 2 so we get average
+						//i.vColor + (												// add to the vertex color (total lighting color set in CustomLight.cs)
+							1 - min(												// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
+									floor(nrmTex.a),
+									min(											// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
+										ceil(										// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
+											abs(nrmTex.r) +							// add normals together
+											abs(nrmTex.g)
+										),
+										saturate( 									// clamp01 so we don't get weird values and invert
+											floor( 									// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
+												0.01 + 								// tolerance (prevents some weirdness)
+												max( 								// max val tells us true diff
+													abs(
+														(nrmTex.r * 2 - 1) - 		// get diff between nrm, dot
+														(dotXsTex.r * 2 - 1) 		// convert nrm, dot from 0->1 to -1->1
+													), 
+													abs(
+														(nrmTex.g * 2 - 1) - 
+														(dotYsTex.r * 2 - 1)
+													)
 												)
 											)
 										)
 									)
-								)
 							)
-					)
+						//)
+					//)
 				);
 				fixed4 mod1 = max(0, i.vColor * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.g * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.g * 2 - 1))))))))); 
 				fixed4 mod2 = max(0, i.vColor * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.b * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.b * 2 - 1))))))))); 
@@ -151,7 +151,7 @@ Shader "Custom/Grid" {
 				mod0 += mod1 + mod2 + mod3;
 
 				// final apply
-				finalColor.rgb = (tex.rgb * colorToUse.rgb) * mod0;
+				finalColor.rgb = min((tex.rgb * colorToUse.rgb) * mod0, i.vColor);
 				finalColor.a = tex.a;
 				return finalColor;
 			}

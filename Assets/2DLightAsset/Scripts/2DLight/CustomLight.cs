@@ -564,11 +564,14 @@ public class CustomLight : MonoBehaviour {
         Vector4 dominantLightLevels = new Vector4();
         Vector4 dominantLightColors = new Vector4(); // todo: make a QuadrupleInt
         for (int i = 0; i < AllLights.Count; i++){ // optimization: can I lower the amount of lights I'm iterating over? Maybe by using a tree?
+            float newRange = AllLights[i].lightRadius;
+            float newDistance = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_pos, AllLights[i].transform.position)), 255);
+
+            if(newDistance > newRange)
+                continue;
             if (GridcastSimple(_pos, _tilePos, AllLights[i].transform.position, AllLights[i].myInspector.MyTileObject.MyTile.GridCoord))
                 continue;
 
-            float newRange = AllLights[i].lightRadius;
-            float newDistance = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_pos, AllLights[i].transform.position)), 255);
             float newIntensity = AllLights[i].Intensity * 255;
             float newLightLevel = newIntensity * (1 - (newDistance / newRange));
 
@@ -789,36 +792,74 @@ public class CustomLight : MonoBehaviour {
         List<BresenhamsLine.OverlapSimple> _cast = BresenhamsLine.GridcastSimple(_startLocal, _endLocal);
 
         // determine if the cast should be able to hit its own collider or not (assuming we're shooting from a corner because that's what I'm using it for currently >.>)
-        bool _canHitStartTile = false;
-        Vector2 _tilePos = Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition;
-        float _diffX = _start.x - _tilePos.x;
-        float _diffY = _start.y - _tilePos.y;
-        int _euler = (int)GetAngleClockwise(_start, _tilePos, 360);
-        if (_diffX > 0 && _diffY < 0) // TL corner of tile
-            _canHitStartTile = _euler > 90 && _euler < 180;
-        else if (_diffX < 0 && _diffY < 0) // TR corner of tile
-            _canHitStartTile = _euler > 180 && _euler < 270;
-        else if (_diffX < 0 && _diffY > 0) // BR corner of tile
-            _canHitStartTile = _euler > 270;
-        else if (_diffX > 0 && _diffY > 0) // BL corner of tile
-            _canHitStartTile = _euler > 0 && _euler < 90;
+        bool _canHitStartTile = CanHitOwnTile(_start, _end, Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition);
+        //Debug.Log(_diffX + ", " + _diffY + ": " + _euler);
+
+        Color col = new Color(Random.value, Random.value, Random.value, 1);
+       // Debug.DrawLine(_start, _end, col, Mathf.Infinity);
 
         // stop hitting yourself
-        if(_canHitStartTile && sGridColliderArray[(int)_cast[0].Pos.x, (int)_cast[0].Pos.y])
+        if (CanHitOwnTile(_start, _end, Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition) && 
+            sGridColliderArray[(int)_cast[0].Pos.x, (int)_cast[0].Pos.y]){
+            Debug.DrawLine(_start + new Vector2(-0.1f, 0.1f), _start + new Vector2(0.1f, 0.1f), Color.red, Mathf.Infinity);
+            Debug.DrawLine(_start + new Vector2(0.1f, 0.1f), _start + new Vector2(0.1f, -0.1f), Color.red, Mathf.Infinity);
+            Debug.DrawLine(_start + new Vector2(0.1f, -0.1f), _start + new Vector2(-0.1f, -0.1f), Color.red, Mathf.Infinity);
+            Debug.DrawLine(_start + new Vector2(-0.1f, -0.1f), _start + new Vector2(-0.1f, 0.1f), Color.red, Mathf.Infinity);
             return true;
+        }
+        else if (_cast[0].ExtraPositions != null){
+            for (int i = 0; i < _cast[0].ExtraPositions.Length; i++){
+                if (CanHitOwnTile(_start, _end, Grid.Instance.grid[(int)_cast[0].ExtraPositions[i].x, (int)_cast[0].ExtraPositions[i].y].WorldPosition) &&
+                    sGridColliderArray[(int)_cast[0].ExtraPositions[i].x, (int)_cast[0].ExtraPositions[i].y]){
+                    Debug.DrawLine(_cast[0].ExtraPositions[i] + new Vector2(-0.1f, 0.1f), _cast[0].ExtraPositions[i] + new Vector2(0.1f, 0.1f), Color.red, Mathf.Infinity);
+                    Debug.DrawLine(_cast[0].ExtraPositions[i] + new Vector2(0.1f, 0.1f), _cast[0].ExtraPositions[i] + new Vector2(0.1f, -0.1f), Color.red, Mathf.Infinity);
+                    Debug.DrawLine(_cast[0].ExtraPositions[i] + new Vector2(0.1f, -0.1f), _cast[0].ExtraPositions[i] + new Vector2(-0.1f, -0.1f), Color.red, Mathf.Infinity);
+                    Debug.DrawLine(_cast[0].ExtraPositions[i] + new Vector2(-0.1f, -0.1f), _cast[0].ExtraPositions[i] + new Vector2(-0.1f, 0.1f), Color.red, Mathf.Infinity);
+                    return true;
+                }
+            }
+        }
         for (int i = 1; i < _cast.Count; i++){
             // check if hit tile
-            if(sGridColliderArray[(int)_cast[i].Pos.x, (int)_cast[i].Pos.y])
+            if (sGridColliderArray[(int)_cast[i].Pos.x, (int)_cast[i].Pos.y]) {
+                Vector2 pos = _cast[i].Pos - new Vector2(24, 24);
+                // Debug.DrawLine(pos + new Vector2(-0.5f, 0.5f), pos + new Vector2(0.5f, 0.5f), Color.red, Mathf.Infinity);
+                // Debug.DrawLine(pos + new Vector2(0.5f, 0.5f), pos + new Vector2(0.5f, -0.5f), Color.red, Mathf.Infinity);
+                // Debug.DrawLine(pos + new Vector2(0.5f, -0.5f), pos + new Vector2(-0.5f, -0.5f), Color.red, Mathf.Infinity);
+                // Debug.DrawLine(pos + new Vector2(-0.5f, -0.5f), pos + new Vector2(-0.5f, 0.5f), Color.red, Mathf.Infinity);
                 return true;
+            }
 
             // else check if hit any equally close tiles
             else if (_cast[i].ExtraPositions != null){
                 for (int j = 0; j < _cast[i].ExtraPositions.Length; j++){
-                    if(sGridColliderArray[(int)_cast[i].ExtraPositions[j].x, (int)_cast[i].ExtraPositions[j].y])
+                    if (sGridColliderArray[(int)_cast[i].ExtraPositions[j].x, (int)_cast[i].ExtraPositions[j].y]) {
+
+                        // Vector2 pos = _cast[i].ExtraPositions[j] - new Vector2(24, 24);
+                        // Debug.DrawLine(pos + new Vector2(-0.5f, 0.5f), pos + new Vector2(0.5f, 0.5f), Color.red, Mathf.Infinity);
+                        // Debug.DrawLine(pos + new Vector2(0.5f, 0.5f), pos + new Vector2(0.5f, -0.5f), Color.red, Mathf.Infinity);
+                        // Debug.DrawLine(pos + new Vector2(0.5f, -0.5f), pos + new Vector2(-0.5f, -0.5f), Color.red, Mathf.Infinity);
+                        // Debug.DrawLine(pos + new Vector2(-0.5f, -0.5f), pos + new Vector2(-0.5f, 0.5f), Color.red, Mathf.Infinity);
                         return true;
+                    }
                 }
             }
         }
+
+        return false;
+    }
+
+    static bool CanHitOwnTile(Vector2 _start, Vector2 _end, Vector2 _startTileWorldPos) {
+        Vector2 _diff = _start - _startTileWorldPos;
+        int _euler = (int)GetAngleClockwise(_end, _start, 360);
+        if (_diff.x < 0 && _diff.y > 0) // TL corner of tile
+            return _euler >= 90 && _euler <= 180;
+        else if (_diff.x > 0 && _diff.y > 0) // TR corner of tile
+            return _euler >= 180 && _euler <= 270;
+        else if (_diff.x > 0 && _diff.y < 0) // BR corner of tile
+            return _euler >= 270;
+        else if (_diff.x < 0 && _diff.y < 0) // BL corner of tile
+            return _euler >= 0 && _euler <= 90;
 
         return false;
     }
