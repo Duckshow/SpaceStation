@@ -451,235 +451,200 @@ public class CachedAssets : MonoBehaviour {
         public Texture2D ShadowMap;
 
         // note: code for generating these can be found in CachedAssetsEditor.cs
-        public MovableCollider wall_Single_shadow;
-        public MovableCollider wall_FourWay_shadow;
-        public MovableCollider wall_Vertical_T_shadow;
-        public MovableCollider wall_Vertical_M_shadow;
-        public MovableCollider wall_Vertical_B_shadow;
-        public MovableCollider wall_Horizontal_L_shadow;
-        public MovableCollider wall_Horizontal_M_shadow;
-        public MovableCollider wall_Horizontal_R_shadow;
+        // public MovableCollider wall_Single_shadow;
+        // public MovableCollider wall_FourWay_shadow;
+        // public MovableCollider wall_Vertical_T_shadow;
+        // public MovableCollider wall_Vertical_M_shadow;
+        // public MovableCollider wall_Vertical_B_shadow;
+        // public MovableCollider wall_Horizontal_L_shadow;
+        // public MovableCollider wall_Horizontal_M_shadow;
+        // public MovableCollider wall_Horizontal_R_shadow;
 
-        public MovableCollider wall_Corner_TopRight_shadow;
-        public MovableCollider wall_Corner_TopLeft_shadow;
-        public MovableCollider wall_Corner_BottomRight_shadow;
-        public MovableCollider wall_Corner_BottomLeft_shadow;
-        public MovableCollider wall_Tee_Right_shadow;
-        public MovableCollider wall_Tee_Left_shadow;
-        public MovableCollider wall_Tee_Top_shadow;
-        public MovableCollider wall_Tee_Bottom_shadow;
+        // public MovableCollider wall_Corner_TopRight_shadow;
+        // public MovableCollider wall_Corner_TopLeft_shadow;
+        // public MovableCollider wall_Corner_BottomRight_shadow;
+        // public MovableCollider wall_Corner_BottomLeft_shadow;
+        // public MovableCollider wall_Tee_Right_shadow;
+        // public MovableCollider wall_Tee_Left_shadow;
+        // public MovableCollider wall_Tee_Top_shadow;
+        // public MovableCollider wall_Tee_Bottom_shadow;
 
-        public MovableCollider wall_Diagonal_TopRight_shadow;
-        public MovableCollider wall_Diagonal_TopRight_T_shadow;
-        public MovableCollider wall_Diagonal_TopRight_R_shadow;
-        public MovableCollider wall_Diagonal_TopRight_TR_shadow;
-        public MovableCollider wall_Diagonal_TopLeft_shadow;
-        public MovableCollider wall_Diagonal_TopLeft_T_shadow;
-        public MovableCollider wall_Diagonal_TopLeft_L_shadow;
-        public MovableCollider wall_Diagonal_TopLeft_TL_shadow;
-        public MovableCollider wall_Diagonal_BottomRight_shadow;
-        public MovableCollider wall_Diagonal_BottomRight_B_shadow;
-        public MovableCollider wall_Diagonal_BottomRight_R_shadow;
-        public MovableCollider wall_Diagonal_BottomRight_BR_shadow;
-        public MovableCollider wall_Diagonal_BottomLeft_shadow;
-        public MovableCollider wall_Diagonal_BottomLeft_B_shadow;
-        public MovableCollider wall_Diagonal_BottomLeft_L_shadow;
-        public MovableCollider wall_Diagonal_BottomLeft_BL_shadow;
+        // public MovableCollider wall_Diagonal_TopRight_shadow;
+        // public MovableCollider wall_Diagonal_TopRight_T_shadow;
+        // public MovableCollider wall_Diagonal_TopRight_R_shadow;
+        // public MovableCollider wall_Diagonal_TopRight_TR_shadow;
+        // public MovableCollider wall_Diagonal_TopLeft_shadow;
+        // public MovableCollider wall_Diagonal_TopLeft_T_shadow;
+        // public MovableCollider wall_Diagonal_TopLeft_L_shadow;
+        // public MovableCollider wall_Diagonal_TopLeft_TL_shadow;
+        // public MovableCollider wall_Diagonal_BottomRight_shadow;
+        // public MovableCollider wall_Diagonal_BottomRight_B_shadow;
+        // public MovableCollider wall_Diagonal_BottomRight_R_shadow;
+        // public MovableCollider wall_Diagonal_BottomRight_BR_shadow;
+        // public MovableCollider wall_Diagonal_BottomLeft_shadow;
+        // public MovableCollider wall_Diagonal_BottomLeft_B_shadow;
+        // public MovableCollider wall_Diagonal_BottomLeft_L_shadow;
+        // public MovableCollider wall_Diagonal_BottomLeft_BL_shadow;
 
-        public MovableCollider[] anim_DoorVertical_Open_shadow;
-        public MovableCollider[] anim_DoorVertical_Close_shadow;
-        public MovableCollider[] anim_DoorHorizontal_Open_shadow;
-        public MovableCollider[] anim_DoorHorizontal_Close_shadow;
-        public MovableCollider[] anim_AirlockHorizontal_Open_B_shadow;
-        public MovableCollider[] anim_AirlockHorizontal_Close_B_shadow;
-        public MovableCollider[] anim_AirlockHorizontal_Open_T_shadow;
-        public MovableCollider[] anim_AirlockHorizontal_Close_T_shadow;
-        public MovableCollider[] anim_AirlockHorizontal_Wait_shadow;
-        public MovableCollider[] anim_AirlockVertical_Open_L_shadow;
-        public MovableCollider[] anim_AirlockVertical_Close_L_shadow;
-        public MovableCollider[] anim_AirlockVertical_Open_R_shadow;
-        public MovableCollider[] anim_AirlockVertical_Close_R_shadow;
-        public MovableCollider[] anim_AirlockVertical_Wait_shadow;
+        // public MovableCollider[] anim_DoorVertical_Open_shadow;
+        // public MovableCollider[] anim_DoorVertical_Close_shadow;
+        // public MovableCollider[] anim_DoorHorizontal_Open_shadow;
+        // public MovableCollider[] anim_DoorHorizontal_Close_shadow;
+        // public MovableCollider[] anim_AirlockHorizontal_Open_B_shadow;
+        // public MovableCollider[] anim_AirlockHorizontal_Close_B_shadow;
+        // public MovableCollider[] anim_AirlockHorizontal_Open_T_shadow;
+        // public MovableCollider[] anim_AirlockHorizontal_Close_T_shadow;
+        // public MovableCollider[] anim_AirlockHorizontal_Wait_shadow;
+        // public MovableCollider[] anim_AirlockVertical_Open_L_shadow;
+        // public MovableCollider[] anim_AirlockVertical_Close_L_shadow;
+        // public MovableCollider[] anim_AirlockVertical_Open_R_shadow;
+        // public MovableCollider[] anim_AirlockVertical_Close_R_shadow;
+        // public MovableCollider[] anim_AirlockVertical_Wait_shadow;
 
-        public MovableCollider GetColliderPaths(P _type, int _animationFrame) { // currently only for assets sorting as Bottom
-            switch (_type) {
-                case P.Wall_Single:
-                    return wall_Single_shadow;
-                case P.Wall_Fourway:
-                    return wall_FourWay_shadow;
-                case P.Wall_Vertical_T:
-                    return wall_Vertical_T_shadow;
-                case P.Wall_Vertical_M:
-                    return wall_Vertical_M_shadow;
-                case P.Wall_Vertical_B:
-                    return wall_Vertical_B_shadow;
-                case P.Wall_Horizontal_L:
-                    return wall_Horizontal_L_shadow;
-                case P.Wall_Horizontal_M:
-                    return wall_Horizontal_M_shadow;
-                case P.Wall_Horizontal_R:
-                    return wall_Horizontal_R_shadow;
-                case P.Wall_Corner_TR:
-                    return wall_Corner_TopRight_shadow;
-                case P.Wall_Corner_TL:
-                    return wall_Corner_TopLeft_shadow;
-                case P.Wall_Corner_BR:
-                    return wall_Corner_BottomRight_shadow;
-                case P.Wall_Corner_BL:
-                    return wall_Corner_BottomLeft_shadow;
-                case P.Wall_Tee_R:
-                    return wall_Tee_Right_shadow;
-                case P.Wall_Tee_L:
-                    return wall_Tee_Left_shadow;
-                case P.Wall_Tee_T:
-                    return wall_Tee_Top_shadow;
-                case P.Wall_Tee_B:
-                    return wall_Tee_Bottom_shadow;
-                case P.Wall_Diagonal_TR:
-                    return wall_Diagonal_TopRight_shadow;
-                case P.Wall_Diagonal_TR_R:
-                    return wall_Diagonal_TopRight_R_shadow;
-                case P.Wall_Diagonal_TR_T:
-                    return wall_Diagonal_TopRight_T_shadow;
-                case P.Wall_Diagonal_TR_TR:
-                    return wall_Diagonal_TopRight_TR_shadow;
-                case P.Wall_Diagonal_TL:
-                    return wall_Diagonal_TopLeft_shadow;
-                case P.Wall_Diagonal_TL_L:
-                    return wall_Diagonal_TopLeft_L_shadow;
-                case P.Wall_Diagonal_TL_T:
-                    return wall_Diagonal_TopLeft_T_shadow;
-                case P.Wall_Diagonal_TL_TL:
-                    return wall_Diagonal_TopLeft_TL_shadow;
-                case P.Wall_Diagonal_BR:
-                    return wall_Diagonal_BottomRight_shadow;
-                case P.Wall_Diagonal_BR_R:
-                    return wall_Diagonal_BottomRight_R_shadow;
-                case P.Wall_Diagonal_BR_B:
-                    return wall_Diagonal_BottomRight_B_shadow;
-                case P.Wall_Diagonal_BR_BR:
-                    return wall_Diagonal_BottomRight_BR_shadow;
-                case P.Wall_Diagonal_BL:
-                    return wall_Diagonal_BottomLeft_shadow;
-                case P.Wall_Diagonal_BL_L:
-                    return wall_Diagonal_BottomLeft_L_shadow;
-                case P.Wall_Diagonal_BL_B:
-                    return wall_Diagonal_BottomLeft_B_shadow;
-                case P.Wall_Diagonal_BL_BL:
-                    return wall_Diagonal_BottomLeft_BL_shadow;
+        public PolygonCollider2D wall_Single_shadow;
+        public PolygonCollider2D wall_FourWay_shadow;
+        public PolygonCollider2D wall_Vertical_T_shadow;
+        public PolygonCollider2D wall_Vertical_M_shadow;
+        public PolygonCollider2D wall_Vertical_B_shadow;
+        public PolygonCollider2D wall_Horizontal_L_shadow;
+        public PolygonCollider2D wall_Horizontal_M_shadow;
+        public PolygonCollider2D wall_Horizontal_R_shadow;
 
-                    // TODO: we probably need some more info here - should we return the open or the close animation for example?
+        public PolygonCollider2D wall_Corner_TopRight_shadow;
+        public PolygonCollider2D wall_Corner_TopLeft_shadow;
+        public PolygonCollider2D wall_Corner_BottomRight_shadow;
+        public PolygonCollider2D wall_Corner_BottomLeft_shadow;
+        public PolygonCollider2D wall_Tee_Right_shadow;
+        public PolygonCollider2D wall_Tee_Left_shadow;
+        public PolygonCollider2D wall_Tee_Top_shadow;
+        public PolygonCollider2D wall_Tee_Bottom_shadow;
 
-                case P.DoorVertical:
-                    return anim_DoorVertical_Open_shadow[_animationFrame];
-                case P.DoorHorizontal:
-                    return anim_DoorHorizontal_Open_shadow[_animationFrame];
-                case P.AirlockHorizontal_Open_B:
-                    return anim_AirlockHorizontal_Open_B_shadow[_animationFrame];
-                case P.AirlockVertical_Open_L:
-                    return anim_AirlockVertical_Open_L_shadow[_animationFrame];
-                case P.AirlockVertical_Open_R:
-                    return anim_AirlockVertical_Open_R_shadow[_animationFrame];
-                default:
-                    return null;
-            }
+        public PolygonCollider2D wall_Diagonal_TopRight_shadow;
+        public PolygonCollider2D wall_Diagonal_TopRight_T_shadow;
+        public PolygonCollider2D wall_Diagonal_TopRight_R_shadow;
+        public PolygonCollider2D wall_Diagonal_TopRight_TR_shadow;
+        public PolygonCollider2D wall_Diagonal_TopLeft_shadow;
+        public PolygonCollider2D wall_Diagonal_TopLeft_T_shadow;
+        public PolygonCollider2D wall_Diagonal_TopLeft_L_shadow;
+        public PolygonCollider2D wall_Diagonal_TopLeft_TL_shadow;
+        public PolygonCollider2D wall_Diagonal_BottomRight_shadow;
+        public PolygonCollider2D wall_Diagonal_BottomRight_B_shadow;
+        public PolygonCollider2D wall_Diagonal_BottomRight_R_shadow;
+        public PolygonCollider2D wall_Diagonal_BottomRight_BR_shadow;
+        public PolygonCollider2D wall_Diagonal_BottomLeft_shadow;
+        public PolygonCollider2D wall_Diagonal_BottomLeft_B_shadow;
+        public PolygonCollider2D wall_Diagonal_BottomLeft_L_shadow;
+        public PolygonCollider2D wall_Diagonal_BottomLeft_BL_shadow;
+
+        public PolygonCollider2D[] anim_DoorVertical_Open_shadow;
+        public PolygonCollider2D[] anim_DoorVertical_Close_shadow;
+        public PolygonCollider2D[] anim_DoorHorizontal_Open_shadow;
+        public PolygonCollider2D[] anim_DoorHorizontal_Close_shadow;
+        public PolygonCollider2D[] anim_AirlockHorizontal_Open_B_shadow;
+        public PolygonCollider2D[] anim_AirlockHorizontal_Close_B_shadow;
+        public PolygonCollider2D[] anim_AirlockHorizontal_Open_T_shadow;
+        public PolygonCollider2D[] anim_AirlockHorizontal_Close_T_shadow;
+        public PolygonCollider2D[] anim_AirlockHorizontal_Wait_shadow;
+        public PolygonCollider2D[] anim_AirlockVertical_Open_L_shadow;
+        public PolygonCollider2D[] anim_AirlockVertical_Close_L_shadow;
+        public PolygonCollider2D[] anim_AirlockVertical_Open_R_shadow;
+        public PolygonCollider2D[] anim_AirlockVertical_Close_R_shadow;
+        public PolygonCollider2D[] anim_AirlockVertical_Wait_shadow;
+
+        public PolygonCollider2D GetCollider(P _type) { // currently only for assets sorting as Bottom
+            return ObjectPooler.Instance.GetPool((ObjectPooler.IDEnum)Enum.Parse(typeof(ObjectPooler.IDEnum), _type.ToString())).GetObject().GetComponent<PolygonCollider2D>();
         }
 
-        private MovableCollider movColl;
-        public bool GetShadowCollider(P _type, int _animationFrame) {
-            movColl = GetColliderPaths(_type, _animationFrame);
+        private PolygonCollider2D movColl;
+        public bool GetShadowCollider(P _type) {
+            movColl = GetCollider(_type);
             return movColl != null;
         }
-        public bool GetShadowCollider(P _type, int _animationFrame, Vector2 _worldPosition, ref MovableCollider returnCollider){
-            movColl = GetColliderPaths(_type, _animationFrame);
+        public bool GetShadowCollider(P _type, Vector2 _worldPosition, out PolygonCollider2D _returnCollider){
+            movColl = GetCollider(_type);
+
             if (movColl != null){
-                if (returnCollider == null)
-                    returnCollider = new MovableCollider();
-
-                returnCollider.SetPaths(movColl.Paths);
-                //for (int i = 0; i < cp.Paths.Length; i++) 
-                //    Instance.ShadowCollider.SetPath(i, cp.Paths[i].Vertices);
-
-                returnCollider.WorldPosition = _worldPosition;
+                _returnCollider = movColl;
+                _returnCollider.transform.position = _worldPosition;
                 return true;
             }
 
-            returnCollider = null;
+            _returnCollider = null;
             return false;
         }
     }
 
-    [System.Serializable]
-    public class MovableCollider { // workaround for moving a collider and raycasting against it on the same frame
-        public Vector2 WorldPosition;
-        public ColliderVertices[] Paths;
-        public MovableCollider() { }
-        public MovableCollider(int _length) { Paths = new ColliderVertices[_length]; }
+    // [System.Serializable]
+    // public class MovableCollider { // workaround for moving a collider and raycasting against it on the same frame
+    //     public Vector2 WorldPosition;
+    //     public ColliderVertices[] Paths;
+    //     public MovableCollider() { }
+    //     public MovableCollider(int _length) { Paths = new ColliderVertices[_length]; }
 
-        public void SetPaths(ColliderVertices[] _p) {
-            if (_p == null) {
-                Paths = new ColliderVertices[0];
-                return;
-            }
+    //     public void SetPaths(ColliderVertices[] _p) {
+    //         if (_p == null) {
+    //             Paths = new ColliderVertices[0];
+    //             return;
+    //         }
 
-            Paths = _p;
-        }
-        public void SetPath(int _path, Vector2[] _vertices) {
-            Paths[_path].Vertices = _vertices;
-        }
-        //private int totalCount;
-        //public int GetTotalPointCount() {
-        //    totalCount = 0;
-        //    for (int i = 0; i < Paths.Length; i++)
-        //        totalCount += Paths[i].Vertices.Length;
-        //    return totalCount;
-        //}
+    //         Paths = _p;
+    //     }
+    //     public void SetPath(int _path, Vector2[] _vertices) {
+    //         Paths[_path].Vertices = _vertices;
+    //     }
+    //     //private int totalCount;
+    //     //public int GetTotalPointCount() {
+    //     //    totalCount = 0;
+    //     //    for (int i = 0; i < Paths.Length; i++)
+    //     //        totalCount += Paths[i].Vertices.Length;
+    //     //    return totalCount;
+    //     //}
 
-        private bool intersect = false;
-        private Vector2 point;
-        private Vector2[] vertices;
-        private int j;
-        private const float VERTEX_HIT_DISTANCE = 0.01f;
-        public bool OverlapPointOrAlmost(Vector2 _pos, out float closest) {
-            point = _pos - WorldPosition;
-            intersect = false;
-            closest = 10000;
-            for (int p = 0; p < Paths.Length; p++) {
-                j = Paths[p].Vertices.Length - 1;
-                vertices = Paths[p].Vertices;
+    //     private bool intersect = false;
+    //     private Vector2 point;
+    //     private Vector2[] vertices;
+    //     private int j;
+    //     private const float VERTEX_HIT_DISTANCE = 0.01f;
+    //     public bool OverlapPointOrAlmost(Vector2 _pos, out float closest) {
+    //         point = _pos - WorldPosition;
+    //         intersect = false;
+    //         closest = 10000;
+    //         for (int p = 0; p < Paths.Length; p++) {
+    //             j = Paths[p].Vertices.Length - 1;
+    //             vertices = Paths[p].Vertices;
 
-                // is point inside collider?
-                for (int v = 0; v < vertices.Length; j = v++) {
-                    // stolen from the internets D:
-                    if (((vertices[v].y <= point.y && point.y < vertices[j].y) || (vertices[j].y <= point.y && point.y < vertices[v].y)) &&
-                        (point.x < (vertices[j].x - vertices[v].x) * (point.y - vertices[v].y) / (vertices[j].y - vertices[v].y) + vertices[v].x))
-                        intersect = !intersect;
-                }
-                if (intersect)
-                    return true;
+    //             // is point inside collider?
+    //             for (int v = 0; v < vertices.Length; j = v++) {
+    //                 // stolen from the internets D:
+    //                 if (((vertices[v].y <= point.y && point.y < vertices[j].y) || (vertices[j].y <= point.y && point.y < vertices[v].y)) &&
+    //                     (point.x < (vertices[j].x - vertices[v].x) * (point.y - vertices[v].y) / (vertices[j].y - vertices[v].y) + vertices[v].x))
+    //                     intersect = !intersect;
+    //             }
+    //             if (intersect)
+    //                 return true;
 
-                // is point super-close to any of the vertices?
-                for (int v = 0; v < vertices.Length; v++) { 
-                    if((point - vertices[v]).magnitude < closest)
-                        closest = (point - vertices[v]).magnitude;
+    //             // is point super-close to any of the vertices?
+    //             for (int v = 0; v < vertices.Length; v++) { 
+    //                 if((point - vertices[v]).magnitude < closest)
+    //                     closest = (point - vertices[v]).magnitude;
 
-                    if ((point - vertices[v]).magnitude < VERTEX_HIT_DISTANCE)
-                        return true;
-                }
-            }
+    //                 if ((point - vertices[v]).magnitude < VERTEX_HIT_DISTANCE)
+    //                     return true;
+    //             }
+    //         }
 
-            return false;
-        }
-    }
-    [System.Serializable]
-    public class ColliderVertices { // workaround for serializing jagged array
-        public Vector2[] Vertices;
-        public ColliderVertices() { }
-        public ColliderVertices(int _length) { Vertices = new Vector2[_length]; }
-    }
+    //         return false;
+    //     }
+    // }
+    // [System.Serializable]
+    // public class ColliderVertices { // workaround for serializing jagged array
+    //     public Vector2[] Vertices;
+    //     public ColliderVertices() { }
+    //     public ColliderVertices(int _length) { Vertices = new Vector2[_length]; }
+    // }
 
     public WallSet[] WallSets;
-    public MovableCollider ShadowCollider;
+    //public PolygonCollider2D ShadowCollider;
     public GameObject TilePrefab;
 
     [Header("Character Assets")]

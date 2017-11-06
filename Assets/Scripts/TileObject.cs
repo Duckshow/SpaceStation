@@ -75,7 +75,7 @@ public class TileObject : MonoBehaviour {
             MyUVControllers[i].Sort(MyTile.GridCoord.Y);
 
         if(MyUVControllers.Length == 0)
-            transform.position = new Vector3(transform.position.x, transform.position.y, -(Grid.Instance.GridSizeY - MyTile.GridCoord.Y) * 0.5f);
+            transform.position = new Vector3(transform.position.x, transform.position.y, -(Grid.GridSizeY - MyTile.GridCoord.Y) * 0.5f);
             gridY = MyTile.GridCoord.Y;
     }
 }

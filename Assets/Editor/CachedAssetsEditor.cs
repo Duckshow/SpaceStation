@@ -159,7 +159,7 @@ public class CachedAssetsEditor : Editor {
     private Color32 pixel_B;
     private Color32 pixel_BL;
     private Vector2 newVertex = new Vector2();
-    CachedAssets.MovableCollider GenerateShadowCollider(CachedAssets.DoubleInt _texturePos) { 
+    PolygonCollider2D GenerateShadowCollider(CachedAssets.DoubleInt _texturePos, PolygonCollider2D ) { 
         if(stopThePresses)
             return null;
 

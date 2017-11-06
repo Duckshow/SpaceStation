@@ -43,7 +43,7 @@ public class Pathfinding : MonoBehaviour {
         }
 
         if (startNode.Walkable && targetNode.Walkable) {
-            Heap<Tile> openSet = new Heap<Tile>(grid.MaxSize);
+            Heap<Tile> openSet = new Heap<Tile>(Grid.MaxSize);
             HashSet<Tile> closedSet = new HashSet<Tile>();
 
             openSet.Add(startNode);

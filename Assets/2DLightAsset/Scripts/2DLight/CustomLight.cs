@@ -126,20 +126,20 @@ public class CustomLight : MonoBehaviour {
     public static void UpdateAllLights() {
 
         if(sGridColliderArray == null)
-            sGridColliderArray = new bool[Grid.Instance.GridSizeX, Grid.Instance.GridSizeY];
-        for (int x = 0; x < Grid.Instance.GridSizeX; x++){
-            for (int y = 0; y < Grid.Instance.GridSizeY; y++){
+            sGridColliderArray = new bool[Grid.GridSizeX, Grid.GridSizeY];
+        for (int x = 0; x < Grid.GridSizeX; x++){
+            for (int y = 0; y < Grid.GridSizeY; y++){
                 sGridColliderArray[x, y] = CachedAssets.Instance.WallSets[0].GetShadowCollider(Grid.Instance.grid[x, y].ExactType, Grid.Instance.grid[x, y].Animator.CurrentFrame);
             }
         }
 
         // create textures and arrays
         if (TextureLightDotXs == null) {
-            TextureLightDotXs = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+            TextureLightDotXs = new Texture2D(Grid.GridSizeX, Grid.GridSizeY, TextureFormat.RGBA32, false);
             TextureLightDotXs.filterMode = FilterMode.Point;
         }
         if (TextureLightDotYs == null) {
-            TextureLightDotYs = new Texture2D(Grid.Instance.GridSizeX, Grid.Instance.GridSizeY, TextureFormat.RGBA32, false);
+            TextureLightDotYs = new Texture2D(Grid.GridSizeX, Grid.GridSizeY, TextureFormat.RGBA32, false);
             TextureLightDotYs.filterMode = FilterMode.Point;
         }
 
@@ -198,8 +198,8 @@ public class CustomLight : MonoBehaviour {
         //	allMeshes[i] = (PolygonCollider2D)allColl2D[i];
 
         allTiles.Clear();
-        for (int y = 0; y < Grid.Instance.GridSizeY; y++) {
-            for (int x = 0; x < Grid.Instance.GridSizeX; x++) {
+        for (int y = 0; y < Grid.GridSizeY; y++) {
+            for (int x = 0; x < Grid.GridSizeX; x++) {
                 t = Grid.Instance.grid[x, y];
                 if (!CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition, ref sShadowCollider)) { 
                     if((t.WorldPosition - (Vector2)transform.position).magnitude < lightRadius)
@@ -471,31 +471,31 @@ public class CustomLight : MonoBehaviour {
     private static Vector2 CORNER_OFFSET_OUTSIDE_GRID = new Vector2(0.5f, -0.5f);
     static void CalculateLightingForGrid() {
         if (ReportedDotXs == null)
-            ReportedDotXs = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+            ReportedDotXs = new Color32[Grid.GridSizeX * Grid.GridSizeY];
         if(ReportedDotYs == null)
-            ReportedDotYs = new Color32[Grid.Instance.GridSizeX * Grid.Instance.GridSizeY];
+            ReportedDotYs = new Color32[Grid.GridSizeX * Grid.GridSizeY];
 
         // iterate over grid and apply lighting to tiles' BL corners (and intersecting vertices). to get outer edge, iterate outside grid and use TR corner.
-        for (int x = 0; x < Grid.Instance.GridSizeX + 1; x++){ // +1 because we're getting each corner
-            for (int y = 0; y < Grid.Instance.GridSizeY + 1; y++){
+        for (int x = 0; x < Grid.GridSizeX + 1; x++){ // +1 because we're getting each corner
+            for (int y = 0; y < Grid.GridSizeY + 1; y++){
 
-                Vector2 _offset = (x < Grid.Instance.GridSizeX && y < Grid.Instance.GridSizeY) ? CORNER_OFFSET : CORNER_OFFSET_OUTSIDE_GRID;
-                int _safeX = Mathf.Min(x, Grid.Instance.GridSizeX - 1);
-                int _safeY = Mathf.Min(y, Grid.Instance.GridSizeY - 1);
+                Vector2 _offset = (x < Grid.GridSizeX && y < Grid.GridSizeY) ? CORNER_OFFSET : CORNER_OFFSET_OUTSIDE_GRID;
+                int _safeX = Mathf.Min(x, Grid.GridSizeX - 1);
+                int _safeY = Mathf.Min(y, Grid.GridSizeY - 1);
 
                 Vector4 _lights; // the 4 most dominant lights
-                Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[_safeX, _safeY].WorldPosition + _offset, Grid.Instance.grid[_safeX, _safeY].GridCoord, out _lights);
+                Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[_safeX, _safeY].WorldPosition + _offset, out _lights);
                 _finalColor.a = 255;
 
                 // apply vertex color to all vertices in this corner
-                if (x < Grid.Instance.GridSizeX && y < Grid.Instance.GridSizeY) { 
+                if (x < Grid.GridSizeX && y < Grid.GridSizeY) { 
                     Grid.Instance.grid[x, y].FloorQuad.                 SetVertexColor(0, _finalColor);
                     Grid.Instance.grid[x, y].FloorCornerHider.          SetVertexColor(0, _finalColor);
                     Grid.Instance.grid[x, y].BottomQuad.                SetVertexColor(0, _finalColor);
                     Grid.Instance.grid[x, y].TopQuad.                   SetVertexColor(0, _finalColor);
                     Grid.Instance.grid[x, y].WallCornerHider.           SetVertexColor(0, _finalColor);
                 }
-                if (x < Grid.Instance.GridSizeX && y > 0) { 
+                if (x < Grid.GridSizeX && y > 0) { 
                     Grid.Instance.grid[x, y - 1].FloorQuad.             SetVertexColor(1, _finalColor);
                     Grid.Instance.grid[x, y - 1].FloorCornerHider.      SetVertexColor(1, _finalColor);
                     Grid.Instance.grid[x, y - 1].BottomQuad.            SetVertexColor(1, _finalColor);
@@ -509,7 +509,7 @@ public class CustomLight : MonoBehaviour {
                     Grid.Instance.grid[x - 1, y - 1].TopQuad.           SetVertexColor(6, _finalColor);
                     Grid.Instance.grid[x - 1, y - 1].WallCornerHider.   SetVertexColor(6, _finalColor);
                 }
-                if (x > 0 && y < Grid.Instance.GridSizeY) { 
+                if (x > 0 && y < Grid.GridSizeY) { 
                     Grid.Instance.grid[x - 1, y].FloorQuad.             SetVertexColor(7, _finalColor);
                     Grid.Instance.grid[x - 1, y].FloorCornerHider.      SetVertexColor(7, _finalColor);
                     Grid.Instance.grid[x - 1, y].BottomQuad.            SetVertexColor(7, _finalColor);
@@ -522,18 +522,18 @@ public class CustomLight : MonoBehaviour {
 
 
                 // use the total vertexlighting to calculate dot x and y (per tile, NOT per corner)
-                if (x < Grid.Instance.GridSizeX && y < Grid.Instance.GridSizeY){
+                if (x < Grid.GridSizeX && y < Grid.GridSizeY){
                     // dot X
-                    ReportedDotXs[(y * Grid.Instance.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.left, 255);
-                    ReportedDotXs[(y * Grid.Instance.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.left, 255);
-                    ReportedDotXs[(y * Grid.Instance.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.left, 255);
-                    ReportedDotXs[(y * Grid.Instance.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.left, 255);
+                    ReportedDotXs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.left, 255);
+                    ReportedDotXs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.left, 255);
+                    ReportedDotXs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.left, 255);
+                    ReportedDotXs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.left, 255);
 
                     // dot Y
-                    ReportedDotYs[(y * Grid.Instance.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.down, 255);
-                    ReportedDotYs[(y * Grid.Instance.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.down, 255);
-                    ReportedDotYs[(y * Grid.Instance.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.down, 255);
-                    ReportedDotYs[(y * Grid.Instance.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.down, 255);
+                    ReportedDotYs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.down, 255);
+                    ReportedDotYs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.down, 255);
+                    ReportedDotYs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.down, 255);
+                    ReportedDotYs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.down, 255);
                 }
             }
         }
@@ -557,18 +557,25 @@ public class CustomLight : MonoBehaviour {
         return _vertical;
     }
 
-    static Color32 GetTotalVertexLighting(Vector2 _pos, CachedAssets.DoubleInt _tilePos, out Vector4 _dominantLightIndices){
+    static Color32 GetTotalVertexLighting(Vector2 _pos, out Vector4 _dominantLightIndices){
 
         // four because we can only store Dot-info for four lights (mostly bc performance) and then any higher number makes little sense
         _dominantLightIndices = new Vector4();
         Vector4 dominantLightLevels = new Vector4();
         Vector4 dominantLightColors = new Vector4(); // todo: make a QuadrupleInt
-        for (int i = 0; i < AllLights.Count; i++){ // optimization: can I lower the amount of lights I'm iterating over? Maybe by using a tree?
+        for (int i = 0; i < AllLights.Count; i++)
+        { // optimization: can I lower the amount of lights I'm iterating over? Maybe by using a tree?
             float newRange = AllLights[i].lightRadius;
             float newDistance = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_pos, AllLights[i].transform.position)), 255);
 
-            if(newDistance > newRange)
+            if (newDistance > newRange)
                 continue;
+
+            CachedAssets.DoubleInt _tilePos = new CachedAssets.DoubleInt(Mathf.RoundToInt(_pos.x + Grid.GridSizeXHalf), Mathf.RoundToInt(_pos.y + Grid.GridSizeYHalf));
+            // if(_tilePos.X - AllLights[i].myInspector.MyTileObject.MyTile.GridCoord.X <= 0)
+            //     _tilePos.X -= 1;
+            // if (_tilePos.Y - AllLights[i].myInspector.MyTileObject.MyTile.GridCoord.Y <= 0)
+            //     _tilePos.Y -= 1;
             if (GridcastSimple(_pos, _tilePos, AllLights[i].transform.position, AllLights[i].myInspector.MyTileObject.MyTile.GridCoord))
                 continue;
 
@@ -795,26 +802,46 @@ public class CustomLight : MonoBehaviour {
         bool _canHitStartTile = CanHitOwnTile(_start, _end, Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition);
         //Debug.Log(_diffX + ", " + _diffY + ": " + _euler);
 
-        Color col = new Color(Random.value, Random.value, Random.value, 1);
-       // Debug.DrawLine(_start, _end, col, Mathf.Infinity);
+        Color _col = new Color(Random.value, Random.value, Random.value, 1);
+        Vector2 _tilePos = Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition;
+        float _scale = 0.1f;
+        // Debug.DrawLine(_start, _end, col, Mathf.Infinity);
+        // Debug.DrawLine(_tilePos + new Vector2(-_scale, _scale), _tilePos + new Vector2(_scale, _scale), col, Mathf.Infinity);
+        // Debug.DrawLine(_tilePos + new Vector2(_scale, _scale), _tilePos + new Vector2(_scale, -_scale), col, Mathf.Infinity);
+        // Debug.DrawLine(_tilePos + new Vector2(_scale, -_scale), _tilePos + new Vector2(-_scale, -_scale), col, Mathf.Infinity);
+        // Debug.DrawLine(_tilePos + new Vector2(-_scale, -_scale), _tilePos + new Vector2(-_scale, _scale), col, Mathf.Infinity);
+
+        
 
         // stop hitting yourself
         if (CanHitOwnTile(_start, _end, Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition) && 
             sGridColliderArray[(int)_cast[0].Pos.x, (int)_cast[0].Pos.y]){
-            Debug.DrawLine(_start + new Vector2(-0.1f, 0.1f), _start + new Vector2(0.1f, 0.1f), Color.red, Mathf.Infinity);
-            Debug.DrawLine(_start + new Vector2(0.1f, 0.1f), _start + new Vector2(0.1f, -0.1f), Color.red, Mathf.Infinity);
-            Debug.DrawLine(_start + new Vector2(0.1f, -0.1f), _start + new Vector2(-0.1f, -0.1f), Color.red, Mathf.Infinity);
-            Debug.DrawLine(_start + new Vector2(-0.1f, -0.1f), _start + new Vector2(-0.1f, 0.1f), Color.red, Mathf.Infinity);
+
+            SuperDebug.Log(
+                _start, _col,
+                "I hit myself!",
+                (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
+                (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
+                _start + " -> " + _end + ":",
+                (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(),
+                (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
+            );
             return true;
         }
         else if (_cast[0].ExtraPositions != null){
             for (int i = 0; i < _cast[0].ExtraPositions.Length; i++){
                 if (CanHitOwnTile(_start, _end, Grid.Instance.grid[(int)_cast[0].ExtraPositions[i].x, (int)_cast[0].ExtraPositions[i].y].WorldPosition) &&
                     sGridColliderArray[(int)_cast[0].ExtraPositions[i].x, (int)_cast[0].ExtraPositions[i].y]){
-                    Debug.DrawLine(_cast[0].ExtraPositions[i] + new Vector2(-0.1f, 0.1f), _cast[0].ExtraPositions[i] + new Vector2(0.1f, 0.1f), Color.red, Mathf.Infinity);
-                    Debug.DrawLine(_cast[0].ExtraPositions[i] + new Vector2(0.1f, 0.1f), _cast[0].ExtraPositions[i] + new Vector2(0.1f, -0.1f), Color.red, Mathf.Infinity);
-                    Debug.DrawLine(_cast[0].ExtraPositions[i] + new Vector2(0.1f, -0.1f), _cast[0].ExtraPositions[i] + new Vector2(-0.1f, -0.1f), Color.red, Mathf.Infinity);
-                    Debug.DrawLine(_cast[0].ExtraPositions[i] + new Vector2(-0.1f, -0.1f), _cast[0].ExtraPositions[i] + new Vector2(-0.1f, 0.1f), Color.red, Mathf.Infinity);
+
+                    SuperDebug.Log(
+                        _start, _col,
+                        "I hit myself! Extra, Extra!",
+                        (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
+                        (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
+                        _start + " -> " + _end + ":",
+                        (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(),
+                        (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
+                    );
                     return true;
                 }
             }
@@ -822,24 +849,47 @@ public class CustomLight : MonoBehaviour {
         for (int i = 1; i < _cast.Count; i++){
             // check if hit tile
             if (sGridColliderArray[(int)_cast[i].Pos.x, (int)_cast[i].Pos.y]) {
-                Vector2 pos = _cast[i].Pos - new Vector2(24, 24);
-                // Debug.DrawLine(pos + new Vector2(-0.5f, 0.5f), pos + new Vector2(0.5f, 0.5f), Color.red, Mathf.Infinity);
-                // Debug.DrawLine(pos + new Vector2(0.5f, 0.5f), pos + new Vector2(0.5f, -0.5f), Color.red, Mathf.Infinity);
-                // Debug.DrawLine(pos + new Vector2(0.5f, -0.5f), pos + new Vector2(-0.5f, -0.5f), Color.red, Mathf.Infinity);
-                // Debug.DrawLine(pos + new Vector2(-0.5f, -0.5f), pos + new Vector2(-0.5f, 0.5f), Color.red, Mathf.Infinity);
+                Vector2 pos = _cast[i].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeXHalf);
+                Debug.DrawLine(_start, _end, _col, Mathf.Infinity);
+                Debug.DrawLine(pos + new Vector2(-_scale, _scale), pos + new Vector2(_scale, _scale), _col, Mathf.Infinity);
+                Debug.DrawLine(pos + new Vector2(_scale, _scale), pos + new Vector2(_scale, -_scale), _col, Mathf.Infinity);
+                Debug.DrawLine(pos + new Vector2(_scale, -_scale), pos + new Vector2(-_scale, -_scale), _col, Mathf.Infinity);
+                Debug.DrawLine(pos + new Vector2(-_scale, -_scale), pos + new Vector2(-_scale, _scale), _col, Mathf.Infinity);
+
+                SuperDebug.Log(
+                    _start, _col,
+                    (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
+                    (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
+                    _start + " -> " + _end + " (" + pos + "):",
+                    (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(),
+                    (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
+                );
+
                 return true;
             }
 
             // else check if hit any equally close tiles
             else if (_cast[i].ExtraPositions != null){
                 for (int j = 0; j < _cast[i].ExtraPositions.Length; j++){
-                    if (sGridColliderArray[(int)_cast[i].ExtraPositions[j].x, (int)_cast[i].ExtraPositions[j].y]) {
 
-                        // Vector2 pos = _cast[i].ExtraPositions[j] - new Vector2(24, 24);
-                        // Debug.DrawLine(pos + new Vector2(-0.5f, 0.5f), pos + new Vector2(0.5f, 0.5f), Color.red, Mathf.Infinity);
-                        // Debug.DrawLine(pos + new Vector2(0.5f, 0.5f), pos + new Vector2(0.5f, -0.5f), Color.red, Mathf.Infinity);
-                        // Debug.DrawLine(pos + new Vector2(0.5f, -0.5f), pos + new Vector2(-0.5f, -0.5f), Color.red, Mathf.Infinity);
-                        // Debug.DrawLine(pos + new Vector2(-0.5f, -0.5f), pos + new Vector2(-0.5f, 0.5f), Color.red, Mathf.Infinity);
+                    if (sGridColliderArray[(int)_cast[i].ExtraPositions[j].x, (int)_cast[i].ExtraPositions[j].y]) {
+                        Vector2 pos = _cast[i].ExtraPositions[j] - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf);
+                        Debug.DrawLine(_start, _end, _col, Mathf.Infinity);
+                        Debug.DrawLine(pos + new Vector2(-_scale, _scale), pos + new Vector2(_scale, _scale), _col, Mathf.Infinity);
+                        Debug.DrawLine(pos + new Vector2(_scale, _scale), pos + new Vector2(_scale, -_scale), _col, Mathf.Infinity);
+                        Debug.DrawLine(pos + new Vector2(_scale, -_scale), pos + new Vector2(-_scale, -_scale), _col, Mathf.Infinity);
+                        Debug.DrawLine(pos + new Vector2(-_scale, -_scale), pos + new Vector2(-_scale, _scale), _col, Mathf.Infinity);
+
+                        SuperDebug.Log(
+                            _start, _col, 
+                            "Extra, Extra!",
+                            (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
+                            (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
+                            _start + " -> " + _end + " (" + pos + "):",
+                            (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(), 
+                            (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
+                        );
+
                         return true;
                     }
                 }

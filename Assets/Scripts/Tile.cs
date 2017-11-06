@@ -193,12 +193,12 @@ public class Tile : IHeapItem<Tile> {
     }
     public static Tile sCachedNeighbour_T;
     public static bool sTryTempCacheNeighbour_T(int _gridX, int _gridY) {
-        sCachedNeighbour_T = _gridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[_gridX, _gridY + 1] : null;
+        sCachedNeighbour_T = _gridY < Grid.GridSizeY - 1 ? Grid.Instance.grid[_gridX, _gridY + 1] : null;
         return sCachedNeighbour_T != null;
     }
     public static Tile sCachedNeighbour_R;
     public static bool sTryTempCacheNeighbour_R(int _gridX, int _gridY) {
-        sCachedNeighbour_R = _gridX < Grid.Instance.GridSizeX - 1 ? Grid.Instance.grid[_gridX + 1, _gridY] : null;
+        sCachedNeighbour_R = _gridX < Grid.GridSizeX - 1 ? Grid.Instance.grid[_gridX + 1, _gridY] : null;
         return sCachedNeighbour_R != null;
     }
     public static Tile sCachedNeighbour_B;
@@ -208,17 +208,17 @@ public class Tile : IHeapItem<Tile> {
     }
     public static Tile sCachedNeighbour_TL;
     public static bool sTryTempCacheNeighbour_TL(int _gridX, int _gridY) {
-        sCachedNeighbour_TL = _gridX > 0 && _gridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[_gridX - 1, _gridY + 1] : null;
+        sCachedNeighbour_TL = _gridX > 0 && _gridY < Grid.GridSizeY - 1 ? Grid.Instance.grid[_gridX - 1, _gridY + 1] : null;
         return sCachedNeighbour_TL != null;
     }
     public static Tile sCachedNeighbour_TR;
     public static bool sTryTempCacheNeighbour_TR(int _gridX, int _gridY) {
-        sCachedNeighbour_TR = _gridX < Grid.Instance.GridSizeX - 1 && _gridY < Grid.Instance.GridSizeY - 1 ? Grid.Instance.grid[_gridX + 1, _gridY + 1] : null;
+        sCachedNeighbour_TR = _gridX < Grid.GridSizeX - 1 && _gridY < Grid.GridSizeY - 1 ? Grid.Instance.grid[_gridX + 1, _gridY + 1] : null;
         return sCachedNeighbour_TR != null;
     }
     public static Tile sCachedNeighbour_BR;
     public static bool sTryTempCacheNeighbour_BR(int _gridX, int _gridY) {
-        sCachedNeighbour_BR = _gridX < Grid.Instance.GridSizeX - 1 && _gridY > 0 ? Grid.Instance.grid[_gridX + 1, _gridY - 1] : null;
+        sCachedNeighbour_BR = _gridX < Grid.GridSizeX - 1 && _gridY > 0 ? Grid.Instance.grid[_gridX + 1, _gridY - 1] : null;
         return sCachedNeighbour_BR != null;
     }
     public static Tile sCachedNeighbour_BL;

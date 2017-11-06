@@ -56,11 +56,11 @@ public class Grid : MonoBehaviour {
     public Tile[,] grid; // should make 1D
     private float nodeDiameter;
 
-    public int MaxSize { get { return GridSizeX * GridSizeY; } }
-    public int GridSizeX { get; private set; }
-    public int GridSizeY { get; private set; }
-
-
+    public static int MaxSize { get { return GridSizeX * GridSizeY; } }
+    public static int GridSizeX { get; private set; }
+    public static int GridSizeY { get; private set; }
+    public static int GridSizeXHalf { get { return Mathf.RoundToInt(GridSizeX * 0.5f); } }
+    public static int GridSizeYHalf { get { return Mathf.RoundToInt(GridSizeY * 0.5f); } }
 
 
     void Awake() {
@@ -103,7 +103,7 @@ public class Grid : MonoBehaviour {
                 //     continue;
                 // }
                 // generate walls randomly
-                if (GenerateWalls && Random.value > 0.9f) {
+                if (GenerateWalls && Random.value > 0.98f) {
                     grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
                     continue;
                 }
