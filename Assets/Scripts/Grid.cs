@@ -6,43 +6,6 @@ public class Grid : MonoBehaviour {
     public static Grid Instance;
 	public Material GridMaterial;
 
-//    private class GridGraphics {
-//        public bool IsDirty = false;
-//
-//        public Texture2D Diffuse;
-//        public Texture2D Normal;
-//        public Texture2D Emissive;
-//        public Texture2D Specular;
-//
-//        public GridGraphics(int _width, int _height, TextureFormat _format, bool _mipmap) {
-//            ApplySettingsToAsset(out Diffuse, _width, _height, _format, _mipmap);
-//            ApplySettingsToAsset(out Normal, _width, _height, _format, _mipmap);
-//            ApplySettingsToAsset(out Emissive, _width, _height, _format, _mipmap);
-//            ApplySettingsToAsset(out Specular, _width, _height, _format, _mipmap);
-//        }
-//
-//        void ApplySettingsToAsset(out Texture2D _texture, int _width, int _height, TextureFormat _format, bool _mipmap) {
-//            _texture = new Texture2D(_width, _height, _format, _mipmap);
-//            _texture.filterMode = FilterMode.Point;
-//            _texture.wrapMode = TextureWrapMode.Clamp;
-//            _texture.anisoLevel = 0;
-//        }
-//
-//        public void ApplyAll() {
-//            if (!IsDirty)
-//                return;
-//            IsDirty = false;
-//
-//            Diffuse.Apply();
-//            Normal.Apply();
-//            Emissive.Apply();
-//            Specular.Apply();
-//        }
-//    }
-
-
-//    private GridGraphics[] gridGraphicsBottom;
-//    private GridGraphics[] gridGraphicsTop;
     public const float WORLD_BOTTOM_HEIGHT = 0.01f;
     public const float WORLD_TOP_HEIGHT = -0.01f;
 
@@ -65,9 +28,6 @@ public class Grid : MonoBehaviour {
 
     void Awake() {
         Instance = this;
-
-//        gridGraphicsBottom = new GridGraphics[GridGraphicsBottomRenderers.Length];
-//        gridGraphicsTop = new GridGraphics[GridGraphicsBottomRenderers.Length];
 
         nodeDiameter = Tile.RADIUS * 2;
         GridSizeX = Mathf.RoundToInt(GridWorldSize.x / nodeDiameter);
@@ -103,7 +63,7 @@ public class Grid : MonoBehaviour {
                 //     continue;
                 // }
                 // generate walls randomly
-                if (GenerateWalls && Random.value > 0.98f) {
+                if (GenerateWalls && Random.value > 0.95f) {
                     grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
                     continue;
                 }
@@ -179,14 +139,14 @@ public class Grid : MonoBehaviour {
                 grid[x, y].UpdateWallCornerHider(false);
                 grid[x, y].UpdateFloorCornerHider(false);
 
-                CachedAssets.MovableCollider myCollider = new CachedAssets.MovableCollider();
-                if(CachedAssets.Instance.WallSets[0].GetShadowCollider(grid[x, y].ExactType, grid[x, y].Animator.CurrentFrame, grid[x, y].WorldPosition, ref myCollider)) {
-                    for(int i = 0; i < myCollider.Paths.Length; i++){
-                        for(int j = 1; j < myCollider.Paths[i].Vertices.Length; j++){
-                            Debug.DrawLine(myCollider.WorldPosition + myCollider.Paths[i].Vertices[j - 1], myCollider.WorldPosition + myCollider.Paths[i].Vertices[j], Color.red, 1);
-                        }
-                    }
-                }
+                // CachedAssets.MovableCollider myCollider = new CachedAssets.MovableCollider();
+                // if(CachedAssets.Instance.WallSets[0].GetShadowCollider(grid[x, y].ExactType, grid[x, y].Animator.CurrentFrame, grid[x, y].WorldPosition, ref myCollider)) {
+                //     for(int i = 0; i < myCollider.Paths.Length; i++){
+                //         for(int j = 1; j < myCollider.Paths[i].Vertices.Length; j++){
+                //             Debug.DrawLine(myCollider.WorldPosition + myCollider.Paths[i].Vertices[j - 1], myCollider.WorldPosition + myCollider.Paths[i].Vertices[j], Color.red, 1);
+                //         }
+                //     }
+                // }
                 //Debug.Break();
             }
         }

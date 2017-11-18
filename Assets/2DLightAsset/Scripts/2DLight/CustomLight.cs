@@ -90,7 +90,12 @@ public class CustomLight : MonoBehaviour {
         AllLights.Remove(this);
     }
 
+    static bool hasRunStartUpdate = false;
     void Start() {
+        if(hasRunStartUpdate)
+            return;
+
+        hasRunStartUpdate = true;
         Invoke("CallTheFuckingMethod", 0.1f);
     }
     void CallTheFuckingMethod() {
@@ -120,18 +125,19 @@ public class CustomLight : MonoBehaviour {
     private static int shaderPropertyDotY;
     private static Material GridMaterial;
 
-    private static bool[,] sGridColliderArray;
+    //private static bool[,] sGridColliderArray;
 
     [EasyButtons.Button]
-    public static void UpdateAllLights() {
+    public void UpdateAllLights() {
+        float _timeStarted = Time.realtimeSinceStartup;
 
-        if(sGridColliderArray == null)
-            sGridColliderArray = new bool[Grid.GridSizeX, Grid.GridSizeY];
-        for (int x = 0; x < Grid.GridSizeX; x++){
-            for (int y = 0; y < Grid.GridSizeY; y++){
-                sGridColliderArray[x, y] = CachedAssets.Instance.WallSets[0].GetShadowCollider(Grid.Instance.grid[x, y].ExactType, Grid.Instance.grid[x, y].Animator.CurrentFrame);
-            }
-        }
+        // if(sGridColliderArray == null)
+        //     sGridColliderArray = new bool[Grid.GridSizeX, Grid.GridSizeY];
+        // for (int x = 0; x < Grid.GridSizeX; x++){
+        //     for (int y = 0; y < Grid.GridSizeY; y++){
+        //         sGridColliderArray[x, y] = CachedAssets.Instance.WallSets[0].HasShadowCollider(Grid.Instance.grid[x, y].ExactType);
+        //     }
+        // }
 
         // create textures and arrays
         if (TextureLightDotXs == null) {
@@ -173,6 +179,8 @@ public class CustomLight : MonoBehaviour {
         // apply textures to shader
         GridMaterial.SetTexture(shaderPropertyDotX, TextureLightDotXs);
         GridMaterial.SetTexture(shaderPropertyDotY, TextureLightDotYs);
+
+        Debug.Log("All Lights Updated: " + (Time.realtimeSinceStartup - _timeStarted) + "s");
     }
 
     void UpdateLight() { // shouldn't call this by itself. must update ALL lights.
@@ -201,16 +209,19 @@ public class CustomLight : MonoBehaviour {
         for (int y = 0; y < Grid.GridSizeY; y++) {
             for (int x = 0; x < Grid.GridSizeX; x++) {
                 t = Grid.Instance.grid[x, y];
-                if (!CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition, ref sShadowCollider)) { 
+                PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(t.ExactType);
+                if (_coll == null) { 
                     if((t.WorldPosition - (Vector2)transform.position).magnitude < lightRadius)
                         tilesInRange.Add(t);
                     continue;
                 }
 
+                _coll.transform.position = t.WorldPosition;
+
                 breakLoops = false;
-                for (int j = 0; j < sShadowCollider.Paths.Length; j++){
-                    for (int k = 0; k < sShadowCollider.Paths[j].Vertices.Length; k++){
-                        if (((t.WorldPosition + sShadowCollider.Paths[j].Vertices[k]) - (Vector2)transform.position).magnitude <= lightRadius) {
+                for (int pIndex = 0; pIndex < _coll.pathCount; pIndex++){
+                    for (int vIndex = 0; vIndex < _coll.GetPath(pIndex).Length; vIndex++){
+                        if (((t.WorldPosition + _coll.GetPath(pIndex)[vIndex]) - (Vector2)transform.position).magnitude <= lightRadius) {
                             allTiles.Add(t);
                             tilesInRange.Add(t);
                             breakLoops = true;
@@ -223,6 +234,8 @@ public class CustomLight : MonoBehaviour {
                     if(breakLoops) 
                         break;
                 }
+
+                _coll.GetComponent<PoolerObject>().ReturnToPool();
             }
         }
     }
@@ -232,10 +245,9 @@ public class CustomLight : MonoBehaviour {
     private bool highs = false; // check si hay mayores a 2.0
     private float magRange = 0.15f;
     private List<Verts> tempVerts = new List<Verts>();
-    private CachedAssets.MovableCollider polCollider;
     private Verts v;
     private Vector3 worldPoint;
-    private Vector2 rayHit;
+    private RaycastHit2D rayHit;
     private int posLowAngle;
     private int posHighAngle;
     private float lowestAngle;
@@ -255,8 +267,6 @@ public class CustomLight : MonoBehaviour {
     private float rangeAngleComparision;
     private Verts vertex1;
     private Verts vertex2;
-    //private bool gridcastHit = false;
-    //private List<Tile> gridcastHits = new List<Tile>();
     void SetLight() {
         allVertices.Clear();// Since these lists are populated every frame, clear them first to prevent overpopulation
 
@@ -265,25 +275,25 @@ public class CustomLight : MonoBehaviour {
 
         magRange = 0.15f;
         tempVerts.Clear();
-        polCollider = new CachedAssets.MovableCollider();
         for (int i = 0; i < allTiles.Count; i++) {
             tempVerts.Clear();
-            CachedAssets.Instance.WallSets[0].GetShadowCollider(allTiles[i].ExactType, allTiles[i].Animator.CurrentFrame, allTiles[i].WorldPosition, ref polCollider);
             
             // the following variables used to fix sorting bug
             // the calculated angles are in mixed quadrants (1 and 4)
             lows = false; // check for minors at -0.5
             highs = false; // check for majors at 2.0
 
-            for (int pIndex = 0; pIndex < polCollider.Paths.Length; pIndex++) {
-                for (int vIndex = 0; vIndex < polCollider.Paths[pIndex].Vertices.Length; vIndex++) {  // ...and for every vertex we have of each collider...
+            PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(allTiles[i].ExactType);
+            _coll.transform.position = allTiles[i].WorldPosition;
+            for (int pIndex = 0; pIndex < _coll.pathCount; pIndex++){
+                for (int vIndex = 0; vIndex < _coll.GetPath(pIndex).Length; vIndex++){ // ...and for every vertex we have of each collider...
                     v = new Verts();
 
                     // Convert vertex to world space
-                    worldPoint = polCollider.WorldPosition + polCollider.Paths[pIndex].Vertices[vIndex];
-                    if (Gridcast(transform.position, worldPoint, true, out rayHit)) {
-                        v.Pos = rayHit;
-                        if (worldPoint.sqrMagnitude >= (rayHit.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.sqrMagnitude + magRange)) {
+                    worldPoint = (Vector2)_coll.transform.position + _coll.GetPath(pIndex)[vIndex];
+                    if (Gridcast(transform.position, worldPoint, out rayHit)) {
+                        v.Pos = rayHit.point;
+                        if (worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange)) {
                             v.Endpoint = true;
                             if (DebugMode)
                                 Debug.DrawLine(transform.position, v.Pos, Color.red);
@@ -316,6 +326,7 @@ public class CustomLight : MonoBehaviour {
                         sortAngles = true;
                 }
             }
+            _coll.GetComponent<PoolerObject>().ReturnToPool();
 
             // Identify the endpoints (left and right)
             if (tempVerts.Count > 0) {
@@ -375,8 +386,8 @@ public class CustomLight : MonoBehaviour {
 
                         int debugger = -1;
 
-                        if (Gridcast(from, from + (dir.normalized * mag), true, out rayHit)) { 
-                            hitPos = rayHit;
+                        if(Gridcast(from, (from + dir.normalized * lightRadius), out rayHit)){
+                            hitPos = rayHit.point;
                             debugger = 1;
 
                             if (Vector2.Distance(hitPos, transform.position) > lightRadius){
@@ -425,8 +436,8 @@ public class CustomLight : MonoBehaviour {
             v.Pos *= lightRadius;
             v.Pos += (Vector2)transform.position;
 
-            if (Gridcast(transform.position, v.Pos, false, out rayHit))
-                v.Pos = transform.InverseTransformPoint(rayHit);
+            if(Gridcast(transform.position, v.Pos, out rayHit))
+                v.Pos = transform.InverseTransformPoint(rayHit.point);
             else
                 v.Pos = transform.InverseTransformPoint(v.Pos);
             allVertices.Add(v);
@@ -467,60 +478,159 @@ public class CustomLight : MonoBehaviour {
         }
     }
 
-    private static Vector2 CORNER_OFFSET = new Vector2(-0.5f, -0.5f);
-    private static Vector2 CORNER_OFFSET_OUTSIDE_GRID = new Vector2(0.5f, -0.5f);
-    static void CalculateLightingForGrid() {
+    //private static Vector2 CORNER_OFFSET = new Vector2(-0.5f, -0.5f);
+    //private static Vector2 CORNER_OFFSET_OUTSIDE_GRID = new Vector2(0.5f, -0.5f);
+    private const float VERTEX_DISTANCE = 0.5f;
+    void CalculateLightingForGrid() {
         if (ReportedDotXs == null)
             ReportedDotXs = new Color32[Grid.GridSizeX * Grid.GridSizeY];
         if(ReportedDotYs == null)
             ReportedDotYs = new Color32[Grid.GridSizeX * Grid.GridSizeY];
 
         // iterate over grid and apply lighting to tiles' BL corners (and intersecting vertices). to get outer edge, iterate outside grid and use TR corner.
-        for (int x = 0; x < Grid.GridSizeX + 1; x++){ // +1 because we're getting each corner
-            for (int y = 0; y < Grid.GridSizeY + 1; y++){
+        // for (int x = 0; x < Grid.GridSizeX + 1; x++){ // +1 because we're getting each corner
+        //     for (int y = 0; y < Grid.GridSizeY + 1; y++){
 
-                Vector2 _offset = (x < Grid.GridSizeX && y < Grid.GridSizeY) ? CORNER_OFFSET : CORNER_OFFSET_OUTSIDE_GRID;
-                int _safeX = Mathf.Min(x, Grid.GridSizeX - 1);
-                int _safeY = Mathf.Min(y, Grid.GridSizeY - 1);
+        //         Vector2 _offset = (x < Grid.GridSizeX && y < Grid.GridSizeY) ? CORNER_OFFSET : CORNER_OFFSET_OUTSIDE_GRID;
+        //         int _safeX = Mathf.Min(x, Grid.GridSizeX - 1);
+        //         int _safeY = Mathf.Min(y, Grid.GridSizeY - 1);
 
-                Vector4 _lights; // the 4 most dominant lights
-                Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[_safeX, _safeY].WorldPosition + _offset, out _lights);
-                _finalColor.a = 255;
+        //         Vector4 _lights; // the 4 most dominant lights
+        //         Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[_safeX, _safeY].WorldPosition + _offset, out _lights);
+        //         _finalColor.a = 255;
 
-                // apply vertex color to all vertices in this corner
-                if (x < Grid.GridSizeX && y < Grid.GridSizeY) { 
-                    Grid.Instance.grid[x, y].FloorQuad.                 SetVertexColor(0, _finalColor);
-                    Grid.Instance.grid[x, y].FloorCornerHider.          SetVertexColor(0, _finalColor);
-                    Grid.Instance.grid[x, y].BottomQuad.                SetVertexColor(0, _finalColor);
-                    Grid.Instance.grid[x, y].TopQuad.                   SetVertexColor(0, _finalColor);
-                    Grid.Instance.grid[x, y].WallCornerHider.           SetVertexColor(0, _finalColor);
-                }
-                if (x < Grid.GridSizeX && y > 0) { 
-                    Grid.Instance.grid[x, y - 1].FloorQuad.             SetVertexColor(1, _finalColor);
-                    Grid.Instance.grid[x, y - 1].FloorCornerHider.      SetVertexColor(1, _finalColor);
-                    Grid.Instance.grid[x, y - 1].BottomQuad.            SetVertexColor(1, _finalColor);
-                    Grid.Instance.grid[x, y - 1].TopQuad.               SetVertexColor(1, _finalColor);
-                    Grid.Instance.grid[x, y - 1].WallCornerHider.       SetVertexColor(1, _finalColor);
-                }
-                if (x > 0 && y > 0) { 
-                    Grid.Instance.grid[x - 1, y - 1].FloorQuad.         SetVertexColor(6, _finalColor);
-                    Grid.Instance.grid[x - 1, y - 1].FloorCornerHider.  SetVertexColor(6, _finalColor);
-                    Grid.Instance.grid[x - 1, y - 1].BottomQuad.        SetVertexColor(6, _finalColor);
-                    Grid.Instance.grid[x - 1, y - 1].TopQuad.           SetVertexColor(6, _finalColor);
-                    Grid.Instance.grid[x - 1, y - 1].WallCornerHider.   SetVertexColor(6, _finalColor);
-                }
-                if (x > 0 && y < Grid.GridSizeY) { 
-                    Grid.Instance.grid[x - 1, y].FloorQuad.             SetVertexColor(7, _finalColor);
-                    Grid.Instance.grid[x - 1, y].FloorCornerHider.      SetVertexColor(7, _finalColor);
-                    Grid.Instance.grid[x - 1, y].BottomQuad.            SetVertexColor(7, _finalColor);
-                    Grid.Instance.grid[x - 1, y].TopQuad.               SetVertexColor(7, _finalColor);
-                    Grid.Instance.grid[x - 1, y].WallCornerHider.       SetVertexColor(7, _finalColor);
-                }
+        //         // apply vertex color to all vertices in this corner
+        //         if (x < Grid.GridSizeX && y < Grid.GridSizeY) { 
+        //             Grid.Instance.grid[x, y].FloorQuad.                 SetVertexColor(0, _finalColor);
+        //             Grid.Instance.grid[x, y].FloorCornerHider.          SetVertexColor(0, _finalColor);
+        //             Grid.Instance.grid[x, y].BottomQuad.                SetVertexColor(0, _finalColor);
+        //             Grid.Instance.grid[x, y].TopQuad.                   SetVertexColor(0, _finalColor);
+        //             Grid.Instance.grid[x, y].WallCornerHider.           SetVertexColor(0, _finalColor);
+        //         }
+        //         if (x < Grid.GridSizeX && y > 0) { 
+        //             Grid.Instance.grid[x, y - 1].FloorQuad.             SetVertexColor(2, _finalColor);
+        //             Grid.Instance.grid[x, y - 1].FloorCornerHider.      SetVertexColor(2, _finalColor);
+        //             Grid.Instance.grid[x, y - 1].BottomQuad.            SetVertexColor(2, _finalColor);
+        //             Grid.Instance.grid[x, y - 1].TopQuad.               SetVertexColor(2, _finalColor);
+        //             Grid.Instance.grid[x, y - 1].WallCornerHider.       SetVertexColor(2, _finalColor);
+        //         }
+        //         if (x > 0 && y > 0) { 
+        //             Grid.Instance.grid[x - 1, y - 1].FloorQuad.         SetVertexColor(4, _finalColor);
+        //             Grid.Instance.grid[x - 1, y - 1].FloorCornerHider.  SetVertexColor(4, _finalColor);
+        //             Grid.Instance.grid[x - 1, y - 1].BottomQuad.        SetVertexColor(4, _finalColor);
+        //             Grid.Instance.grid[x - 1, y - 1].TopQuad.           SetVertexColor(4, _finalColor);
+        //             Grid.Instance.grid[x - 1, y - 1].WallCornerHider.   SetVertexColor(4, _finalColor);
+        //         }
+        //         if (x > 0 && y < Grid.GridSizeY) { 
+        //             Grid.Instance.grid[x - 1, y].FloorQuad.             SetVertexColor(6, _finalColor);
+        //             Grid.Instance.grid[x - 1, y].FloorCornerHider.      SetVertexColor(6, _finalColor);
+        //             Grid.Instance.grid[x - 1, y].BottomQuad.            SetVertexColor(6, _finalColor);
+        //             Grid.Instance.grid[x - 1, y].TopQuad.               SetVertexColor(6, _finalColor);
+        //             Grid.Instance.grid[x - 1, y].WallCornerHider.       SetVertexColor(6, _finalColor);
+        //         }
 
+
+        //         // TODO: try to make Dot part of vertex-stuff
+
+
+        //         // use the total vertexlighting to calculate dot x and y (per tile, NOT per corner)
+        //         if (x < Grid.GridSizeX && y < Grid.GridSizeY){
+        //             // dot X
+        //             ReportedDotXs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.left, 255);
+        //             ReportedDotXs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.left, 255);
+        //             ReportedDotXs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.left, 255);
+        //             ReportedDotXs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.left, 255);
+
+        //             // dot Y
+        //             ReportedDotYs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.down, 255);
+        //             ReportedDotYs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.down, 255);
+        //             ReportedDotYs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.down, 255);
+        //             ReportedDotYs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.down, 255);
+        //         }
+        //     }
+        // }
+        // for (int x = 0; x < Grid.GridSizeX; x++){
+        //     for (int y = 0; y < Grid.GridSizeY; y++){
+
+        //         Vector4 _lights; // the 4 most dominant lights
+        //         Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[x, y].WorldPosition, out _lights);
+        //         _finalColor.a = 255;
+
+        //         Grid.Instance.grid[x, y].FloorQuad.                 SetVertexColor(0, _finalColor);
+        //         Grid.Instance.grid[x, y].FloorCornerHider.          SetVertexColor(0, _finalColor);
+        //         Grid.Instance.grid[x, y].BottomQuad.                SetVertexColor(0, _finalColor);
+        //         Grid.Instance.grid[x, y].TopQuad.                   SetVertexColor(0, _finalColor);
+        //         Grid.Instance.grid[x, y].WallCornerHider.           SetVertexColor(0, _finalColor);
+
+
+        //         // TODO: try to make Dot part of vertex-stuff
+        //     }
+        // }
+
+        Vector2 _offset = new Vector2();
+        Vector4 _lights = new Vector4(); // the 4 most dominant lights
+        Color32 _finalColor;
+        for (int x = 0; x < Grid.GridSizeX; x++){
+            for (int y = 0; y < Grid.GridSizeY; y++){
+                
+                for (int vx = 0; vx < 3; vx++){
+                    if(x > 0 && vx == 0)
+                        continue;
+
+                    for (int vy = 0; vy < 3; vy++){
+                        if(y > 0 && vy == 0)
+                            continue;
+
+                        _lights.x = -1;
+                        _lights.y = -1;
+                        _lights.z = -1;
+                        _lights.w = -1;
+
+                        _offset.x = (vx - 1) * VERTEX_DISTANCE;
+                        _offset.y = (vy - 1) * VERTEX_DISTANCE;
+
+                        _finalColor = GetTotalVertexLighting(Grid.Instance.grid[x, y].WorldPosition + _offset, out _lights);
+                        _finalColor.a = 255;
+                        
+                        int _vIndex = vy * 3 + vx;
+                        Grid.Instance.grid[x, y].FloorQuad.                 SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].FloorCornerHider.          SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].BottomQuad.                SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].TopQuad.                   SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].WallCornerHider.           SetVertexColor(_vIndex, _finalColor);
+
+                        bool _affectsR = x < Grid.GridSizeX - 1 && vx == 2;
+                        bool _affectsT = y < Grid.GridSizeY - 1 && vy == 2;
+                        if (_affectsR){
+                            int xR = x + 1;
+                            int _vIndexR = vy * 3;
+                            Grid.Instance.grid[xR, y].FloorQuad.                 SetVertexColor(_vIndexR, _finalColor);
+                            Grid.Instance.grid[xR, y].FloorCornerHider.          SetVertexColor(_vIndexR, _finalColor);
+                            Grid.Instance.grid[xR, y].BottomQuad.                SetVertexColor(_vIndexR, _finalColor);
+                            Grid.Instance.grid[xR, y].TopQuad.                   SetVertexColor(_vIndexR, _finalColor);
+                            Grid.Instance.grid[xR, y].WallCornerHider.           SetVertexColor(_vIndexR, _finalColor);
+                        }
+                        if (_affectsT){
+                            int yT = y + 1;
+                            Grid.Instance.grid[x, yT].FloorQuad.                 SetVertexColor(vx, _finalColor);
+                            Grid.Instance.grid[x, yT].FloorCornerHider.          SetVertexColor(vx, _finalColor);
+                            Grid.Instance.grid[x, yT].BottomQuad.                SetVertexColor(vx, _finalColor);
+                            Grid.Instance.grid[x, yT].TopQuad.                   SetVertexColor(vx, _finalColor);
+                            Grid.Instance.grid[x, yT].WallCornerHider.           SetVertexColor(vx, _finalColor);
+                        }
+                        if (_affectsR && _affectsT){
+                            int xTR = x + 1;
+                            int yTR = y + 1;
+                            Grid.Instance.grid[xTR, yTR].FloorQuad.                 SetVertexColor(0, _finalColor);
+                            Grid.Instance.grid[xTR, yTR].FloorCornerHider.          SetVertexColor(0, _finalColor);
+                            Grid.Instance.grid[xTR, yTR].BottomQuad.                SetVertexColor(0, _finalColor);
+                            Grid.Instance.grid[xTR, yTR].TopQuad.                   SetVertexColor(0, _finalColor);
+                            Grid.Instance.grid[xTR, yTR].WallCornerHider.           SetVertexColor(0, _finalColor);
+                        }
+                    }
+                }
 
                 // TODO: try to make Dot part of vertex-stuff
-
-
                 // use the total vertexlighting to calculate dot x and y (per tile, NOT per corner)
                 if (x < Grid.GridSizeX && y < Grid.GridSizeY){
                     // dot X
@@ -557,26 +667,26 @@ public class CustomLight : MonoBehaviour {
         return _vertical;
     }
 
-    static Color32 GetTotalVertexLighting(Vector2 _pos, out Vector4 _dominantLightIndices){
+    Color32 GetTotalVertexLighting(Vector2 _pos, out Vector4 _dominantLightIndices){
 
         // four because we can only store Dot-info for four lights (mostly bc performance) and then any higher number makes little sense
         _dominantLightIndices = new Vector4();
         Vector4 dominantLightLevels = new Vector4();
         Vector4 dominantLightColors = new Vector4(); // todo: make a QuadrupleInt
-        for (int i = 0; i < AllLights.Count; i++)
-        { // optimization: can I lower the amount of lights I'm iterating over? Maybe by using a tree?
+        for (int i = 0; i < AllLights.Count; i++) { // optimization: can I lower the amount of lights I'm iterating over? Maybe by using a tree?
             float newRange = AllLights[i].lightRadius;
             float newDistance = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_pos, AllLights[i].transform.position)), 255);
 
             if (newDistance > newRange)
                 continue;
 
-            CachedAssets.DoubleInt _tilePos = new CachedAssets.DoubleInt(Mathf.RoundToInt(_pos.x + Grid.GridSizeXHalf), Mathf.RoundToInt(_pos.y + Grid.GridSizeYHalf));
+            DoubleInt _tilePos = new DoubleInt(Mathf.RoundToInt(_pos.x + Grid.GridSizeXHalf), Mathf.RoundToInt(_pos.y + Grid.GridSizeYHalf));
             // if(_tilePos.X - AllLights[i].myInspector.MyTileObject.MyTile.GridCoord.X <= 0)
             //     _tilePos.X -= 1;
             // if (_tilePos.Y - AllLights[i].myInspector.MyTileObject.MyTile.GridCoord.Y <= 0)
             //     _tilePos.Y -= 1;
-            if (GridcastSimple(_pos, _tilePos, AllLights[i].transform.position, AllLights[i].myInspector.MyTileObject.MyTile.GridCoord))
+            RaycastHit2D _rayHit;
+            if(Gridcast(AllLights[i].transform.position, _pos, out _rayHit))
                 continue;
 
             float newIntensity = AllLights[i].Intensity * 255;
@@ -717,218 +827,251 @@ public class CustomLight : MonoBehaviour {
         return p;
     }
 
-    private static CachedAssets.MovableCollider sShadowCollider = new CachedAssets.MovableCollider();
-    private static CachedAssets.MovableCollider[] sExtraShadowColliders;
-    bool Gridcast(Vector2 _start, Vector2 _end, bool debug, out Vector2 _rayhit) {
+    // private PolygonCollider2D sShadowCollider;
+    // private PolygonCollider2D[] sExtraShadowColliders;
+    private const float GRIDCAST_TOLERANCE = 0.01f;
+    bool Gridcast(Vector2 _start, Vector2 _end, out RaycastHit2D _rayhit){
+        float _length = (_start - _end).magnitude;
 
-        // calculate indices to iterate over
-        List<BresenhamsLine.OverlapWithTiles> _cast = BresenhamsLine.Gridcast(_start, _end);
+        // find relevant colliders
+        List<PolygonCollider2D> _collidersUsed = new List<PolygonCollider2D>();
+        for (int y = 0; y < Grid.GridSizeY; y++){
+            for (int x = 0; x < Grid.GridSizeX; x++){
+                if((_start - Grid.Instance.grid[x, y].WorldPosition).magnitude > _length)
+                    continue;
+                PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(Grid.Instance.grid[x, y].ExactType);
+                if(_coll == null)
+                    continue;
 
-        // get colliders at start position
-        if (_cast.Count > 0) {
-            CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[0].Tile.ExactType, _cast[0].Tile.Animator.CurrentFrame, _cast[0].Tile.WorldPosition, ref sShadowCollider);
-
-            if (_cast[0].ExtraTiles != null){
-                sExtraShadowColliders = new CachedAssets.MovableCollider[_cast[0].ExtraTiles.Length];
-                for (int i = 0; i < _cast[0].ExtraTiles.Length; i++)
-                    CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[0].ExtraTiles[i].ExactType, _cast[0].ExtraTiles[i].Animator.CurrentFrame, _cast[0].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
+                _coll.transform.position = Grid.Instance.grid[x, y].WorldPosition;                
+                _collidersUsed.Add(_coll);
             }
         }
 
-       // use approximate pixel positions to iterate through cast and test each pixel for shadowcollider
-        int _currentIndex = 0;
-        int _iterationsInCast = 0;
-        int _goal = Mathf.RoundToInt(((_end - _start).magnitude + 1) * Tile.RESOLUTION); // the distance in amount of tiles, multiplied by the amount of pixels across a tile
-        Vector2 _curPos = _start;
-        while (_iterationsInCast <= _goal || _currentIndex < _cast.Count) {
-            _curPos = Vector2.Lerp(_start, _end, (float)_iterationsInCast / (float)_goal);
-            _iterationsInCast++;
+        // pew
+        _rayhit = Physics2D.Linecast(_start, _end);
 
-            // if pixel is closer to next collider, set next collider as current
-            if (_currentIndex < _cast.Count - 1 && (_cast[_currentIndex + 1].Tile.WorldPosition - _curPos).magnitude <= (_cast[_currentIndex].Tile.WorldPosition - _curPos).magnitude) {
-                _currentIndex++;
+        // clean-up
+        for (int i = 0; i < _collidersUsed.Count; i++)
+            _collidersUsed[i].GetComponent<PoolerObject>().ReturnToPool();
 
-                CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[_currentIndex].Tile.ExactType, _cast[_currentIndex].Tile.Animator.CurrentFrame, _cast[_currentIndex].Tile.WorldPosition, ref sShadowCollider);
-
-                // get extra colliders (happens if pixel is (more-or-less) in a corner)
-                if (_cast[_currentIndex].ExtraTiles != null){
-                    sExtraShadowColliders = new CachedAssets.MovableCollider[_cast[_currentIndex].ExtraTiles.Length];
-                    for (int i = 0; i < _cast[_currentIndex].ExtraTiles.Length; i++)
-                        CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[_currentIndex].ExtraTiles[i].ExactType, _cast[_currentIndex].ExtraTiles[i].Animator.CurrentFrame, _cast[_currentIndex].ExtraTiles[i].WorldPosition, ref sExtraShadowColliders[i]);
-                }
-            }
-
-            // check for hit
-            float closest = 1000;
-            if (sShadowCollider != null && sShadowCollider.OverlapPointOrAlmost(_curPos, out closest)) {
-                _rayhit = _curPos;
-                hits.Add(_curPos);
-                hitsDistance.Add(closest);
-                return true;
-            }
-            // check for hit if in corner
-            if (sExtraShadowColliders != null){
-                for (int i = 0; i < sExtraShadowColliders.Length; i++){
-                    if (sExtraShadowColliders[i] != null && sExtraShadowColliders[i].OverlapPointOrAlmost(_curPos, out closest)){
-                        _rayhit = _curPos;
-                        hits.Add(_curPos);
-                        hitsDistance.Add(closest);
-                        return true;
-                    }
-                }
-            }
-
-            // done, so no hit
-            if ((float)_iterationsInCast / (float)_goal > 1) {
-                _rayhit = Vector2.zero;
-                nonHits.Add(_curPos);
-                nonHitsDistance.Add(closest);
-                nonHitsHadCollider.Add(sShadowCollider != null && sExtraShadowColliders != null && sExtraShadowColliders.Length > 0);
-                return false;
-            }
-        }
-
-        throw new System.Exception("Gridcast exceeded 100.000 iterations to reach target! Something is totally wrong or your cast is way too big! D:");
+        return _rayhit.collider != null && (_end - _rayhit.point).magnitude > 0.01f;
     }
-    static bool GridcastSimple(Vector2 _start, CachedAssets.DoubleInt _startTileCoords, Vector2 _end, CachedAssets.DoubleInt _endTileCoords){
-        // _start and _end local to grid (zero is in bottom left)
-        Vector2 _startLocal = new Vector2(_startTileCoords.X + (_start.x - Mathf.Round(_start.x)), _startTileCoords.Y + (_start.y - Mathf.Round(_start.y)));
-        Vector2 _endLocal = new Vector2(_endTileCoords.X + (_end.x - Mathf.Round(_end.x)), _endTileCoords.Y + (_end.y - Mathf.Round(_end.y)));
 
-        // find tiles along cast with a shadowcollider
-        List<BresenhamsLine.OverlapSimple> _cast = BresenhamsLine.GridcastSimple(_startLocal, _endLocal);
+    // bool Gridcast(Vector2 _start, Vector2 _end, bool debug, out Vector2 _rayhit) { // TODO: replace with raycast
 
-        // determine if the cast should be able to hit its own collider or not (assuming we're shooting from a corner because that's what I'm using it for currently >.>)
-        bool _canHitStartTile = CanHitOwnTile(_start, _end, Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition);
-        //Debug.Log(_diffX + ", " + _diffY + ": " + _euler);
+    //     // calculate indices to iterate over
+    //     List<BresenhamsLine.OverlapWithTiles> _cast = BresenhamsLine.Gridcast(_start, _end);
 
-        Color _col = new Color(Random.value, Random.value, Random.value, 1);
-        Vector2 _tilePos = Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition;
-        float _scale = 0.1f;
-        // Debug.DrawLine(_start, _end, col, Mathf.Infinity);
-        // Debug.DrawLine(_tilePos + new Vector2(-_scale, _scale), _tilePos + new Vector2(_scale, _scale), col, Mathf.Infinity);
-        // Debug.DrawLine(_tilePos + new Vector2(_scale, _scale), _tilePos + new Vector2(_scale, -_scale), col, Mathf.Infinity);
-        // Debug.DrawLine(_tilePos + new Vector2(_scale, -_scale), _tilePos + new Vector2(-_scale, -_scale), col, Mathf.Infinity);
-        // Debug.DrawLine(_tilePos + new Vector2(-_scale, -_scale), _tilePos + new Vector2(-_scale, _scale), col, Mathf.Infinity);
+    //     // get colliders at start position
+    //     if (_cast.Count > 0) {
+            
+    //         CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[0].Tile.ExactType, out sShadowCollider);
+    //         sShadowCollider.transform.position = _cast[0].Tile.WorldPosition;
+
+    //         if (_cast[0].ExtraTiles != null){
+    //             sExtraShadowColliders = new PolygonCollider2D[_cast[0].ExtraTiles.Length];
+    //             for (int i = 0; i < _cast[0].ExtraTiles.Length; i++){
+    //                 CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[0].ExtraTiles[i].ExactType, out sExtraShadowColliders[i]);
+    //                 sExtraShadowColliders[i].transform.position = _cast[0].Tile.WorldPosition;
+    //             }
+    //         }
+    //     }
+
+    //    // use approximate pixel positions to iterate through cast and test each pixel for shadowcollider
+    //     int _currentIndex = 0;
+    //     int _iterationsInCast = 0;
+    //     int _goal = Mathf.RoundToInt(((_end - _start).magnitude + 1) * Tile.RESOLUTION); // the distance in amount of tiles, multiplied by the amount of pixels across a tile
+    //     Vector2 _curPos = _start;
+    //     while (_iterationsInCast <= _goal || _currentIndex < _cast.Count) {
+    //         _curPos = Vector2.Lerp(_start, _end, (float)_iterationsInCast / (float)_goal);
+    //         _iterationsInCast++;
+
+    //         // if pixel is closer to next collider, set next collider as current
+    //         if (_currentIndex < _cast.Count - 1 && (_cast[_currentIndex + 1].Tile.WorldPosition - _curPos).magnitude <= (_cast[_currentIndex].Tile.WorldPosition - _curPos).magnitude) {
+    //             _currentIndex++;
+
+    //             CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[_currentIndex].Tile.ExactType, out sShadowCollider);
+    //             sShadowCollider.transform.position = _cast[_currentIndex].Tile.WorldPosition;
+
+    //             // get extra colliders (happens if pixel is (more-or-less) in a corner)
+    //             if (_cast[_currentIndex].ExtraTiles != null){
+    //                 sExtraShadowColliders = new PolygonCollider2D[_cast[_currentIndex].ExtraTiles.Length];
+    //                 for (int i = 0; i < _cast[_currentIndex].ExtraTiles.Length; i++){
+    //                     CachedAssets.Instance.WallSets[0].GetShadowCollider(_cast[_currentIndex].ExtraTiles[i].ExactType, out sExtraShadowColliders[i]);
+    //                     sExtraShadowColliders[i].transform.position = _cast[_currentIndex].ExtraTiles[i].WorldPosition;
+    //                 }
+    //             }
+    //         }
+
+    //         // check for hit
+    //         float closest = 1000;
+    //         if (sShadowCollider != null && sShadowCollider.OverlapPoint(_curPos)) {
+    //             _rayhit = _curPos;
+    //             hits.Add(_curPos);
+    //             return true;
+    //         }
+    //         // check for hit if in corner
+    //         if (sExtraShadowColliders != null){
+    //             for (int i = 0; i < sExtraShadowColliders.Length; i++){
+    //                 if (sExtraShadowColliders[i] != null && sExtraShadowColliders[i].OverlapPoint(_curPos)){
+    //                     _rayhit = _curPos;
+    //                     hits.Add(_curPos);
+    //                     return true;
+    //                 }
+    //             }
+    //         }
+
+    //         // done, so no hit
+    //         if ((float)_iterationsInCast / (float)_goal > 1) {
+    //             _rayhit = Vector2.zero;
+    //             nonHits.Add(_curPos);
+    //             nonHitsDistance.Add(closest);
+    //             nonHitsHadCollider.Add(sShadowCollider != null && sExtraShadowColliders != null && sExtraShadowColliders.Length > 0);
+    //             return false;
+    //         }
+    //     }
+
+    //     throw new System.Exception("Gridcast exceeded 100.000 iterations to reach target! Something is totally wrong or your cast is way too big! D:");
+    // }
+    // static bool GridcastSimple(Vector2 _start, CachedAssets.DoubleInt _startTileCoords, Vector2 _end, CachedAssets.DoubleInt _endTileCoords){
+    //     // _start and _end local to grid (zero is in bottom left)
+    //     Vector2 _startLocal = new Vector2(_startTileCoords.X + (_start.x - Mathf.Round(_start.x)), _startTileCoords.Y + (_start.y - Mathf.Round(_start.y)));
+    //     Vector2 _endLocal = new Vector2(_endTileCoords.X + (_end.x - Mathf.Round(_end.x)), _endTileCoords.Y + (_end.y - Mathf.Round(_end.y)));
+
+    //     // find tiles along cast with a shadowcollider
+    //     List<BresenhamsLine.OverlapSimple> _cast = BresenhamsLine.GridcastSimple(_startLocal, _endLocal);
+
+    //     // determine if the cast should be able to hit its own collider or not (assuming we're shooting from a corner because that's what I'm using it for currently >.>)
+    //     bool _canHitStartTile = CanHitOwnTile(_start, _end, Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition);
+    //     //Debug.Log(_diffX + ", " + _diffY + ": " + _euler);
+
+    //     Color _col = new Color(Random.value, Random.value, Random.value, 1);
+    //     Vector2 _tilePos = Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition;
+    //     float _scale = 0.1f;
+    //     // Debug.DrawLine(_start, _end, col, Mathf.Infinity);
+    //     // Debug.DrawLine(_tilePos + new Vector2(-_scale, _scale), _tilePos + new Vector2(_scale, _scale), col, Mathf.Infinity);
+    //     // Debug.DrawLine(_tilePos + new Vector2(_scale, _scale), _tilePos + new Vector2(_scale, -_scale), col, Mathf.Infinity);
+    //     // Debug.DrawLine(_tilePos + new Vector2(_scale, -_scale), _tilePos + new Vector2(-_scale, -_scale), col, Mathf.Infinity);
+    //     // Debug.DrawLine(_tilePos + new Vector2(-_scale, -_scale), _tilePos + new Vector2(-_scale, _scale), col, Mathf.Infinity);
 
         
 
-        // stop hitting yourself
-        if (CanHitOwnTile(_start, _end, Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition) && 
-            sGridColliderArray[(int)_cast[0].Pos.x, (int)_cast[0].Pos.y]){
+    //     // stop hitting yourself
+    //     if (CanHitOwnTile(_start, _end, Grid.Instance.grid[_startTileCoords.X, _startTileCoords.Y].WorldPosition) && 
+    //         sGridColliderArray[(int)_cast[0].Pos.x, (int)_cast[0].Pos.y]){
 
-            SuperDebug.Log(
-                _start, _col,
-                "I hit myself!",
-                (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
-                (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
-                _start + " -> " + _end + ":",
-                (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(),
-                (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
-            );
-            return true;
-        }
-        else if (_cast[0].ExtraPositions != null){
-            for (int i = 0; i < _cast[0].ExtraPositions.Length; i++){
-                if (CanHitOwnTile(_start, _end, Grid.Instance.grid[(int)_cast[0].ExtraPositions[i].x, (int)_cast[0].ExtraPositions[i].y].WorldPosition) &&
-                    sGridColliderArray[(int)_cast[0].ExtraPositions[i].x, (int)_cast[0].ExtraPositions[i].y]){
+    //         SuperDebug.Log(
+    //             _start, _col,
+    //             "I hit myself!",
+    //             (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
+    //             (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
+    //             _start + " -> " + _end + ":",
+    //             (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(),
+    //             (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
+    //         );
+    //         return true;
+    //     }
+    //     else if (_cast[0].ExtraPositions != null){
+    //         for (int i = 0; i < _cast[0].ExtraPositions.Length; i++){
+    //             if (CanHitOwnTile(_start, _end, Grid.Instance.grid[(int)_cast[0].ExtraPositions[i].x, (int)_cast[0].ExtraPositions[i].y].WorldPosition) &&
+    //                 sGridColliderArray[(int)_cast[0].ExtraPositions[i].x, (int)_cast[0].ExtraPositions[i].y]){
 
-                    SuperDebug.Log(
-                        _start, _col,
-                        "I hit myself! Extra, Extra!",
-                        (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
-                        (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
-                        _start + " -> " + _end + ":",
-                        (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(),
-                        (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
-                    );
-                    return true;
-                }
-            }
-        }
-        for (int i = 1; i < _cast.Count; i++){
-            // check if hit tile
-            if (sGridColliderArray[(int)_cast[i].Pos.x, (int)_cast[i].Pos.y]) {
-                Vector2 pos = _cast[i].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeXHalf);
-                Debug.DrawLine(_start, _end, _col, Mathf.Infinity);
-                Debug.DrawLine(pos + new Vector2(-_scale, _scale), pos + new Vector2(_scale, _scale), _col, Mathf.Infinity);
-                Debug.DrawLine(pos + new Vector2(_scale, _scale), pos + new Vector2(_scale, -_scale), _col, Mathf.Infinity);
-                Debug.DrawLine(pos + new Vector2(_scale, -_scale), pos + new Vector2(-_scale, -_scale), _col, Mathf.Infinity);
-                Debug.DrawLine(pos + new Vector2(-_scale, -_scale), pos + new Vector2(-_scale, _scale), _col, Mathf.Infinity);
+    //                 SuperDebug.Log(
+    //                     _start, _col,
+    //                     "I hit myself! Extra, Extra!",
+    //                     (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
+    //                     (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
+    //                     _start + " -> " + _end + ":",
+    //                     (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(),
+    //                     (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
+    //                 );
+    //                 return true;
+    //             }
+    //         }
+    //     }
+    //     for (int i = 1; i < _cast.Count; i++){
+    //         // check if hit tile
+    //         if (sGridColliderArray[(int)_cast[i].Pos.x, (int)_cast[i].Pos.y]) {
+    //             Vector2 pos = _cast[i].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeXHalf);
+    //             Debug.DrawLine(_start, _end, _col, Mathf.Infinity);
+    //             Debug.DrawLine(pos + new Vector2(-_scale, _scale), pos + new Vector2(_scale, _scale), _col, Mathf.Infinity);
+    //             Debug.DrawLine(pos + new Vector2(_scale, _scale), pos + new Vector2(_scale, -_scale), _col, Mathf.Infinity);
+    //             Debug.DrawLine(pos + new Vector2(_scale, -_scale), pos + new Vector2(-_scale, -_scale), _col, Mathf.Infinity);
+    //             Debug.DrawLine(pos + new Vector2(-_scale, -_scale), pos + new Vector2(-_scale, _scale), _col, Mathf.Infinity);
 
-                SuperDebug.Log(
-                    _start, _col,
-                    (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
-                    (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
-                    _start + " -> " + _end + " (" + pos + "):",
-                    (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(),
-                    (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
-                );
+    //             SuperDebug.Log(
+    //                 _start, _col,
+    //                 (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
+    //                 (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
+    //                 _start + " -> " + _end + " (" + pos + "):",
+    //                 (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(),
+    //                 (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
+    //             );
 
-                return true;
-            }
+    //             return true;
+    //         }
 
-            // else check if hit any equally close tiles
-            else if (_cast[i].ExtraPositions != null){
-                for (int j = 0; j < _cast[i].ExtraPositions.Length; j++){
+    //         // else check if hit any equally close tiles
+    //         else if (_cast[i].ExtraPositions != null){
+    //             for (int j = 0; j < _cast[i].ExtraPositions.Length; j++){
 
-                    if (sGridColliderArray[(int)_cast[i].ExtraPositions[j].x, (int)_cast[i].ExtraPositions[j].y]) {
-                        Vector2 pos = _cast[i].ExtraPositions[j] - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf);
-                        Debug.DrawLine(_start, _end, _col, Mathf.Infinity);
-                        Debug.DrawLine(pos + new Vector2(-_scale, _scale), pos + new Vector2(_scale, _scale), _col, Mathf.Infinity);
-                        Debug.DrawLine(pos + new Vector2(_scale, _scale), pos + new Vector2(_scale, -_scale), _col, Mathf.Infinity);
-                        Debug.DrawLine(pos + new Vector2(_scale, -_scale), pos + new Vector2(-_scale, -_scale), _col, Mathf.Infinity);
-                        Debug.DrawLine(pos + new Vector2(-_scale, -_scale), pos + new Vector2(-_scale, _scale), _col, Mathf.Infinity);
+    //                 if (sGridColliderArray[(int)_cast[i].ExtraPositions[j].x, (int)_cast[i].ExtraPositions[j].y]) {
+    //                     Vector2 pos = _cast[i].ExtraPositions[j] - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf);
+    //                     Debug.DrawLine(_start, _end, _col, Mathf.Infinity);
+    //                     Debug.DrawLine(pos + new Vector2(-_scale, _scale), pos + new Vector2(_scale, _scale), _col, Mathf.Infinity);
+    //                     Debug.DrawLine(pos + new Vector2(_scale, _scale), pos + new Vector2(_scale, -_scale), _col, Mathf.Infinity);
+    //                     Debug.DrawLine(pos + new Vector2(_scale, -_scale), pos + new Vector2(-_scale, -_scale), _col, Mathf.Infinity);
+    //                     Debug.DrawLine(pos + new Vector2(-_scale, -_scale), pos + new Vector2(-_scale, _scale), _col, Mathf.Infinity);
 
-                        SuperDebug.Log(
-                            _start, _col, 
-                            "Extra, Extra!",
-                            (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
-                            (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
-                            _start + " -> " + _end + " (" + pos + "):",
-                            (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(), 
-                            (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
-                        );
+    //                     SuperDebug.Log(
+    //                         _start, _col, 
+    //                         "Extra, Extra!",
+    //                         (_cast[0].ExtraPositions != null && _cast[0].ExtraPositions.Length > 0).ToString(),
+    //                         (_cast[1].ExtraPositions != null && _cast[1].ExtraPositions.Length > 0).ToString(),
+    //                         _start + " -> " + _end + " (" + pos + "):",
+    //                         (_cast[0].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString(), 
+    //                         (_cast[1].Pos - new Vector2(Grid.GridSizeXHalf, Grid.GridSizeYHalf)).ToString()
+    //                     );
 
-                        return true;
-                    }
-                }
-            }
-        }
+    //                     return true;
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
-    static bool CanHitOwnTile(Vector2 _start, Vector2 _end, Vector2 _startTileWorldPos) {
-        Vector2 _diff = _start - _startTileWorldPos;
-        int _euler = (int)GetAngleClockwise(_end, _start, 360);
-        if (_diff.x < 0 && _diff.y > 0) // TL corner of tile
-            return _euler >= 90 && _euler <= 180;
-        else if (_diff.x > 0 && _diff.y > 0) // TR corner of tile
-            return _euler >= 180 && _euler <= 270;
-        else if (_diff.x > 0 && _diff.y < 0) // BR corner of tile
-            return _euler >= 270;
-        else if (_diff.x < 0 && _diff.y < 0) // BL corner of tile
-            return _euler >= 0 && _euler <= 90;
+    // static bool CanHitOwnTile(Vector2 _start, Vector2 _end, Vector2 _startTileWorldPos) {
+    //     Vector2 _diff = _start - _startTileWorldPos;
+    //     int _euler = (int)GetAngleClockwise(_end, _start, 360);
+    //     if (_diff.x < 0 && _diff.y > 0) // TL corner of tile
+    //         return _euler >= 90 && _euler <= 180;
+    //     else if (_diff.x > 0 && _diff.y > 0) // TR corner of tile
+    //         return _euler >= 180 && _euler <= 270;
+    //     else if (_diff.x > 0 && _diff.y < 0) // BR corner of tile
+    //         return _euler >= 270;
+    //     else if (_diff.x < 0 && _diff.y < 0) // BL corner of tile
+    //         return _euler >= 0 && _euler <= 90;
 
-        return false;
-    }
+    //     return false;
+    // }
 
-    Vector2 testPos;
-    bool IsPossibleToGridcastFurther(Vector2 _start, Vector2 _dir) {
-        testPos = _start + (_dir * 0.01f);
+    // Vector2 testPos;
+    // bool IsPossibleToGridcastFurther(Vector2 _start, Vector2 _dir) {
+    //     testPos = _start + (_dir * 0.01f);
 
-        t = Grid.Instance.GetTileFromWorldPoint(testPos);
-        CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition, ref sShadowCollider);
+    //     t = Grid.Instance.GetTileFromWorldPoint(testPos);
+    //     CachedAssets.Instance.WallSets[0].GetShadowCollider(t.ExactType, t.Animator.CurrentFrame, t.WorldPosition, ref sShadowCollider);
 
-        float closest = 0;
-        return sShadowCollider != null && sShadowCollider.OverlapPointOrAlmost(testPos, out closest);
-    }
+    //     float closest = 0;
+    //     return sShadowCollider != null && sShadowCollider.OverlapPointOrAlmost(testPos, out closest);
+    // }
 
-    List<Vector2> hits = new List<Vector2>();
-    List<float> hitsDistance = new List<float>();
-    List<Vector2> nonHits = new List<Vector2>();
-    List<bool> nonHitsHadCollider = new List<bool>();
-    List<float> nonHitsDistance = new List<float>();
+    // List<Vector2> hits = new List<Vector2>();
+    // List<Vector2> nonHits = new List<Vector2>();
+    // List<bool> nonHitsHadCollider = new List<bool>();
+    // List<float> nonHitsDistance = new List<float>();
 }
 

@@ -3,8 +3,8 @@ using System.Linq;
 using System.Collections.Generic;
 public class UVController : MeshSorter {
 
-	public CachedAssets.DoubleInt Coordinates;
-    public CachedAssets.DoubleInt TemporaryCoordinates;
+	public DoubleInt Coordinates;
+    public DoubleInt TemporaryCoordinates;
 
     //public Tile.Type Type;
     public Tile.TileOrientation Orientation;
@@ -64,42 +64,33 @@ public class UVController : MeshSorter {
 
     Mesh GenerateMesh(){
         Mesh mesh = new Mesh();
-        mesh.vertices = new Vector3[] {
-            new Vector3(-0.5f, -1, 0),
-            new Vector3(-0.5f, 0, 0),
-            new Vector3(-0.5f, 0, 0), // duplicate to stop vertex color spilling into tile above
-            new Vector3(-0.5f, 1, 0),
-            new Vector3(0.5f, 1, 0),
-            new Vector3(0.5f, 0, 0),
-            new Vector3(0.5f, 0, 0), // duplicate again
-            new Vector3(0.5f, -1, 0)
+        mesh.vertices = new Vector3[] { // imagine it upside down, and that's the mesh below
+            new Vector3(-0.5f, -1, 0),      new Vector3(0, -1, 0),      new Vector3(0.5f, -1, 0), 
+            new Vector3(-0.5f, -0.5f, 0),   new Vector3(0, -0.5f, 0),   new Vector3(0.5f, -0.5f, 0),
+            new Vector3(-0.5f, 0, 0),       new Vector3(0, 0, 0),       new Vector3(0.5f, 0, 0), 
+            new Vector3(-0.5f, 0, 0),       new Vector3(0, 0, 0),       new Vector3(0.5f, 0, 0), 
+            new Vector3(-0.5f, 1, 0),                                   new Vector3(0.5f, 1, 0)
         };
         mesh.uv = new Vector2[]{
-            new Vector2(0, 0),
-            new Vector2(0, 0.5f),
-            new Vector2(0, 0.5f),
-            new Vector2(0, 1),
-            new Vector2(1, 1),
-            new Vector2(1, 0.5f),
-            new Vector2(1, 0.5f),
-            new Vector2(1, 0)
+            new Vector2(0, 0),      new Vector2(0.5f, 0),       new Vector2(1, 0),
+            new Vector2(0, 0.25f),  new Vector2(0.5f, 0.25f),   new Vector2(1, 0.25f),
+            new Vector2(0, 0.5f),   new Vector2(0.5f, 0.5f),    new Vector2(1, 0.5f), 
+            new Vector2(0, 0.5f),   new Vector2(0.5f, 0.5f),    new Vector2(1, 0.5f), 
+            new Vector2(0, 1),                                  new Vector2(1, 1)
         };
         mesh.triangles = new int[]{
-            0,
-            6,
-            7,
+            0, 4, 1,
+            1, 4, 2,
+            2, 4, 5,
+            5, 4, 8,
+            8, 4, 7,
+            7, 4, 6,
+            6, 4, 3,
+            3, 4, 0,
 
-            0,
-            1,
-            6,
-
-            2,
-            4,
-            5,
-
-            2,
-            3,
-            4
+            9,  10, 12,
+            12, 10, 13,
+            13, 10, 11
         };
         return mesh;
     }
@@ -108,7 +99,7 @@ public class UVController : MeshSorter {
         TemporaryCoordinates = null;
         ChangeAsset(Coordinates, false);
     }
-    public void ChangeAsset(CachedAssets.DoubleInt _assetIndices, bool _temporary) {
+    public void ChangeAsset(DoubleInt _assetIndices, bool _temporary) {
         if(!Application.isPlaying)
             return;
 
@@ -122,31 +113,30 @@ public class UVController : MeshSorter {
             return;
         }
 
-        // BL
-        myMeshUVs[0].x = (Tile.RESOLUTION * _assetIndices.X) / CachedAssets.WallSet.TEXTURE_SIZE_X;
-        myMeshUVs[0].y = (Tile.RESOLUTION * _assetIndices.Y) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
+        float _uvL = (Tile.RESOLUTION * _assetIndices.X) / CachedAssets.WallSet.TEXTURE_SIZE_X;
+        float _uvR = (Tile.RESOLUTION * _assetIndices.X + 1) / CachedAssets.WallSet.TEXTURE_SIZE_X;
 
-        // TR
-        myMeshUVs[4].x = (Tile.RESOLUTION * (_assetIndices.X + 1)) / CachedAssets.WallSet.TEXTURE_SIZE_X;
-        myMeshUVs[4].y = (Tile.RESOLUTION * (_assetIndices.Y + 2)) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
+        float _uvB = (Tile.RESOLUTION * _assetIndices.Y) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
+        float _uvT = (Tile.RESOLUTION * _assetIndices.Y + 2) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
 
-        // L
-        myMeshUVs[1].x = myMeshUVs[0].x;
-        myMeshUVs[1].y = (Tile.RESOLUTION * (_assetIndices.Y + 1)) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
-        myMeshUVs[2] = myMeshUVs[1];
+        float _halfX = (_uvR - _uvL) * 0.5f;
+        float _halfY = (_uvT - _uvB) * 0.5f;
+        float _quarterY = _halfY * 0.5f;
 
-        // TL
-        myMeshUVs[3].x = myMeshUVs[0].x;
-        myMeshUVs[3].y = myMeshUVs[4].y;
+        myMeshUVs[0].x = _uvL;              myMeshUVs[1].x = _uvL + _halfX;     myMeshUVs[2].x = _uvR;
+        myMeshUVs[0].y = _uvB;              myMeshUVs[1].y = _uvB;              myMeshUVs[2].y = _uvB;
 
-        // R
-        myMeshUVs[5].x = myMeshUVs[4].x;
-        myMeshUVs[5].y = myMeshUVs[1].y;
-        myMeshUVs[6] = myMeshUVs[5];
+        myMeshUVs[3].x = _uvL;              myMeshUVs[4].x = _uvL + _halfX;     myMeshUVs[5].x = _uvR;
+        myMeshUVs[3].y = _uvB + _quarterY;  myMeshUVs[4].y = _uvB + _quarterY;  myMeshUVs[5].y = _uvB + _quarterY;
 
-        // BR
-        myMeshUVs[7].x = myMeshUVs[4].x;
-        myMeshUVs[7].y = myMeshUVs[0].y;
+        myMeshUVs[6].x = _uvL;              myMeshUVs[7].x = _uvL + _halfX;     myMeshUVs[8].x = _uvR;
+        myMeshUVs[6].y = _uvB + _halfY;     myMeshUVs[7].y = _uvB + _halfY;     myMeshUVs[8].y = _uvB + _halfY;
+
+        myMeshUVs[9] = myMeshUVs[6];        myMeshUVs[10] = myMeshUVs[7];       myMeshUVs[11] = myMeshUVs[8];
+
+        myMeshUVs[12].x = _uvL;                                                 myMeshUVs[13].x = _uvR;
+        myMeshUVs[12].y = _uvT;                                                 myMeshUVs[13].y = _uvT;
+
 
         myMeshFilter.mesh.uv = myMeshUVs;
         if(!isHidden)
@@ -227,7 +217,7 @@ public class UVController : MeshSorter {
     }
 
     private static Color32[] sVertexColors;
-    public void SetVertexColor(byte _specificVertex, Color32 _color){
+    public void SetVertexColor(int _specificVertex, Color32 _color){
         sVertexColors = myMeshFilter.mesh.colors32.Length > 0 ? myMeshFilter.mesh.colors32 : new Color32[myMeshFilter.mesh.vertices.Length];
         sVertexColors[_specificVertex] = _color;
         myMeshFilter.mesh.colors32 = sVertexColors;

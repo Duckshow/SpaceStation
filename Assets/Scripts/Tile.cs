@@ -59,7 +59,7 @@ public class Tile : IHeapItem<Tile> {
     public bool _BuildingAllowed_ { get { return buildingAllowed; } private set { buildingAllowed = value; } }
     // public int GridX { get; private set; }
     // public int GridY { get; private set; }
-    public CachedAssets.DoubleInt GridCoord { get; private set; }
+    public DoubleInt GridCoord { get; private set; }
 
     public Vector2 WorldPosition { get; private set; }
     public Vector2 DefaultPositionWorld { get; private set; }
@@ -153,7 +153,7 @@ public class Tile : IHeapItem<Tile> {
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY) {
         WorldPosition = _worldPos;
-        GridCoord = new CachedAssets.DoubleInt(_gridX, _gridY);
+        GridCoord = new DoubleInt(_gridX, _gridY);
 
         FloorQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
         FloorCornerHider = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
@@ -881,7 +881,7 @@ public class Tile : IHeapItem<Tile> {
         }
     }
 
-    public void ChangeWallGraphics(CachedAssets.DoubleInt _bottomAssetIndices, CachedAssets.DoubleInt _topAssetIndices, bool _temporary) {
+    public void ChangeWallGraphics(DoubleInt _bottomAssetIndices, DoubleInt _topAssetIndices, bool _temporary) {
 		BottomQuad.ChangeAsset(_bottomAssetIndices, _temporary);
         TopQuad.ChangeAsset(_topAssetIndices, _temporary);
 		UpdateWallCornerHider (_temporary);
@@ -892,7 +892,7 @@ public class Tile : IHeapItem<Tile> {
         TopQuad.StopTempMode();
         UpdateWallCornerHider(false);
     }
-	public void ChangeFloorGraphics(CachedAssets.DoubleInt _assetIndices, bool _temporary) {
+	public void ChangeFloorGraphics(DoubleInt _assetIndices, bool _temporary) {
 		FloorQuad.ChangeAsset(_assetIndices, _temporary);
 		//UpdateWallCornerHider (_temporary);
 		UpdateFloorCornerHider (_temporary);
@@ -932,21 +932,21 @@ public class Tile : IHeapItem<Tile> {
             case Type.Diagonal:
                 break;
             case Type.Door:
-                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Open), null, _forward: true, _loop: false);
+                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Open).Forward(), null, _loop: false);
                 break;
             case Type.Airlock:
                 Animator.Animate(
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, _direction), 
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, _direction), 
-                    _forward: true, _loop: false
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, _direction).Forward(), 
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, _direction).Forward(), 
+                    _loop: false
                 );
                 break;
             default:
 				throw new System.NotImplementedException(_WallType_ + " hasn't been properly implemented yet!");
         }
     }
-    TileAnimator.TileAnimation[] animationSequenceTop;
-    TileAnimator.TileAnimation[] animationSequenceBottom;
+    DoubleInt[][] animationSequenceTop;
+    DoubleInt[][] animationSequenceBottom;
     public void OnActorEnterTile(TileOrientation _direction, out float _yieldTime) {
         _yieldTime = 0;
 		switch (_WallType_) {
@@ -955,19 +955,19 @@ public class Tile : IHeapItem<Tile> {
             case Type.Diagonal:
                 break;
             case Type.Door:
-                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Close), null, _forward: true, _loop: false);
+                Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Open).Reverse(), null, _loop: false);
                 break;
             case Type.Airlock:
-                animationSequenceTop = new TileAnimator.TileAnimation[] {
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Close, _direction),
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Wait, TileOrientation.None),
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)),
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Close, GetReverseDirection(_direction)) };
-                animationSequenceBottom = new TileAnimator.TileAnimation[] {
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Close, _direction),
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Wait, TileOrientation.None),
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)),
-                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Close, GetReverseDirection(_direction)) };
+                animationSequenceTop = new DoubleInt[][] {
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, _direction).Reverse(),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Wait, TileOrientation.None).Forward(),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)).Forward(),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)).Reverse() };
+                animationSequenceBottom = new DoubleInt[][] {
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, _direction).Reverse(),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Wait, TileOrientation.None).Forward(),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)).Forward(),
+                    Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)).Reverse() };
 
                 Animator.AnimateSequence(animationSequenceBottom, animationSequenceTop);
 

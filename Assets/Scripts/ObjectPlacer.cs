@@ -19,8 +19,8 @@ public class ObjectPlacer {
                 UISelectedObject = value;
         }
     }
-    private CachedAssets.DoubleInt AssetBottom;
-    private CachedAssets.DoubleInt AssetTop;
+    private DoubleInt AssetBottom;
+    private DoubleInt AssetTop;
     private bool activeTemporarily = false;
     private int oldObjectButtonIndex = -1;
     private bool selectedObjectButtonHasChanged = false;
@@ -64,7 +64,7 @@ public class ObjectPlacer {
             TopQuad.transform.position = newPos;
             position = _value;
         }
-        public void ChangeAssets(CachedAssets.DoubleInt _bottomIndices, CachedAssets.DoubleInt _topIndices) {
+        public void ChangeAssets(DoubleInt _bottomIndices, DoubleInt _topIndices) {
             BottomQuad.ChangeAsset(_bottomIndices, false);
             TopQuad.ChangeAsset(_topIndices, false);
         }

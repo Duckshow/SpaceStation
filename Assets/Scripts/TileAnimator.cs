@@ -8,29 +8,35 @@ public class TileAnimator {
     private float currentFPS;
 
     public class TileAnimation {
-        public CachedAssets.DoubleInt[] Frames;
+        private DoubleInt[] Frames;
+        public int FrameCount { get { return Frames.Length; } }
+        public DoubleInt First { get { return Frames[0]; } }
 
-		private static List<CachedAssets.DoubleInt> frameList = new List<CachedAssets.DoubleInt>();
-        public TileAnimation(int texturePosY, int amountOfFrames, CachedAssets.DoubleInt forceFirstFrame = null) {
+		private static List<DoubleInt> frameList = new List<DoubleInt>();
+        public TileAnimation(int texturePosY, int amountOfFrames, DoubleInt forceFirstFrame = null) {
             frameList.Clear();
             for (int i = 0; i < amountOfFrames; i++) {
                 if(i == 0 && forceFirstFrame != null)
                     frameList.Add(forceFirstFrame);
                 else
-                    frameList.Add(new CachedAssets.DoubleInt(i, texturePosY));
+                    frameList.Add(new DoubleInt(i, texturePosY));
             }
             Frames = frameList.ToArray();
         }
-        public TileAnimation Reverse() {
+        public DoubleInt[] Forward() {
+            frameList.Clear();
+            frameList.AddRange(Frames);
+            return frameList.ToArray();
+        }
+        public DoubleInt[] Reverse() {
             frameList.Clear();
             frameList.AddRange(Frames);
             frameList.Reverse();
-            Frames = frameList.ToArray();
-            return this;
+            return frameList.ToArray();
         }
     }
-    public TileAnimation AnimationBottom;
-    public TileAnimation AnimationTop;
+    public DoubleInt[] AnimationBottom;
+    public DoubleInt[] AnimationTop;
     public int CurrentFrame { get; private set; }
     public int StartFrame { get; private set; }
     public int EndFrame { get; private set; }
@@ -50,13 +56,11 @@ public class TileAnimator {
         IsFinished = true;
     }
 
-    public enum AnimationContextEnum { Open, Close, Wait };
+    public enum AnimationContextEnum { Open, Wait };
     public enum AnimationPartEnum { Bottom, Top };
     public TileAnimation GetDoorAnimation(AnimationContextEnum _context) {
         switch (_context) {
             case AnimationContextEnum.Open:
-                return (owner._IsHorizontal_ ? CachedAssets.WallSet.anim_DoorHorizontal_Open : CachedAssets.WallSet.anim_DoorVertical_Open);
-            case AnimationContextEnum.Close:
                 return (owner._IsHorizontal_ ? CachedAssets.WallSet.anim_DoorHorizontal_Open : CachedAssets.WallSet.anim_DoorVertical_Open);
             case AnimationContextEnum.Wait:
                 // not used for doors
@@ -86,19 +90,6 @@ public class TileAnimator {
                     else
                         return (_direction == Tile.TileOrientation.Left ? CachedAssets.WallSet.anim_AirlockVertical_Open_R_Bottom : CachedAssets.WallSet.anim_AirlockVertical_Open_L_Bottom);
                 }
-            case AnimationContextEnum.Close:
-                if (owner._IsHorizontal_) {
-                    if (_part == AnimationPartEnum.Top)
-                        return (_direction == Tile.TileOrientation.Bottom ? CachedAssets.WallSet.anim_AirlockHorizontal_Close_T_Top : CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Top);
-                    else
-                        return (_direction == Tile.TileOrientation.Bottom ? CachedAssets.WallSet.anim_AirlockHorizontal_Close_T_Bottom : CachedAssets.WallSet.anim_AirlockHorizontal_Close_B_Bottom);
-                }
-                else {
-                    if (_part == AnimationPartEnum.Top)
-                        return (_direction == Tile.TileOrientation.Left ? CachedAssets.WallSet.anim_AirlockVertical_Close_R_Top : CachedAssets.WallSet.anim_AirlockVertical_Close_L_Top);
-                    else
-                        return (_direction == Tile.TileOrientation.Left ? CachedAssets.WallSet.anim_AirlockVertical_Close_R_Bottom : CachedAssets.WallSet.anim_AirlockVertical_Close_L_Bottom);
-                }
             case AnimationContextEnum.Wait:
                 if (owner._IsHorizontal_) {
                     if (_part == AnimationPartEnum.Top)
@@ -117,19 +108,19 @@ public class TileAnimator {
         }
     }
 
-    public void AnimateSequence(TileAnimation[] _sequenceBottom, TileAnimation[] _sequenceTop) {
+    public void AnimateSequence(DoubleInt[][] _sequenceBottom, DoubleInt[][] _sequenceTop) {
         Grid.Instance.StartCoroutine(_AnimateSequence(_sequenceBottom, _sequenceTop));
     }
-    IEnumerator _AnimateSequence(TileAnimation[] _sequenceBottom, TileAnimation[] _sequenceTop) {
+    IEnumerator _AnimateSequence(DoubleInt[][] _sequenceBottom, DoubleInt[][] _sequenceTop) {
         if (_sequenceBottom.Length != _sequenceTop.Length)
             throw new System.Exception("AnimationSequences must be of equal length in all parts of a tile!");
 
         for (int i = 0; i < _sequenceBottom.Length; i++) {
-            Animate(_sequenceBottom[i], _sequenceTop[i], true, false);
+            Animate(_sequenceBottom[i], _sequenceTop[i], false);
             yield return new WaitForSeconds(GetProperWaitTimeForTileAnim(_sequenceBottom[i], _sequenceTop[i]));
         }
     }
-    public void Animate(TileAnimation _animationBottom, TileAnimation _animationTop, bool _forward, bool _loop, float _fps = 0) {
+    public void Animate(DoubleInt[] _animationBottom, DoubleInt[] _animationTop, bool _loop, float _fps = 0) {
         if (!IsFinished)
             Debug.LogWarning("Animator wasn't finished but launched new animation anyway! Not sure if dangerous!");
         if (!_loop)
@@ -139,7 +130,11 @@ public class TileAnimator {
 
         AnimationBottom = _animationBottom;
         AnimationTop = _animationTop;
-        SetPlayForward(_forward);
+        //SetPlayForward(_forward);
+        StartFrame = -1;
+        EndFrame = Mathf.Max(
+            AnimationBottom == null ? 0 : AnimationBottom.Length
+            , AnimationTop == null ? 0 : AnimationTop.Length) - 1;
         CurrentFrame = StartFrame;
         Loop = _loop;
         IsPaused = false;
@@ -147,15 +142,15 @@ public class TileAnimator {
         IsFinished = false;
         Grid.LateUpdateAnimators.Add(this);
     }
-    public float GetProperWaitTimeForTileAnim(TileAnimation _animBottom, TileAnimation _animTop) {
-        return (Mathf.Max(_animBottom.Frames.Length, _animTop.Frames.Length) + 1) / currentFPS;
+    public float GetProperWaitTimeForTileAnim(DoubleInt[] _animBottom, DoubleInt[] _animTop) {
+        return (Mathf.Max(_animBottom.Length, _animTop.Length) + 1) / currentFPS;
     }
 
-    public void SetPlayForward(bool _b) {
-        PlayForward = _b;
-        StartFrame = PlayForward ? -1 : Mathf.Max(AnimationBottom == null ? 0 : AnimationBottom.Frames.Length, AnimationTop == null ? 0 : AnimationTop.Frames.Length);
-        EndFrame = PlayForward ? Mathf.Max(AnimationBottom == null ? 0 : AnimationBottom.Frames.Length, AnimationTop == null ? 0 : AnimationTop.Frames.Length) - 1 : 0;
-    }
+    // public void SetPlayForward(bool _b) {
+    //     PlayForward = _b;
+    //     StartFrame = PlayForward ? -1 : Mathf.Max(AnimationBottom == null ? 0 : AnimationBottom.FrameCount, AnimationTop == null ? 0 : AnimationTop.FrameCount);
+    //     EndFrame = PlayForward ? Mathf.Max(AnimationBottom == null ? 0 : AnimationBottom.FrameCount, AnimationTop == null ? 0 : AnimationTop.FrameCount) - 1 : 0;
+    // }
 
     public void StopAnimating() {
         IsFinished = true;
@@ -188,16 +183,16 @@ public class TileAnimator {
         }
     }
 
-    private CachedAssets.DoubleInt currentFrameBottom;
-    private CachedAssets.DoubleInt currentFrameTop;
+    private DoubleInt currentFrameBottom;
+    private DoubleInt currentFrameTop;
     void SwitchToNextFrame() {
 
         // set new frame and get graphics
         CurrentFrame = Mathf.Clamp(PlayForward ? CurrentFrame + 1 : CurrentFrame - 1, Mathf.Min(StartFrame, EndFrame), Mathf.Max(StartFrame, EndFrame));
 
         // apply new frame
-        currentFrameBottom = (AnimationBottom != null && AnimationBottom.Frames.Length > CurrentFrame) ? AnimationBottom.Frames[CurrentFrame] : null;
-        currentFrameTop = (AnimationTop != null && AnimationTop.Frames.Length > CurrentFrame) ? AnimationTop.Frames[CurrentFrame] : null;
+        currentFrameBottom = (AnimationBottom != null && AnimationBottom.Length > CurrentFrame) ? AnimationBottom[CurrentFrame] : null;
+        currentFrameTop = (AnimationTop != null && AnimationTop.Length > CurrentFrame) ? AnimationTop[CurrentFrame] : null;
         owner.ChangeWallGraphics(currentFrameBottom, currentFrameTop, false);
 
         IsFinished = CurrentFrame == EndFrame;
