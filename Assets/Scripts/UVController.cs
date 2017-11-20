@@ -10,7 +10,7 @@ public class UVController : MeshSorter {
     public Tile.TileOrientation Orientation;
 
     private MeshFilter myMeshFilter;
-    private Vector2[] myMeshUVs;
+    private List<Vector4> myMeshUVs;
 
 	private static int sCachedPropertyColor = -1;
 	private static int sCachedPropertyAllColors = -1;
@@ -48,9 +48,9 @@ public class UVController : MeshSorter {
         myMeshFilter = GetComponent<MeshFilter>();
         if(myMeshFilter.sharedMesh == null)
             myMeshFilter.sharedMesh = GenerateMesh();
-        myMeshUVs = myMeshFilter.sharedMesh.uv;
+        myMeshFilter.mesh.GetUVs(0, myMeshUVs);
 
-		if(sCachedPropertyColor == -1)
+        if(sCachedPropertyColor == -1)
 	        sCachedPropertyColor = Shader.PropertyToID("_Color");
 		ChangeAsset(Coordinates, false);
 
@@ -95,10 +95,15 @@ public class UVController : MeshSorter {
         return mesh;
     }
 
+    [EasyButtons.Button]
+    public void UpdateCurrentGraphics() {
+        ChangeAsset(Coordinates, false);
+    }
     public void StopTempMode() {
         TemporaryCoordinates = null;
         ChangeAsset(Coordinates, false);
     }
+    delegate void SetUV(int _index, float _x, float _y);
     public void ChangeAsset(DoubleInt _assetIndices, bool _temporary) {
         if(!Application.isPlaying)
             return;
@@ -114,31 +119,33 @@ public class UVController : MeshSorter {
         }
 
         float _uvL = (Tile.RESOLUTION * _assetIndices.X) / CachedAssets.WallSet.TEXTURE_SIZE_X;
-        float _uvR = (Tile.RESOLUTION * _assetIndices.X + 1) / CachedAssets.WallSet.TEXTURE_SIZE_X;
+        float _uvR = (Tile.RESOLUTION * (_assetIndices.X + 1)) / CachedAssets.WallSet.TEXTURE_SIZE_X;
 
         float _uvB = (Tile.RESOLUTION * _assetIndices.Y) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
-        float _uvT = (Tile.RESOLUTION * _assetIndices.Y + 2) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
+        float _uvT = (Tile.RESOLUTION * (_assetIndices.Y + 2)) / CachedAssets.WallSet.TEXTURE_SIZE_Y;
 
         float _halfX = (_uvR - _uvL) * 0.5f;
         float _halfY = (_uvT - _uvB) * 0.5f;
         float _quarterY = _halfY * 0.5f;
 
-        myMeshUVs[0].x = _uvL;              myMeshUVs[1].x = _uvL + _halfX;     myMeshUVs[2].x = _uvR;
-        myMeshUVs[0].y = _uvB;              myMeshUVs[1].y = _uvB;              myMeshUVs[2].y = _uvB;
+        //Debug.LogFormat("UVs:\n Left: {0}\nRight: {1}\nBottom: {2}\nTop: {3}\nHalfX: {4}\nHalfY: {5}\nQuarterY: {6}", _uvL, _uvR, _uvB, _uvT, _halfX, _halfY, _quarterY);
 
-        myMeshUVs[3].x = _uvL;              myMeshUVs[4].x = _uvL + _halfX;     myMeshUVs[5].x = _uvR;
-        myMeshUVs[3].y = _uvB + _quarterY;  myMeshUVs[4].y = _uvB + _quarterY;  myMeshUVs[5].y = _uvB + _quarterY;
+        SetUV _setUV = delegate (int _index, float _x, float _y){
+            Vector4 _uv = new Vector4();
+            _uv.x = _x;
+            _uv.y = _y;
+            _uv.z = myMeshUVs[_index].z;
+            _uv.w = myMeshUVs[_index].w;
+            myMeshUVs[_index] = _uv;
+        };
+        _setUV(0, _uvL, _uvB);               _setUV(1, _uvL + _halfX, _uvB);                _setUV(2, _uvR, _uvB);
+        _setUV(3, _uvL, _uvB + _quarterY);   _setUV(4, _uvL + _halfX, _uvB + _quarterY);    _setUV(5, _uvR, _uvB + _quarterY);
+        _setUV(6, _uvL, _uvB + _halfY);      _setUV(7, _uvL + _halfX, _uvB + _halfY);       _setUV(8, _uvR, _uvB + _halfY);
+        _setUV(9, _uvL, _uvB + _halfY);      _setUV(10, _uvL + _halfX, _uvB + _halfY);      _setUV(11, _uvR, _uvB + _halfY);
+        _setUV(12, _uvL, _uvT);                                                             _setUV(13, _uvR, _uvT);
 
-        myMeshUVs[6].x = _uvL;              myMeshUVs[7].x = _uvL + _halfX;     myMeshUVs[8].x = _uvR;
-        myMeshUVs[6].y = _uvB + _halfY;     myMeshUVs[7].y = _uvB + _halfY;     myMeshUVs[8].y = _uvB + _halfY;
-
-        myMeshUVs[9] = myMeshUVs[6];        myMeshUVs[10] = myMeshUVs[7];       myMeshUVs[11] = myMeshUVs[8];
-
-        myMeshUVs[12].x = _uvL;                                                 myMeshUVs[13].x = _uvR;
-        myMeshUVs[12].y = _uvT;                                                 myMeshUVs[13].y = _uvT;
-
-
-        myMeshFilter.mesh.uv = myMeshUVs;
+        //myMeshFilter.mesh.uv = myMeshUVs;
+        myMeshFilter.mesh.SetUVs(0, myMeshUVs);
         if(!isHidden)
             myRenderer.enabled = true;
     }
@@ -158,12 +165,12 @@ public class UVController : MeshSorter {
     }
 
     // skip 0 as it's used as actual UV
-    private static List<Vector4> sUVColors_12 = new List<Vector4>();
-    private static List<Vector4> sUVColors_34 = new List<Vector4>();
-    private static List<Vector2> sUVColors_5 = new List<Vector2>();
-    private static Vector4 sUVColor_12 = new Vector4();
-    private static Vector4 sUVColor_34 = new Vector4();
-    private static Vector2 sUVColor_5 = new Vector2();
+    private static List<Vector2> sUVColors_01 = new List<Vector2>();
+    private static List<Vector4> sUVColors_23 = new List<Vector4>();
+    private static List<Vector4> sUVColors_45 = new List<Vector4>();
+    private static Vector4 sUVColor_01 = new Vector4();
+    private static Vector4 sUVColor_23 = new Vector4();
+    private static Vector4 sUVColor_45 = new Vector4();
     public void SetUVColor(byte _color0, byte _color1, byte _color2, byte _color3, byte _color4, byte _color5, byte _color6, byte _color7, byte _color8, byte _color9, bool _temporarily) {
         if (!_temporarily) {
 			setColorIndex_0 = _color0;
@@ -189,37 +196,59 @@ public class UVController : MeshSorter {
         colorIndex_8 = _color8;
         colorIndex_9 = _color9;
 
-        sUVColors_12.Clear();
-        sUVColors_34.Clear();
-        sUVColors_5.Clear();
-        sUVColor_12.x = colorIndex_0; // non-alloc, instead of doing new Vector2() all the time
-        sUVColor_12.y = colorIndex_1;
-        sUVColor_12.z = colorIndex_2;
-        sUVColor_12.w = colorIndex_3;
-        sUVColor_34.x = colorIndex_4;
-        sUVColor_34.y = colorIndex_5;
-        sUVColor_34.z = colorIndex_6;
-        sUVColor_34.w = colorIndex_7;
-        sUVColor_5.x = colorIndex_8;
-        sUVColor_5.y = colorIndex_9;
+        sUVColors_01.Clear();
+        sUVColors_23.Clear();
+        sUVColors_45.Clear();
+        // sUVColor_01.x = colorIndex_0; // don't assign x & y since they're used for actual uv-ing
+        // sUVColor_01.y = colorIndex_1;
+        sUVColor_01.z = colorIndex_0;
+        sUVColor_01.w = colorIndex_1;
+        sUVColor_23.x = colorIndex_2;
+        sUVColor_23.y = colorIndex_3;
+        sUVColor_23.z = colorIndex_4;
+        sUVColor_23.w = colorIndex_5;
+        sUVColor_45.x = colorIndex_6;
+        sUVColor_45.y = colorIndex_7;
+        sUVColor_45.z = colorIndex_8;
+        sUVColor_45.w = colorIndex_9;
+
         for (int i = 0; i < myMeshFilter.mesh.uv.Length; i++) {
-            sUVColors_12.Add(sUVColor_12);
-            sUVColors_34.Add(sUVColor_34);
-            sUVColors_5.Add(sUVColor_5);
+
+            // add the actual uvs to _01
+            sUVColor_01.x = myMeshUVs[i].x;
+            sUVColor_01.y = myMeshUVs[i].y;
+
+            sUVColors_01.Add(sUVColor_01);
+            sUVColors_23.Add(sUVColor_23);
+            sUVColors_45.Add(sUVColor_45);
         }
 
-        myMeshFilter.mesh.SetUVs(1, sUVColors_12);
-        myMeshFilter.mesh.SetUVs(2, sUVColors_34);
-        myMeshFilter.mesh.SetUVs(3, sUVColors_5);
+        myMeshFilter.mesh.SetUVs(0, sUVColors_01);
+        myMeshFilter.mesh.SetUVs(1, sUVColors_23);
+        myMeshFilter.mesh.SetUVs(2, sUVColors_45);
     }
     public void ResetUVColor() {
         SetUVColor(setColorIndex_0, setColorIndex_1, setColorIndex_2, setColorIndex_3, setColorIndex_4, setColorIndex_5, setColorIndex_6, setColorIndex_7, setColorIndex_8, setColorIndex_9, false);
     }
 
-    private static Color32[] sVertexColors;
+    private static List<Color32> sVertexColors = new List<Color32>();
     public void SetVertexColor(int _specificVertex, Color32 _color){
-        sVertexColors = myMeshFilter.mesh.colors32.Length > 0 ? myMeshFilter.mesh.colors32 : new Color32[myMeshFilter.mesh.vertices.Length];
+        myMeshFilter.mesh.GetColors(sVertexColors);
         sVertexColors[_specificVertex] = _color;
-        myMeshFilter.mesh.colors32 = sVertexColors;
+        myMeshFilter.mesh.SetColors(sVertexColors);
+    }
+
+    private static List<Vector4> sUVAngles = new List<Vector4>();
+    public void SetUVAngles(int _specificUV, float _angle0, float _angle1, float _angle2, float _angle3){
+        myMeshFilter.mesh.GetUVs(3, sUVAngles);
+
+        Vector4 _angle = sUVAngles[_specificUV];
+        _angle.x = _angle0;
+        _angle.y = _angle1;
+        _angle.z = _angle2;
+        _angle.w = _angle3;
+        sUVAngles[_specificUV] = _angle;
+
+        myMeshFilter.mesh.SetUVs(3, sUVAngles);
     }
 }

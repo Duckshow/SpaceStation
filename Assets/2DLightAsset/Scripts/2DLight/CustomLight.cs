@@ -115,14 +115,14 @@ public class CustomLight : MonoBehaviour {
     }
 
     //private static Texture2D TextureLightAngles;
-    private static Texture2D TextureLightDotXs;
-    private static Texture2D TextureLightDotYs;
+    // private static Texture2D TextureLightDotXs;
+    // private static Texture2D TextureLightDotYs;
 
-    private static Color32[] ReportedDotXs;
-    private static Color32[] ReportedDotYs;
+    // private static Color32[] ReportedDotXs;
+    // private static Color32[] ReportedDotYs;
 
-    private static int shaderPropertyDotX;
-    private static int shaderPropertyDotY;
+    // private static int shaderPropertyDotX;
+    // private static int shaderPropertyDotY;
     private static Material GridMaterial;
 
     //private static bool[,] sGridColliderArray;
@@ -140,22 +140,22 @@ public class CustomLight : MonoBehaviour {
         // }
 
         // create textures and arrays
-        if (TextureLightDotXs == null) {
-            TextureLightDotXs = new Texture2D(Grid.GridSizeX, Grid.GridSizeY, TextureFormat.RGBA32, false);
-            TextureLightDotXs.filterMode = FilterMode.Point;
-        }
-        if (TextureLightDotYs == null) {
-            TextureLightDotYs = new Texture2D(Grid.GridSizeX, Grid.GridSizeY, TextureFormat.RGBA32, false);
-            TextureLightDotYs.filterMode = FilterMode.Point;
-        }
+        // if (TextureLightDotXs == null) {
+        //     TextureLightDotXs = new Texture2D(Grid.GridSizeX, Grid.GridSizeY, TextureFormat.RGBA32, false);
+        //     TextureLightDotXs.filterMode = FilterMode.Point;
+        // }
+        // if (TextureLightDotYs == null) {
+        //     TextureLightDotYs = new Texture2D(Grid.GridSizeX, Grid.GridSizeY, TextureFormat.RGBA32, false);
+        //     TextureLightDotYs.filterMode = FilterMode.Point;
+        // }
 
         // find material and propertyIDs
         if (GridMaterial == null)
             GridMaterial = Grid.Instance.grid[0, 0].BottomQuad.Renderer.sharedMaterial;
-        if (shaderPropertyDotX == 0)
-            shaderPropertyDotX = Shader.PropertyToID("_DotXs");
-        if (shaderPropertyDotY == 0)
-            shaderPropertyDotY = Shader.PropertyToID("_DotYs");
+        // if (shaderPropertyDotX == 0)
+        //     shaderPropertyDotX = Shader.PropertyToID("_DotXs");
+        // if (shaderPropertyDotY == 0)
+        //     shaderPropertyDotY = Shader.PropertyToID("_DotYs");
 
         // get to business
         for (int i = 0; i < AllLights.Count; i++) {
@@ -170,15 +170,15 @@ public class CustomLight : MonoBehaviour {
         CalculateLightingForGrid();
 
         // apply arrays to textures
-        TextureLightDotXs.SetPixels32(ReportedDotXs);
-        TextureLightDotYs.SetPixels32(ReportedDotYs);
-        TextureLightDotXs.Apply();
-        TextureLightDotYs.Apply();
+        // TextureLightDotXs.SetPixels32(ReportedDotXs);
+        // TextureLightDotYs.SetPixels32(ReportedDotYs);
+        // TextureLightDotXs.Apply();
+        // TextureLightDotYs.Apply();
 
 
         // apply textures to shader
-        GridMaterial.SetTexture(shaderPropertyDotX, TextureLightDotXs);
-        GridMaterial.SetTexture(shaderPropertyDotY, TextureLightDotYs);
+        // GridMaterial.SetTexture(shaderPropertyDotX, TextureLightDotXs);
+        // GridMaterial.SetTexture(shaderPropertyDotY, TextureLightDotYs);
 
         Debug.Log("All Lights Updated: " + (Time.realtimeSinceStartup - _timeStarted) + "s");
     }
@@ -482,94 +482,12 @@ public class CustomLight : MonoBehaviour {
     //private static Vector2 CORNER_OFFSET_OUTSIDE_GRID = new Vector2(0.5f, -0.5f);
     private const float VERTEX_DISTANCE = 0.5f;
     void CalculateLightingForGrid() {
-        if (ReportedDotXs == null)
-            ReportedDotXs = new Color32[Grid.GridSizeX * Grid.GridSizeY];
-        if(ReportedDotYs == null)
-            ReportedDotYs = new Color32[Grid.GridSizeX * Grid.GridSizeY];
-
-        // iterate over grid and apply lighting to tiles' BL corners (and intersecting vertices). to get outer edge, iterate outside grid and use TR corner.
-        // for (int x = 0; x < Grid.GridSizeX + 1; x++){ // +1 because we're getting each corner
-        //     for (int y = 0; y < Grid.GridSizeY + 1; y++){
-
-        //         Vector2 _offset = (x < Grid.GridSizeX && y < Grid.GridSizeY) ? CORNER_OFFSET : CORNER_OFFSET_OUTSIDE_GRID;
-        //         int _safeX = Mathf.Min(x, Grid.GridSizeX - 1);
-        //         int _safeY = Mathf.Min(y, Grid.GridSizeY - 1);
-
-        //         Vector4 _lights; // the 4 most dominant lights
-        //         Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[_safeX, _safeY].WorldPosition + _offset, out _lights);
-        //         _finalColor.a = 255;
-
-        //         // apply vertex color to all vertices in this corner
-        //         if (x < Grid.GridSizeX && y < Grid.GridSizeY) { 
-        //             Grid.Instance.grid[x, y].FloorQuad.                 SetVertexColor(0, _finalColor);
-        //             Grid.Instance.grid[x, y].FloorCornerHider.          SetVertexColor(0, _finalColor);
-        //             Grid.Instance.grid[x, y].BottomQuad.                SetVertexColor(0, _finalColor);
-        //             Grid.Instance.grid[x, y].TopQuad.                   SetVertexColor(0, _finalColor);
-        //             Grid.Instance.grid[x, y].WallCornerHider.           SetVertexColor(0, _finalColor);
-        //         }
-        //         if (x < Grid.GridSizeX && y > 0) { 
-        //             Grid.Instance.grid[x, y - 1].FloorQuad.             SetVertexColor(2, _finalColor);
-        //             Grid.Instance.grid[x, y - 1].FloorCornerHider.      SetVertexColor(2, _finalColor);
-        //             Grid.Instance.grid[x, y - 1].BottomQuad.            SetVertexColor(2, _finalColor);
-        //             Grid.Instance.grid[x, y - 1].TopQuad.               SetVertexColor(2, _finalColor);
-        //             Grid.Instance.grid[x, y - 1].WallCornerHider.       SetVertexColor(2, _finalColor);
-        //         }
-        //         if (x > 0 && y > 0) { 
-        //             Grid.Instance.grid[x - 1, y - 1].FloorQuad.         SetVertexColor(4, _finalColor);
-        //             Grid.Instance.grid[x - 1, y - 1].FloorCornerHider.  SetVertexColor(4, _finalColor);
-        //             Grid.Instance.grid[x - 1, y - 1].BottomQuad.        SetVertexColor(4, _finalColor);
-        //             Grid.Instance.grid[x - 1, y - 1].TopQuad.           SetVertexColor(4, _finalColor);
-        //             Grid.Instance.grid[x - 1, y - 1].WallCornerHider.   SetVertexColor(4, _finalColor);
-        //         }
-        //         if (x > 0 && y < Grid.GridSizeY) { 
-        //             Grid.Instance.grid[x - 1, y].FloorQuad.             SetVertexColor(6, _finalColor);
-        //             Grid.Instance.grid[x - 1, y].FloorCornerHider.      SetVertexColor(6, _finalColor);
-        //             Grid.Instance.grid[x - 1, y].BottomQuad.            SetVertexColor(6, _finalColor);
-        //             Grid.Instance.grid[x - 1, y].TopQuad.               SetVertexColor(6, _finalColor);
-        //             Grid.Instance.grid[x - 1, y].WallCornerHider.       SetVertexColor(6, _finalColor);
-        //         }
-
-
-        //         // TODO: try to make Dot part of vertex-stuff
-
-
-        //         // use the total vertexlighting to calculate dot x and y (per tile, NOT per corner)
-        //         if (x < Grid.GridSizeX && y < Grid.GridSizeY){
-        //             // dot X
-        //             ReportedDotXs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.left, 255);
-        //             ReportedDotXs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.left, 255);
-        //             ReportedDotXs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.left, 255);
-        //             ReportedDotXs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.left, 255);
-
-        //             // dot Y
-        //             ReportedDotYs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.down, 255);
-        //             ReportedDotYs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.down, 255);
-        //             ReportedDotYs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.down, 255);
-        //             ReportedDotYs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.down, 255);
-        //         }
-        //     }
-        // }
-        // for (int x = 0; x < Grid.GridSizeX; x++){
-        //     for (int y = 0; y < Grid.GridSizeY; y++){
-
-        //         Vector4 _lights; // the 4 most dominant lights
-        //         Color32 _finalColor = GetTotalVertexLighting(Grid.Instance.grid[x, y].WorldPosition, out _lights);
-        //         _finalColor.a = 255;
-
-        //         Grid.Instance.grid[x, y].FloorQuad.                 SetVertexColor(0, _finalColor);
-        //         Grid.Instance.grid[x, y].FloorCornerHider.          SetVertexColor(0, _finalColor);
-        //         Grid.Instance.grid[x, y].BottomQuad.                SetVertexColor(0, _finalColor);
-        //         Grid.Instance.grid[x, y].TopQuad.                   SetVertexColor(0, _finalColor);
-        //         Grid.Instance.grid[x, y].WallCornerHider.           SetVertexColor(0, _finalColor);
-
-
-        //         // TODO: try to make Dot part of vertex-stuff
-        //     }
-        // }
+        // if (ReportedDotXs == null)
+        //     ReportedDotXs = new Color32[Grid.GridSizeX * Grid.GridSizeY];
+        // if(ReportedDotYs == null)
+        //     ReportedDotYs = new Color32[Grid.GridSizeX * Grid.GridSizeY];
 
         Vector2 _offset = new Vector2();
-        Vector4 _lights = new Vector4(); // the 4 most dominant lights
-        Color32 _finalColor;
         for (int x = 0; x < Grid.GridSizeX; x++){
             for (int y = 0; y < Grid.GridSizeY; y++){
                 
@@ -581,23 +499,35 @@ public class CustomLight : MonoBehaviour {
                         if(y > 0 && vy == 0)
                             continue;
 
-                        _lights.x = -1;
-                        _lights.y = -1;
-                        _lights.z = -1;
-                        _lights.w = -1;
-
                         _offset.x = (vx - 1) * VERTEX_DISTANCE;
                         _offset.y = (vy - 1) * VERTEX_DISTANCE;
 
-                        _finalColor = GetTotalVertexLighting(Grid.Instance.grid[x, y].WorldPosition + _offset, out _lights);
+                        // get colors from lights
+                        Vector4 _lights; // the 4 most dominant lights
+                        Vector2 _tilePos = Grid.Instance.grid[x, y].WorldPosition;
+                        Color32 _finalColor = GetTotalVertexLighting(_tilePos + _offset, out _lights);
                         _finalColor.a = 255;
                         
+                        // get angles to lights
+                        float _angle0 = GetAngleCW(_tilePos, AllLights[(int)_lights.x].transform.position, 1);
+                        float _angle1 = GetAngleCW(_tilePos, AllLights[(int)_lights.y].transform.position, 1);
+                        float _angle2 = GetAngleCW(_tilePos, AllLights[(int)_lights.z].transform.position, 1);
+                        float _angle3 = GetAngleCW(_tilePos, AllLights[(int)_lights.w].transform.position, 1);
+
+                        // set colors
                         int _vIndex = vy * 3 + vx;
-                        Grid.Instance.grid[x, y].FloorQuad.                 SetVertexColor(_vIndex, _finalColor);
-                        Grid.Instance.grid[x, y].FloorCornerHider.          SetVertexColor(_vIndex, _finalColor);
-                        Grid.Instance.grid[x, y].BottomQuad.                SetVertexColor(_vIndex, _finalColor);
-                        Grid.Instance.grid[x, y].TopQuad.                   SetVertexColor(_vIndex, _finalColor);
-                        Grid.Instance.grid[x, y].WallCornerHider.           SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].FloorQuad.         SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].FloorCornerHider.  SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].BottomQuad.        SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].TopQuad.           SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].WallCornerHider.   SetVertexColor(_vIndex, _finalColor);
+
+                        // set angles
+                        Grid.Instance.grid[x, y].FloorQuad.         SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                        Grid.Instance.grid[x, y].FloorCornerHider.  SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                        Grid.Instance.grid[x, y].BottomQuad.        SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                        Grid.Instance.grid[x, y].TopQuad.           SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                        Grid.Instance.grid[x, y].WallCornerHider.   SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
 
                         bool _affectsR = x < Grid.GridSizeX - 1 && vx == 2;
                         bool _affectsT = y < Grid.GridSizeY - 1 && vy == 2;
@@ -609,6 +539,12 @@ public class CustomLight : MonoBehaviour {
                             Grid.Instance.grid[xR, y].BottomQuad.                SetVertexColor(_vIndexR, _finalColor);
                             Grid.Instance.grid[xR, y].TopQuad.                   SetVertexColor(_vIndexR, _finalColor);
                             Grid.Instance.grid[xR, y].WallCornerHider.           SetVertexColor(_vIndexR, _finalColor);
+
+                            Grid.Instance.grid[xR, y].FloorQuad.                SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xR, y].FloorCornerHider.         SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xR, y].BottomQuad.               SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xR, y].TopQuad.                  SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xR, y].WallCornerHider.          SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
                         }
                         if (_affectsT){
                             int yT = y + 1;
@@ -617,6 +553,12 @@ public class CustomLight : MonoBehaviour {
                             Grid.Instance.grid[x, yT].BottomQuad.                SetVertexColor(vx, _finalColor);
                             Grid.Instance.grid[x, yT].TopQuad.                   SetVertexColor(vx, _finalColor);
                             Grid.Instance.grid[x, yT].WallCornerHider.           SetVertexColor(vx, _finalColor);
+
+                            Grid.Instance.grid[x, yT].FloorQuad.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[x, yT].FloorCornerHider.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[x, yT].BottomQuad.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[x, yT].TopQuad.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[x, yT].WallCornerHider.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
                         }
                         if (_affectsR && _affectsT){
                             int xTR = x + 1;
@@ -626,34 +568,42 @@ public class CustomLight : MonoBehaviour {
                             Grid.Instance.grid[xTR, yTR].BottomQuad.                SetVertexColor(0, _finalColor);
                             Grid.Instance.grid[xTR, yTR].TopQuad.                   SetVertexColor(0, _finalColor);
                             Grid.Instance.grid[xTR, yTR].WallCornerHider.           SetVertexColor(0, _finalColor);
+
+                            Grid.Instance.grid[xTR, yTR].FloorQuad.                 SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xTR, yTR].FloorCornerHider.          SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xTR, yTR].BottomQuad.                SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xTR, yTR].TopQuad.                   SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xTR, yTR].WallCornerHider.           SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
                         }
                     }
                 }
 
-                // TODO: try to make Dot part of vertex-stuff
-                // use the total vertexlighting to calculate dot x and y (per tile, NOT per corner)
-                if (x < Grid.GridSizeX && y < Grid.GridSizeY){
-                    // dot X
-                    ReportedDotXs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.left, 255);
-                    ReportedDotXs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.left, 255);
-                    ReportedDotXs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.left, 255);
-                    ReportedDotXs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.left, 255);
+                
 
-                    // dot Y
-                    ReportedDotYs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.down, 255);
-                    ReportedDotYs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.down, 255);
-                    ReportedDotYs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.down, 255);
-                    ReportedDotYs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.down, 255);
-                }
+                // TODO: try to make Dot part of vertex-stuff
+                // // use the total vertexlighting to calculate dot x and y (per tile, NOT per corner)
+                // if (x < Grid.GridSizeX && y < Grid.GridSizeY){
+                //     // dot X
+                //     ReportedDotXs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle01(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.left, 255);
+                //     ReportedDotXs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle01(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.left, 255);
+                //     ReportedDotXs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle01(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.left, 255);
+                //     ReportedDotXs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle01(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.left, 255);
+
+                //     // dot Y
+                //     ReportedDotYs[(y * Grid.GridSizeX) + x].r = (byte)GetAngle01(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.x].transform.position, Vector2.down, 255);
+                //     ReportedDotYs[(y * Grid.GridSizeX) + x].g = (byte)GetAngle01(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.y].transform.position, Vector2.down, 255);
+                //     ReportedDotYs[(y * Grid.GridSizeX) + x].b = (byte)GetAngle01(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.z].transform.position, Vector2.down, 255);
+                //     ReportedDotYs[(y * Grid.GridSizeX) + x].a = (byte)GetAngle01(Grid.Instance.grid[x, y].WorldPosition, (Vector2)AllLights[(int)_lights.w].transform.position, Vector2.down, 255);
+                // }
             }
         }
     }
-    static float GetAngle(Vector2 _pos1, Vector2 _pos2, Vector2 _referenceAngle, int maxAngle) { // TODO: replace with GetAngleClockwise!
+    static float GetAngle01(Vector2 _pos1, Vector2 _pos2, Vector2 _referenceAngle, int maxAngle) { // TODO: replace with GetAngleClockwise!
         return maxAngle * (0.5f * (1 + Vector2.Dot(
                                             _referenceAngle, 
                                             Vector3.Normalize(_pos1 - _pos2))));
     }
-    static float GetAngleClockwise(Vector2 _pos1, Vector2 _pos2, int _maxAngle){
+    static float GetAngleCW(Vector2 _pos1, Vector2 _pos2, int _maxAngle){ // CW as in clockwise. currently starts pointing down, like an upside-down clock
         // gets the angle between _pos1 and _pos2, ranging from 0 to _maxAngle.
         // the angle goes all-the-way-around, like a clock and unlike a dot-product.
 

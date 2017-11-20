@@ -19,11 +19,11 @@ public class Test : MonoBehaviour
     float tan;
     int deg;
     byte reportAngle;
-    // void Update(){
-    //     tan = (((Vector2.Dot(Vector2.left, Vector3.Normalize((Vector2)light.transform.position - (Vector2)transform.position)) + 1) * 0.5f));
-    //     Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
-    //     Debug.Log(tan);
-    // }
+    void Update(){
+        tan = GetAngleClockwise(light.transform.position, transform.position, 1);
+        Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
+        Debug.Log(tan);
+    }
 
     [EasyButtons.Button]
     public void PrintValues(){
@@ -67,6 +67,27 @@ public class Test : MonoBehaviour
     {
         Vector2 diff = nrm - InputDot;
         return Mathf.Min(Mathf.Ceil(Mathf.Abs(nrm.x) + Mathf.Abs(nrm.y)), 1 - Mathf.Clamp01(Mathf.Floor(Mathf.Max(Mathf.Abs(diff.x), Mathf.Abs(diff.y)))));
+    }
+
+    static float GetAngle(Vector2 _pos1, Vector2 _pos2, Vector2 _referenceAngle, int maxAngle)
+    { // TODO: replace with GetAngleClockwise!
+        return maxAngle * (0.5f * (1 + Vector2.Dot(
+                                            _referenceAngle,
+                                            Vector3.Normalize(_pos1 - _pos2))));
+    }
+    static float GetAngleClockwise(Vector2 _pos1, Vector2 _pos2, int _maxAngle)
+    {
+        // gets the angle between _pos1 and _pos2, ranging from 0 to _maxAngle.
+        // the angle goes all-the-way-around, like a clock and unlike a dot-product.
+
+        float _vertical = (0.5f * (1 + Vector2.Dot(Vector2.down, Vector3.Normalize(_pos1 - _pos2))));
+        float _horizontal = Vector2.Dot(Vector2.right, Vector3.Normalize(_pos1 - _pos2));
+
+        _vertical = (_vertical * (_maxAngle * 0.5f));
+        if (_horizontal < 0)
+            _vertical = Mathf.Abs(_vertical - _maxAngle);
+
+        return _vertical;
     }
 
     public static void ClearLogConsole()

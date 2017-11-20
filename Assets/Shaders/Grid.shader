@@ -57,20 +57,20 @@ Shader "Custom/Grid" {
 			struct appData {
 				float4 vertex : POSITION;
 				float4 vColor : COLOR; // vertex color
-				float2 uv : TEXCOORD0;
-				float4 uv12 : TEXCOORD1;
-				float4 uv34 : TEXCOORD2;
-				float2 uv5 : TEXCOORD3;
+				float4 uv01 : TEXCOORD0;
+				float4 uv23 : TEXCOORD1;
+				float4 uv45 : TEXCOORD2;
+				float4 angles : TEXCOORD3;
 			};
 
 			struct v2f {
 				float4 pos : POSITION;
 				float4 worldPos : NORMAL;
 				fixed4 vColor : COLOR;
-				float2 uv  : TEXCOORD0;
-				float4 uv12 : TEXCOORD1;
-				float4 uv34 : TEXCOORD2;
-				float2 uv5 : TEXCOORD3;
+				float4 uv01  : TEXCOORD0;
+				float4 uv23 : TEXCOORD1;
+				float4 uv45 : TEXCOORD2;
+				float4 angles : TEXCOORD3;
 			};
 
 			uniform fixed colorIndices [10];
@@ -79,12 +79,75 @@ Shader "Custom/Grid" {
 				o.pos = UnityObjectToClipPos(v.vertex);
 				o.worldPos = mul(unity_ObjectToWorld, v.vertex);
 				o.vColor = v.vColor;
-				o.uv = float2(v.uv.x, v.uv.y);
-				o.uv12 = float4(v.uv12.x, v.uv12.y, v.uv12.z, v.uv12.w);
-				o.uv34 = float4(v.uv34.x, v.uv34.y, v.uv34.z, v.uv34.w);
-				o.uv5 = float2(v.uv5.x, v.uv5.y);
+				o.uv01 = v.uv01;
+				o.uv23 = v.uv23;
+				o.uv45 = v.uv45;
+				o.angles = v.angles;
 				return o;
 			}
+
+			// fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed dotX, fixed dotY){
+			// 	return min(												// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
+			// 		vColor, 												
+			// 		1 - min(											// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
+			// 				floor(normals.a),
+			// 				min(										// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
+			// 					ceil(									// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
+			// 						abs(normals.r) +					// add normals together
+			// 						abs(normals.g)
+			// 					),
+			// 					saturate( 								// clamp01 so we don't get weird values and invert
+			// 						floor( 								// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
+			// 							0.01 + 							// tolerance (prevents some weirdness)
+			// 							max( 							// max val tells us true diff
+			// 								abs(
+			// 									(normals.r * 2 - 1) - 	// get diff between nrm, dot
+			// 									(dotX * 2 - 1) 			// convert nrm, dot from 0->1 to -1->1
+			// 								), 
+			// 								abs(
+			// 									(normals.g * 2 - 1) - 
+			// 									(dotY * 2 - 1)
+			// 								)
+			// 							)
+			// 						)
+			// 					)
+			// 				)
+			// 		)
+						
+			// 	);
+			// }
+			fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed angle){
+				return min(															// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
+					vColor, 												
+					1 - min(														// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
+							floor(normals.a),
+							min(													// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
+								ceil(												// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
+									abs(normals.r) +								// add normals together
+									abs(normals.g)
+								),
+								saturate( 											// clamp01 so we don't get weird values and invert
+									floor( 											// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
+										0.01 + 										// tolerance (prevents some weirdness)
+										max( 										// max val tells us true diff
+											abs(
+												(normals.r * 2 - 1) - 				// get diff between nrm, dot
+												(abs(angle - 0.25) * 2 * 2 - 1)	// angle rel to left (0.25), times 2 so 0->1 from left to right, times 2 so 0->2, minus 1 so -1->1
+											), 
+											abs(
+												(normals.g * 2 - 1) - 
+												(abs(angle) * 2 * 2 - 1)	// angle rel to left (0.25), times 2 so 0->1 from left to right, times 2 so 0->2, minus 1 so -1->1
+											)
+										)
+									)
+								)
+							)
+					)
+						
+				);
+			}
+
+			qwndipqw // add the per-vertex dot stuff in the rest of the shader!
 
 			fixed4 frag(v2f i) : COLOR {
 				tex = tex2D(_MainTex, i.uv);
@@ -108,46 +171,18 @@ Shader "Custom/Grid" {
 
 				// normals: R (0->1 == down->up), A (0->1 == left->right)
 
-				half2 gridUV = (ceil(i.worldPos) + 23.5) / 47.5;
-				dotXsTex = tex2D(_DotXs, gridUV);
-				dotYsTex = tex2D(_DotYs, gridUV);
-				fixed4 mod0 = 
-				max(0, 																// make sure it's over zero (not sure how, but that happens >.>)
-					//0.5f * (														// divide in 2 so we get average
-						//i.vColor + (												// add to the vertex color (total lighting color set in CustomLight.cs)
-							1 - min(												// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
-									floor(nrmTex.a),
-									min(											// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
-										ceil(										// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
-											abs(nrmTex.r) +							// add normals together
-											abs(nrmTex.g)
-										),
-										saturate( 									// clamp01 so we don't get weird values and invert
-											floor( 									// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
-												0.01 + 								// tolerance (prevents some weirdness)
-												max( 								// max val tells us true diff
-													abs(
-														(nrmTex.r * 2 - 1) - 		// get diff between nrm, dot
-														(dotXsTex.r * 2 - 1) 		// convert nrm, dot from 0->1 to -1->1
-													), 
-													abs(
-														(nrmTex.g * 2 - 1) - 
-														(dotYsTex.r * 2 - 1)
-													)
-												)
-											)
-										)
-									)
-							)
-						//)
-					//)
-				);
-				fixed4 mod1 = max(0, i.vColor * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.g * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.g * 2 - 1))))))))); 
-				fixed4 mod2 = max(0, i.vColor * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.b * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.b * 2 - 1))))))))); 
-				fixed4 mod3 = max(0, i.vColor * (1 - min(floor(nrmTex.a), min(ceil(abs(nrmTex.r) + abs(nrmTex.g)), saturate(floor(0.1 + max(abs((nrmTex.r * 2 - 1) - (dotXsTex.a * 2 - 1)), abs((nrmTex.g * 2 - 1) - (dotYsTex.a * 2 - 1))))))))); 
+				// half2 gridUV = (ceil(i.worldPos) + 23.5) / 47.5;
+				// dotXsTex = tex2D(_DotXs, gridUV);
+				// dotYsTex = tex2D(_DotYs, gridUV);
 
-
-				// mush together
+				// fixed4 mod0 = CalculateLighting(i.vColor, nrmTex, dotXsTex.r, dotYsTex.r);
+				// fixed4 mod1 = CalculateLighting(i.vColor, nrmTex, dotXsTex.g, dotYsTex.g);
+				// fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, dotXsTex.b, dotYsTex.b);
+				// fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, dotXsTex.a, dotYsTex.a);
+				fixed4 mod0 = CalculateLighting(i.vColor, nrmTex, i.angles.r);
+				fixed4 mod1 = CalculateLighting(i.vColor, nrmTex, i.angles.g);
+				fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, i.angles.b);
+				fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, i.angles.a);
 				mod0 += mod1 + mod2 + mod3;
 
 				// final apply
@@ -155,6 +190,7 @@ Shader "Custom/Grid" {
 				finalColor.a = tex.a;
 				return finalColor;
 			}
+			
 			ENDCG
 		}
 	}
