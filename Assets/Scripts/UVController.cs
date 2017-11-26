@@ -10,7 +10,7 @@ public class UVController : MeshSorter {
     public Tile.TileOrientation Orientation;
 
     private MeshFilter myMeshFilter;
-    private List<Vector4> myMeshUVs;
+    private List<Vector4> myMeshUVs = new List<Vector4>();
 
 	private static int sCachedPropertyColor = -1;
 	private static int sCachedPropertyAllColors = -1;
@@ -234,6 +234,9 @@ public class UVController : MeshSorter {
     private static List<Color32> sVertexColors = new List<Color32>();
     public void SetVertexColor(int _specificVertex, Color32 _color){
         myMeshFilter.mesh.GetColors(sVertexColors);
+        if(sVertexColors.Count != myMeshFilter.mesh.vertexCount)
+            sVertexColors = new Color32[myMeshFilter.mesh.vertexCount].ToList();
+
         sVertexColors[_specificVertex] = _color;
         myMeshFilter.mesh.SetColors(sVertexColors);
     }
@@ -241,6 +244,8 @@ public class UVController : MeshSorter {
     private static List<Vector4> sUVAngles = new List<Vector4>();
     public void SetUVAngles(int _specificUV, float _angle0, float _angle1, float _angle2, float _angle3){
         myMeshFilter.mesh.GetUVs(3, sUVAngles);
+        if(sUVAngles.Count != myMeshFilter.mesh.vertexCount)
+            sUVAngles = new Vector4[myMeshFilter.mesh.vertexCount].ToList();
 
         Vector4 _angle = sUVAngles[_specificUV];
         _angle.x = _angle0;

@@ -19,11 +19,11 @@ public class Test : MonoBehaviour
     float tan;
     int deg;
     byte reportAngle;
-    void Update(){
-        tan = GetAngleClockwise(light.transform.position, transform.position, 1);
-        Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
-        Debug.Log(tan);
-    }
+    // void Update(){
+    //     tan = GetAngleClockwise(light.transform.position, transform.position, 1);
+    //     Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
+    //     Debug.Log(tan);
+    // }
 
     [EasyButtons.Button]
     public void PrintValues(){

@@ -116,30 +116,57 @@ Shader "Custom/Grid" {
 						
 			// 	);
 			// }
+			// fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed angle){
+			// 	return min(															// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
+			// 		vColor, 												
+			// 		1 - min(														// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
+			// 				floor(normals.a),
+			// 				min(													// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
+			// 					ceil(												// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
+			// 						abs(normals.r) +								// add normals together
+			// 						abs(normals.g)
+			// 					),
+			// 					saturate( 											// clamp01 so we don't get weird values and invert
+			// 						floor( 											// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
+			// 							0.01 + 										// tolerance (prevents some weirdness)
+			// 							max( 										// max val tells us true diff
+			// 								abs(
+			// 									(normals.r * 2 - 1) - 				// get diff between nrm, dot
+			// 									(abs(angle - 0.25) * 2 * 2 - 1)	// angle rel to left (0.25), times 2 so 0->1 from left to right, times 2 so 0->2, minus 1 so -1->1
+			// 								), 
+			// 								abs(
+			// 									(normals.g * 2 - 1) - 
+			// 									(abs(angle) * 2 * 2 - 1)	// angle rel to bottom (0), times 2 so 0->1 from left to right, times 2 so 0->2, minus 1 so -1->1
+			// 								)
+			// 							)
+			// 						)
+			// 					)
+			// 				)
+			// 		)
+						
+			// 	);
+			// }
+
 			fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed angle){
+
+				float dotX = 1 - 2 * abs((angle - 0.25) * 2 - 1); 	// the angle to the light expressed as 0->1, and only horizontally (0 == left)
+				float dotY = 1 - 2 * abs(angle * 2 - 1); 			// the angle to the light expressed as 0->1, and only vertically (0 == bottom)
+
 				return min(															// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
 					vColor, 												
 					1 - min(														// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
 							floor(normals.a),
 							min(													// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
 								ceil(												// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
-									abs(normals.r) +								// add normals together
-									abs(normals.g)
+									normals.r +										// add normals together
+									normals.g
 								),
 								saturate( 											// clamp01 so we don't get weird values and invert
-									floor( 											// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
-										0.01 + 										// tolerance (prevents some weirdness)
+										//0.01 + 										// tolerance (prevents some weirdness)
 										max( 										// max val tells us true diff
-											abs(
-												(normals.r * 2 - 1) - 				// get diff between nrm, dot
-												(abs(angle - 0.25) * 2 * 2 - 1)	// angle rel to left (0.25), times 2 so 0->1 from left to right, times 2 so 0->2, minus 1 so -1->1
-											), 
-											abs(
-												(normals.g * 2 - 1) - 
-												(abs(angle) * 2 * 2 - 1)	// angle rel to left (0.25), times 2 so 0->1 from left to right, times 2 so 0->2, minus 1 so -1->1
-											)
+											abs((normals.r * 2 - 1) - dotY), 		// diff between surface-normal Y and vertical dot product to light
+											abs((normals.g * 2 - 1) - dotX)			// diff between surface-normal X and horizontal dot product to light
 										)
-									)
 								)
 							)
 					)
@@ -147,24 +174,22 @@ Shader "Custom/Grid" {
 				);
 			}
 
-			qwndipqw // add the per-vertex dot stuff in the rest of the shader!
-
 			fixed4 frag(v2f i) : COLOR {
-				tex = tex2D(_MainTex, i.uv);
-				nrmTex = tex2D(_NrmMap, i.uv);
-				emTex = tex2D(_EmissiveMap, i.uv);
-				palTex = tex2D(_PalletteMap, i.uv);
+				tex = tex2D(_MainTex, i.uv01.xy);
+				nrmTex = tex2D(_NrmMap, i.uv01.xy);
+				emTex = tex2D(_EmissiveMap, i.uv01.xy);
+				palTex = tex2D(_PalletteMap, i.uv01.xy);
 
-				colorIndices[0] = floor(i.uv12.x);
-				colorIndices[1] = floor(i.uv12.y);
-				colorIndices[2] = floor(i.uv12.z);
-				colorIndices[3] = floor(i.uv12.w);
-				colorIndices[4] = floor(i.uv34.x);
-				colorIndices[5] = floor(i.uv34.y);
-				colorIndices[6] = floor(i.uv34.z);
-				colorIndices[7] = floor(i.uv34.w);
-				colorIndices[8] = floor(i.uv5.x);
-				colorIndices[9] = floor(i.uv5.y);
+				colorIndices[0] = floor(i.uv01.z);
+				colorIndices[1] = floor(i.uv01.w);
+				colorIndices[2] = floor(i.uv23.x);
+				colorIndices[3] = floor(i.uv23.y);
+				colorIndices[4] = floor(i.uv23.z);
+				colorIndices[5] = floor(i.uv23.w);
+				colorIndices[6] = floor(i.uv45.x);
+				colorIndices[7] = floor(i.uv45.y);
+				colorIndices[8] = floor(i.uv45.z);
+				colorIndices[9] = floor(i.uv45.w);
 
 				fixed indexToUse = 10 - floor(palTex.r * 10);
 				colorToUse = _allColors[colorIndices[indexToUse]];
@@ -184,6 +209,14 @@ Shader "Custom/Grid" {
 				fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, i.angles.b);
 				fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, i.angles.a);
 				mod0 += mod1 + mod2 + mod3;
+
+
+				float dotX = 1 - 2 * abs((i.angles.r - 0.25) * 2 - 1); 	// the angle to the light expressed as 0->1, and only horizontally (0 == left)
+				float dotY = 1 - 2 * abs(i.angles.r * 2 - 1); 	
+
+				i.angles.a = 1;
+				i.angles.r = dotX;
+				return i.angles.rrra;
 
 				// final apply
 				finalColor.rgb = min((tex.rgb * colorToUse.rgb) * mod0, i.vColor);
