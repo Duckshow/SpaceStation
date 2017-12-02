@@ -241,19 +241,19 @@ public class UVController : MeshSorter {
         myMeshFilter.mesh.SetColors(sVertexColors);
     }
 
-    private static List<Vector4> sUVAngles = new List<Vector4>();
-    public void SetUVAngles(int _specificUV, float _angle0, float _angle1, float _angle2, float _angle3){
-        myMeshFilter.mesh.GetUVs(3, sUVAngles);
-        if(sUVAngles.Count != myMeshFilter.mesh.vertexCount)
-            sUVAngles = new Vector4[myMeshFilter.mesh.vertexCount].ToList();
+    private static List<Vector4> sUVDoubleDots = new List<Vector4>();
+    public void SetUVDoubleDot(int _specificUV, float _doubleDot0, float _doubleDot1, float _doubleDot2, float _doubleDot3){
+        myMeshFilter.mesh.GetUVs(3, sUVDoubleDots);
+        if(sUVDoubleDots.Count != myMeshFilter.mesh.vertexCount)
+            sUVDoubleDots = new Vector4[myMeshFilter.mesh.vertexCount].ToList();
 
-        Vector4 _angle = sUVAngles[_specificUV];
-        _angle.x = _angle0;
-        _angle.y = _angle1;
-        _angle.z = _angle2;
-        _angle.w = _angle3;
-        sUVAngles[_specificUV] = _angle;
+        Vector4 _doubleDot = sUVDoubleDots[_specificUV];
+        _doubleDot.x = _doubleDot0;
+        _doubleDot.y = _doubleDot1;
+        _doubleDot.z = _doubleDot2;
+        _doubleDot.w = _doubleDot3;
+        sUVDoubleDots[_specificUV] = _doubleDot;
 
-        myMeshFilter.mesh.SetUVs(3, sUVAngles);
+        myMeshFilter.mesh.SetUVs(3, sUVDoubleDots);
     }
 }

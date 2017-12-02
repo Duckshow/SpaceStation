@@ -60,7 +60,7 @@ Shader "Custom/Grid" {
 				float4 uv01 : TEXCOORD0;
 				float4 uv23 : TEXCOORD1;
 				float4 uv45 : TEXCOORD2;
-				float4 angles : TEXCOORD3;
+				float4 doubleDots : TEXCOORD3;
 			};
 
 			struct v2f {
@@ -70,7 +70,7 @@ Shader "Custom/Grid" {
 				float4 uv01  : TEXCOORD0;
 				float4 uv23 : TEXCOORD1;
 				float4 uv45 : TEXCOORD2;
-				float4 angles : TEXCOORD3;
+				float4 doubleDots : TEXCOORD3;
 			};
 
 			uniform fixed colorIndices [10];
@@ -82,75 +82,22 @@ Shader "Custom/Grid" {
 				o.uv01 = v.uv01;
 				o.uv23 = v.uv23;
 				o.uv45 = v.uv45;
-				o.angles = v.angles;
+				o.doubleDots = v.doubleDots;
 				return o;
 			}
 
-			// fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed dotX, fixed dotY){
-			// 	return min(												// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
-			// 		vColor, 												
-			// 		1 - min(											// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
-			// 				floor(normals.a),
-			// 				min(										// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
-			// 					ceil(									// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
-			// 						abs(normals.r) +					// add normals together
-			// 						abs(normals.g)
-			// 					),
-			// 					saturate( 								// clamp01 so we don't get weird values and invert
-			// 						floor( 								// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
-			// 							0.01 + 							// tolerance (prevents some weirdness)
-			// 							max( 							// max val tells us true diff
-			// 								abs(
-			// 									(normals.r * 2 - 1) - 	// get diff between nrm, dot
-			// 									(dotX * 2 - 1) 			// convert nrm, dot from 0->1 to -1->1
-			// 								), 
-			// 								abs(
-			// 									(normals.g * 2 - 1) - 
-			// 									(dotY * 2 - 1)
-			// 								)
-			// 							)
-			// 						)
-			// 					)
-			// 				)
-			// 		)
-						
-			// 	);
-			// }
-			// fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed angle){
-			// 	return min(															// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
-			// 		vColor, 												
-			// 		1 - min(														// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
-			// 				floor(normals.a),
-			// 				min(													// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
-			// 					ceil(												// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
-			// 						abs(normals.r) +								// add normals together
-			// 						abs(normals.g)
-			// 					),
-			// 					saturate( 											// clamp01 so we don't get weird values and invert
-			// 						floor( 											// floor bc we want diffs below 1 to be 0, so they get 100% lit, no falloff
-			// 							0.01 + 										// tolerance (prevents some weirdness)
-			// 							max( 										// max val tells us true diff
-			// 								abs(
-			// 									(normals.r * 2 - 1) - 				// get diff between nrm, dot
-			// 									(abs(angle - 0.25) * 2 * 2 - 1)	// angle rel to left (0.25), times 2 so 0->1 from left to right, times 2 so 0->2, minus 1 so -1->1
-			// 								), 
-			// 								abs(
-			// 									(normals.g * 2 - 1) - 
-			// 									(abs(angle) * 2 * 2 - 1)	// angle rel to bottom (0), times 2 so 0->1 from left to right, times 2 so 0->2, minus 1 so -1->1
-			// 								)
-			// 							)
-			// 						)
-			// 					)
-			// 				)
-			// 		)
-						
-			// 	);
-			// }
+			float ConvertDoubleDotToDotX(float doubleDot){
+				return floor(doubleDot) * 0.001;
+			}
+			float ConvertDoubleDotToDotY(float doubleDot){
+				return round((doubleDot - floor(doubleDot)) * 1000) * 0.001;
+			}
+			fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed doubleDot){
 
-			fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed angle){
-
-				float dotX = 1 - 2 * abs((angle - 0.25) * 2 - 1); 	// the angle to the light expressed as 0->1, and only horizontally (0 == left)
-				float dotY = 1 - 2 * abs(angle * 2 - 1); 			// the angle to the light expressed as 0->1, and only vertically (0 == bottom)
+				// float dotX = 1 - 2 * abs((angle - 0.25) * 2 - 1); 	// the angle to the light expressed as 0->1, and only horizontally (0 == left)
+				// float dotY = 1 - 2 * abs(angle * 2 - 1); 			// the angle to the light expressed as 0->1, and only vertically (0 == bottom)
+				float dotX = ConvertDoubleDotToDotX(doubleDot);
+				float dotY = ConvertDoubleDotToDotY(doubleDot);
 
 				return min(															// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
 					vColor, 												
@@ -204,19 +151,25 @@ Shader "Custom/Grid" {
 				// fixed4 mod1 = CalculateLighting(i.vColor, nrmTex, dotXsTex.g, dotYsTex.g);
 				// fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, dotXsTex.b, dotYsTex.b);
 				// fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, dotXsTex.a, dotYsTex.a);
-				fixed4 mod0 = CalculateLighting(i.vColor, nrmTex, i.angles.r);
-				fixed4 mod1 = CalculateLighting(i.vColor, nrmTex, i.angles.g);
-				fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, i.angles.b);
-				fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, i.angles.a);
+				fixed4 mod0 = CalculateLighting(i.vColor, nrmTex, i.doubleDots.r);
+				fixed4 mod1 = CalculateLighting(i.vColor, nrmTex, i.doubleDots.g);
+				fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, i.doubleDots.b);
+				fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, i.doubleDots.a);
 				mod0 += mod1 + mod2 + mod3;
 
 
-				float dotX = 1 - 2 * abs((i.angles.r - 0.25) * 2 - 1); 	// the angle to the light expressed as 0->1, and only horizontally (0 == left)
-				float dotY = 1 - 2 * abs(i.angles.r * 2 - 1); 	
+				// float dotY = 2 * abs(i.angles.r * 2 - 1) - 1; 	// the angle to the light expressed as 0->1, and only horizontally (0 == left)
+				// float dotX = i.angles.r + 0.25; 				// offset to get angle from the left, instead of bottom
+				// dotX -= floor(dotX);							// make sure value loops around (so it doesn't exceed 1)
+				// dotX = 2 * abs(dotX * 2 - 1) - 1; 	
 
-				i.angles.a = 1;
-				i.angles.r = dotX;
-				return i.angles.rrra;
+
+				float dotX = ConvertDoubleDotToDotX(i.doubleDots.r);
+				float dotY = ConvertDoubleDotToDotY(i.doubleDots.r);
+
+				i.doubleDots.a = 1;
+				i.doubleDots.r = dotY;
+				return fixed4(i.doubleDots.r, i.doubleDots.r, i.doubleDots.r, 1); // i.angles.rrra;
 
 				// final apply
 				finalColor.rgb = min((tex.rgb * colorToUse.rgb) * mod0, i.vColor);

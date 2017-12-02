@@ -507,58 +507,60 @@ public class CustomLight : MonoBehaviour {
                         Vector2 _tilePos = Grid.Instance.grid[x, y].WorldPosition;
                         Color32 _finalColor = GetTotalVertexLighting(_tilePos + _offset, out _lights);
                         _finalColor.a = 255;
-                        
-                        // get angles to lights
-                        float _angle0 = GetAngleCW(_tilePos, AllLights[(int)_lights.x].transform.position, 1);
-                        float _angle1 = GetAngleCW(_tilePos, AllLights[(int)_lights.y].transform.position, 1);
-                        float _angle2 = GetAngleCW(_tilePos, AllLights[(int)_lights.z].transform.position, 1);
-                        float _angle3 = GetAngleCW(_tilePos, AllLights[(int)_lights.w].transform.position, 1);
+
+                        // get two dots per light describing angle to respective lights, concatted to one float each
+                        float _doubleDot0 = ConvertAngle01ToConcatDot(GetAngleCCW(_tilePos + _offset, AllLights[(int)_lights.x].transform.position, 1));
+                        float _doubleDot1 = ConvertAngle01ToConcatDot(GetAngleCCW(_tilePos + _offset, AllLights[(int)_lights.y].transform.position, 1));
+                        float _doubleDot2 = ConvertAngle01ToConcatDot(GetAngleCCW(_tilePos + _offset, AllLights[(int)_lights.z].transform.position, 1));
+                        float _doubleDot3 = ConvertAngle01ToConcatDot(GetAngleCCW(_tilePos + _offset, AllLights[(int)_lights.w].transform.position, 1));
 
                         // set colors
                         int _vIndex = vy * 3 + vx;
-                        Grid.Instance.grid[x, y].FloorQuad.         SetVertexColor(_vIndex, _finalColor);
-                        Grid.Instance.grid[x, y].FloorCornerHider.  SetVertexColor(_vIndex, _finalColor);
-                        Grid.Instance.grid[x, y].BottomQuad.        SetVertexColor(_vIndex, _finalColor);
-                        Grid.Instance.grid[x, y].TopQuad.           SetVertexColor(_vIndex, _finalColor);
-                        Grid.Instance.grid[x, y].WallCornerHider.   SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].FloorQuad.                         SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].FloorCornerHider.                  SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].BottomQuad.                        SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].TopQuad.                           SetVertexColor(_vIndex, _finalColor);
+                        Grid.Instance.grid[x, y].WallCornerHider.                   SetVertexColor(_vIndex, _finalColor);
 
                         // set angles
-                        Grid.Instance.grid[x, y].FloorQuad.         SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                        Grid.Instance.grid[x, y].FloorCornerHider.  SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                        Grid.Instance.grid[x, y].BottomQuad.        SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                        Grid.Instance.grid[x, y].TopQuad.           SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                        Grid.Instance.grid[x, y].WallCornerHider.   SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                        Grid.Instance.grid[x, y].FloorQuad.                         SetUVDoubleDot(_vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                        Grid.Instance.grid[x, y].FloorCornerHider.                  SetUVDoubleDot(_vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                        Grid.Instance.grid[x, y].BottomQuad.                        SetUVDoubleDot(_vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                        Grid.Instance.grid[x, y].TopQuad.                           SetUVDoubleDot(_vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                        Grid.Instance.grid[x, y].WallCornerHider.                   SetUVDoubleDot(_vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+
+                        //SuperDebug.Log(_tilePos + _offset, Color.red, _angle0.ToString());
 
                         bool _affectsR = x < Grid.GridSizeX - 1 && vx == 2;
                         bool _affectsT = y < Grid.GridSizeY - 1 && vy == 2;
                         if (_affectsR){
                             int xR = x + 1;
                             int _vIndexR = vy * 3;
-                            Grid.Instance.grid[xR, y].FloorQuad.                 SetVertexColor(_vIndexR, _finalColor);
-                            Grid.Instance.grid[xR, y].FloorCornerHider.          SetVertexColor(_vIndexR, _finalColor);
-                            Grid.Instance.grid[xR, y].BottomQuad.                SetVertexColor(_vIndexR, _finalColor);
-                            Grid.Instance.grid[xR, y].TopQuad.                   SetVertexColor(_vIndexR, _finalColor);
-                            Grid.Instance.grid[xR, y].WallCornerHider.           SetVertexColor(_vIndexR, _finalColor);
+                            Grid.Instance.grid[xR, y].FloorQuad.                    SetVertexColor(_vIndexR, _finalColor);
+                            Grid.Instance.grid[xR, y].FloorCornerHider.             SetVertexColor(_vIndexR, _finalColor);
+                            Grid.Instance.grid[xR, y].BottomQuad.                   SetVertexColor(_vIndexR, _finalColor);
+                            Grid.Instance.grid[xR, y].TopQuad.                      SetVertexColor(_vIndexR, _finalColor);
+                            Grid.Instance.grid[xR, y].WallCornerHider.              SetVertexColor(_vIndexR, _finalColor);
 
-                            Grid.Instance.grid[xR, y].FloorQuad.                SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[xR, y].FloorCornerHider.         SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[xR, y].BottomQuad.               SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[xR, y].TopQuad.                  SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[xR, y].WallCornerHider.          SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xR, y].FloorQuad.                    SetUVDoubleDot(_vIndexR, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[xR, y].FloorCornerHider.             SetUVDoubleDot(_vIndexR, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[xR, y].BottomQuad.                   SetUVDoubleDot(_vIndexR, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[xR, y].TopQuad.                      SetUVDoubleDot(_vIndexR, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[xR, y].WallCornerHider.              SetUVDoubleDot(_vIndexR, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                         }
                         if (_affectsT){
                             int yT = y + 1;
-                            Grid.Instance.grid[x, yT].FloorQuad.                 SetVertexColor(vx, _finalColor);
-                            Grid.Instance.grid[x, yT].FloorCornerHider.          SetVertexColor(vx, _finalColor);
-                            Grid.Instance.grid[x, yT].BottomQuad.                SetVertexColor(vx, _finalColor);
-                            Grid.Instance.grid[x, yT].TopQuad.                   SetVertexColor(vx, _finalColor);
-                            Grid.Instance.grid[x, yT].WallCornerHider.           SetVertexColor(vx, _finalColor);
+                            Grid.Instance.grid[x, yT].FloorQuad.                    SetVertexColor(vx, _finalColor);
+                            Grid.Instance.grid[x, yT].FloorCornerHider.             SetVertexColor(vx, _finalColor);
+                            Grid.Instance.grid[x, yT].BottomQuad.                   SetVertexColor(vx, _finalColor);
+                            Grid.Instance.grid[x, yT].TopQuad.                      SetVertexColor(vx, _finalColor);
+                            Grid.Instance.grid[x, yT].WallCornerHider.              SetVertexColor(vx, _finalColor);
 
-                            Grid.Instance.grid[x, yT].FloorQuad.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[x, yT].FloorCornerHider.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[x, yT].BottomQuad.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[x, yT].TopQuad.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[x, yT].WallCornerHider.SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[x, yT].FloorQuad.                    SetUVDoubleDot(vx, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[x, yT].FloorCornerHider.             SetUVDoubleDot(vx, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[x, yT].BottomQuad.                   SetUVDoubleDot(vx, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[x, yT].TopQuad.                      SetUVDoubleDot(vx, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[x, yT].WallCornerHider.              SetUVDoubleDot(vx, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                         }
                         if (_affectsR && _affectsT){
                             int xTR = x + 1;
@@ -569,11 +571,11 @@ public class CustomLight : MonoBehaviour {
                             Grid.Instance.grid[xTR, yTR].TopQuad.                   SetVertexColor(0, _finalColor);
                             Grid.Instance.grid[xTR, yTR].WallCornerHider.           SetVertexColor(0, _finalColor);
 
-                            Grid.Instance.grid[xTR, yTR].FloorQuad.                 SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[xTR, yTR].FloorCornerHider.          SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[xTR, yTR].BottomQuad.                SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[xTR, yTR].TopQuad.                   SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
-                            Grid.Instance.grid[xTR, yTR].WallCornerHider.           SetUVAngles(_vIndex, _angle0, _angle1, _angle2, _angle3);
+                            Grid.Instance.grid[xTR, yTR].FloorQuad.                 SetUVDoubleDot(0, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[xTR, yTR].FloorCornerHider.          SetUVDoubleDot(0, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[xTR, yTR].BottomQuad.                SetUVDoubleDot(0, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[xTR, yTR].TopQuad.                   SetUVDoubleDot(0, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+                            Grid.Instance.grid[xTR, yTR].WallCornerHider.           SetUVDoubleDot(0, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                         }
                     }
                 }
@@ -603,18 +605,40 @@ public class CustomLight : MonoBehaviour {
                                             _referenceAngle, 
                                             Vector3.Normalize(_pos1 - _pos2))));
     }
-    static float GetAngleCW(Vector2 _pos1, Vector2 _pos2, int _maxAngle){ // CW as in clockwise. currently starts pointing down, like an upside-down clock
+    static float GetAngleCCW(Vector2 _pos1, Vector2 _pos2, int _maxAngle){ // CCW as in counter-clockwise. currently starts pointing down, like an upside-down clock
         // gets the angle between _pos1 and _pos2, ranging from 0 to _maxAngle.
         // the angle goes all-the-way-around, like a clock and unlike a dot-product.
 
         float _vertical     = (0.5f * (1 + Vector2.Dot(Vector2.down,   Vector3.Normalize(_pos1 - _pos2))));
-        float _horizontal   =              Vector2.Dot(Vector2.right, Vector3.Normalize(_pos1 - _pos2));
+        float _horizontal   =              Vector2.Dot(Vector2.left, Vector3.Normalize(_pos1 - _pos2));
 
         _vertical = (_vertical * (_maxAngle * 0.5f));
         if (_horizontal < 0)
             _vertical = Mathf.Abs(_vertical - _maxAngle);
 
         return _vertical;
+    }
+    static float ConvertAngle01ToConcatDot(float _angle){ // Take an angle (between 0, 1) and convert to two dot-products concatted into one number (0.25 + 0.5 = 25.5) 
+        float _relX = _angle + 0.25f;
+        _relX -= Mathf.Floor(_relX);
+
+        float _val = (GetDotifiedAngle(_relX) * 1000) + GetDotifiedAngle(_angle);
+
+        // float _x = Mathf.Floor(_val) * 0.001f;
+        // float _y = _val - Mathf.Floor(_val);
+        // Debug.Log(_x + ", " + _y);
+        return _val;
+    }
+    static float GetDotifiedAngle(float _angle){ // Take an angle (between 0, 1) and convert to something like 0->1->0
+
+    // float = 13.37f;
+    // dotX = floor( 13.37f ) * 0.01f;
+    // dotY = ( 13.37f - floor( 13.37f ));
+    // dotX = 0.13f, dotY = 0.37f! 
+
+        _angle *= 2;
+        float _floored = Mathf.Floor(_angle);
+        return Mathf.Abs(_floored - (_angle - _floored));
     }
 
     Color32 GetTotalVertexLighting(Vector2 _pos, out Vector4 _dominantLightIndices){
@@ -630,7 +654,7 @@ public class CustomLight : MonoBehaviour {
             if (newDistance > newRange)
                 continue;
 
-            DoubleInt _tilePos = new DoubleInt(Mathf.RoundToInt(_pos.x + Grid.GridSizeXHalf), Mathf.RoundToInt(_pos.y + Grid.GridSizeYHalf));
+            //DoubleInt _tilePos = new DoubleInt(Mathf.RoundToInt(_pos.x + Grid.GridSizeXHalf), Mathf.RoundToInt(_pos.y + Grid.GridSizeYHalf));
             // if(_tilePos.X - AllLights[i].myInspector.MyTileObject.MyTile.GridCoord.X <= 0)
             //     _tilePos.X -= 1;
             // if (_tilePos.Y - AllLights[i].myInspector.MyTileObject.MyTile.GridCoord.Y <= 0)

@@ -13,6 +13,57 @@ public class Test : MonoBehaviour
 
     void Start(){
         light = FindObjectOfType<CustomLight>();
+        
+
+        // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(0,     1,        0,        0,        1);
+        // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(1,     0.75f,    0.25f,    0,        1);
+        // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(2,     0.5f,     0.5f,     0,        1);
+        // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(3,     0.25f,    0.75f,    0,        1);
+        // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(4,     0,        1,        0,        1);
+        // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(5,     0,        0.75f,    0.25f,    1);
+        // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(6,     0,        0.5f,     0.5f,     1);
+        // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(7,     0,        0.25f,    0.75f,    1);
+        // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(8,     0,        0,        1,        1);
+
+        // Grid.Instance.grid[24, 24].BottomQuad.SetUVAngles(0,     1,        0,        0,        1);
+        // Grid.Instance.grid[24, 24].BottomQuad.SetUVAngles(1,     0.75f,    0.25f,    0,        1);
+        // Grid.Instance.grid[24, 24].BottomQuad.SetUVAngles(2,     0.5f,     0.5f,     0,        1);
+        // Grid.Instance.grid[24, 24].BottomQuad.SetUVAngles(3,     0.25f,    0.75f,    0,        1);
+        // Grid.Instance.grid[24, 24].BottomQuad.SetUVAngles(4,     0,        1,        0,        1);
+        // Grid.Instance.grid[24, 24].BottomQuad.SetUVAngles(5,     0,        0.75f,    0.25f,    1);
+        // Grid.Instance.grid[24, 24].BottomQuad.SetUVAngles(6,     0,        0.5f,     0.5f,     1);
+        // Grid.Instance.grid[24, 24].BottomQuad.SetUVAngles(7,     0,        0.25f,    0.75f,    1);
+        // Grid.Instance.grid[24, 24].BottomQuad.SetUVAngles(8,     0,        0,        1,        1);
+
+        // Grid.Instance.grid[24, 24].TopQuad.SetUVAngles(0,     1,        0,        0,        1);
+        // Grid.Instance.grid[24, 24].TopQuad.SetUVAngles(1,     0.75f,    0.25f,    0,        1);
+        // Grid.Instance.grid[24, 24].TopQuad.SetUVAngles(2,     0.5f,     0.5f,     0,        1);
+        // Grid.Instance.grid[24, 24].TopQuad.SetUVAngles(3,     0.25f,    0.75f,    0,        1);
+        // Grid.Instance.grid[24, 24].TopQuad.SetUVAngles(4,     0,        1,        0,        1);
+        // Grid.Instance.grid[24, 24].TopQuad.SetUVAngles(5,     0,        0.75f,    0.25f,    1);
+        // Grid.Instance.grid[24, 24].TopQuad.SetUVAngles(6,     0,        0.5f,     0.5f,     1);
+        // Grid.Instance.grid[24, 24].TopQuad.SetUVAngles(7,     0,        0.25f,    0.75f,    1);
+        // Grid.Instance.grid[24, 24].TopQuad.SetUVAngles(8,     0,        0,        1,        1);
+
+        // Grid.Instance.grid[24, 24].FloorCornerHider.SetUVAngles(0,     1,        0,        0,        1);
+        // Grid.Instance.grid[24, 24].FloorCornerHider.SetUVAngles(1,     0.75f,    0.25f,    0,        1);
+        // Grid.Instance.grid[24, 24].FloorCornerHider.SetUVAngles(2,     0.5f,     0.5f,     0,        1);
+        // Grid.Instance.grid[24, 24].FloorCornerHider.SetUVAngles(3,     0.25f,    0.75f,    0,        1);
+        // Grid.Instance.grid[24, 24].FloorCornerHider.SetUVAngles(4,     0,        1,        0,        1);
+        // Grid.Instance.grid[24, 24].FloorCornerHider.SetUVAngles(5,     0,        0.75f,    0.25f,    1);
+        // Grid.Instance.grid[24, 24].FloorCornerHider.SetUVAngles(6,     0,        0.5f,     0.5f,     1);
+        // Grid.Instance.grid[24, 24].FloorCornerHider.SetUVAngles(7,     0,        0.25f,    0.75f,    1);
+        // Grid.Instance.grid[24, 24].FloorCornerHider.SetUVAngles(8,     0,        0,        1,        1);
+
+        // Grid.Instance.grid[24, 24].WallCornerHider.SetUVAngles(0,     1,        0,        0,        1);
+        // Grid.Instance.grid[24, 24].WallCornerHider.SetUVAngles(1,     0.75f,    0.25f,    0,        1);
+        // Grid.Instance.grid[24, 24].WallCornerHider.SetUVAngles(2,     0.5f,     0.5f,     0,        1);
+        // Grid.Instance.grid[24, 24].WallCornerHider.SetUVAngles(3,     0.25f,    0.75f,    0,        1);
+        // Grid.Instance.grid[24, 24].WallCornerHider.SetUVAngles(4,     0,        1,        0,        1);
+        // Grid.Instance.grid[24, 24].WallCornerHider.SetUVAngles(5,     0,        0.75f,    0.25f,    1);
+        // Grid.Instance.grid[24, 24].WallCornerHider.SetUVAngles(6,     0,        0.5f,     0.5f,     1);
+        // Grid.Instance.grid[24, 24].WallCornerHider.SetUVAngles(7,     0,        0.25f,    0.75f,    1);
+        // Grid.Instance.grid[24, 24].WallCornerHider.SetUVAngles(8,     0,        0,        1,        1);
     }
 
     Vector2 C;
@@ -24,6 +75,16 @@ public class Test : MonoBehaviour
     //     Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
     //     Debug.Log(tan);
     // }
+
+    public float Angle;
+    [EasyButtons.Button]
+    public void TestDot(){
+        float _angle = Angle + 0.25f;
+        _angle -= Mathf.Floor(_angle);
+        _angle *= 2;
+        float _floored = Mathf.Floor(_angle);
+        Debug.Log(Mathf.Abs(_floored - (_angle - _floored)));
+    }
 
     [EasyButtons.Button]
     public void PrintValues(){
