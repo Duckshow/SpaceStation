@@ -90,7 +90,7 @@ Shader "Custom/Grid" {
 				return floor(doubleDot) * 0.001;
 			}
 			float ConvertDoubleDotToDotY(float doubleDot){
-				return round((doubleDot - floor(doubleDot)) * 1000) * 0.001;
+				return (doubleDot - floor(doubleDot)) * 2;
 			}
 			fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed doubleDot){
 
