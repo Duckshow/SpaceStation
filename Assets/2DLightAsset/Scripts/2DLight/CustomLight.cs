@@ -529,7 +529,7 @@ public class CustomLight : MonoBehaviour {
                         Grid.Instance.grid[x, y].TopQuad.                           SetUVDoubleDot(_vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                         Grid.Instance.grid[x, y].WallCornerHider.                   SetUVDoubleDot(_vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
 
-                        //SuperDebug.Log(_tilePos + _offset, Color.red, _angle0.ToString());
+                        //SuperDebug.Log(_tilePos + _offset, Color.red, _doubleDot0.ToString());
 
                         bool _affectsR = x < Grid.GridSizeX - 1 && vx == 2;
                         bool _affectsT = y < Grid.GridSizeY - 1 && vy == 2;
@@ -618,16 +618,16 @@ public class CustomLight : MonoBehaviour {
 
         return _vertical;
     }
-    static float ConvertAngle01ToConcatDot(float _angle){ // Take an angle (between 0, 1) and convert to two dot-products concatted into one number (0.25 + 0.5 = 25.5) 
+    static int ConvertAngle01ToConcatDot(float _angle){ // Take an angle (between 0, 1) and convert to two dot-products concatted into one number (0.25 + 0.5 = 255) 
         float _relX = _angle + 0.25f;
         _relX -= Mathf.Floor(_relX);
 
-        float _val = (GetDotifiedAngle(_relX) * 1000) + GetDotifiedAngle(_angle);
+         // store dots (0->1) as ints (0->1000)
+        int _dotX = Mathf.RoundToInt(GetDotifiedAngle(_relX) * 1000);
+        int _dotY = Mathf.RoundToInt(GetDotifiedAngle(_angle) * 1000); 
 
-        // float _x = Mathf.Floor(_val) * 0.001f;
-        // float _y = _val - Mathf.Floor(_val);
-        // Debug.Log(_x + ", " + _y);
-        return _val;
+        // merge ints into one
+        return _dotX | (_dotY << 16);;
     }
     static float GetDotifiedAngle(float _angle){ // Take an angle (between 0, 1) and convert to something like 0->1->0
 
@@ -647,6 +647,7 @@ public class CustomLight : MonoBehaviour {
         _dominantLightIndices = new Vector4();
         Vector4 dominantLightLevels = new Vector4();
         Vector4 dominantLightColors = new Vector4(); // todo: make a QuadrupleInt
+        Color totalColor = new Color();
         for (int i = 0; i < AllLights.Count; i++) { // optimization: can I lower the amount of lights I'm iterating over? Maybe by using a tree?
             float newRange = AllLights[i].lightRadius;
             float newDistance = Mathf.Min(Mathf.RoundToInt(Vector2.Distance(_pos, AllLights[i].transform.position)), 255);
@@ -654,52 +655,27 @@ public class CustomLight : MonoBehaviour {
             if (newDistance > newRange)
                 continue;
 
-            //DoubleInt _tilePos = new DoubleInt(Mathf.RoundToInt(_pos.x + Grid.GridSizeXHalf), Mathf.RoundToInt(_pos.y + Grid.GridSizeYHalf));
-            // if(_tilePos.X - AllLights[i].myInspector.MyTileObject.MyTile.GridCoord.X <= 0)
-            //     _tilePos.X -= 1;
-            // if (_tilePos.Y - AllLights[i].myInspector.MyTileObject.MyTile.GridCoord.Y <= 0)
-            //     _tilePos.Y -= 1;
             RaycastHit2D _rayHit;
             if(Gridcast(AllLights[i].transform.position, _pos, out _rayHit))
                 continue;
 
-            float newIntensity = AllLights[i].Intensity * 255;
-            float newLightLevel = newIntensity * (1 - (newDistance / newRange));
-
+            float newLightLevel = AllLights[i].Intensity * (1 - (newDistance / newRange));
+            totalColor += Mouse.Instance.Coloring.AllColors[(int)AllLights[i].LightColor] * newLightLevel;
             if(newLightLevel > dominantLightLevels.x){
                 _dominantLightIndices.x = i;
-                dominantLightLevels.x = newLightLevel;
-                dominantLightColors.x = AllLights[i].LightColor;
             }
             else if (newLightLevel > dominantLightLevels.y){
                 _dominantLightIndices.y = i;
-                dominantLightLevels.y = newLightLevel;
-                dominantLightColors.y = AllLights[i].LightColor;
             }
             else if (newLightLevel > dominantLightLevels.z){
                 _dominantLightIndices.z = i;
-                dominantLightLevels.z = newLightLevel;
-                dominantLightColors.z = AllLights[i].LightColor;
             }
             else if (newLightLevel > dominantLightLevels.w){
                 _dominantLightIndices.w = i;
-                dominantLightLevels.w = newLightLevel;
-                dominantLightColors.w = AllLights[i].LightColor;
             }
         }
 
-        Color color1 = Mouse.Instance.Coloring.AllColors[(int)dominantLightColors.x] * dominantLightLevels.x;
-        Color color2 = Mouse.Instance.Coloring.AllColors[(int)dominantLightColors.y] * dominantLightLevels.y;
-        Color color3 = Mouse.Instance.Coloring.AllColors[(int)dominantLightColors.z] * dominantLightLevels.z;
-        Color color4 = Mouse.Instance.Coloring.AllColors[(int)dominantLightColors.w] * dominantLightLevels.w;
-
-        Color32 finalColor = new Color32();
-        finalColor += color1 * 255;
-        finalColor += color2 * 255;
-        finalColor += color3 * 255;
-        finalColor += color4 * 255;
-
-        return finalColor;
+        return totalColor;
     }
 
     private Vector3[] initVerticesMeshLight;

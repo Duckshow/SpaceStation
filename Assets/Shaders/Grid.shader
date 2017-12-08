@@ -70,8 +70,26 @@ Shader "Custom/Grid" {
 				float4 uv01  : TEXCOORD0;
 				float4 uv23 : TEXCOORD1;
 				float4 uv45 : TEXCOORD2;
-				float4 doubleDots : TEXCOORD3;
+				float4 dotXs : TEXCOORD3;
+				float4 dotYs : TEXCOORD4;
 			};
+
+			float4 ConvertDoubleDotsToDotXs(int4 doubleDots){
+				return float4(
+					(doubleDots.x & 0xFFFF) * 0.001, 
+					(doubleDots.y & 0xFFFF) * 0.001, 
+					(doubleDots.z & 0xFFFF) * 0.001, 
+					(doubleDots.w & 0xFFFF) * 0.001
+				);
+			}
+			float4 ConvertDoubleDotsToDotYs(int4 doubleDots){
+				return float4(
+					((doubleDots.x) >> 16 & 0xFFFF) * 0.001, 
+					((doubleDots.y) >> 16 & 0xFFFF) * 0.001, 
+					((doubleDots.z) >> 16 & 0xFFFF) * 0.001, 
+					((doubleDots.w) >> 16 & 0xFFFF) * 0.001
+				);
+			}
 
 			uniform fixed colorIndices [10];
 			v2f vert(appData v) {
@@ -82,26 +100,15 @@ Shader "Custom/Grid" {
 				o.uv01 = v.uv01;
 				o.uv23 = v.uv23;
 				o.uv45 = v.uv45;
-				o.doubleDots = v.doubleDots;
+				o.dotXs = ConvertDoubleDotsToDotXs(v.doubleDots) * 2 - 1;
+				o.dotYs = ConvertDoubleDotsToDotYs(v.doubleDots) * 2 - 1;
 				return o;
 			}
 
-			float ConvertDoubleDotToDotX(float doubleDot){
-				return floor(doubleDot) * 0.001;
-			}
-			float ConvertDoubleDotToDotY(float doubleDot){
-				return (doubleDot - floor(doubleDot)) * 2;
-			}
-			fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed doubleDot){
-
-				// float dotX = 1 - 2 * abs((angle - 0.25) * 2 - 1); 	// the angle to the light expressed as 0->1, and only horizontally (0 == left)
-				// float dotY = 1 - 2 * abs(angle * 2 - 1); 			// the angle to the light expressed as 0->1, and only vertically (0 == bottom)
-				float dotX = ConvertDoubleDotToDotX(doubleDot);
-				float dotY = ConvertDoubleDotToDotY(doubleDot);
-
+			fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed dotX, fixed dotY){
 				return min(															// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
 					vColor, 												
-					1 - min(														// pick the smallest; floored Alpha channel or ceiled-nrm/equation. Unless A is 1, pixel will be unlit.
+					1 - min(
 							floor(normals.a),
 							min(													// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
 								ceil(												// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
@@ -111,8 +118,8 @@ Shader "Custom/Grid" {
 								saturate( 											// clamp01 so we don't get weird values and invert
 										//0.01 + 										// tolerance (prevents some weirdness)
 										max( 										// max val tells us true diff
-											abs((normals.r * 2 - 1) - dotY), 		// diff between surface-normal Y and vertical dot product to light
-											abs((normals.g * 2 - 1) - dotX)			// diff between surface-normal X and horizontal dot product to light
+											abs((normals.r * 2 - 1) - dotX), 		// diff between surface-normal Y and horizontal dot product to light
+											abs((normals.g * 2 - 1) - dotY)			// diff between surface-normal X and vertical dot product to light
 										)
 								)
 							)
@@ -141,35 +148,11 @@ Shader "Custom/Grid" {
 				fixed indexToUse = 10 - floor(palTex.r * 10);
 				colorToUse = _allColors[colorIndices[indexToUse]];
 
-				// normals: R (0->1 == down->up), A (0->1 == left->right)
-
-				// half2 gridUV = (ceil(i.worldPos) + 23.5) / 47.5;
-				// dotXsTex = tex2D(_DotXs, gridUV);
-				// dotYsTex = tex2D(_DotYs, gridUV);
-
-				// fixed4 mod0 = CalculateLighting(i.vColor, nrmTex, dotXsTex.r, dotYsTex.r);
-				// fixed4 mod1 = CalculateLighting(i.vColor, nrmTex, dotXsTex.g, dotYsTex.g);
-				// fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, dotXsTex.b, dotYsTex.b);
-				// fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, dotXsTex.a, dotYsTex.a);
-				fixed4 mod0 = CalculateLighting(i.vColor, nrmTex, i.doubleDots.r);
-				fixed4 mod1 = CalculateLighting(i.vColor, nrmTex, i.doubleDots.g);
-				fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, i.doubleDots.b);
-				fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, i.doubleDots.a);
+				fixed4 mod0 = CalculateLighting(i.vColor, nrmTex, i.dotXs.r, i.dotYs.r);
+				fixed4 mod1 = CalculateLighting(i.vColor, nrmTex, i.dotXs.g, i.dotYs.g);
+				fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, i.dotXs.b, i.dotYs.b);
+				fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, i.dotXs.a, i.dotYs.a);
 				mod0 += mod1 + mod2 + mod3;
-
-
-				// float dotY = 2 * abs(i.angles.r * 2 - 1) - 1; 	// the angle to the light expressed as 0->1, and only horizontally (0 == left)
-				// float dotX = i.angles.r + 0.25; 				// offset to get angle from the left, instead of bottom
-				// dotX -= floor(dotX);							// make sure value loops around (so it doesn't exceed 1)
-				// dotX = 2 * abs(dotX * 2 - 1) - 1; 	
-
-
-				float dotX = ConvertDoubleDotToDotX(i.doubleDots.r);
-				float dotY = ConvertDoubleDotToDotY(i.doubleDots.r);
-
-				i.doubleDots.a = 1;
-				i.doubleDots.r = dotY;
-				return fixed4(i.doubleDots.r, i.doubleDots.r, i.doubleDots.r, 1); // i.angles.rrra;
 
 				// final apply
 				finalColor.rgb = min((tex.rgb * colorToUse.rgb) * mod0, i.vColor);
