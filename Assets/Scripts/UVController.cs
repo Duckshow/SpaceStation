@@ -92,6 +92,37 @@ public class UVController : MeshSorter {
             12, 10, 13,
             13, 10, 11
         };
+
+        // mesh.vertices = new Vector3[] { // imagine it upside down, and that's the mesh below
+        //     new Vector3(-0.5f, -1, 0),      new Vector3(0, -1, 0),      new Vector3(0.5f, -1, 0), 
+        //     new Vector3(-0.5f, -0.5f, 0),                               new Vector3(0.5f, -0.5f, 0),
+        //     new Vector3(-0.5f, 0, 0),       new Vector3(0, 0, 0),       new Vector3(0.5f, 0, 0), 
+        //     new Vector3(-0.5f, 0, 0),       new Vector3(0, 0, 0),       new Vector3(0.5f, 0, 0), 
+        //     new Vector3(-0.5f, 1, 0),                                   new Vector3(0.5f, 1, 0)
+        // };
+        // mesh.uv = new Vector2[]{
+        //     new Vector2(0, 0),      new Vector2(0.5f, 0),       new Vector2(1, 0),
+        //     new Vector2(0, 0.25f),                              new Vector2(1, 0.25f),
+        //     new Vector2(0, 0.5f),   new Vector2(0.5f, 0.5f),    new Vector2(1, 0.5f), 
+        //     new Vector2(0, 0.5f),   new Vector2(0.5f, 0.5f),    new Vector2(1, 0.5f), 
+        //     new Vector2(0, 1),                                  new Vector2(1, 1)
+        // };
+        // mesh.triangles = new int[]{
+        //     0, 3, 1,
+        //     3, 4, 1,
+        //     1, 4, 2,
+        //     3, 5, 6,
+        //     3, 6, 4,
+        //     6, 7, 4,
+        //     5, 8, 6,
+        //     6, 8, 9,
+        //     6, 9, 10,
+        //     6, 10, 12,
+        //     8, 11, 9,
+        //     9, 11, 12,
+        //     9, 12, 10
+        // };
+
         return mesh;
     }
 
