@@ -100,8 +100,11 @@ Shader "Custom/Grid" {
 				o.uv01 = v.uv01;
 				o.uv23 = v.uv23;
 				o.uv45 = v.uv45;
-				o.dotXs = ConvertDoubleDotsToDotXs(v.doubleDots) * 2 - 1;
-				o.dotYs = ConvertDoubleDotsToDotYs(v.doubleDots) * 2 - 1;
+
+				float4 dx = ConvertDoubleDotsToDotXs(v.doubleDots);
+				float4 dy = ConvertDoubleDotsToDotYs(v.doubleDots);
+				o.dotXs = (dx * 2 - 1) * saturate(ceil(dx)); // convert 0->1 to -1->1 and multiply so that unless dx > 0, this becomes 0
+				o.dotYs = (dy * 2 - 1) * saturate(ceil(dy));
 				return o;
 			}
 
@@ -111,21 +114,17 @@ Shader "Custom/Grid" {
 					1 - min(
 							floor(normals.a),
 							min(													// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
-								ceil(												// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
-									normals.r +										// add normals together
-									normals.g
-								),
-								saturate( 											// clamp01 so we don't get weird values and invert
-										//0.01 + 										// tolerance (prevents some weirdness)
+								ceil(normals.r + normals.g),						// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
+								floor(saturate( 											// clamp01 so we don't get weird values and invert
 										max( 										// max val tells us true diff
-											abs((normals.r * 2 - 1) - dotX), 		// diff between surface-normal Y and horizontal dot product to light
-											abs((normals.g * 2 - 1) - dotY)			// diff between surface-normal X and vertical dot product to light
+											abs((normals.r * 2 - 1) - dotX), 		// diff between surface-normal X and horizontal dot product to light
+											abs((normals.g * 2 - 1) - dotY)			// diff between surface-normal Y and vertical dot product to light
 										)
-								)
+								))
 							)
 					)
 						
-				);
+				) * saturate(ceil(abs(dotX + dotY))); 								// unless dotX and dotY forced to zero (otherwise impossible), this equals 1
 			}
 
 			fixed4 frag(v2f i) : COLOR {

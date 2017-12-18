@@ -613,11 +613,13 @@ public class CustomLight : MonoBehaviour {
                         Color _finalColor = GetTotalVertexLighting(_tilePos + _offset, out _lights);
                         _finalColor.a = 1;
 
-                        // get two dots per light describing angle to respective lights, concatted to one float each
-                        float _doubleDot0 = ConvertAngle01ToConcatDot(GetAngleCCW(_tilePos + _offset, AllLights[(int)_lights.x].transform.position, 1));
-                        float _doubleDot1 = ConvertAngle01ToConcatDot(GetAngleCCW(_tilePos + _offset, AllLights[(int)_lights.y].transform.position, 1));
-                        float _doubleDot2 = ConvertAngle01ToConcatDot(GetAngleCCW(_tilePos + _offset, AllLights[(int)_lights.z].transform.position, 1));
-                        float _doubleDot3 = ConvertAngle01ToConcatDot(GetAngleCCW(_tilePos + _offset, AllLights[(int)_lights.w].transform.position, 1));
+						dadwm // the tile underneath a light is getting a weird dot (or something). Might wanna look into that?
+
+						// get two dots per light describing angle to respective lights, concatted to one float each
+						float _doubleDot0 = _lights.x < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.x].transform.position);
+                        float _doubleDot1 = _lights.y < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.y].transform.position);
+                        float _doubleDot2 = _lights.z < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.z].transform.position);
+                        float _doubleDot3 = _lights.w < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.w].transform.position);
 
                         SetDoubleDotForTile(x, y, _vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                         _cachedColors[_totalX, _totalY] = _finalColor;
@@ -665,8 +667,6 @@ public class CustomLight : MonoBehaviour {
                             _neighbourColors[_index] = _clear;
                             clearAmount++;
                         };
-
-                        esofnaef // it seems like the normal-based lighting isn't depending on the raycasts? that sounds broken...
 
                          if(_totalY > 0 && _totalX > 0)         _neighbourColors[0] = _cachedColors[_totalX - 1, _totalY - 1];
                         else                                    SetNeighbourColorClear(0);  
@@ -726,37 +726,28 @@ public class CustomLight : MonoBehaviour {
                                             _referenceAngle, 
                                             Vector3.Normalize(_pos1 - _pos2))));
     }
-    static float GetAngleCCW(Vector2 _pos1, Vector2 _pos2, int _maxAngle){ // CCW as in counter-clockwise. currently starts pointing down, like an upside-down clock
-        // gets the angle between _pos1 and _pos2, ranging from 0 to _maxAngle.
-        // the angle goes all-the-way-around, like a clock and unlike a dot-product.
+	private const float DOUBLE_DOT_MAX_ANGLE = 1;
+	static int GetDoubleDotAngle(Vector2 _pos1, Vector2 _pos2){ // Find an angle (0->1) and convert to two dot-products concatted into one number (eg 0.25 + 0.5 = 255) 
+		// get an angle between 0->1. The angle goes all the way around, but counter-clockwise, so sorta like a clock and unlike a dot
+		float _vertical = (0.5f * (DOUBLE_DOT_MAX_ANGLE + Vector2.Dot(Vector2.down, Vector3.Normalize(_pos1 - _pos2))));
+		float _horizontal = Vector2.Dot(Vector2.left, Vector3.Normalize(_pos1 - _pos2));
 
-        float _vertical     = (0.5f * (1 + Vector2.Dot(Vector2.down,   Vector3.Normalize(_pos1 - _pos2))));
-        float _horizontal   =              Vector2.Dot(Vector2.left, Vector3.Normalize(_pos1 - _pos2));
+		_vertical = (_vertical * (DOUBLE_DOT_MAX_ANGLE * 0.5f));
+		if (_horizontal < 0)
+			_vertical = Mathf.Abs(_vertical - 1);
 
-        _vertical = (_vertical * (_maxAngle * 0.5f));
-        if (_horizontal < 0)
-            _vertical = Mathf.Abs(_vertical - _maxAngle);
-
-        return _vertical;
-    }
-    static int ConvertAngle01ToConcatDot(float _angle){ // Take an angle (between 0, 1) and convert to two dot-products concatted into one number (0.25 + 0.5 = 255) 
-        float _relX = _angle + 0.25f;
-        _relX -= Mathf.Floor(_relX);
+		// convert angle to two dot products
+        _horizontal = _vertical + 0.25f;
+        _horizontal -= Mathf.Floor(_horizontal);
 
          // store dots (0->1) as ints (0->1000)
-        int _dotX = Mathf.RoundToInt(GetDotifiedAngle(_relX) * 1000);
-        int _dotY = Mathf.RoundToInt(GetDotifiedAngle(_angle) * 1000); 
+        int _dotX = Mathf.RoundToInt(GetDotifiedAngle(_horizontal) * 1000);
+        int _dotY = Mathf.RoundToInt(GetDotifiedAngle(_vertical) * 1000); 
 
         // merge ints into one
-        return _dotX | (_dotY << 16);;
+        return _dotX | (_dotY << 16);
     }
     static float GetDotifiedAngle(float _angle){ // Take an angle (between 0, 1) and convert to something like 0->1->0
-
-    // float = 13.37f;
-    // dotX = floor( 13.37f ) * 0.01f;
-    // dotY = ( 13.37f - floor( 13.37f ));
-    // dotX = 0.13f, dotY = 0.37f! 
-
         _angle *= 2;
         float _floored = Mathf.Floor(_angle);
         return Mathf.Abs(_floored - (_angle - _floored));
@@ -765,10 +756,10 @@ public class CustomLight : MonoBehaviour {
     Color GetTotalVertexLighting(Vector2 _pos, out Vector4 _dominantLightIndices){
 
         // four because we can only store Dot-info for four lights (mostly bc performance) and then any higher number makes little sense
-        _dominantLightIndices = new Vector4();
-        Vector4 dominantLightLevels = new Vector4();
+        _dominantLightIndices = new Vector4(-1, -1, -1, -1);
+        Vector4 _dominantLightLevels = new Vector4();
         Color totalColor = new Color();
-        for (int i = 0; i < AllLights.Count; i++) { // optimization: can I lower the amount of lights I'm iterating over? Maybe by using a tree?
+        for (int i = 0; i < AllLights.Count; i++) {
             float newRange = AllLights[i].lightRadius;
             float newDistance = Mathf.Min(Vector2.Distance(_pos, AllLights[i].transform.position), 255);
 
@@ -781,18 +772,22 @@ public class CustomLight : MonoBehaviour {
 
             float newLightLevel = AllLights[i].Intensity * (1 - (newDistance / newRange));
             totalColor += Mouse.Instance.Coloring.AllColors[(int)AllLights[i].LightColor] * newLightLevel;
-            if(newLightLevel > dominantLightLevels.x){
+            if(newLightLevel > _dominantLightLevels.x){
                 _dominantLightIndices.x = i;
-            }
-            else if (newLightLevel > dominantLightLevels.y){
+				_dominantLightLevels.x = newLightLevel;
+			}
+            else if (newLightLevel > _dominantLightLevels.y){
                 _dominantLightIndices.y = i;
-            }
-            else if (newLightLevel > dominantLightLevels.z){
+				_dominantLightLevels.y = newLightLevel;
+			}
+            else if (newLightLevel > _dominantLightLevels.z){
                 _dominantLightIndices.z = i;
-            }
-            else if (newLightLevel > dominantLightLevels.w){
+				_dominantLightLevels.z = newLightLevel;
+			}
+            else if (newLightLevel > _dominantLightLevels.w){
                 _dominantLightIndices.w = i;
-            }
+				_dominantLightLevels.w = newLightLevel;
+			}
         }
 
         return totalColor;

@@ -43,8 +43,10 @@ public class Grid : MonoBehaviour {
         }
     }
 
-    void CreateGrid() {
-        grid = new Tile[GridSizeX, GridSizeY];
+	[SerializeField] private int Seed;
+	void CreateGrid() {
+		Random.InitState(Seed);
+		grid = new Tile[GridSizeX, GridSizeY];
 
         Vector3 worldBottomLeft = transform.position - (Vector3.right * GridWorldSize.x / 2) - (Vector3.up * GridWorldSize.y / 2) - new Vector3(0, 0.5f, 0); // 0.5f because of the +1 for diagonals
         for (int y = 0; y < GridSizeY; y++) {
