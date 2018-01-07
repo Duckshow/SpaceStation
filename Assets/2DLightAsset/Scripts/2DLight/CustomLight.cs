@@ -589,7 +589,7 @@ public class CustomLight : MonoBehaviour {
     private int clearAmount = 0;
     public delegate void mSetNeighbourColorClear(int _index);
     void CalculateLightingForGrid() {
-        Color[,] _cachedColors = new Color[Grid.GridSizeX * 3, Grid.GridSizeY * 3];
+		Color[,] _cachedColors = new Color[Grid.GridSizeX * 3, Grid.GridSizeY * 3];
         Vector2 _offset = new Vector2();
         for (int x = 0; x < Grid.GridSizeX; x++){
             for (int y = 0; y < Grid.GridSizeY; y++){
@@ -613,15 +613,30 @@ public class CustomLight : MonoBehaviour {
                         Color _finalColor = GetTotalVertexLighting(_tilePos + _offset, out _lights);
                         _finalColor.a = 1;
 
-						dadwm // the tile underneath a light is getting a weird dot (or something). Might wanna look into that?
-
 						// get two dots per light describing angle to respective lights, concatted to one float each
 						float _doubleDot0 = _lights.x < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.x].transform.position);
                         float _doubleDot1 = _lights.y < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.y].transform.position);
                         float _doubleDot2 = _lights.z < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.z].transform.position);
                         float _doubleDot3 = _lights.w < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.w].transform.position);
 
-                        SetDoubleDotForTile(x, y, _vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
+						if (_lights.x >= 0 && y >= 18 && y <= 20) { 
+
+							float _vertical = (0.5f * (DOUBLE_DOT_MAX_ANGLE + Vector2.Dot(Vector2.down, Vector3.Normalize((Vector3)(_tilePos + _offset) - AllLights[(int)_lights.x].transform.position))));
+							float _horizontal = Vector2.Dot(Vector2.left, Vector3.Normalize((Vector3)(_tilePos + _offset) - AllLights[(int)_lights.x].transform.position));
+							_vertical = (_vertical * (DOUBLE_DOT_MAX_ANGLE * 0.5f));
+							if (_horizontal < 0)
+								_vertical = Mathf.Abs(_vertical - 1);
+							_horizontal = _vertical + 0.25f;
+							_horizontal -= Mathf.Floor(_horizontal);
+
+							Debug.Log(Mathf.Max(0.001f, GetDotifiedAngle(_horizontal)));
+							int _dotX = Mathf.RoundToInt(Mathf.Max(0.001f, GetDotifiedAngle(_horizontal)) * 1000);
+							int _dotY = Mathf.RoundToInt(Mathf.Max(0.001f, GetDotifiedAngle(_vertical)) * 1000);
+							SuperDebug.Log(_tilePos + _offset, Color.red, _dotX.ToString(), _dotY.ToString(), _doubleDot0.ToString());
+							//SuperDebug.Log(_tilePos + _offset, Color.red, _doubleDot0.ToString());
+						}
+
+						SetDoubleDotForTile(x, y, _vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                         _cachedColors[_totalX, _totalY] = _finalColor;
 
                         bool _affectsR = x < Grid.GridSizeX - 1 && vx == 2;
@@ -741,8 +756,8 @@ public class CustomLight : MonoBehaviour {
         _horizontal -= Mathf.Floor(_horizontal);
 
          // store dots (0->1) as ints (0->1000)
-        int _dotX = Mathf.RoundToInt(GetDotifiedAngle(_horizontal) * 1000);
-        int _dotY = Mathf.RoundToInt(GetDotifiedAngle(_vertical) * 1000); 
+        int _dotX = Mathf.RoundToInt(Mathf.Max(0.001f, GetDotifiedAngle(_horizontal)) * 1000);
+        int _dotY = Mathf.RoundToInt(Mathf.Max(0.001f, GetDotifiedAngle(_vertical)) * 1000); 
 
         // merge ints into one
         return _dotX | (_dotY << 16);

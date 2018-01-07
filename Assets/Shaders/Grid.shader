@@ -76,7 +76,7 @@ Shader "Custom/Grid" {
 
 			float4 ConvertDoubleDotsToDotXs(int4 doubleDots){
 				return float4(
-					(doubleDots.x & 0xFFFF) * 0.001, 
+					(doubleDots.x & 0xFFFF) * 0.001, diad // try to figure out what this means and see what the numbers actually do when converted
 					(doubleDots.y & 0xFFFF) * 0.001, 
 					(doubleDots.z & 0xFFFF) * 0.001, 
 					(doubleDots.w & 0xFFFF) * 0.001
@@ -128,6 +128,10 @@ Shader "Custom/Grid" {
 			}
 
 			fixed4 frag(v2f i) : COLOR {
+
+				fixed4 dot = fixed4(i.dotXs.r + 1, i.dotXs.r + 1, i.dotXs.r + 1, 1);
+				return dot;
+				
 				tex = tex2D(_MainTex, i.uv01.xy);
 				nrmTex = tex2D(_NrmMap, i.uv01.xy);
 				emTex = tex2D(_EmissiveMap, i.uv01.xy);
