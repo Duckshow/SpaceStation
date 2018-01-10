@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class ObjectPooler : MonoBehaviour {
-
-	public static ObjectPooler Instance;
-
     [Serializable]
 	public class Pool {
 
@@ -51,20 +48,70 @@ public class ObjectPooler : MonoBehaviour {
         }
     }
 
-    [SerializeField] private List<Pool> MyPools = new List<Pool>();
+	public static ObjectPooler Instance;
+	[SerializeField] private List<Pool> MyPools = new List<Pool>();
+
+	void Awake(){
+		if (Instance != null)
+			Destroy(this);
+		else
+			Instance = this;
+
+		SetupPoolIDsArray();
+
+		// check for duplicate ID usage (not sure how else to prevent double usage...)
+		List<CachedAssets.WallSet.P> usedIDs = new List<CachedAssets.WallSet.P>();
+		for (int i = 0; i < MyPools.Count; i++){
+			for (int j = 0; j < MyPools[i].IDs.Count; j++){
+				if (usedIDs.Contains(MyPools[i].IDs[j]))
+					Debug.LogError("Two Pools are using " + MyPools[i].IDs[j] + " as ID!");
+				else
+					usedIDs.Add(MyPools[i].IDs[j]);
+			}
+		}
+	}
+	
+
 	public void AddPool(CachedAssets.WallSet.P _id, PoolerObject _prefab, params CachedAssets.WallSet.P[] _additionalIDs){
 		MyPools.Add(new Pool(this, _id, _prefab, _additionalIDs));
 	}
 
-	// return the pool using the provided ID
-    public T GetPooledObject<T>(CachedAssets.WallSet.P _id) where T : Component {
-		Pool _pool = null; 
+	private CachedAssets.WallSet.P[] allPoolIDs;
+	private int[] idsPerPool;
+	void SetupPoolIDsArray(){
+		idsPerPool = new int[MyPools.Count];
+		int _total = 0;
 		for (int i = 0; i < MyPools.Count; i++){
-			for (int j = 0; j < MyPools[i].IDs.Count; j++){
-				if(MyPools[i].IDs[j] == _id)
-	                _pool = MyPools[i];
+			idsPerPool[i] = MyPools[i].IDs.Count;
+			_total += idsPerPool[i];
+		}
+		allPoolIDs = new CachedAssets.WallSet.P[_total];
+
+		_total = 0;
+		for (int i = 0; i < idsPerPool.Length; i++){
+			for (int i2 = 0; i2 < idsPerPool[i]; i2++){
+				allPoolIDs[_total] = MyPools[i].IDs[i2];
+				_total++;
 			}
-        }
+		}
+	}
+    public T GetPooledObject<T>(CachedAssets.WallSet.P _id) where T : Component {
+		CachedAssets.WallSet.P _poolID;
+		Pool _pool = null;
+		int _idIndex = 0;
+		int _poolIndex = 0;
+
+		for (int i = 0; i < allPoolIDs.Length; i++){
+			_poolID = allPoolIDs[i];
+			if (_poolID == _id)
+				_pool = MyPools[_poolIndex];
+
+			_idIndex++;
+			if (_idIndex == idsPerPool[_poolIndex]) { 
+				_idIndex = 0;
+				_poolIndex++;
+			}
+		}
 
 		if(_pool == null)
 	        return null;
@@ -79,23 +126,5 @@ public class ObjectPooler : MonoBehaviour {
 			}
         }
 		return false;
-	}
-
-    void Awake() {
-        if (Instance != null)
-            Destroy(this);
-		else
-            Instance = this;
-
-        // check for duplicate ID usage (not sure how else to prevent double usage...)
-        List<CachedAssets.WallSet.P> usedIDs = new List<CachedAssets.WallSet.P>();
-		for (int i = 0; i < MyPools.Count; i++){
-			for (int j = 0; j < MyPools[i].IDs.Count; j++){
-				if(usedIDs.Contains(MyPools[i].IDs[j]))
-					Debug.LogError("Two Pools are using " + MyPools[i].IDs[j] + " as ID!");
-				else
-					usedIDs.Add(MyPools[i].IDs[j]);
-			}
-        }
 	}
 }

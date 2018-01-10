@@ -12,7 +12,7 @@ public class Test : MonoBehaviour
     private CustomLight light;
 
     void Start(){
-        light = FindObjectOfType<CustomLight>();
+		light = FindObjectOfType<CustomLight>();
         
 
         // Grid.Instance.grid[24, 24].FloorQuad.SetUVAngles(0,     1,        0,        0,        1);
@@ -76,7 +76,41 @@ public class Test : MonoBehaviour
     //     Debug.Log(tan);
     // }
 
-    public float Angle;
+	[EasyButtons.Button]
+	public void TestBitshift(){
+		int x = 0;
+		int y = 1;
+		int bits = x | (y << 16);
+		float deBittedX = (bits & 0xFFFF) * 0.001f;
+		float deBittedY = (bits >> 16 & 0xFFFF) * 0.001f;
+
+		Debug.Log((deBittedX + ", " + deBittedY).ToString().Color(Color.cyan));
+	}
+	string GetBinaryString(int n) {
+		char[] b = new char[32];
+		int pos = 31;
+		int i = 0;
+
+		while (i < 32){
+			if ((n & (1 << i)) != 0){
+				b[pos] = '1';
+			}
+			else{
+				b[pos] = '0';
+			}
+			pos--;
+			i++;
+		}
+		return new string(b);
+	}
+
+	public Color TestColor;
+	[EasyButtons.Button]
+	public void TestColorGrayscale(){
+		Debug.Log("Grayscale: " + TestColor.grayscale);
+	}
+
+	public float Angle;
     [EasyButtons.Button]
     public void TestDot(){
         float _angle = Angle + 0.25f;

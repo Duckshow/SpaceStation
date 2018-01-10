@@ -76,7 +76,8 @@ Shader "Custom/Grid" {
 
 			float4 ConvertDoubleDotsToDotXs(int4 doubleDots){
 				return float4(
-					(doubleDots.x & 0xFFFF) * 0.001, diad // try to figure out what this means and see what the numbers actually do when converted
+					// 0xFFFF == 65535 == 1111111111111111 (16 bits)
+					(doubleDots.x & 0xFFFF) * 0.001,
 					(doubleDots.y & 0xFFFF) * 0.001, 
 					(doubleDots.z & 0xFFFF) * 0.001, 
 					(doubleDots.w & 0xFFFF) * 0.001
@@ -84,10 +85,11 @@ Shader "Custom/Grid" {
 			}
 			float4 ConvertDoubleDotsToDotYs(int4 doubleDots){
 				return float4(
-					((doubleDots.x) >> 16 & 0xFFFF) * 0.001, 
-					((doubleDots.y) >> 16 & 0xFFFF) * 0.001, 
-					((doubleDots.z) >> 16 & 0xFFFF) * 0.001, 
-					((doubleDots.w) >> 16 & 0xFFFF) * 0.001
+					// 0xFFFF == 65535 == 1111111111111111 (16 bits)
+					(doubleDots.x >> 16 & 0xFFFF) * 0.001, 
+					(doubleDots.y >> 16 & 0xFFFF) * 0.001, 
+					(doubleDots.z >> 16 & 0xFFFF) * 0.001, 
+					(doubleDots.w >> 16 & 0xFFFF) * 0.001
 				);
 			}
 
@@ -100,27 +102,26 @@ Shader "Custom/Grid" {
 				o.uv01 = v.uv01;
 				o.uv23 = v.uv23;
 				o.uv45 = v.uv45;
-
-				float4 dx = ConvertDoubleDotsToDotXs(v.doubleDots);
-				float4 dy = ConvertDoubleDotsToDotYs(v.doubleDots);
-				o.dotXs = (dx * 2 - 1) * saturate(ceil(dx)); // convert 0->1 to -1->1 and multiply so that unless dx > 0, this becomes 0
-				o.dotYs = (dy * 2 - 1) * saturate(ceil(dy));
+				o.dotXs = ConvertDoubleDotsToDotXs(v.doubleDots);
+				o.dotYs = ConvertDoubleDotsToDotYs(v.doubleDots);
 				return o;
 			}
 
 			fixed4 CalculateLighting(fixed4 vColor, fixed4 normals, fixed dotX, fixed dotY){
-				return min(															// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
-					vColor, 												
-					1 - min(
+				return //min(															// return the darkest; total lighting (set in CustomLight.cs) or the normal-dependant lighting
+					//vColor, 												
+					(1 - min(
 							floor(normals.a),
 							min(													// pick the smallest; ceiled normals or light-equation. Unless normals are zero, equation wins.
 								ceil(normals.r + normals.g),						// ceil normals, so anything above 0 becomes 1 (thus equal to maximum lighting)
-								floor(saturate( 											// clamp01 so we don't get weird values and invert
+								//floor(
+									saturate( 											// clamp01 so we don't get weird values and invert
 										max( 										// max val tells us true diff
-											abs((normals.r * 2 - 1) - dotX), 		// diff between surface-normal X and horizontal dot product to light
-											abs((normals.g * 2 - 1) - dotY)			// diff between surface-normal Y and vertical dot product to light
+											abs(normals.r - dotX), 		// diff between surface-normal X and horizontal dot product to light
+											abs(normals.g - dotY)			// diff between surface-normal Y and vertical dot product to light
 										)
-								))
+									)
+								//)
 							)
 					)
 						
@@ -129,8 +130,8 @@ Shader "Custom/Grid" {
 
 			fixed4 frag(v2f i) : COLOR {
 
-				fixed4 dot = fixed4(i.dotXs.r + 1, i.dotXs.r + 1, i.dotXs.r + 1, 1);
-				return dot;
+				// fixed4 dot = fixed4(i.dotYs.r, i.dotYs.r, i.dotYs.r, 1);
+				// return dot;
 				
 				tex = tex2D(_MainTex, i.uv01.xy);
 				nrmTex = tex2D(_NrmMap, i.uv01.xy);
@@ -155,10 +156,12 @@ Shader "Custom/Grid" {
 				fixed4 mod1 = CalculateLighting(i.vColor, nrmTex, i.dotXs.g, i.dotYs.g);
 				fixed4 mod2 = CalculateLighting(i.vColor, nrmTex, i.dotXs.b, i.dotYs.b);
 				fixed4 mod3 = CalculateLighting(i.vColor, nrmTex, i.dotXs.a, i.dotYs.a);
-				mod0 += mod1 + mod2 + mod3;
+				mod0 = saturate(mod0 + mod1 + mod2 + mod3);
 
 				// final apply
-				finalColor.rgb = min((tex.rgb * colorToUse.rgb) * mod0, i.vColor);
+				//finalColor.rgb = min((tex.rgb * colorToUse.rgb) * mod0, i.vColor);
+				finalColor.rgb = (i.vColor * tex.rgb * colorToUse.rgb) * mod0;
+
 				finalColor.a = tex.a;
 				return finalColor;
 			}

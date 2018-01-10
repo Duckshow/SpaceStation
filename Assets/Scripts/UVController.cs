@@ -283,7 +283,7 @@ public class UVController : MeshSorter {
         _doubleDot.y = _doubleDot1;
         _doubleDot.z = _doubleDot2;
         _doubleDot.w = _doubleDot3;
-        sUVDoubleDots[_specificUV] = _doubleDot;
+		sUVDoubleDots[_specificUV] = _doubleDot;
 
         myMeshFilter.mesh.SetUVs(3, sUVDoubleDots);
     }

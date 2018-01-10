@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 using UnityEngine;
 using System.Collections.Generic;
-
+using System.Linq;
 using UnityEditor; // for debug-gizmos only
 
 public class Verts {
@@ -586,11 +586,11 @@ public class CustomLight : MonoBehaviour {
     // }
 
     private const float VERTEX_DISTANCE = 0.5f;
-    private int clearAmount = 0;
-    public delegate void mSetNeighbourColorClear(int _index);
-    void CalculateLightingForGrid() {
+    private delegate void mSetNeighbourColorClear(int _index);
+	private  delegate Color mTryGetNeighbourColor(int _x, int _y);
+	void CalculateLightingForGrid() {
 		Color[,] _cachedColors = new Color[Grid.GridSizeX * 3, Grid.GridSizeY * 3];
-        Vector2 _offset = new Vector2();
+		Vector2 _offset = new Vector2();
         for (int x = 0; x < Grid.GridSizeX; x++){
             for (int y = 0; y < Grid.GridSizeY; y++){
                 for (int vy = 0; vy < 3; vy++){
@@ -619,40 +619,23 @@ public class CustomLight : MonoBehaviour {
                         float _doubleDot2 = _lights.z < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.z].transform.position);
                         float _doubleDot3 = _lights.w < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.w].transform.position);
 
-						if (_lights.x >= 0 && y >= 18 && y <= 20) { 
-
-							float _vertical = (0.5f * (DOUBLE_DOT_MAX_ANGLE + Vector2.Dot(Vector2.down, Vector3.Normalize((Vector3)(_tilePos + _offset) - AllLights[(int)_lights.x].transform.position))));
-							float _horizontal = Vector2.Dot(Vector2.left, Vector3.Normalize((Vector3)(_tilePos + _offset) - AllLights[(int)_lights.x].transform.position));
-							_vertical = (_vertical * (DOUBLE_DOT_MAX_ANGLE * 0.5f));
-							if (_horizontal < 0)
-								_vertical = Mathf.Abs(_vertical - 1);
-							_horizontal = _vertical + 0.25f;
-							_horizontal -= Mathf.Floor(_horizontal);
-
-							Debug.Log(Mathf.Max(0.001f, GetDotifiedAngle(_horizontal)));
-							int _dotX = Mathf.RoundToInt(Mathf.Max(0.001f, GetDotifiedAngle(_horizontal)) * 1000);
-							int _dotY = Mathf.RoundToInt(Mathf.Max(0.001f, GetDotifiedAngle(_vertical)) * 1000);
-							SuperDebug.Log(_tilePos + _offset, Color.red, _dotX.ToString(), _dotY.ToString(), _doubleDot0.ToString());
-							//SuperDebug.Log(_tilePos + _offset, Color.red, _doubleDot0.ToString());
-						}
-
 						SetDoubleDotForTile(x, y, _vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                         _cachedColors[_totalX, _totalY] = _finalColor;
 
-                        bool _affectsR = x < Grid.GridSizeX - 1 && vx == 2;
+						bool _affectsR = x < Grid.GridSizeX - 1 && vx == 2;
                         bool _affectsT = y < Grid.GridSizeY - 1 && vy == 2;
                         if (_affectsR){
                             SetDoubleDotForTile(x + 1, y, _vIndex - vx, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                             _cachedColors[_totalX + 1, _totalY] = _finalColor;
-                        }
+						}
                         if (_affectsT){
                             SetDoubleDotForTile(x, y + 1, vx, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                             _cachedColors[_totalX, _totalY + 1] = _finalColor;
-                        }
+						}
                         if (_affectsR && _affectsT){
                             SetDoubleDotForTile(x + 1, y + 1, 0, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                             _cachedColors[_totalX + 1, _totalY + 1] = _finalColor;
-                        }
+						}
                     }
                 }
             }
@@ -673,43 +656,40 @@ public class CustomLight : MonoBehaviour {
                         if(x > 0 && vx == 0)
                             continue;
 
-                        int _vIndex = vy * 3 + vx;
+						// try get colors from neighbouring vertices (for smoothing)
                         int _totalX = x * 3 + vx;
                         int _totalY = y * 3 + vy;
+						int _diffToRightX = vx == 0 ? 1 : 2;
+						int _diffToAboveY = vy == 0 ? 1 : 2;
+						int _failAmount = 0;
+						mTryGetNeighbourColor TryGetNeighbourColor = delegate (int _x, int _y){
+							if (_x < 0 || _x > _maxX || _y < 0 || _y > _maxY){
+								_failAmount++;
+								return _clear;
+							}
+							return _cachedColors[_x, _y];
+						};
+						_neighbourColors[0] = TryGetNeighbourColor(_totalX - 1, _totalY - 1);
+						_neighbourColors[1] = TryGetNeighbourColor(_totalX, 	_totalY - 1);
+						_neighbourColors[2] = TryGetNeighbourColor(_totalX + _diffToRightX, _totalY - 1);
+						_neighbourColors[3] = TryGetNeighbourColor(_totalX - 1, _totalY);
+						_neighbourColors[4] = TryGetNeighbourColor(_totalX + _diffToRightX, _totalY);
+						_neighbourColors[5] = TryGetNeighbourColor(_totalX - 1, _totalY + _diffToAboveY);
+						_neighbourColors[6] = TryGetNeighbourColor(_totalX, 	_totalY + _diffToAboveY);
+						_neighbourColors[7] = TryGetNeighbourColor(_totalX + _diffToRightX, _totalY + _diffToAboveY);
 
-                        clearAmount = 0;
-                        mSetNeighbourColorClear SetNeighbourColorClear = delegate(int _index){
-                            _neighbourColors[_index] = _clear;
-                            clearAmount++;
-                        };
-
-                         if(_totalY > 0 && _totalX > 0)         _neighbourColors[0] = _cachedColors[_totalX - 1, _totalY - 1];
-                        else                                    SetNeighbourColorClear(0);  
-                        if(_totalY > 0)                         _neighbourColors[1] = _cachedColors[_totalX, _totalY - 1];
-                        else                                    SetNeighbourColorClear(1);  
-                        if(_totalY > 0 && _totalX < _maxX)      _neighbourColors[2] = _cachedColors[_totalX + 1, _totalY - 1];
-                        else                                    SetNeighbourColorClear(2);  
-                        if(_totalX > 0)                         _neighbourColors[3] = _cachedColors[_totalX - 1, _totalY];
-                        else                                    SetNeighbourColorClear(3); 
-                        if(_totalX < _maxX)                     _neighbourColors[4] = _cachedColors[_totalX + 1, _totalY];
-                        else                                    SetNeighbourColorClear(4); 
-                        if(_totalY < _maxY && _totalX > 0)      _neighbourColors[5] = _cachedColors[_totalX - 1, _totalY + 1];
-                        else                                    SetNeighbourColorClear(5);  
-                        if(_totalY < _maxY)                     _neighbourColors[6] = _cachedColors[_totalX, _totalY + 1];
-                        else                                    SetNeighbourColorClear(6);   
-                        if(_totalY < _maxY && _totalX < _maxX)  _neighbourColors[7] = _cachedColors[_totalX + 1, _totalY + 1];
-                        else                                    SetNeighbourColorClear(7);  
-
+						// apply found colors
                         for (int i = 0; i < _neighbourColors.Length; i++)
                             _myColorMod += _neighbourColors[i];
-                        _myColorMod /= _neighbourColors.Length - clearAmount;
-                        _myColor = (_cachedColors[_totalX, _totalY] + _myColorMod) * 0.5f;
+                        _myColorMod /= Mathf.Max(_neighbourColors.Length - _failAmount, 1);
+						_myColor = (_cachedColors[_totalX, _totalY] + _myColorMod) * 0.5f;
                         _myColor.a = 1;
 
-                        SetVertexColorForTile(x, y, _vIndex, _myColor);
-
+						// set color on all vertices at this position
+                        int _vIndex = vy * 3 + vx;
                         bool _affectsR = x < Grid.GridSizeX - 1 && vx == 2;
                         bool _affectsT = y < Grid.GridSizeY - 1 && vy == 2;
+                        SetVertexColorForTile(x, y, _vIndex, _myColor);
                         if (_affectsR)
                             SetVertexColorForTile(x + 1, y, _vIndex - vx, _myColor);
                         if (_affectsT)
@@ -721,7 +701,7 @@ public class CustomLight : MonoBehaviour {
             }
         }
     }
-    void SetDoubleDotForTile(int _gridX, int _gridY, int _vertex, float _doubleDot0, float _doubleDot1, float _doubleDot2, float _doubleDot3){
+	void SetDoubleDotForTile(int _gridX, int _gridY, int _vertex, float _doubleDot0, float _doubleDot1, float _doubleDot2, float _doubleDot3){
         Grid.Instance.grid[_gridX, _gridY].FloorQuad.       SetUVDoubleDot(_vertex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
         Grid.Instance.grid[_gridX, _gridY].FloorCornerHider.SetUVDoubleDot(_vertex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
         Grid.Instance.grid[_gridX, _gridY].BottomQuad.      SetUVDoubleDot(_vertex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
@@ -760,7 +740,7 @@ public class CustomLight : MonoBehaviour {
         int _dotY = Mathf.RoundToInt(Mathf.Max(0.001f, GetDotifiedAngle(_vertical)) * 1000); 
 
         // merge ints into one
-        return _dotX | (_dotY << 16);
+		return _dotX | (_dotY << 16);
     }
     static float GetDotifiedAngle(float _angle){ // Take an angle (between 0, 1) and convert to something like 0->1->0
         _angle *= 2;
@@ -768,47 +748,110 @@ public class CustomLight : MonoBehaviour {
         return Mathf.Abs(_floored - (_angle - _floored));
     }
 
-    Color GetTotalVertexLighting(Vector2 _pos, out Vector4 _dominantLightIndices){
+	private delegate bool mIsInsideMesh(Vector3 _meshPos, Mesh _mesh);
+	Color GetTotalVertexLighting(Vector2 _pos, out Vector4 _highestLightLevelIndices){
+		RaycastHit2D _rayHit;
+        Color _totalColor = new Color();
+        Vector4 _highestLightLevels = new Vector4();
+        _highestLightLevelIndices = new Vector4(-1, -1, -1, -1);
 
-        // four because we can only store Dot-info for four lights (mostly bc performance) and then any higher number makes little sense
-        _dominantLightIndices = new Vector4(-1, -1, -1, -1);
-        Vector4 _dominantLightLevels = new Vector4();
-        Color totalColor = new Color();
+		float _newDistance;
+		float _newLightLevel;
+		bool _illuminated;
+
+		mIsInsideMesh IsInsideMesh = delegate (Vector3 _meshPos, Mesh _mesh){
+			// Vector3[] _vx = _mesh.vertices;
+			// int i2 = _vx.Length - 1;
+			// bool _inside = false;
+			// for (int i = 0; i < _mesh.vertexCount; i2 = i++){
+			// 	bool _b1 = _vx[i].y <= _pos.y && _pos.y < _vx[i2].y;
+			// 	bool _b2 = _vx[i2].y <= _pos.y && _pos.y < _vx[i].y;
+			// 	bool _b3 = _pos.x < (_vx[i2].x - _vx[i].x) * (_pos.y - _vx[i].y) / (_vx[i2].y - _vx[i].y) + _vx[i].x;
+			// 	if (_b1 || _b2 && _b3)
+			// 		_inside = !_inside;
+			// }
+			// return _inside;
+
+			Vector2 p = _pos;
+			Vector3[] polyPoints = new Vector3[_mesh.vertexCount];
+			for (int i = 0; i < _mesh.vertexCount; i++){
+				polyPoints[i] = _meshPos + _mesh.vertices[i];
+			}
+
+			var i2 = polyPoints.Length - 1;
+			var inside = false;
+			for (int i = 0; i < polyPoints.Length; i2 = i++){
+				if (((polyPoints[i].y <= p.y && p.y < polyPoints[i2].y) || (polyPoints[i2].y <= p.y && p.y < polyPoints[i].y)) &&
+				   (p.x < (polyPoints[i2].x - polyPoints[i].x) * (p.y - polyPoints[i].y) / (polyPoints[i2].y - polyPoints[i].y) + polyPoints[i].x))
+					inside = !inside;
+			}
+			return inside;
+		};
+		
         for (int i = 0; i < AllLights.Count; i++) {
-            float newRange = AllLights[i].lightRadius;
-            float newDistance = Mathf.Min(Vector2.Distance(_pos, AllLights[i].transform.position), 255);
-
-            if (newDistance > newRange)
+            _newDistance = Mathf.Min(Vector2.Distance(_pos, AllLights[i].transform.position), 255);
+            if (_newDistance > AllLights[i].lightRadius)
                 continue;
 
-            RaycastHit2D _rayHit;
-            if(Gridcast(AllLights[i].transform.position, _pos, out _rayHit))
-                continue;
+			_illuminated = IsInsideMesh(AllLights[i].transform.position, AllLights[i].lightMesh);
+			//_illuminated = !Gridcast(AllLights[i].transform.position, _pos, out _rayHit);
+            _newLightLevel = AllLights[i].Intensity * (1 - (_newDistance / AllLights[i].lightRadius));
 
-            float newLightLevel = AllLights[i].Intensity * (1 - (newDistance / newRange));
-            totalColor += Mouse.Instance.Coloring.AllColors[(int)AllLights[i].LightColor] * newLightLevel;
-            if(newLightLevel > _dominantLightLevels.x){
-                _dominantLightIndices.x = i;
-				_dominantLightLevels.x = newLightLevel;
-			}
-            else if (newLightLevel > _dominantLightLevels.y){
-                _dominantLightIndices.y = i;
-				_dominantLightLevels.y = newLightLevel;
-			}
-            else if (newLightLevel > _dominantLightLevels.z){
-                _dominantLightIndices.z = i;
-				_dominantLightLevels.z = newLightLevel;
-			}
-            else if (newLightLevel > _dominantLightLevels.w){
-                _dominantLightIndices.w = i;
-				_dominantLightLevels.w = newLightLevel;
-			}
-        }
+			// the four strongest lights will be cached and used for rendering shadows
+			TryAddToLightsCastingShadows(i, _newLightLevel, _illuminated, ref _highestLightLevels, ref _highestLightLevelIndices);
 
-        return totalColor;
+			// but all lights will affect the luminosity and color of the vertex (if hit, that is)
+			if(_illuminated)
+				_totalColor += Mouse.Instance.Coloring.AllColors[(int)AllLights[i].LightColor] * _newLightLevel;
+		}
+
+        return _totalColor;
     }
+	List<LightIndexLevelPairClass> lightLevelList = new List<LightIndexLevelPairClass>(4);
+	class LightIndexLevelPairClass{
+		public float Index;
+		public float Level;
+		public LightIndexLevelPairClass(float i, float l) { Index = i; Level = l; }
+		public void Set(float i, float l) { Index = i; Level = l; }
+	}
+	void TryAddToLightsCastingShadows(int _lightIndex, float _newLightLevel, bool _illuminated, ref Vector4 _highestLightLevels, ref Vector4 _highestLightLevelIndices) { 
+		if (lightLevelList.Count != 4){
+			lightLevelList.Clear();
+			lightLevelList.Add(new LightIndexLevelPairClass(-1, 0));
+			lightLevelList.Add(new LightIndexLevelPairClass(-1, 0));
+			lightLevelList.Add(new LightIndexLevelPairClass(-1, 0));
+			lightLevelList.Add(new LightIndexLevelPairClass(-1, 0));
+		}
 
-    private Vector3[] initVerticesMeshLight;
+		// cache and reverse-sort previously cached lights
+		lightLevelList[0].Set(_highestLightLevelIndices.x, _highestLightLevels.x);
+		lightLevelList[1].Set(_highestLightLevelIndices.y, _highestLightLevels.y);
+		lightLevelList[2].Set(_highestLightLevelIndices.z, _highestLightLevels.z);
+		lightLevelList[3].Set(_highestLightLevelIndices.w, _highestLightLevels.w);
+		lightLevelList.OrderBy(x => -x.Level); // reverse sort
+		for (int i = 0; i < lightLevelList.Count; i++){
+			if (_illuminated && _newLightLevel >= lightLevelList[i].Level){
+				lightLevelList.Insert(i, new LightIndexLevelPairClass(_lightIndex, _newLightLevel));
+				break;
+			}
+			else if (!_illuminated && lightLevelList[i].Level == 0){ // we still wanna save the index to prevent some shadow-issues around corners
+				lightLevelList.Insert(i, new LightIndexLevelPairClass(_lightIndex, 0));
+				break;
+			}
+		}
+
+		// re-add lights to proper variable
+		_highestLightLevelIndices.x = lightLevelList[0].Index;
+		_highestLightLevelIndices.y = lightLevelList[1].Index;
+		_highestLightLevelIndices.z = lightLevelList[2].Index;
+		_highestLightLevelIndices.w = lightLevelList[3].Index;
+		_highestLightLevels.x = lightLevelList[0].Level;
+		_highestLightLevels.y = lightLevelList[1].Level;
+		_highestLightLevels.z = lightLevelList[2].Level;
+		_highestLightLevels.w = lightLevelList[3].Level;
+	}
+
+	private Vector3[] initVerticesMeshLight;
     private Vector2[] uvs;
     private int index;
     private int[] triangles;
@@ -907,14 +950,12 @@ public class CustomLight : MonoBehaviour {
         return p;
     }
 
-    // private PolygonCollider2D sShadowCollider;
-    // private PolygonCollider2D[] sExtraShadowColliders;
     private const float GRIDCAST_TOLERANCE = 0.01f;
     bool Gridcast(Vector2 _start, Vector2 _end, out RaycastHit2D _rayhit){
-        float _length = (_start - _end).magnitude;
+		float _length = (_start - _end).magnitude;
 
         // find relevant colliders
-        List<PolygonCollider2D> _collidersUsed = new List<PolygonCollider2D>();
+        Queue<PolygonCollider2D> _collidersUsed = new Queue<PolygonCollider2D>();
         for (int y = 0; y < Grid.GridSizeY; y++){
             for (int x = 0; x < Grid.GridSizeX; x++){
                 if((_start - Grid.Instance.grid[x, y].WorldPosition).magnitude > _length)
@@ -924,16 +965,17 @@ public class CustomLight : MonoBehaviour {
                     continue;
 
                 _coll.transform.position = Grid.Instance.grid[x, y].WorldPosition;                
-                _collidersUsed.Add(_coll);
+                _collidersUsed.Enqueue(_coll);
             }
         }
 
         // pew
         _rayhit = Physics2D.Linecast(_start, _end);
 
-        // clean-up
-        for (int i = 0; i < _collidersUsed.Count; i++)
-            _collidersUsed[i].GetComponent<PoolerObject>().ReturnToPool();
+		// clean-up
+		int _usedAmount = _collidersUsed.Count;
+		for (int i = 0; i < _usedAmount; i++)
+            _collidersUsed.Dequeue().GetComponent<PoolerObject>().ReturnToPool();
 
         return _rayhit.collider != null && (_end - _rayhit.point).magnitude > 0.01f;
     }
