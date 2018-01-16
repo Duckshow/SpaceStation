@@ -7,7 +7,7 @@ public class Tile : IHeapItem<Tile> {
     public const int RESOLUTION = 64;
     public const float PIXEL_RADIUS = 0.0078125f;
 
-    public CachedAssets.WallSet.P ExactType;
+    public CachedAssets.WallSet.Purpose ExactType;
     public enum Type { Empty, Solid, Diagonal, Door, Airlock }
 	private Type wallType = Type.Empty;
 	public Type _WallType_ { get { return wallType; } private set { wallType = value; }}
@@ -94,7 +94,7 @@ public class Tile : IHeapItem<Tile> {
     public bool CanConnectTempFloor_R { get; private set; }
     public bool CanConnectTempFloor_B { get; private set; }
 
-    [NonSerialized] public bool HasConnectable_L = false;
+    [NonSerialized] public bool HasConnectable_L = false; // TODO: could all these bools just be a few matrices??
     [NonSerialized] public bool HasConnectable_T = false;
     [NonSerialized] public bool HasConnectable_R = false;
     [NonSerialized] public bool HasConnectable_B = false;
@@ -137,11 +137,12 @@ public class Tile : IHeapItem<Tile> {
         set { heapIndex = value; }
     }
 
-	public UVController FloorQuad;
-    public UVController FloorCornerHider;
-    public UVController BottomQuad;
-    public UVController TopQuad;
-    public UVController WallCornerHider;
+	public UVController MyUVController;
+	// public UVController FloorQuad;
+    // public UVController FloorCornerHider;
+    // public UVController BottomQuad;
+    // public UVController TopQuad;
+    // public UVController WallCornerHider;
     public TileAnimator Animator;
 
     public bool StopAheadAndBehindMeWhenCrossing { get; private set; }
@@ -155,26 +156,29 @@ public class Tile : IHeapItem<Tile> {
         WorldPosition = _worldPos;
         GridCoord = new DoubleInt(_gridX, _gridY);
 
-        FloorQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-        FloorCornerHider = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-        BottomQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-        TopQuad = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-        WallCornerHider = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
+		MyUVController = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
+		// FloorQuad 			= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
+		// FloorCornerHider 	= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
+		// BottomQuad 			= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
+		// TopQuad 			= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
+		// WallCornerHider 	= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
 
-        FloorQuad.name = "TileQuad " + GridCoord.X + "x" + GridCoord.Y + " (" + WorldPosition.x + ", " + WorldPosition.y + ")";
-        FloorCornerHider.transform.parent = FloorQuad.transform;
-        BottomQuad.transform.parent = FloorQuad.transform;
-		TopQuad.transform.parent = BottomQuad.transform;
-        WallCornerHider.transform.parent = FloorQuad.transform;
+		MyUVController.name = "TileQuad " + GridCoord.X + "x" + GridCoord.Y + " (" + WorldPosition.x + ", " + WorldPosition.y + ")";
+		// FloorQuad.name = "TileQuad " + GridCoord.X + "x" + GridCoord.Y + " (" + WorldPosition.x + ", " + WorldPosition.y + ")";
+		// FloorCornerHider.transform.parent = FloorQuad.transform;
+		// BottomQuad.transform.parent = FloorQuad.transform;
+		// TopQuad.transform.parent = BottomQuad.transform;
+		// WallCornerHider.transform.parent = FloorQuad.transform;
 
-        FloorCornerHider.transform.localPosition = new Vector3(0, 0, -0.01f);
-        WallCornerHider.transform.localPosition = new Vector3(0, 0, -0.01f);
+		// FloorCornerHider.transform.localPosition = new Vector3(0, 0, -0.01f);
+		// WallCornerHider.transform.localPosition = new Vector3(0, 0, -0.01f);
 
-        FloorQuad.Setup ();
-        FloorCornerHider.Setup();
-		BottomQuad.Setup();
-        TopQuad.Setup();
-        WallCornerHider.Setup();
+		MyUVController.Setup();
+		// FloorQuad.Setup ();
+        // FloorCornerHider.Setup();
+		// BottomQuad.Setup();
+        // TopQuad.Setup();
+        // WallCornerHider.Setup();
         Animator = new TileAnimator(this);
     }
 		
@@ -300,7 +304,7 @@ public class Tile : IHeapItem<Tile> {
     }
 
     public void SetTileType(Type _newType, TileOrientation _newOrientation, bool _temporarily = false) {
-        if (_temporarily) {
+		if (_temporarily) {
             TempType = _newType;
             TempOrientation = _newOrientation;
 
@@ -352,19 +356,23 @@ public class Tile : IHeapItem<Tile> {
 		prevOrientation = _Orientation_;
 		_Orientation_ = _newOrientation;
 
-        BottomQuad.Orientation = _newOrientation;
-        BottomQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        BottomQuad.GridSorting = MeshSorter.GridSortingEnum.Bottom;
-        BottomQuad.Sort(GridCoord.Y);
+		MyUVController.GridLayers[(int)MeshSorter.GridLayerEnum.Bottom].Orientation = _newOrientation;
+		MyUVController.GridLayers[(int)MeshSorter.GridLayerEnum.Top].Orientation = _newOrientation;
+		MyUVController.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+		MyUVController.Sort(GridCoord.Y); // TODO: this probably only needs to happen once, or?
+		// BottomQuad.Orientation = _newOrientation;
+        // BottomQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        // BottomQuad.GridSorting = MeshSorter.GridSortingEnum.Bottom;
+        // BottomQuad.Sort(GridCoord.Y);
 
-        TopQuad.Orientation = _newOrientation;
-        TopQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        TopQuad.GridSorting = MeshSorter.GridSortingEnum.Top;
-        TopQuad.Sort(GridCoord.Y);
+        // TopQuad.Orientation = _newOrientation;
+        // TopQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        // TopQuad.GridSorting = MeshSorter.GridSortingEnum.Top;
+        // TopQuad.Sort(GridCoord.Y);
 
-        WallCornerHider.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        WallCornerHider.GridSorting = MeshSorter.GridSortingEnum.TopCorners;
-        WallCornerHider.Sort(GridCoord.Y);
+        // WallCornerHider.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        // WallCornerHider.GridSorting = MeshSorter.GridSortingEnum.TopCorners;
+        // WallCornerHider.Sort(GridCoord.Y);
 
         ForceActorStopWhenPassingThis = false;
         MovementPenalty = 0; //TODO: use this for something!
@@ -555,14 +563,18 @@ public class Tile : IHeapItem<Tile> {
 		_FloorType_ = _newType;
 		_FloorOrientation_ = _newOrientation;
 
-		FloorQuad.Orientation = _newOrientation;
-        FloorQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        FloorQuad.GridSorting = MeshSorter.GridSortingEnum.Floor;
-		FloorQuad.Sort(GridCoord.Y);
+		MyUVController.GridLayers[(int)MeshSorter.GridLayerEnum.Floor].Orientation = _newOrientation;
+		MyUVController.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+		MyUVController.Sort(GridCoord.Y); // TODO: this probably only needs to happen once, or?
 
-        FloorCornerHider.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        FloorCornerHider.GridSorting = MeshSorter.GridSortingEnum.FloorCorners;
-        FloorCornerHider.Sort(GridCoord.Y);
+		// FloorQuad.Orientation = _newOrientation;
+        // FloorQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        // FloorQuad.GridSorting = MeshSorter.GridSortingEnum.Floor;
+		// FloorQuad.Sort(GridCoord.Y);
+
+        // FloorCornerHider.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
+        // FloorCornerHider.GridSorting = MeshSorter.GridSortingEnum.FloorCorners;
+        // FloorCornerHider.Sort(GridCoord.Y);
 
         //ForceActorStopWhenPassingThis = false; // if floor actually needs this, it has to be its own - otherwise breaks airlocks and such!
 		MovementPenalty = 0; //TODO: use this for something!
@@ -832,25 +844,43 @@ public class Tile : IHeapItem<Tile> {
         sTryTempCacheNeighbour_R(GridCoord.X, GridCoord.Y);
         sTryTempCacheNeighbour_B(GridCoord.X, GridCoord.Y);
 
-        if (_temporarily) {
-            //WallCornerHider.SetDebugBools(CanConnectTemp_L, HasConnectableTemp_L, CanConnectTemp_T, HasConnectableTemp_T, CanConnectTemp_R, HasConnectableTemp_R, CanConnectTemp_B, HasConnectableTemp_B);
-            WallCornerHider.ChangeAsset(CachedAssets.Instance.GetWallCornerAsset(
-                CanConnectTemp_T && HasConnectableTemp_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTemp_L && sCachedNeighbour_T.HasConnectableTemp_L && CanConnectTemp_L && HasConnectableTemp_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTemp_T && sCachedNeighbour_L.HasConnectableTemp_T,
-                CanConnectTemp_T && HasConnectableTemp_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTemp_R && sCachedNeighbour_T.HasConnectableTemp_R && CanConnectTemp_R && HasConnectableTemp_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTemp_T && sCachedNeighbour_R.HasConnectableTemp_T,
-                CanConnectTemp_B && HasConnectableTemp_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTemp_R && sCachedNeighbour_B.HasConnectableTemp_R && CanConnectTemp_R && HasConnectableTemp_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTemp_B && sCachedNeighbour_R.HasConnectableTemp_B,
-                CanConnectTemp_B && HasConnectableTemp_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTemp_L && sCachedNeighbour_B.HasConnectableTemp_L && CanConnectTemp_L && HasConnectableTemp_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTemp_B && sCachedNeighbour_L.HasConnectableTemp_B),
-                true
-            );
-        }
-        else {
-            WallCornerHider.ChangeAsset(CachedAssets.Instance.GetWallCornerAsset(
-                CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_L && sCachedNeighbour_T.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_T && sCachedNeighbour_L.HasConnectable_T,
-                CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_R && sCachedNeighbour_T.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_T && sCachedNeighbour_R.HasConnectable_T,
-                CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_R && sCachedNeighbour_B.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_B && sCachedNeighbour_R.HasConnectable_B,
-                CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_L && sCachedNeighbour_B.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_B && sCachedNeighbour_L.HasConnectable_B), 
-                false
-            );
-        }
+        if (_temporarily){
+			MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.TopCorners, CachedAssets.Instance.GetWallCornerAsset(
+				CanConnectTemp_T && HasConnectableTemp_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTemp_L && sCachedNeighbour_T.HasConnectableTemp_L && CanConnectTemp_L && HasConnectableTemp_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTemp_T && sCachedNeighbour_L.HasConnectableTemp_T,
+				CanConnectTemp_T && HasConnectableTemp_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTemp_R && sCachedNeighbour_T.HasConnectableTemp_R && CanConnectTemp_R && HasConnectableTemp_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTemp_T && sCachedNeighbour_R.HasConnectableTemp_T,
+				CanConnectTemp_B && HasConnectableTemp_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTemp_R && sCachedNeighbour_B.HasConnectableTemp_R && CanConnectTemp_R && HasConnectableTemp_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTemp_B && sCachedNeighbour_R.HasConnectableTemp_B,
+				CanConnectTemp_B && HasConnectableTemp_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTemp_L && sCachedNeighbour_B.HasConnectableTemp_L && CanConnectTemp_L && HasConnectableTemp_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTemp_B && sCachedNeighbour_L.HasConnectableTemp_B),
+				true
+			);
+		}
+		else{
+			MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.TopCorners, CachedAssets.Instance.GetWallCornerAsset(
+				CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_L && sCachedNeighbour_T.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_T && sCachedNeighbour_L.HasConnectable_T,
+				CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_R && sCachedNeighbour_T.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_T && sCachedNeighbour_R.HasConnectable_T,
+				CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_R && sCachedNeighbour_B.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_B && sCachedNeighbour_R.HasConnectable_B,
+				CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_L && sCachedNeighbour_B.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_B && sCachedNeighbour_L.HasConnectable_B),
+				false
+			);
+		}
+		// if (_temporarily) {
+        //     //WallCornerHider.SetDebugBools(CanConnectTemp_L, HasConnectableTemp_L, CanConnectTemp_T, HasConnectableTemp_T, CanConnectTemp_R, HasConnectableTemp_R, CanConnectTemp_B, HasConnectableTemp_B);
+        //     WallCornerHider.ChangeAsset(CachedAssets.Instance.GetWallCornerAsset(
+        //         CanConnectTemp_T && HasConnectableTemp_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTemp_L && sCachedNeighbour_T.HasConnectableTemp_L && CanConnectTemp_L && HasConnectableTemp_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTemp_T && sCachedNeighbour_L.HasConnectableTemp_T,
+        //         CanConnectTemp_T && HasConnectableTemp_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTemp_R && sCachedNeighbour_T.HasConnectableTemp_R && CanConnectTemp_R && HasConnectableTemp_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTemp_T && sCachedNeighbour_R.HasConnectableTemp_T,
+        //         CanConnectTemp_B && HasConnectableTemp_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTemp_R && sCachedNeighbour_B.HasConnectableTemp_R && CanConnectTemp_R && HasConnectableTemp_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTemp_B && sCachedNeighbour_R.HasConnectableTemp_B,
+        //         CanConnectTemp_B && HasConnectableTemp_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTemp_L && sCachedNeighbour_B.HasConnectableTemp_L && CanConnectTemp_L && HasConnectableTemp_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTemp_B && sCachedNeighbour_L.HasConnectableTemp_B),
+        //         true
+        //     );
+        // }
+        // else {
+        //     WallCornerHider.ChangeAsset(CachedAssets.Instance.GetWallCornerAsset(
+        //         CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_L && sCachedNeighbour_T.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_T && sCachedNeighbour_L.HasConnectable_T,
+        //         CanConnect_T && HasConnectable_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnect_R && sCachedNeighbour_T.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_T && sCachedNeighbour_R.HasConnectable_T,
+        //         CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_R && sCachedNeighbour_B.HasConnectable_R && CanConnect_R && HasConnectable_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnect_B && sCachedNeighbour_R.HasConnectable_B,
+        //         CanConnect_B && HasConnectable_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnect_L && sCachedNeighbour_B.HasConnectable_L && CanConnect_L && HasConnectable_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnect_B && sCachedNeighbour_L.HasConnectable_B), 
+        //         false
+        //     );
+        // }
     }
     public void UpdateFloorCornerHider(bool _temporarily) {
         if (_temporarily && _FloorType_ == TempType && TempType != Type.Empty)
@@ -861,68 +891,89 @@ public class Tile : IHeapItem<Tile> {
         sTryTempCacheNeighbour_R(GridCoord.X, GridCoord.Y);
         sTryTempCacheNeighbour_B(GridCoord.X, GridCoord.Y);
 
-        if (_temporarily) {
-            FloorCornerHider.ChangeAsset(CachedAssets.Instance.GetFloorCornerAsset(
-                CanConnectTempFloor_T && HasConnectableTempFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTempFloor_L && sCachedNeighbour_T.HasConnectableTempFloor_L && CanConnectTempFloor_L && HasConnectableTempFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTempFloor_T && sCachedNeighbour_L.HasConnectableTempFloor_T,
-                CanConnectTempFloor_T && HasConnectableTempFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTempFloor_R && sCachedNeighbour_T.HasConnectableTempFloor_R && CanConnectTempFloor_R && HasConnectableTempFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTempFloor_T && sCachedNeighbour_R.HasConnectableTempFloor_T,
-                CanConnectTempFloor_B && HasConnectableTempFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTempFloor_R && sCachedNeighbour_B.HasConnectableTempFloor_R && CanConnectTempFloor_R && HasConnectableTempFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTempFloor_B && sCachedNeighbour_R.HasConnectableTempFloor_B,
-                CanConnectTempFloor_B && HasConnectableTempFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTempFloor_L && sCachedNeighbour_B.HasConnectableTempFloor_L && CanConnectTempFloor_L && HasConnectableTempFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTempFloor_B && sCachedNeighbour_L.HasConnectableTempFloor_B),
-                true
-            );
-        }
-        else {
-            FloorCornerHider.ChangeAsset(CachedAssets.Instance.GetFloorCornerAsset(
-                CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_L && sCachedNeighbour_T.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_T && sCachedNeighbour_L.HasConnectableFloor_T,
-                CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_R && sCachedNeighbour_T.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_T && sCachedNeighbour_R.HasConnectableFloor_T,
-                CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_R && sCachedNeighbour_B.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_B && sCachedNeighbour_R.HasConnectableFloor_B,
-                CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_L && sCachedNeighbour_B.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_B && sCachedNeighbour_L.HasConnectableFloor_B),
-                false
-            );
-        }
+        if (_temporarily){
+			MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.FloorCorners, CachedAssets.Instance.GetFloorCornerAsset(
+				CanConnectTempFloor_T && HasConnectableTempFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTempFloor_L && sCachedNeighbour_T.HasConnectableTempFloor_L && CanConnectTempFloor_L && HasConnectableTempFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTempFloor_T && sCachedNeighbour_L.HasConnectableTempFloor_T,
+				CanConnectTempFloor_T && HasConnectableTempFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTempFloor_R && sCachedNeighbour_T.HasConnectableTempFloor_R && CanConnectTempFloor_R && HasConnectableTempFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTempFloor_T && sCachedNeighbour_R.HasConnectableTempFloor_T,
+				CanConnectTempFloor_B && HasConnectableTempFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTempFloor_R && sCachedNeighbour_B.HasConnectableTempFloor_R && CanConnectTempFloor_R && HasConnectableTempFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTempFloor_B && sCachedNeighbour_R.HasConnectableTempFloor_B,
+				CanConnectTempFloor_B && HasConnectableTempFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTempFloor_L && sCachedNeighbour_B.HasConnectableTempFloor_L && CanConnectTempFloor_L && HasConnectableTempFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTempFloor_B && sCachedNeighbour_L.HasConnectableTempFloor_B),
+				true
+			);
+		}
+		else{
+			MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.FloorCorners, CachedAssets.Instance.GetFloorCornerAsset(
+				CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_L && sCachedNeighbour_T.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_T && sCachedNeighbour_L.HasConnectableFloor_T,
+				CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_R && sCachedNeighbour_T.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_T && sCachedNeighbour_R.HasConnectableFloor_T,
+				CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_R && sCachedNeighbour_B.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_B && sCachedNeighbour_R.HasConnectableFloor_B,
+				CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_L && sCachedNeighbour_B.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_B && sCachedNeighbour_L.HasConnectableFloor_B),
+				false
+			);
+		}
+		// if (_temporarily) {
+        //     FloorCornerHider.ChangeAsset(CachedAssets.Instance.GetFloorCornerAsset(
+        //         CanConnectTempFloor_T && HasConnectableTempFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTempFloor_L && sCachedNeighbour_T.HasConnectableTempFloor_L && CanConnectTempFloor_L && HasConnectableTempFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTempFloor_T && sCachedNeighbour_L.HasConnectableTempFloor_T,
+        //         CanConnectTempFloor_T && HasConnectableTempFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectTempFloor_R && sCachedNeighbour_T.HasConnectableTempFloor_R && CanConnectTempFloor_R && HasConnectableTempFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTempFloor_T && sCachedNeighbour_R.HasConnectableTempFloor_T,
+        //         CanConnectTempFloor_B && HasConnectableTempFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTempFloor_R && sCachedNeighbour_B.HasConnectableTempFloor_R && CanConnectTempFloor_R && HasConnectableTempFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectTempFloor_B && sCachedNeighbour_R.HasConnectableTempFloor_B,
+        //         CanConnectTempFloor_B && HasConnectableTempFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectTempFloor_L && sCachedNeighbour_B.HasConnectableTempFloor_L && CanConnectTempFloor_L && HasConnectableTempFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectTempFloor_B && sCachedNeighbour_L.HasConnectableTempFloor_B),
+        //         true
+        //     );
+        // }
+        // else {
+        //     FloorCornerHider.ChangeAsset(CachedAssets.Instance.GetFloorCornerAsset(
+        //         CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_L && sCachedNeighbour_T.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_T && sCachedNeighbour_L.HasConnectableFloor_T,
+        //         CanConnectFloor_T && HasConnectableFloor_T && sCachedNeighbour_T != null && sCachedNeighbour_T.CanConnectFloor_R && sCachedNeighbour_T.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_T && sCachedNeighbour_R.HasConnectableFloor_T,
+        //         CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_R && sCachedNeighbour_B.HasConnectableFloor_R && CanConnectFloor_R && HasConnectableFloor_R && sCachedNeighbour_R != null && sCachedNeighbour_R.CanConnectFloor_B && sCachedNeighbour_R.HasConnectableFloor_B,
+        //         CanConnectFloor_B && HasConnectableFloor_B && sCachedNeighbour_B != null && sCachedNeighbour_B.CanConnectFloor_L && sCachedNeighbour_B.HasConnectableFloor_L && CanConnectFloor_L && HasConnectableFloor_L && sCachedNeighbour_L != null && sCachedNeighbour_L.CanConnectFloor_B && sCachedNeighbour_L.HasConnectableFloor_B),
+        //         false
+        //     );
+        // }
     }
 
-    public void ChangeWallGraphics(DoubleInt _bottomAssetIndices, DoubleInt _topAssetIndices, bool _temporary) {
-		BottomQuad.ChangeAsset(_bottomAssetIndices, _temporary);
-        TopQuad.ChangeAsset(_topAssetIndices, _temporary);
+	// TODO: could these wall/floor-methods be merged?
+    public void ChangeWallGraphics(DoubleInt _bottomAssetCoord, DoubleInt _topAssetCoord, bool _temporary) {
+		MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Bottom, _bottomAssetCoord, _temporary);
+		MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Top, _topAssetCoord, _temporary);
+		// BottomQuad.ChangeAsset(_bottomAssetIndices, _temporary);
+		// TopQuad.ChangeAsset(_topAssetIndices, _temporary);
 		UpdateWallCornerHider (_temporary);
-		//UpdateFloorCornerHider (_temporary);
     }
     public void ResetTempSettingsWall() {
-        BottomQuad.StopTempMode();
-        TopQuad.StopTempMode();
+		MyUVController.StopTempMode();
+		// BottomQuad.StopTempMode();
+        // TopQuad.StopTempMode();
         UpdateWallCornerHider(false);
     }
-	public void ChangeFloorGraphics(DoubleInt _assetIndices, bool _temporary) {
-		FloorQuad.ChangeAsset(_assetIndices, _temporary);
-		//UpdateWallCornerHider (_temporary);
+	public void ChangeFloorGraphics(DoubleInt _assetCoord, bool _temporary) {
+		MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Floor, _assetCoord, _temporary);
+		//FloorQuad.ChangeAsset(_assetIndices, _temporary);
 		UpdateFloorCornerHider (_temporary);
 	}
     public void ResetTempSettingsFloor() {
-        FloorQuad.StopTempMode();
+		MyUVController.StopTempMode();
+		//FloorQuad.StopTempMode();
         UpdateFloorCornerHider(false);
     }
-    public void SetFloorColor(byte _colorIndex, bool temporary) {
-        FloorQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
-        FloorCornerHider.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
-        // FloorQuad.ChangeColor(_colorIndex);
-        // FloorCornerHider.ChangeColor (_colorIndex);
+    public void SetFloorColor(byte _colorIndex, bool _temporary) {
+		MyUVController.ChangeColor(_colorIndex, _temporary);
+		//FloorQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _temporary);
+        //FloorCornerHider.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _temporary);
     }
     public void ResetFloorColor(){
-        FloorQuad.ResetUVColor();
-        FloorCornerHider.ResetUVColor();
+		MyUVController.ResetColor();
+		//FloorQuad.ResetUVColor();
+        //FloorCornerHider.ResetUVColor();
     }
-    public void SetWallColor(byte _colorIndex, bool temporary) {
-        BottomQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
-        TopQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
-        WallCornerHider.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
-        // BottomQuad.ChangeColor(_colorIndex);
-        // TopQuad.ChangeColor(_colorIndex);
-        // WallCornerHider.ChangeColor(_colorIndex);
+    public void SetWallColor(byte _colorIndex, bool _temporary) {
+		MyUVController.ChangeColor(_colorIndex, _temporary);
+		//BottomQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
+        //TopQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
+        //WallCornerHider.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
     }
     public void ResetWallColor(){
-        BottomQuad.ResetUVColor();
-        TopQuad.ResetUVColor();
-        WallCornerHider.ResetUVColor();
+		MyUVController.ResetColor();
+		// BottomQuad.ResetUVColor();
+        // TopQuad.ResetUVColor();
+        // WallCornerHider.ResetUVColor();
     }
 
     public void OnActorApproachingTile(TileOrientation _direction) {

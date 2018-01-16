@@ -3,9 +3,9 @@
 public class TileObject : MonoBehaviour {
 
     public Tile MyTile;
-    public UVController[] MyUVControllers;
-    public TileObject Parent { get; private set; }
-    public int gridY;
+    //public UVController[] MyUVControllers;
+	public UVController MyUVController;
+	public TileObject Parent { get; private set; }
 
 	void Start () {
         if (Grid.Instance == null)
@@ -71,11 +71,9 @@ public class TileObject : MonoBehaviour {
     }
 
     public void Sort() {
-        for (int i = 0; i < MyUVControllers.Length; i++)
-            MyUVControllers[i].Sort(MyTile.GridCoord.Y);
-
-        if(MyUVControllers.Length == 0)
-            transform.position = new Vector3(transform.position.x, transform.position.y, -(Grid.GridSizeY - MyTile.GridCoord.Y) * 0.5f);
-            gridY = MyTile.GridCoord.Y;
+		if (MyUVController == null)
+			transform.position = new Vector3(transform.position.x, transform.position.y, -(Grid.GridSizeY - MyTile.GridCoord.Y) * 0.5f);
+		else
+			MyUVController.Sort(MyTile.GridCoord.Y);
     }
 }

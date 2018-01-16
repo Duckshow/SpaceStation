@@ -32,12 +32,14 @@ public class CachedAssets : MonoBehaviour {
     [System.Serializable]
     public class WallSet {
 
-        public const float TEXTURE_SIZE_X = 1024;
-        public const float TEXTURE_SIZE_Y = 2560;
+        public const int TEXTURE_SIZE_X = 1024; // TODO: this should be automated, seriously
+        public const int TEXTURE_SIZE_Y = 2688;
 
-        public enum P { // P for Purpose
-            Null,
-            Floor_Single,
+        public enum Purpose {
+			Null,
+			UVControllerBasic, // used to pool UVControllerBasics. Confusing, yes.
+
+			Floor_Single,
             Floor_Fourway,
             Floor_Vertical_T,
             Floor_Vertical_M,
@@ -148,157 +150,160 @@ public class CachedAssets : MonoBehaviour {
             AirlockVertical_Wait,
             AirlockVertical_Wait_TOP
         }
-        private static List<List<P>> AllAssetPurposes = new List<List<P>>() {
-            new List<P>() {
-                P.Floor_Single,
-                P.Floor_Fourway,
-                P.Floor_Vertical_T,
-                P.Floor_Vertical_M,
-                P.Floor_Vertical_B,
-                P.Floor_Horizontal_L,
-                P.Floor_Horizontal_M,
-                P.Floor_Horizontal_R,
-                P.Floor_Corner_TR,
-                P.Floor_Corner_TL,
-                P.Floor_Corner_BR,
-                P.Floor_Corner_BL,
-                P.Floor_Tee_R,
-                P.Floor_Tee_L,
-                P.Floor_Tee_T,
-                P.Floor_Tee_B
+        private static List<List<Purpose>> AllAssetPurposes = new List<List<Purpose>>() {
+            new List<Purpose>() {
+				Purpose.Null
+			},
+			new List<Purpose>() {
+                Purpose.Floor_Single,
+                Purpose.Floor_Fourway,
+                Purpose.Floor_Vertical_T,
+                Purpose.Floor_Vertical_M,
+                Purpose.Floor_Vertical_B,
+                Purpose.Floor_Horizontal_L,
+                Purpose.Floor_Horizontal_M,
+                Purpose.Floor_Horizontal_R,
+                Purpose.Floor_Corner_TR,
+                Purpose.Floor_Corner_TL,
+                Purpose.Floor_Corner_BR,
+                Purpose.Floor_Corner_BL,
+                Purpose.Floor_Tee_R,
+                Purpose.Floor_Tee_L,
+                Purpose.Floor_Tee_T,
+                Purpose.Floor_Tee_B
             },
-            new List<P>() {
-                P.Floor_Diagonal_TR,
-                P.Floor_Diagonal_TR_R,
-                P.Floor_Diagonal_TR_T,
-                P.Floor_Diagonal_TR_TR,
-                P.Floor_Diagonal_TL,
-                P.Floor_Diagonal_TL_L,
-                P.Floor_Diagonal_TL_T,
-                P.Floor_Diagonal_TL_TL,
-                P.Floor_Diagonal_BR,
-                P.Floor_Diagonal_BR_R,
-                P.Floor_Diagonal_BR_B,
-                P.Floor_Diagonal_BR_BR,
-                P.Floor_Diagonal_BL,
-                P.Floor_Diagonal_BL_L,
-                P.Floor_Diagonal_BL_B,
-                P.Floor_Diagonal_BL_BL
+            new List<Purpose>() {
+                Purpose.Floor_Diagonal_TR,
+                Purpose.Floor_Diagonal_TR_R,
+                Purpose.Floor_Diagonal_TR_T,
+                Purpose.Floor_Diagonal_TR_TR,
+                Purpose.Floor_Diagonal_TL,
+                Purpose.Floor_Diagonal_TL_L,
+                Purpose.Floor_Diagonal_TL_T,
+                Purpose.Floor_Diagonal_TL_TL,
+                Purpose.Floor_Diagonal_BR,
+                Purpose.Floor_Diagonal_BR_R,
+                Purpose.Floor_Diagonal_BR_B,
+                Purpose.Floor_Diagonal_BR_BR,
+                Purpose.Floor_Diagonal_BL,
+                Purpose.Floor_Diagonal_BL_L,
+                Purpose.Floor_Diagonal_BL_B,
+                Purpose.Floor_Diagonal_BL_BL
             },
-            new List<P>() {
-                P.FloorCornerHider_All,
-                P.FloorCornerHider_TL_BR,
-                P.FloorCornerHider_TR_BL,
-                P.FloorCornerHider_TL,
-                P.FloorCornerHider_TL_TR,
-                P.FloorCornerHider_TL_TR_BR,
-                P.FloorCornerHider_TR,
-                P.FloorCornerHider_TR_BR,
-                P.FloorCornerHider_TR_BR_BL,
-                P.FloorCornerHider_BR,
-                P.FloorCornerHider_BR_BL,
-                P.FloorCornerHider_BR_BL_TL,
-                P.FloorCornerHider_BL,
-                P.FloorCornerHider_BL_TL,
-                P.FloorCornerHider_BL_TL_TR
+            new List<Purpose>() {
+                Purpose.FloorCornerHider_All,
+                Purpose.FloorCornerHider_TL_BR,
+                Purpose.FloorCornerHider_TR_BL,
+                Purpose.FloorCornerHider_TL,
+                Purpose.FloorCornerHider_TL_TR,
+                Purpose.FloorCornerHider_TL_TR_BR,
+                Purpose.FloorCornerHider_TR,
+                Purpose.FloorCornerHider_TR_BR,
+                Purpose.FloorCornerHider_TR_BR_BL,
+                Purpose.FloorCornerHider_BR,
+                Purpose.FloorCornerHider_BR_BL,
+                Purpose.FloorCornerHider_BR_BL_TL,
+                Purpose.FloorCornerHider_BL,
+                Purpose.FloorCornerHider_BL_TL,
+                Purpose.FloorCornerHider_BL_TL_TR
             },
-            new List<P>() {
-                P.Wall_Single,
-                P.Wall_Fourway,
-                P.Wall_Vertical_T,
-                P.Wall_Vertical_M,
-                P.Wall_Vertical_B,
-                P.Wall_Horizontal_L,
-                P.Wall_Horizontal_M,
-                P.Wall_Horizontal_R,
-                P.Wall_Corner_TR,
-                P.Wall_Corner_TL,
-                P.Wall_Corner_BR,
-                P.Wall_Corner_BL,
-                P.Wall_Tee_R,
-                P.Wall_Tee_L,
-                P.Wall_Tee_T,
-                P.Wall_Tee_B
+            new List<Purpose>() {
+                Purpose.Wall_Single,
+                Purpose.Wall_Fourway,
+                Purpose.Wall_Vertical_T,
+                Purpose.Wall_Vertical_M,
+                Purpose.Wall_Vertical_B,
+                Purpose.Wall_Horizontal_L,
+                Purpose.Wall_Horizontal_M,
+                Purpose.Wall_Horizontal_R,
+                Purpose.Wall_Corner_TR,
+                Purpose.Wall_Corner_TL,
+                Purpose.Wall_Corner_BR,
+                Purpose.Wall_Corner_BL,
+                Purpose.Wall_Tee_R,
+                Purpose.Wall_Tee_L,
+                Purpose.Wall_Tee_T,
+                Purpose.Wall_Tee_B
             },
-            new List<P>() {
-                P.Wall_Diagonal_TR,
-                P.Wall_Diagonal_TR_R,
-                P.Wall_Diagonal_TR_T,
-                P.Wall_Diagonal_TR_TR,
-                P.Wall_Diagonal_TL,
-                P.Wall_Diagonal_TL_L,
-                P.Wall_Diagonal_TL_T,
-                P.Wall_Diagonal_TL_TL,
-                P.Wall_Diagonal_BR,
-                P.Wall_Diagonal_BR_R,
-                P.Wall_Diagonal_BR_B,
-                P.Wall_Diagonal_BR_BR,
-                P.Wall_Diagonal_BL,
-                P.Wall_Diagonal_BL_L,
-                P.Wall_Diagonal_BL_B,
-                P.Wall_Diagonal_BL_BL
+            new List<Purpose>() {
+                Purpose.Wall_Diagonal_TR,
+                Purpose.Wall_Diagonal_TR_R,
+                Purpose.Wall_Diagonal_TR_T,
+                Purpose.Wall_Diagonal_TR_TR,
+                Purpose.Wall_Diagonal_TL,
+                Purpose.Wall_Diagonal_TL_L,
+                Purpose.Wall_Diagonal_TL_T,
+                Purpose.Wall_Diagonal_TL_TL,
+                Purpose.Wall_Diagonal_BR,
+                Purpose.Wall_Diagonal_BR_R,
+                Purpose.Wall_Diagonal_BR_B,
+                Purpose.Wall_Diagonal_BR_BR,
+                Purpose.Wall_Diagonal_BL,
+                Purpose.Wall_Diagonal_BL_L,
+                Purpose.Wall_Diagonal_BL_B,
+                Purpose.Wall_Diagonal_BL_BL
             },
-            new List<P>() {
-                P.WallCornerHider_All,
-                P.WallCornerHider_TL_BR,
-                P.WallCornerHider_TR_BL,
-                P.WallCornerHider_TL,
-                P.WallCornerHider_TL_TR,
-                P.WallCornerHider_TL_TR_BR,
-                P.WallCornerHider_TR,
-                P.WallCornerHider_TR_BR,
-                P.WallCornerHider_TR_BR_BL,
-                P.WallCornerHider_BR,
-                P.WallCornerHider_BR_BL,
-                P.WallCornerHider_BR_BL_TL,
-                P.WallCornerHider_BL,
-                P.WallCornerHider_BL_TL,
-                P.WallCornerHider_BL_TL_TR
+            new List<Purpose>() {
+                Purpose.WallCornerHider_All,
+                Purpose.WallCornerHider_TL_BR,
+                Purpose.WallCornerHider_TR_BL,
+                Purpose.WallCornerHider_TL,
+                Purpose.WallCornerHider_TL_TR,
+                Purpose.WallCornerHider_TL_TR_BR,
+                Purpose.WallCornerHider_TR,
+                Purpose.WallCornerHider_TR_BR,
+                Purpose.WallCornerHider_TR_BR_BL,
+                Purpose.WallCornerHider_BR,
+                Purpose.WallCornerHider_BR_BL,
+                Purpose.WallCornerHider_BR_BL_TL,
+                Purpose.WallCornerHider_BL,
+                Purpose.WallCornerHider_BL_TL,
+                Purpose.WallCornerHider_BL_TL_TR
             },
-            new List<P>() {
-                P.DoorVertical
+            new List<Purpose>() {
+                Purpose.DoorVertical
             },
-            new List<P>() {
-                P.DoorHorizontal
+            new List<Purpose>() {
+                Purpose.DoorHorizontal
             },
-            new List<P>() {
-                P.AirlockHorizontal_Open_B
+            new List<Purpose>() {
+                Purpose.AirlockHorizontal_Open_B
             },
-            new List<P>() {
-                P.AirlockHorizontal_Open_B_TOP
+            new List<Purpose>() {
+                Purpose.AirlockHorizontal_Open_B_TOP
             },
-            new List<P>() {
-                P.AirlockHorizontal_Open_T
+            new List<Purpose>() {
+                Purpose.AirlockHorizontal_Open_T
             },
-            new List<P>() {
-                P.AirlockHorizontal_Open_T_TOP
+            new List<Purpose>() {
+                Purpose.AirlockHorizontal_Open_T_TOP
             },
-            new List<P>() {
-                P.AirlockHorizontal_Wait
+            new List<Purpose>() {
+                Purpose.AirlockHorizontal_Wait
             },
-            new List<P>() {
-                P.AirlockHorizontal_Wait_TOP
+            new List<Purpose>() {
+                Purpose.AirlockHorizontal_Wait_TOP
             },
-            new List<P>() {
-                P.AirlockVertical_Open_L
+            new List<Purpose>() {
+                Purpose.AirlockVertical_Open_L
             },
-            new List<P>() {
-                P.AirlockVertical_Open_L_TOP
+            new List<Purpose>() {
+                Purpose.AirlockVertical_Open_L_TOP
             },
-            new List<P>() {
-                P.AirlockVertical_Open_R
+            new List<Purpose>() {
+                Purpose.AirlockVertical_Open_R
             },
-            new List<P>() {
-                P.AirlockVertical_Open_R_TOP
+            new List<Purpose>() {
+                Purpose.AirlockVertical_Open_R_TOP
             },
-            new List<P>() {
-                P.AirlockVertical_Wait
+            new List<Purpose>() {
+                Purpose.AirlockVertical_Wait
             },
-            new List<P>() {
-                P.AirlockVertical_Wait_TOP
+            new List<Purpose>() {
+                Purpose.AirlockVertical_Wait_TOP
             }
         };
-        private static DoubleInt GetTextureCoord(P id) {
+        private static DoubleInt GetTextureCoord(Purpose id) {
             DoubleInt _di = new DoubleInt();
             int _index = AllAssetPurposes.FindIndex(x => x.Contains(id));
             _di.X = AllAssetPurposes[_index].FindIndex(x => x == id);
@@ -306,123 +311,125 @@ public class CachedAssets : MonoBehaviour {
             return _di;
         }
 
-        public static DoubleInt floor_Single = GetTextureCoord(P.Floor_Single);
-        public static DoubleInt floor_FourWay = GetTextureCoord(P.Floor_Fourway);
-        public static DoubleInt floor_Vertical_T = GetTextureCoord(P.Floor_Vertical_T);
-        public static DoubleInt floor_Vertical_M = GetTextureCoord(P.Floor_Vertical_M);
-        public static DoubleInt floor_Vertical_B = GetTextureCoord(P.Floor_Vertical_B);
-        public static DoubleInt floor_Horizontal_L = GetTextureCoord(P.Floor_Horizontal_L);
-        public static DoubleInt floor_Horizontal_M = GetTextureCoord(P.Floor_Horizontal_M);
-        public static DoubleInt floor_Horizontal_R = GetTextureCoord(P.Floor_Horizontal_R);
-        public static DoubleInt floor_Corner_TopRight = GetTextureCoord(P.Floor_Corner_TR);
-        public static DoubleInt floor_Corner_TopLeft = GetTextureCoord(P.Floor_Corner_TL);
-        public static DoubleInt floor_Corner_BottomRight = GetTextureCoord(P.Floor_Corner_BR);
-        public static DoubleInt floor_Corner_BottomLeft = GetTextureCoord(P.Floor_Corner_BL);
-        public static DoubleInt floor_Tee_Right = GetTextureCoord(P.Floor_Tee_R);
-        public static DoubleInt floor_Tee_Left = GetTextureCoord(P.Floor_Tee_L);
-        public static DoubleInt floor_Tee_Top = GetTextureCoord(P.Floor_Tee_T);
-        public static DoubleInt floor_Tee_Bottom = GetTextureCoord(P.Floor_Tee_B);
+		public static DoubleInt Null 							= GetTextureCoord(Purpose.Null);
 
-        public static DoubleInt floor_Diagonal_TopRight = GetTextureCoord(P.Floor_Diagonal_TR);
-        public static DoubleInt floor_Diagonal_TopRight_T = GetTextureCoord(P.Floor_Diagonal_TR_T);
-        public static DoubleInt floor_Diagonal_TopRight_R = GetTextureCoord(P.Floor_Diagonal_TR_R);
-        public static DoubleInt floor_Diagonal_TopRight_TR = GetTextureCoord(P.Floor_Diagonal_TR_TR);
-        public static DoubleInt floor_Diagonal_TopLeft = GetTextureCoord(P.Floor_Diagonal_TL);
-        public static DoubleInt floor_Diagonal_TopLeft_T = GetTextureCoord(P.Floor_Diagonal_TL_T);
-        public static DoubleInt floor_Diagonal_TopLeft_L = GetTextureCoord(P.Floor_Diagonal_TL_L);
-        public static DoubleInt floor_Diagonal_TopLeft_TL = GetTextureCoord(P.Floor_Diagonal_TL_TL);
-        public static DoubleInt floor_Diagonal_BottomRight = GetTextureCoord(P.Floor_Diagonal_BR);
-        public static DoubleInt floor_Diagonal_BottomRight_B = GetTextureCoord(P.Floor_Diagonal_BR_B);
-        public static DoubleInt floor_Diagonal_BottomRight_R = GetTextureCoord(P.Floor_Diagonal_BR_R);
-        public static DoubleInt floor_Diagonal_BottomRight_BR = GetTextureCoord(P.Floor_Diagonal_BR_BR);
-        public static DoubleInt floor_Diagonal_BottomLeft = GetTextureCoord(P.Floor_Diagonal_BL);
-        public static DoubleInt floor_Diagonal_BottomLeft_B = GetTextureCoord(P.Floor_Diagonal_BL_B);
-        public static DoubleInt floor_Diagonal_BottomLeft_L = GetTextureCoord(P.Floor_Diagonal_BL_L);
-        public static DoubleInt floor_Diagonal_BottomLeft_BL = GetTextureCoord(P.Floor_Diagonal_BL_BL);
+		public static DoubleInt floor_Single 					= GetTextureCoord(Purpose.Floor_Single);
+        public static DoubleInt floor_FourWay 					= GetTextureCoord(Purpose.Floor_Fourway);
+        public static DoubleInt floor_Vertical_T 				= GetTextureCoord(Purpose.Floor_Vertical_T);
+        public static DoubleInt floor_Vertical_M 				= GetTextureCoord(Purpose.Floor_Vertical_M);
+        public static DoubleInt floor_Vertical_B 				= GetTextureCoord(Purpose.Floor_Vertical_B);
+        public static DoubleInt floor_Horizontal_L 				= GetTextureCoord(Purpose.Floor_Horizontal_L);
+        public static DoubleInt floor_Horizontal_M 				= GetTextureCoord(Purpose.Floor_Horizontal_M);
+        public static DoubleInt floor_Horizontal_R 				= GetTextureCoord(Purpose.Floor_Horizontal_R);
+        public static DoubleInt floor_Corner_TopRight 			= GetTextureCoord(Purpose.Floor_Corner_TR);
+        public static DoubleInt floor_Corner_TopLeft 			= GetTextureCoord(Purpose.Floor_Corner_TL);
+        public static DoubleInt floor_Corner_BottomRight 		= GetTextureCoord(Purpose.Floor_Corner_BR);
+        public static DoubleInt floor_Corner_BottomLeft 		= GetTextureCoord(Purpose.Floor_Corner_BL);
+        public static DoubleInt floor_Tee_Right 				= GetTextureCoord(Purpose.Floor_Tee_R);
+        public static DoubleInt floor_Tee_Left 					= GetTextureCoord(Purpose.Floor_Tee_L);
+        public static DoubleInt floor_Tee_Top 					= GetTextureCoord(Purpose.Floor_Tee_T);
+        public static DoubleInt floor_Tee_Bottom 				= GetTextureCoord(Purpose.Floor_Tee_B);
 
-        public static DoubleInt floorCornerHider_All = GetTextureCoord(P.FloorCornerHider_All);
-        public static DoubleInt floorCornerHider_TL_BR = GetTextureCoord(P.FloorCornerHider_TL_BR);
-        public static DoubleInt floorCornerHider_TR_BL = GetTextureCoord(P.FloorCornerHider_TR_BL);
-        public static DoubleInt floorCornerHider_TL = GetTextureCoord(P.FloorCornerHider_TL);
-        public static DoubleInt floorCornerHider_TL_TR = GetTextureCoord(P.FloorCornerHider_TL_TR);
-        public static DoubleInt floorCornerHider_TL_TR_BR = GetTextureCoord(P.FloorCornerHider_TL_TR_BR);
-        public static DoubleInt floorCornerHider_TR = GetTextureCoord(P.FloorCornerHider_TR);
-        public static DoubleInt floorCornerHider_TR_BR = GetTextureCoord(P.FloorCornerHider_TR_BR);
-        public static DoubleInt floorCornerHider_TR_BR_BL = GetTextureCoord(P.FloorCornerHider_TR_BR_BL);
-        public static DoubleInt floorCornerHider_BR = GetTextureCoord(P.FloorCornerHider_BR);
-        public static DoubleInt floorCornerHider_BR_BL = GetTextureCoord(P.FloorCornerHider_BR_BL);
-        public static DoubleInt floorCornerHider_BR_BL_TL = GetTextureCoord(P.FloorCornerHider_BR_BL_TL);
-        public static DoubleInt floorCornerHider_BL = GetTextureCoord(P.FloorCornerHider_BL);
-        public static DoubleInt floorCornerHider_BL_TL = GetTextureCoord(P.FloorCornerHider_BL_TL);
-        public static DoubleInt floorCornerHider_BL_TL_TR = GetTextureCoord(P.FloorCornerHider_BL_TL_TR);
+        public static DoubleInt floor_Diagonal_TopRight 		= GetTextureCoord(Purpose.Floor_Diagonal_TR);
+        public static DoubleInt floor_Diagonal_TopRight_T 		= GetTextureCoord(Purpose.Floor_Diagonal_TR_T);
+        public static DoubleInt floor_Diagonal_TopRight_R 		= GetTextureCoord(Purpose.Floor_Diagonal_TR_R);
+        public static DoubleInt floor_Diagonal_TopRight_TR 		= GetTextureCoord(Purpose.Floor_Diagonal_TR_TR);
+        public static DoubleInt floor_Diagonal_TopLeft 			= GetTextureCoord(Purpose.Floor_Diagonal_TL);
+        public static DoubleInt floor_Diagonal_TopLeft_T 		= GetTextureCoord(Purpose.Floor_Diagonal_TL_T);
+        public static DoubleInt floor_Diagonal_TopLeft_L 		= GetTextureCoord(Purpose.Floor_Diagonal_TL_L);
+        public static DoubleInt floor_Diagonal_TopLeft_TL 		= GetTextureCoord(Purpose.Floor_Diagonal_TL_TL);
+        public static DoubleInt floor_Diagonal_BottomRight 		= GetTextureCoord(Purpose.Floor_Diagonal_BR);
+        public static DoubleInt floor_Diagonal_BottomRight_B 	= GetTextureCoord(Purpose.Floor_Diagonal_BR_B);
+        public static DoubleInt floor_Diagonal_BottomRight_R 	= GetTextureCoord(Purpose.Floor_Diagonal_BR_R);
+        public static DoubleInt floor_Diagonal_BottomRight_BR 	= GetTextureCoord(Purpose.Floor_Diagonal_BR_BR);
+        public static DoubleInt floor_Diagonal_BottomLeft 		= GetTextureCoord(Purpose.Floor_Diagonal_BL);
+        public static DoubleInt floor_Diagonal_BottomLeft_B 	= GetTextureCoord(Purpose.Floor_Diagonal_BL_B);
+        public static DoubleInt floor_Diagonal_BottomLeft_L 	= GetTextureCoord(Purpose.Floor_Diagonal_BL_L);
+        public static DoubleInt floor_Diagonal_BottomLeft_BL 	= GetTextureCoord(Purpose.Floor_Diagonal_BL_BL);
 
-        public static DoubleInt wall_Single = GetTextureCoord(P.Wall_Single);
-        public static DoubleInt wall_FourWay = GetTextureCoord(P.Wall_Fourway);
-        public static DoubleInt wall_Vertical_T = GetTextureCoord(P.Wall_Vertical_T);
-        public static DoubleInt wall_Vertical_M = GetTextureCoord(P.Wall_Vertical_M);
-        public static DoubleInt wall_Vertical_B = GetTextureCoord(P.Wall_Vertical_B);
-        public static DoubleInt wall_Horizontal_L = GetTextureCoord(P.Wall_Horizontal_L);
-        public static DoubleInt wall_Horizontal_M = GetTextureCoord(P.Wall_Horizontal_M);
-        public static DoubleInt wall_Horizontal_R = GetTextureCoord(P.Wall_Horizontal_R);
+        public static DoubleInt floorCornerHider_All 			= GetTextureCoord(Purpose.FloorCornerHider_All);
+        public static DoubleInt floorCornerHider_TL_BR 			= GetTextureCoord(Purpose.FloorCornerHider_TL_BR);
+        public static DoubleInt floorCornerHider_TR_BL 			= GetTextureCoord(Purpose.FloorCornerHider_TR_BL);
+        public static DoubleInt floorCornerHider_TL 			= GetTextureCoord(Purpose.FloorCornerHider_TL);
+        public static DoubleInt floorCornerHider_TL_TR 			= GetTextureCoord(Purpose.FloorCornerHider_TL_TR);
+        public static DoubleInt floorCornerHider_TL_TR_BR 		= GetTextureCoord(Purpose.FloorCornerHider_TL_TR_BR);
+        public static DoubleInt floorCornerHider_TR 			= GetTextureCoord(Purpose.FloorCornerHider_TR);
+        public static DoubleInt floorCornerHider_TR_BR 			= GetTextureCoord(Purpose.FloorCornerHider_TR_BR);
+        public static DoubleInt floorCornerHider_TR_BR_BL 		= GetTextureCoord(Purpose.FloorCornerHider_TR_BR_BL);
+        public static DoubleInt floorCornerHider_BR 			= GetTextureCoord(Purpose.FloorCornerHider_BR);
+        public static DoubleInt floorCornerHider_BR_BL 			= GetTextureCoord(Purpose.FloorCornerHider_BR_BL);
+        public static DoubleInt floorCornerHider_BR_BL_TL 		= GetTextureCoord(Purpose.FloorCornerHider_BR_BL_TL);
+        public static DoubleInt floorCornerHider_BL 			= GetTextureCoord(Purpose.FloorCornerHider_BL);
+        public static DoubleInt floorCornerHider_BL_TL 			= GetTextureCoord(Purpose.FloorCornerHider_BL_TL);
+        public static DoubleInt floorCornerHider_BL_TL_TR 		= GetTextureCoord(Purpose.FloorCornerHider_BL_TL_TR);
 
-        public static DoubleInt wall_Corner_TopRight = GetTextureCoord(P.Wall_Corner_TR);
-        public static DoubleInt wall_Corner_TopLeft = GetTextureCoord(P.Wall_Corner_TL);
-        public static DoubleInt wall_Corner_BottomRight = GetTextureCoord(P.Wall_Corner_BR);
-        public static DoubleInt wall_Corner_BottomLeft = GetTextureCoord(P.Wall_Corner_BL);
-        public static DoubleInt wall_Tee_Right = GetTextureCoord(P.Wall_Tee_R);
-        public static DoubleInt wall_Tee_Left = GetTextureCoord(P.Wall_Tee_L);
-        public static DoubleInt wall_Tee_Top = GetTextureCoord(P.Wall_Tee_T);
-        public static DoubleInt wall_Tee_Bottom = GetTextureCoord(P.Wall_Tee_B);
+        public static DoubleInt wall_Single 					= GetTextureCoord(Purpose.Wall_Single);
+        public static DoubleInt wall_FourWay 					= GetTextureCoord(Purpose.Wall_Fourway);
+        public static DoubleInt wall_Vertical_T 				= GetTextureCoord(Purpose.Wall_Vertical_T);
+        public static DoubleInt wall_Vertical_M 				= GetTextureCoord(Purpose.Wall_Vertical_M);
+        public static DoubleInt wall_Vertical_B 				= GetTextureCoord(Purpose.Wall_Vertical_B);
+        public static DoubleInt wall_Horizontal_L 				= GetTextureCoord(Purpose.Wall_Horizontal_L);
+        public static DoubleInt wall_Horizontal_M 				= GetTextureCoord(Purpose.Wall_Horizontal_M);
+        public static DoubleInt wall_Horizontal_R 				= GetTextureCoord(Purpose.Wall_Horizontal_R);
 
-        public static DoubleInt wall_Diagonal_TopRight = GetTextureCoord(P.Wall_Diagonal_TR);
-        public static DoubleInt wall_Diagonal_TopRight_T = GetTextureCoord(P.Wall_Diagonal_TR_T);
-        public static DoubleInt wall_Diagonal_TopRight_R = GetTextureCoord(P.Wall_Diagonal_TR_R);
-        public static DoubleInt wall_Diagonal_TopRight_TR = GetTextureCoord(P.Wall_Diagonal_TR_TR);
-        public static DoubleInt wall_Diagonal_TopLeft = GetTextureCoord(P.Wall_Diagonal_TL);
-        public static DoubleInt wall_Diagonal_TopLeft_T = GetTextureCoord(P.Wall_Diagonal_TL_T);
-        public static DoubleInt wall_Diagonal_TopLeft_L = GetTextureCoord(P.Wall_Diagonal_TL_L);
-        public static DoubleInt wall_Diagonal_TopLeft_TL = GetTextureCoord(P.Wall_Diagonal_TL_TL);
-        public static DoubleInt wall_Diagonal_BottomRight = GetTextureCoord(P.Wall_Diagonal_BR);
-        public static DoubleInt wall_Diagonal_BottomRight_B = GetTextureCoord(P.Wall_Diagonal_BR_B);
-        public static DoubleInt wall_Diagonal_BottomRight_R = GetTextureCoord(P.Wall_Diagonal_BR_R);
-        public static DoubleInt wall_Diagonal_BottomRight_BR = GetTextureCoord(P.Wall_Diagonal_BR_BR);
-        public static DoubleInt wall_Diagonal_BottomLeft = GetTextureCoord(P.Wall_Diagonal_BL);
-        public static DoubleInt wall_Diagonal_BottomLeft_B = GetTextureCoord(P.Wall_Diagonal_BL_B);
-        public static DoubleInt wall_Diagonal_BottomLeft_L = GetTextureCoord(P.Wall_Diagonal_BL_L);
-        public static DoubleInt wall_Diagonal_BottomLeft_BL = GetTextureCoord(P.Wall_Diagonal_BL_BL);
+        public static DoubleInt wall_Corner_TopRight 			= GetTextureCoord(Purpose.Wall_Corner_TR);
+        public static DoubleInt wall_Corner_TopLeft 			= GetTextureCoord(Purpose.Wall_Corner_TL);
+        public static DoubleInt wall_Corner_BottomRight 		= GetTextureCoord(Purpose.Wall_Corner_BR);
+        public static DoubleInt wall_Corner_BottomLeft 			= GetTextureCoord(Purpose.Wall_Corner_BL);
+        public static DoubleInt wall_Tee_Right 					= GetTextureCoord(Purpose.Wall_Tee_R);
+        public static DoubleInt wall_Tee_Left 					= GetTextureCoord(Purpose.Wall_Tee_L);
+        public static DoubleInt wall_Tee_Top 					= GetTextureCoord(Purpose.Wall_Tee_T);
+        public static DoubleInt wall_Tee_Bottom 				= GetTextureCoord(Purpose.Wall_Tee_B);
 
-        public static DoubleInt wallCornerHider_All = GetTextureCoord(P.WallCornerHider_All);
-        public static DoubleInt wallCornerHider_TL_BR = GetTextureCoord(P.WallCornerHider_TL_BR);
-        public static DoubleInt wallCornerHider_TR_BL = GetTextureCoord(P.WallCornerHider_TR_BL);
-        public static DoubleInt wallCornerHider_TL = GetTextureCoord(P.WallCornerHider_TL);
-        public static DoubleInt wallCornerHider_TL_TR = GetTextureCoord(P.WallCornerHider_TL_TR);
-        public static DoubleInt wallCornerHider_TL_TR_BR = GetTextureCoord(P.WallCornerHider_TL_TR_BR);
-        public static DoubleInt wallCornerHider_TR = GetTextureCoord(P.WallCornerHider_TR);
-        public static DoubleInt wallCornerHider_TR_BR = GetTextureCoord(P.WallCornerHider_TR_BR);
-        public static DoubleInt wallCornerHider_TR_BR_BL = GetTextureCoord(P.WallCornerHider_TR_BR_BL);
-        public static DoubleInt wallCornerHider_BR = GetTextureCoord(P.WallCornerHider_BR);
-        public static DoubleInt wallCornerHider_BR_BL = GetTextureCoord(P.WallCornerHider_BR_BL);
-        public static DoubleInt wallCornerHider_BR_BL_TL = GetTextureCoord(P.WallCornerHider_BR_BL_TL);
-        public static DoubleInt wallCornerHider_BL = GetTextureCoord(P.WallCornerHider_BL);
-        public static DoubleInt wallCornerHider_BL_TL = GetTextureCoord(P.WallCornerHider_BL_TL);
-        public static DoubleInt wallCornerHider_BL_TL_TR = GetTextureCoord(P.WallCornerHider_BL_TL_TR);
+        public static DoubleInt wall_Diagonal_TopRight 			= GetTextureCoord(Purpose.Wall_Diagonal_TR);
+        public static DoubleInt wall_Diagonal_TopRight_T 		= GetTextureCoord(Purpose.Wall_Diagonal_TR_T);
+        public static DoubleInt wall_Diagonal_TopRight_R 		= GetTextureCoord(Purpose.Wall_Diagonal_TR_R);
+        public static DoubleInt wall_Diagonal_TopRight_TR 		= GetTextureCoord(Purpose.Wall_Diagonal_TR_TR);
+        public static DoubleInt wall_Diagonal_TopLeft 			= GetTextureCoord(Purpose.Wall_Diagonal_TL);
+        public static DoubleInt wall_Diagonal_TopLeft_T 		= GetTextureCoord(Purpose.Wall_Diagonal_TL_T);
+        public static DoubleInt wall_Diagonal_TopLeft_L 		= GetTextureCoord(Purpose.Wall_Diagonal_TL_L);
+        public static DoubleInt wall_Diagonal_TopLeft_TL 		= GetTextureCoord(Purpose.Wall_Diagonal_TL_TL);
+        public static DoubleInt wall_Diagonal_BottomRight 		= GetTextureCoord(Purpose.Wall_Diagonal_BR);
+        public static DoubleInt wall_Diagonal_BottomRight_B 	= GetTextureCoord(Purpose.Wall_Diagonal_BR_B);
+        public static DoubleInt wall_Diagonal_BottomRight_R 	= GetTextureCoord(Purpose.Wall_Diagonal_BR_R);
+        public static DoubleInt wall_Diagonal_BottomRight_BR 	= GetTextureCoord(Purpose.Wall_Diagonal_BR_BR);
+        public static DoubleInt wall_Diagonal_BottomLeft 		= GetTextureCoord(Purpose.Wall_Diagonal_BL);
+        public static DoubleInt wall_Diagonal_BottomLeft_B 		= GetTextureCoord(Purpose.Wall_Diagonal_BL_B);
+        public static DoubleInt wall_Diagonal_BottomLeft_L 		= GetTextureCoord(Purpose.Wall_Diagonal_BL_L);
+        public static DoubleInt wall_Diagonal_BottomLeft_BL 	= GetTextureCoord(Purpose.Wall_Diagonal_BL_BL);
 
-        public static TileAnimator.TileAnimation anim_DoorVertical_Open = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorVertical).Y, 4);
-        public static TileAnimator.TileAnimation anim_DoorHorizontal_Open = new TileAnimator.TileAnimation(GetTextureCoord(P.DoorHorizontal).Y, 4);
+        public static DoubleInt wallCornerHider_All 			= GetTextureCoord(Purpose.WallCornerHider_All);
+        public static DoubleInt wallCornerHider_TL_BR 			= GetTextureCoord(Purpose.WallCornerHider_TL_BR);
+        public static DoubleInt wallCornerHider_TR_BL 			= GetTextureCoord(Purpose.WallCornerHider_TR_BL);
+        public static DoubleInt wallCornerHider_TL 				= GetTextureCoord(Purpose.WallCornerHider_TL);
+        public static DoubleInt wallCornerHider_TL_TR 			= GetTextureCoord(Purpose.WallCornerHider_TL_TR);
+        public static DoubleInt wallCornerHider_TL_TR_BR 		= GetTextureCoord(Purpose.WallCornerHider_TL_TR_BR);
+        public static DoubleInt wallCornerHider_TR 				= GetTextureCoord(Purpose.WallCornerHider_TR);
+        public static DoubleInt wallCornerHider_TR_BR 			= GetTextureCoord(Purpose.WallCornerHider_TR_BR);
+        public static DoubleInt wallCornerHider_TR_BR_BL 		= GetTextureCoord(Purpose.WallCornerHider_TR_BR_BL);
+        public static DoubleInt wallCornerHider_BR 				= GetTextureCoord(Purpose.WallCornerHider_BR);
+        public static DoubleInt wallCornerHider_BR_BL 			= GetTextureCoord(Purpose.WallCornerHider_BR_BL);
+        public static DoubleInt wallCornerHider_BR_BL_TL 		= GetTextureCoord(Purpose.WallCornerHider_BR_BL_TL);
+        public static DoubleInt wallCornerHider_BL 				= GetTextureCoord(Purpose.WallCornerHider_BL);
+        public static DoubleInt wallCornerHider_BL_TL 			= GetTextureCoord(Purpose.WallCornerHider_BL_TL);
+        public static DoubleInt wallCornerHider_BL_TL_TR 		= GetTextureCoord(Purpose.WallCornerHider_BL_TL_TR);
 
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_B_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_B).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_T_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Open_T).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Wait_TOP).Y, 8);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockHorizontal_Wait).Y, 8);
+        public static TileAnimator.TileAnimation anim_DoorVertical_Open 				= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.DoorVertical).Y, 4);
+        public static TileAnimator.TileAnimation anim_DoorHorizontal_Open 				= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.DoorHorizontal).Y, 4);
 
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_L_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_L).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_R_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Open_R).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Top = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Wait_TOP).Y, 8);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Bottom = new TileAnimator.TileAnimation(GetTextureCoord(P.AirlockVertical_Wait).Y, 8);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_B_TOP).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_B).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_T_TOP).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_T).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Wait_TOP).Y, 8);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Wait).Y, 8);
+
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_L_TOP).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_L).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_R_TOP).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_R).Y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Top 			= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Wait_TOP).Y, 8);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Bottom 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Wait).Y, 8);
 
         public Texture2D ShadowMap;
 
@@ -557,7 +564,7 @@ public class CachedAssets : MonoBehaviour {
     private bool isConnected_T;
     private bool isConnected_R;
     private bool isConnected_B;
-    public WallSet.P GetTileDefinition(Tile _tile) {
+    public WallSet.Purpose GetTileDefinition(Tile _tile) {
         isConnected_L = false;
         isConnected_T = false;
         isConnected_R = false;
@@ -574,68 +581,68 @@ public class CachedAssets : MonoBehaviour {
                     if (isConnected_L) {
                         if (isConnected_T) {
                             if (isConnected_R) {
-                                if (isConnected_B) return WallSet.P.Wall_Fourway;
-                                else return WallSet.P.Wall_Tee_T;
+                                if (isConnected_B) return WallSet.Purpose.Wall_Fourway;
+                                else return WallSet.Purpose.Wall_Tee_T;
                             }
-                            else if (isConnected_B) return WallSet.P.Wall_Tee_L;
-                            else return WallSet.P.Wall_Corner_TL;
+                            else if (isConnected_B) return WallSet.Purpose.Wall_Tee_L;
+                            else return WallSet.Purpose.Wall_Corner_TL;
                         }
                         else if (isConnected_R) {
-                            if (isConnected_B) return WallSet.P.Wall_Tee_B;
-                            else return WallSet.P.Wall_Horizontal_M;
+                            if (isConnected_B) return WallSet.Purpose.Wall_Tee_B;
+                            else return WallSet.Purpose.Wall_Horizontal_M;
                         }
-                        else if (isConnected_B) return WallSet.P.Wall_Corner_BL;
-                        else return WallSet.P.Wall_Horizontal_R;
+                        else if (isConnected_B) return WallSet.Purpose.Wall_Corner_BL;
+                        else return WallSet.Purpose.Wall_Horizontal_R;
                     }
                     else if (isConnected_T) {
                         if (isConnected_R) {
-                            if (isConnected_B) return WallSet.P.Wall_Tee_R;
-                            else return WallSet.P.Wall_Corner_TR;
+                            if (isConnected_B) return WallSet.Purpose.Wall_Tee_R;
+                            else return WallSet.Purpose.Wall_Corner_TR;
                         }
-                        else if (isConnected_B) return WallSet.P.Wall_Vertical_M;
-                        else return WallSet.P.Wall_Vertical_B;
+                        else if (isConnected_B) return WallSet.Purpose.Wall_Vertical_M;
+                        else return WallSet.Purpose.Wall_Vertical_B;
                     }
                     else if (isConnected_R) {
-                        if (isConnected_B) return WallSet.P.Wall_Corner_BR;
-                        else return WallSet.P.Wall_Horizontal_L;
+                        if (isConnected_B) return WallSet.Purpose.Wall_Corner_BR;
+                        else return WallSet.Purpose.Wall_Horizontal_L;
                     }
-                    else if (isConnected_B) return WallSet.P.Wall_Vertical_T;
-                    else return WallSet.P.Wall_Single;
+                    else if (isConnected_B) return WallSet.Purpose.Wall_Vertical_T;
+                    else return WallSet.Purpose.Wall_Single;
 
                 case Tile.Type.Diagonal:
                     switch (_tile._Orientation_) {
                         case Tile.TileOrientation.TopRight: {
                                 if (isConnected_T) {
-                                    if (isConnected_R) return WallSet.P.Wall_Diagonal_TR_TR;
-                                    else return WallSet.P.Wall_Diagonal_TR_T;
+                                    if (isConnected_R) return WallSet.Purpose.Wall_Diagonal_TR_TR;
+                                    else return WallSet.Purpose.Wall_Diagonal_TR_T;
                                 }
-                                else if (isConnected_R) return WallSet.P.Wall_Diagonal_TR_R;
-                                else return WallSet.P.Wall_Diagonal_TR;
+                                else if (isConnected_R) return WallSet.Purpose.Wall_Diagonal_TR_R;
+                                else return WallSet.Purpose.Wall_Diagonal_TR;
                             }
 
                         case Tile.TileOrientation.TopLeft: {
                                 if (isConnected_T) {
-                                    if (isConnected_L) return WallSet.P.Wall_Diagonal_TL_TL;
-                                    else return WallSet.P.Wall_Diagonal_TL_T;
+                                    if (isConnected_L) return WallSet.Purpose.Wall_Diagonal_TL_TL;
+                                    else return WallSet.Purpose.Wall_Diagonal_TL_T;
                                 }
-                                else if (isConnected_L) return WallSet.P.Wall_Diagonal_TL_L;
-                                else return WallSet.P.Wall_Diagonal_TL;
+                                else if (isConnected_L) return WallSet.Purpose.Wall_Diagonal_TL_L;
+                                else return WallSet.Purpose.Wall_Diagonal_TL;
                             }
                         case Tile.TileOrientation.BottomRight: {
                                 if (isConnected_B) {
-                                    if (isConnected_R) return WallSet.P.Wall_Diagonal_BR_BR;
-                                    else return WallSet.P.Wall_Diagonal_BR_B;
+                                    if (isConnected_R) return WallSet.Purpose.Wall_Diagonal_BR_BR;
+                                    else return WallSet.Purpose.Wall_Diagonal_BR_B;
                                 }
-                                else if (isConnected_R) return WallSet.P.Wall_Diagonal_BR_R;
-                                else return WallSet.P.Wall_Diagonal_BR;
+                                else if (isConnected_R) return WallSet.Purpose.Wall_Diagonal_BR_R;
+                                else return WallSet.Purpose.Wall_Diagonal_BR;
                             }
                         case Tile.TileOrientation.BottomLeft: {
                                 if (isConnected_B) {
-                                    if (isConnected_L) return WallSet.P.Wall_Diagonal_BL_BL;
-                                    else return WallSet.P.Wall_Diagonal_BL_B;
+                                    if (isConnected_L) return WallSet.Purpose.Wall_Diagonal_BL_BL;
+                                    else return WallSet.Purpose.Wall_Diagonal_BL_B;
                                 }
-                                else if (isConnected_L) return WallSet.P.Wall_Diagonal_BL_L;
-                                else return WallSet.P.Wall_Diagonal_BL;
+                                else if (isConnected_L) return WallSet.Purpose.Wall_Diagonal_BL_L;
+                                else return WallSet.Purpose.Wall_Diagonal_BL;
                             }
                         default:
                             throw new System.Exception(_tile._Orientation_ + " is not supported by diagonals!");
@@ -645,10 +652,10 @@ public class CachedAssets : MonoBehaviour {
                         case Tile.TileOrientation.None:
                         case Tile.TileOrientation.Bottom:
                         case Tile.TileOrientation.Top:
-                            return WallSet.P.DoorVertical;
+                            return WallSet.Purpose.DoorVertical;
                         case Tile.TileOrientation.Left:
                         case Tile.TileOrientation.Right:
-                            return WallSet.P.DoorHorizontal;
+                            return WallSet.Purpose.DoorHorizontal;
                     }
                     break;
                 case Tile.Type.Airlock:
@@ -656,10 +663,10 @@ public class CachedAssets : MonoBehaviour {
                         case Tile.TileOrientation.None:
                         case Tile.TileOrientation.Bottom:
                         case Tile.TileOrientation.Top:
-                            return WallSet.P.AirlockVertical_Open_L;
+                            return WallSet.Purpose.AirlockVertical_Open_L;
                         case Tile.TileOrientation.Left:
                         case Tile.TileOrientation.Right:
-                            return WallSet.P.AirlockHorizontal_Open_T_TOP;
+                            return WallSet.Purpose.AirlockHorizontal_Open_T_TOP;
                     }
                     break;
                 default:
@@ -677,67 +684,67 @@ public class CachedAssets : MonoBehaviour {
                     if (isConnected_L) {
                         if (isConnected_T) {
                             if (isConnected_R) {
-                                if (isConnected_B) return WallSet.P.Floor_Fourway;
-                                else return WallSet.P.Floor_Tee_T;
+                                if (isConnected_B) return WallSet.Purpose.Floor_Fourway;
+                                else return WallSet.Purpose.Floor_Tee_T;
                             }
-                            else if (isConnected_B) return WallSet.P.Floor_Tee_L;
-                            else return WallSet.P.Floor_Corner_TL;
+                            else if (isConnected_B) return WallSet.Purpose.Floor_Tee_L;
+                            else return WallSet.Purpose.Floor_Corner_TL;
                         }
                         else if (isConnected_R) {
-                            if (isConnected_B) return WallSet.P.Floor_Tee_B;
-                            else return WallSet.P.Floor_Horizontal_M;
+                            if (isConnected_B) return WallSet.Purpose.Floor_Tee_B;
+                            else return WallSet.Purpose.Floor_Horizontal_M;
                         }
-                        else if (isConnected_B) return WallSet.P.Floor_Corner_BL;
-                        else return WallSet.P.Floor_Horizontal_R;
+                        else if (isConnected_B) return WallSet.Purpose.Floor_Corner_BL;
+                        else return WallSet.Purpose.Floor_Horizontal_R;
                     }
                     else if (isConnected_T) {
                         if (isConnected_R) {
-                            if (isConnected_B) return WallSet.P.Floor_Tee_R;
-                            else return WallSet.P.Floor_Corner_TR;
+                            if (isConnected_B) return WallSet.Purpose.Floor_Tee_R;
+                            else return WallSet.Purpose.Floor_Corner_TR;
                         }
-                        else if (isConnected_B) return WallSet.P.Floor_Vertical_M;
-                        else return WallSet.P.Floor_Vertical_B;
+                        else if (isConnected_B) return WallSet.Purpose.Floor_Vertical_M;
+                        else return WallSet.Purpose.Floor_Vertical_B;
                     }
                     else if (isConnected_R) {
-                        if (isConnected_B) return WallSet.P.Floor_Corner_BR;
-                        else return WallSet.P.Floor_Horizontal_L;
+                        if (isConnected_B) return WallSet.Purpose.Floor_Corner_BR;
+                        else return WallSet.Purpose.Floor_Horizontal_L;
                     }
-                    else if (isConnected_B) return WallSet.P.Floor_Vertical_T;
-                    else return WallSet.P.Floor_Single;
+                    else if (isConnected_B) return WallSet.Purpose.Floor_Vertical_T;
+                    else return WallSet.Purpose.Floor_Single;
 
                 case Tile.Type.Diagonal:
                     switch (_tile._FloorOrientation_) {
                         case Tile.TileOrientation.TopRight: {
                                 if (isConnected_T) {
-                                    if (isConnected_R) return WallSet.P.Floor_Diagonal_TR_TR;
-                                    else return WallSet.P.Floor_Diagonal_TR_T;
+                                    if (isConnected_R) return WallSet.Purpose.Floor_Diagonal_TR_TR;
+                                    else return WallSet.Purpose.Floor_Diagonal_TR_T;
                                 }
-                                else if (isConnected_R) return WallSet.P.Floor_Diagonal_TR_R;
-                                else return WallSet.P.Floor_Diagonal_TR;
+                                else if (isConnected_R) return WallSet.Purpose.Floor_Diagonal_TR_R;
+                                else return WallSet.Purpose.Floor_Diagonal_TR;
                             }
                         case Tile.TileOrientation.TopLeft: {
                                 if (isConnected_T) {
-                                    if (isConnected_L) return WallSet.P.Floor_Diagonal_TL_TL;
-                                    else return WallSet.P.Floor_Diagonal_TL_T;
+                                    if (isConnected_L) return WallSet.Purpose.Floor_Diagonal_TL_TL;
+                                    else return WallSet.Purpose.Floor_Diagonal_TL_T;
                                 }
-                                else if (isConnected_L) return WallSet.P.Floor_Diagonal_TL_L;
-                                else return WallSet.P.Floor_Diagonal_TL;
+                                else if (isConnected_L) return WallSet.Purpose.Floor_Diagonal_TL_L;
+                                else return WallSet.Purpose.Floor_Diagonal_TL;
                             }
                         case Tile.TileOrientation.BottomRight: {
                                 if (isConnected_B) {
-                                    if (isConnected_R) return WallSet.P.Floor_Diagonal_BR_BR;
-                                    else return WallSet.P.Floor_Diagonal_BR_B;
+                                    if (isConnected_R) return WallSet.Purpose.Floor_Diagonal_BR_BR;
+                                    else return WallSet.Purpose.Floor_Diagonal_BR_B;
                                 }
-                                else if (isConnected_R) return WallSet.P.Floor_Diagonal_BR_R;
-                                else return WallSet.P.Floor_Diagonal_BR;
+                                else if (isConnected_R) return WallSet.Purpose.Floor_Diagonal_BR_R;
+                                else return WallSet.Purpose.Floor_Diagonal_BR;
                             }
                         case Tile.TileOrientation.BottomLeft: {
                                 if (isConnected_B) {
-                                    if (isConnected_L) return WallSet.P.Floor_Diagonal_BL_BL;
-                                    else return WallSet.P.Floor_Diagonal_BL_B;
+                                    if (isConnected_L) return WallSet.Purpose.Floor_Diagonal_BL_BL;
+                                    else return WallSet.Purpose.Floor_Diagonal_BL_B;
                                 }
-                                else if (isConnected_L) return WallSet.P.Floor_Diagonal_BL_L;
-                                else return WallSet.P.Floor_Diagonal_BL;
+                                else if (isConnected_L) return WallSet.Purpose.Floor_Diagonal_BL_L;
+                                else return WallSet.Purpose.Floor_Diagonal_BL;
                             }
                         default:
                             throw new System.Exception(_tile._FloorOrientation_ + " is not supported by diagonals!");
@@ -750,83 +757,87 @@ public class CachedAssets : MonoBehaviour {
             }
         }
 
-        return WallSet.P.Null;
+        return WallSet.Purpose.Null;
     }
 
     // TODO: this should be able to just use the ExactType, saving some processing
     public DoubleInt GetWallAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isBottom, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
-        switch (_tileType) {
+		switch (_tileType) {
             case Tile.Type.Empty:
-                return null;
-            case Tile.Type.Solid:
+                return WallSet.Null;
+			case Tile.Type.Solid:
                 if (!_isBottom) // for now at least
-                    return null;
+                    return WallSet.Null;
 
                 if (_hasConnection_Left) {
                     if (_hasConnection_Top) {
                         if (_hasConnection_Right) {
-                            if (_hasConnection_Bottom) return WallSet.wall_FourWay;
-                            else return WallSet.wall_Tee_Top;
+                            if (_hasConnection_Bottom) 		return WallSet.wall_FourWay;
+                            else 							return WallSet.wall_Tee_Top;
                         }
-                        else if (_hasConnection_Bottom) return WallSet.wall_Tee_Left;
-                        else return WallSet.wall_Corner_TopLeft;
+                        else if (_hasConnection_Bottom) 	return WallSet.wall_Tee_Left;
+                        else 								return WallSet.wall_Corner_TopLeft;
                     }
                     else if (_hasConnection_Right) {
-                        if (_hasConnection_Bottom) return WallSet.wall_Tee_Bottom;
-                        else return WallSet.wall_Horizontal_M;
+                        if (_hasConnection_Bottom) 			return WallSet.wall_Tee_Bottom;
+                        else 								return WallSet.wall_Horizontal_M;
                     }
-                    else if (_hasConnection_Bottom) return WallSet.wall_Corner_BottomLeft;
-                    else return WallSet.wall_Horizontal_R;
+                    else if (_hasConnection_Bottom) 		return WallSet.wall_Corner_BottomLeft;
+                    else 									return WallSet.wall_Horizontal_R;
                 }
                 else if (_hasConnection_Top) {
                     if (_hasConnection_Right) {
-                        if (_hasConnection_Bottom) return WallSet.wall_Tee_Right;
-                        else return WallSet.wall_Corner_TopRight;
+                        if (_hasConnection_Bottom) 			return WallSet.wall_Tee_Right;
+                        else 								return WallSet.wall_Corner_TopRight;
                     }
-                    else if (_hasConnection_Bottom) return WallSet.wall_Vertical_M;
-                    else return WallSet.wall_Vertical_B;
+                    else if (_hasConnection_Bottom) 		return WallSet.wall_Vertical_M;
+                    else 									return WallSet.wall_Vertical_B;
                 }
                 else if (_hasConnection_Right) {
-                    if (_hasConnection_Bottom) return WallSet.wall_Corner_BottomRight;
-                    else return WallSet.wall_Horizontal_L;
+                    if (_hasConnection_Bottom) 				return WallSet.wall_Corner_BottomRight;
+                    else 									return WallSet.wall_Horizontal_L;
                 }
-                else if (_hasConnection_Bottom) return WallSet.wall_Vertical_T;
-                else return WallSet.wall_Single;
+                else if (_hasConnection_Bottom) 			return WallSet.wall_Vertical_T;
+                else 										return WallSet.wall_Single;
 
             case Tile.Type.Diagonal:
                 switch (_tileOrientation) {
                     case Tile.TileOrientation.TopRight: {
-                            if (_hasConnection_Top) {
-                                if (_hasConnection_Right) return (_isBottom ? WallSet.wall_Diagonal_TopRight_TR : null);
-                                else return (_isBottom ? WallSet.wall_Diagonal_TopRight_T : null);
+							if (!_isBottom) 						return WallSet.Null;
+							else if (_hasConnection_Top) {
+								if (_hasConnection_Right) 			return WallSet.wall_Diagonal_TopRight_TR;
+                                else 								return WallSet.wall_Diagonal_TopRight_T;
                             }
-                            else if(_hasConnection_Right) return (_isBottom ? WallSet.wall_Diagonal_TopRight_R : null);
-                            else return (_isBottom ? WallSet.wall_Diagonal_TopRight : null);
+							else if (_hasConnection_Right) 			return WallSet.wall_Diagonal_TopRight_R;
+                            else 									return WallSet.wall_Diagonal_TopRight;
                         }
 
                     case Tile.TileOrientation.TopLeft: {
-                            if (_hasConnection_Top) {
-                                if (_hasConnection_Left) return (_isBottom ? WallSet.wall_Diagonal_TopLeft_TL : null);
-                                else return (_isBottom ? WallSet.wall_Diagonal_TopLeft_T : null);
+							if (!_isBottom)					return WallSet.Null;
+							else if (_hasConnection_Top) {
+								if (_hasConnection_Left) 	return WallSet.wall_Diagonal_TopLeft_TL;
+                                else 						return WallSet.wall_Diagonal_TopLeft_T;
                             }
-                            else if(_hasConnection_Left) return (_isBottom ? WallSet.wall_Diagonal_TopLeft_L : null);
-                            else return (_isBottom ? WallSet.wall_Diagonal_TopLeft : null);
+							else if(_hasConnection_Left) 	return WallSet.wall_Diagonal_TopLeft_L;
+                            else 							return WallSet.wall_Diagonal_TopLeft;
                         }
                     case Tile.TileOrientation.BottomRight: {
-                            if (_hasConnection_Bottom) {
-                                if (_hasConnection_Right) return (_isBottom ? null : WallSet.wall_Diagonal_BottomRight_BR);
-                                else return(_isBottom ? null : WallSet.wall_Diagonal_BottomRight_B);
+							if (_isBottom) 					return WallSet.Null;
+                            else if (_hasConnection_Bottom) {
+                                if (_hasConnection_Right) 	return WallSet.wall_Diagonal_BottomRight_BR;
+                                else 						return WallSet.wall_Diagonal_BottomRight_B;
                             }
-                            else if (_hasConnection_Right) return (_isBottom ? null : WallSet.wall_Diagonal_BottomRight_R);
-                            else return(_isBottom ? null : WallSet.wall_Diagonal_BottomRight);
+                            else if (_hasConnection_Right) 	return WallSet.wall_Diagonal_BottomRight_R;
+                            else 							return WallSet.wall_Diagonal_BottomRight;
                         }
                     case Tile.TileOrientation.BottomLeft: {
-                            if (_hasConnection_Bottom) {
-                                if (_hasConnection_Left) return (_isBottom ? null : WallSet.wall_Diagonal_BottomLeft_BL);
-                                else return(_isBottom ? null : WallSet.wall_Diagonal_BottomLeft_B);
+							if (_isBottom) 					return WallSet.Null;
+							else if (_hasConnection_Bottom) {
+                                if (_hasConnection_Left) 	return WallSet.wall_Diagonal_BottomLeft_BL;
+                                else 						return WallSet.wall_Diagonal_BottomLeft_B;
                             }
-                            else if (_hasConnection_Left) return (_isBottom ? null : WallSet.wall_Diagonal_BottomLeft_L);
-                            else return(_isBottom ? null : WallSet.wall_Diagonal_BottomLeft);
+                            else if (_hasConnection_Left) 	return WallSet.wall_Diagonal_BottomLeft_L;
+                            else 							return WallSet.wall_Diagonal_BottomLeft;
                         }
 					default:
 						throw new System.Exception (_tileOrientation + " is not supported by diagonals!");
@@ -836,10 +847,10 @@ public class CachedAssets : MonoBehaviour {
                     case Tile.TileOrientation.None:
                     case Tile.TileOrientation.Bottom:
                     case Tile.TileOrientation.Top:
-                        return _isBottom ? WallSet.anim_DoorVertical_Open.First : null;
+                        return _isBottom ? WallSet.anim_DoorVertical_Open.First : WallSet.Null;
                     case Tile.TileOrientation.Left:
                     case Tile.TileOrientation.Right:
-                        return _isBottom ? WallSet.anim_DoorHorizontal_Open.First : null;
+                        return _isBottom ? WallSet.anim_DoorHorizontal_Open.First : WallSet.Null;
                 }
                 break;
             case Tile.Type.Airlock:
@@ -862,73 +873,73 @@ public class CachedAssets : MonoBehaviour {
 	public DoubleInt GetFloorAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
 		switch (_tileType) {
 			case Tile.Type.Empty:
-				return null;
+				return WallSet.Null;
 			case Tile.Type.Solid:
 				if (_hasConnection_Left) {
 					if (_hasConnection_Top) {
 						if (_hasConnection_Right) {
-							if (_hasConnection_Bottom) return WallSet.floor_FourWay;
-							else return WallSet.floor_Tee_Top;
+							if (_hasConnection_Bottom) 		return WallSet.floor_FourWay;
+							else 							return WallSet.floor_Tee_Top;
 						}
-						else if (_hasConnection_Bottom) return WallSet.floor_Tee_Left;
-						else return WallSet.floor_Corner_TopLeft;
+						else if (_hasConnection_Bottom) 	return WallSet.floor_Tee_Left;
+						else 								return WallSet.floor_Corner_TopLeft;
 					}
 					else if (_hasConnection_Right) {
-						if (_hasConnection_Bottom) return WallSet.floor_Tee_Bottom;
-						else return WallSet.floor_Horizontal_M;
+						if (_hasConnection_Bottom) 			return WallSet.floor_Tee_Bottom;
+						else 								return WallSet.floor_Horizontal_M;
 					}
-					else if (_hasConnection_Bottom) return WallSet.floor_Corner_BottomLeft;
-					else return WallSet.floor_Horizontal_R;
+					else if (_hasConnection_Bottom) 		return WallSet.floor_Corner_BottomLeft;
+					else 									return WallSet.floor_Horizontal_R;
 				}
 				else if (_hasConnection_Top) {
 					if (_hasConnection_Right) {
-						if (_hasConnection_Bottom) return WallSet.floor_Tee_Right;
-						else return WallSet.floor_Corner_TopRight;
+						if (_hasConnection_Bottom) 			return WallSet.floor_Tee_Right;
+						else 								return WallSet.floor_Corner_TopRight;
 					}
-					else if (_hasConnection_Bottom) return WallSet.floor_Vertical_M;
-					else return WallSet.floor_Vertical_B;
+					else if (_hasConnection_Bottom) 		return WallSet.floor_Vertical_M;
+					else 									return WallSet.floor_Vertical_B;
 				}
 				else if (_hasConnection_Right) {
-					if (_hasConnection_Bottom) return WallSet.floor_Corner_BottomRight;
-					else return WallSet.floor_Horizontal_L;
+					if (_hasConnection_Bottom) 				return WallSet.floor_Corner_BottomRight;
+					else 									return WallSet.floor_Horizontal_L;
 				}
-				else if (_hasConnection_Bottom) return WallSet.floor_Vertical_T;
-				else return WallSet.floor_Single;
+				else if (_hasConnection_Bottom) 			return WallSet.floor_Vertical_T;
+				else 										return WallSet.floor_Single;
 
             case Tile.Type.Diagonal:
                 switch (_tileOrientation) {
                     case Tile.TileOrientation.TopRight: {
                             if (_hasConnection_Top) {
-                                if (_hasConnection_Right) return WallSet.floor_Diagonal_TopRight_TR;
-                                else return WallSet.floor_Diagonal_TopRight_T;
+                                if (_hasConnection_Right) 	return WallSet.floor_Diagonal_TopRight_TR;
+                                else 						return WallSet.floor_Diagonal_TopRight_T;
                             }
-                            else if (_hasConnection_Right) return WallSet.floor_Diagonal_TopRight_R;
-                            else return WallSet.floor_Diagonal_TopRight;
+                            else if (_hasConnection_Right) 	return WallSet.floor_Diagonal_TopRight_R;
+                            else 							return WallSet.floor_Diagonal_TopRight;
                         }
 
                     case Tile.TileOrientation.TopLeft: {
                             if (_hasConnection_Top) {
-                                if (_hasConnection_Left) return WallSet.floor_Diagonal_TopLeft_TL;
-                                else return WallSet.floor_Diagonal_TopLeft_T;
+                                if (_hasConnection_Left) 	return WallSet.floor_Diagonal_TopLeft_TL;
+                                else 						return WallSet.floor_Diagonal_TopLeft_T;
                             }
-                            else if (_hasConnection_Left) return WallSet.floor_Diagonal_TopLeft_L;
-                            else return WallSet.floor_Diagonal_TopLeft;
+                            else if (_hasConnection_Left) 	return WallSet.floor_Diagonal_TopLeft_L;
+                            else 							return WallSet.floor_Diagonal_TopLeft;
                         }
                     case Tile.TileOrientation.BottomRight: {
                             if (_hasConnection_Bottom) {
-                                if (_hasConnection_Right) return  WallSet.floor_Diagonal_BottomRight_BR;
-                                else return  WallSet.floor_Diagonal_BottomRight_B;
+                                if (_hasConnection_Right) 	return  WallSet.floor_Diagonal_BottomRight_BR;
+                                else 						return  WallSet.floor_Diagonal_BottomRight_B;
                             }
-                            else if (_hasConnection_Right) return  WallSet.floor_Diagonal_BottomRight_R;
-                            else return  WallSet.floor_Diagonal_BottomRight;
+                            else if (_hasConnection_Right) 	return  WallSet.floor_Diagonal_BottomRight_R;
+                            else 							return  WallSet.floor_Diagonal_BottomRight;
                         }
                     case Tile.TileOrientation.BottomLeft: {
                             if (_hasConnection_Bottom) {
-                                if (_hasConnection_Left) return  WallSet.floor_Diagonal_BottomLeft_BL;
-                                else return  WallSet.floor_Diagonal_BottomLeft_B;
+                                if (_hasConnection_Left) 	return  WallSet.floor_Diagonal_BottomLeft_BL;
+                                else 						return  WallSet.floor_Diagonal_BottomLeft_B;
                             }
-                            else if (_hasConnection_Left) return  WallSet.floor_Diagonal_BottomLeft_L;
-                            else return  WallSet.floor_Diagonal_BottomLeft;
+                            else if (_hasConnection_Left) 	return  WallSet.floor_Diagonal_BottomLeft_L;
+                            else 							return  WallSet.floor_Diagonal_BottomLeft;
                         }
                     default:
                         throw new System.Exception(_tileOrientation + " is not supported by diagonals!");
@@ -944,96 +955,64 @@ public class CachedAssets : MonoBehaviour {
         if (_TL) {
             if (_TR) {
                 if (_BR) {
-                    if (_BL)
-                        return WallSet.wallCornerHider_All;
-
-                    return WallSet.wallCornerHider_TL_TR_BR;
+                    if (_BL) 	return WallSet.wallCornerHider_All;
+					else 		return WallSet.wallCornerHider_TL_TR_BR;
                 }
-                else if (_BL)
-                    return WallSet.wallCornerHider_BL_TL_TR;
-
-                return WallSet.wallCornerHider_TL_TR;
+                else if (_BL)	return WallSet.wallCornerHider_BL_TL_TR;
+                else 			return WallSet.wallCornerHider_TL_TR;
             }
             else if (_BR) {
-                if (_BL)
-                    return WallSet.wallCornerHider_BR_BL_TL;
-
-                return WallSet.wallCornerHider_TL_BR;
+                if (_BL)		return WallSet.wallCornerHider_BR_BL_TL;
+				else 			return WallSet.wallCornerHider_TL_BR;
             }
-            else if (_BL)
-                return WallSet.wallCornerHider_BL_TL;
-
-            return WallSet.wallCornerHider_TL;
+            else if (_BL)		return WallSet.wallCornerHider_BL_TL;
+			else 				return WallSet.wallCornerHider_TL;
         }
         else if (_TR) {
             if (_BR) {
-                if (_BL)
-                    return WallSet.wallCornerHider_TR_BR_BL;
-
-                return WallSet.wallCornerHider_TR_BR;
+                if (_BL) 		return WallSet.wallCornerHider_TR_BR_BL;
+				else 			return WallSet.wallCornerHider_TR_BR;
             }
-            else if (_BL)
-                return WallSet.wallCornerHider_TR_BL;
-
-            return WallSet.wallCornerHider_TR;
+            else if (_BL)		return WallSet.wallCornerHider_TR_BL;
+			else 				return WallSet.wallCornerHider_TR;
         }
         else if (_BR) {
-            if (_BL)
-                return WallSet.wallCornerHider_BR_BL;
-
-            return WallSet.wallCornerHider_BR;
+            if (_BL)			return WallSet.wallCornerHider_BR_BL;
+			else 				return WallSet.wallCornerHider_BR;
         }
-        else if (_BL)
-            return WallSet.wallCornerHider_BL;
-
-        return null;
+        else if (_BL)			return WallSet.wallCornerHider_BL;
+		else 					return WallSet.Null;
     }
     public DoubleInt GetFloorCornerAsset(bool _TL, bool _TR, bool _BR, bool _BL) {
         if (_TL) {
             if (_TR) {
                 if (_BR) {
-                    if (_BL)
-                        return WallSet.floorCornerHider_All;
-
-                    return WallSet.floorCornerHider_TL_TR_BR;
+                    if (_BL)	return WallSet.floorCornerHider_All;
+					else 		return WallSet.floorCornerHider_TL_TR_BR;
                 }
-                else if (_BL)
-                    return WallSet.floorCornerHider_BL_TL_TR;
-
-                return WallSet.floorCornerHider_TL_TR;
+                else if (_BL)	return WallSet.floorCornerHider_BL_TL_TR;
+				else 			return WallSet.floorCornerHider_TL_TR;
             }
             else if (_BR) {
-                if (_BL)
-                    return WallSet.floorCornerHider_BR_BL_TL;
-
-                return WallSet.floorCornerHider_TL_BR;
+                if (_BL) 		return WallSet.floorCornerHider_BR_BL_TL;
+				else 			return WallSet.floorCornerHider_TL_BR;
             }
-            else if (_BL)
-                return WallSet.floorCornerHider_BL_TL;
-
-            return WallSet.floorCornerHider_TL;
+            else if (_BL)		return WallSet.floorCornerHider_BL_TL;
+			else 				return WallSet.floorCornerHider_TL;
         }
         else if (_TR) {
             if (_BR) {
-                if (_BL)
-                    return WallSet.floorCornerHider_TR_BR_BL;
-
-                return WallSet.floorCornerHider_TR_BR;
+                if (_BL) 		return WallSet.floorCornerHider_TR_BR_BL;
+				else 			return WallSet.floorCornerHider_TR_BR;
             }
-            else if (_BL)
-                return WallSet.floorCornerHider_TR_BL;
-
-            return WallSet.floorCornerHider_TR;
+            else if (_BL) 		return WallSet.floorCornerHider_TR_BL;
+			else 				return WallSet.floorCornerHider_TR;
         }
         else if (_BR) {
-            if (_BL)
-                return WallSet.floorCornerHider_BR_BL;
-
-            return WallSet.floorCornerHider_BR;
+            if (_BL) 			return WallSet.floorCornerHider_BR_BL;
+			else 				return WallSet.floorCornerHider_BR;
         }
-        else if(_BL)
-            return WallSet.floorCornerHider_BL;
-
-        return null;
+        else if(_BL) 			return WallSet.floorCornerHider_BL;
+		else 					return WallSet.Null;
     }
 }

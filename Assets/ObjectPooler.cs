@@ -7,13 +7,13 @@ public class ObjectPooler : MonoBehaviour {
 	public class Pool {
 
         private const int MAX_POOLED = 500;
-        public List<CachedAssets.WallSet.P> IDs = new List<CachedAssets.WallSet.P>();
+        public List<CachedAssets.WallSet.Purpose> IDs = new List<CachedAssets.WallSet.Purpose>();
         public PoolerObject Prefab;
         public ObjectPooler Owner;
         private Queue<PoolerObject> available;
         private int pooledCount = 0;
 
-		public Pool(ObjectPooler _owner, CachedAssets.WallSet.P _id, PoolerObject _prefab, CachedAssets.WallSet.P[] _additionalIDs){
+		public Pool(ObjectPooler _owner, CachedAssets.WallSet.Purpose _id, PoolerObject _prefab, CachedAssets.WallSet.Purpose[] _additionalIDs){
 			Owner = _owner;
 			Prefab = _prefab;
 			IDs.Add(_id);
@@ -60,7 +60,7 @@ public class ObjectPooler : MonoBehaviour {
 		SetupPoolIDsArray();
 
 		// check for duplicate ID usage (not sure how else to prevent double usage...)
-		List<CachedAssets.WallSet.P> usedIDs = new List<CachedAssets.WallSet.P>();
+		List<CachedAssets.WallSet.Purpose> usedIDs = new List<CachedAssets.WallSet.Purpose>();
 		for (int i = 0; i < MyPools.Count; i++){
 			for (int j = 0; j < MyPools[i].IDs.Count; j++){
 				if (usedIDs.Contains(MyPools[i].IDs[j]))
@@ -72,11 +72,11 @@ public class ObjectPooler : MonoBehaviour {
 	}
 	
 
-	public void AddPool(CachedAssets.WallSet.P _id, PoolerObject _prefab, params CachedAssets.WallSet.P[] _additionalIDs){
+	public void AddPool(CachedAssets.WallSet.Purpose _id, PoolerObject _prefab, params CachedAssets.WallSet.Purpose[] _additionalIDs){
 		MyPools.Add(new Pool(this, _id, _prefab, _additionalIDs));
 	}
 
-	private CachedAssets.WallSet.P[] allPoolIDs;
+	private CachedAssets.WallSet.Purpose[] allPoolIDs;
 	private int[] idsPerPool;
 	void SetupPoolIDsArray(){
 		idsPerPool = new int[MyPools.Count];
@@ -85,7 +85,7 @@ public class ObjectPooler : MonoBehaviour {
 			idsPerPool[i] = MyPools[i].IDs.Count;
 			_total += idsPerPool[i];
 		}
-		allPoolIDs = new CachedAssets.WallSet.P[_total];
+		allPoolIDs = new CachedAssets.WallSet.Purpose[_total];
 
 		_total = 0;
 		for (int i = 0; i < idsPerPool.Length; i++){
@@ -95,8 +95,8 @@ public class ObjectPooler : MonoBehaviour {
 			}
 		}
 	}
-    public T GetPooledObject<T>(CachedAssets.WallSet.P _id) where T : Component {
-		CachedAssets.WallSet.P _poolID;
+    public T GetPooledObject<T>(CachedAssets.WallSet.Purpose _id) where T : Component {
+		CachedAssets.WallSet.Purpose _poolID;
 		Pool _pool = null;
 		int _idIndex = 0;
 		int _poolIndex = 0;
@@ -118,7 +118,7 @@ public class ObjectPooler : MonoBehaviour {
     
 		return _pool.GetObject().GetComponent<T>();
 	}
-	public bool HasPoolForID(CachedAssets.WallSet.P _id){
+	public bool HasPoolForID(CachedAssets.WallSet.Purpose _id){
 		for (int i = 0; i < MyPools.Count; i++){
 			for (int j = 0; j < MyPools[i].IDs.Count; j++){
 				if(MyPools[i].IDs[j] == _id)

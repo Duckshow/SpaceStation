@@ -65,7 +65,7 @@ public class Grid : MonoBehaviour {
                 //     continue;
                 // }
                 // generate walls randomly
-                if (GenerateWalls && Random.value > 0.95f) {
+                if (GenerateWalls && Random.value > 0.9f) {
                     grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
                     continue;
                 }

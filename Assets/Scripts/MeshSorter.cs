@@ -4,10 +4,21 @@ using UnityEngine;
 
 public class MeshSorter : MonoBehaviour {
 
-    public enum SortingLayerEnum { BelowGrid, Grid, AboveGrid }
     public SortingLayerEnum SortingLayer = SortingLayerEnum.Grid;
-    public enum GridSortingEnum { Floor, FloorCorners, Bottom, Top, TopCorners }
-    public GridSortingEnum GridSorting;
+    public enum SortingLayerEnum { 
+		BelowGrid, 
+		Grid, 
+		AboveGrid 
+	}
+	//public GridLayerEnum GridSorting;
+	public bool SortAboveActors = false;
+	public enum GridLayerEnum { 
+		Floor = 0, 
+		FloorCorners = 1, 
+		Bottom = 2, 
+		Top = 3, 
+		TopCorners = 4 
+	}
 
     protected bool hasStarted = false;
     protected MeshRenderer myRenderer;
@@ -36,7 +47,7 @@ public class MeshSorter : MonoBehaviour {
                 myRenderer.sortingLayerName = "BelowGrid";
                 break;
         }
-    }
+	}
 
 	public static int GetSortOrderFromGridY(int _gridY) { return (Grid.GridSizeY * GameManager.Instance.SortingTransformsPerPosY) - (_gridY * GameManager.Instance.SortingTransformsPerPosY); }
     public int GetSortOrder() { return regularSortOrder; }
@@ -55,15 +66,18 @@ public class MeshSorter : MonoBehaviour {
 				// if (SortingLayer == SortingLayerEnum.Floor)
 				// 	regularSortOrder -= 2;
 				// else 
-				if (GridSorting == GridSortingEnum.FloorCorners)
-					regularSortOrder += 1;
-				else if (GridSorting == GridSortingEnum.Bottom)
-					regularSortOrder += 2;
-				else if (GridSorting == GridSortingEnum.Top)
-					regularSortOrder += 8; // 8 is a hack to account for 5 transforms in an actor
-				else if (GridSorting == GridSortingEnum.TopCorners)
-					regularSortOrder += 9;
-                break;
+				// if (GridSorting == GridLayerEnum.FloorCorners)
+				// 	regularSortOrder += 1;
+				// else if (GridSorting == GridLayerEnum.Bottom)
+				// 	regularSortOrder += 2;
+				// else if (GridSorting == GridLayerEnum.Top)
+				// 	regularSortOrder += 8; // 8 is a hack to account for 5 transforms in an actor
+				// else if (GridSorting == GridLayerEnum.TopCorners)
+				// 	regularSortOrder += 9;
+
+				if (SortAboveActors)
+					regularSortOrder += 6; // to account for 5 transforms in an actor
+				break;
             case SortingLayerEnum.BelowGrid:
                 regularSortOrder = Mathf.Abs(Mathf.RoundToInt(transform.position.z));
                 break;

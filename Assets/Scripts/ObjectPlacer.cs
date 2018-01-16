@@ -38,15 +38,15 @@ public class ObjectPlacer {
 
     private IEnumerator ghostRoutine;
     public class GhostInfo {
-        public UVController BottomQuad;
-        public UVController TopQuad;
+        public UVController MyUVController;
+        //public UVController TopQuad;
         public Vector3 position { get; private set; }
         public Tile.Type Type;
         public Tile.TileOrientation Orientation;
 
-        public GhostInfo(UVController _bottomQuad, UVController _topQuad) {
-            BottomQuad = _bottomQuad;
-            TopQuad = _topQuad;
+        public GhostInfo(UVController _uvc/*, UVController _topQuad*/) {
+            MyUVController = _uvc;
+            //TopQuad = _topQuad;
             SetPosition(Vector2.zero);
             Type = Tile.Type.Empty;
             Orientation = Tile.TileOrientation.None;
@@ -60,21 +60,22 @@ public class ObjectPlacer {
 			else
 				newPos = Vector3.zero;
 
-			BottomQuad.transform.position = newPos;
-            TopQuad.transform.position = newPos;
+			MyUVController.transform.position = newPos;
+            //TopQuad.transform.position = newPos;
             position = _value;
         }
         public void ChangeAssets(DoubleInt _bottomIndices, DoubleInt _topIndices) {
-            BottomQuad.ChangeAsset(_bottomIndices, false);
-            TopQuad.ChangeAsset(_topIndices, false);
-        }
+            MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Bottom, _bottomIndices, false);
+			MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Top, _topIndices, false);
+			//TopQuad.ChangeAsset(_topIndices, false);
+		}
         public void SetColor(byte _colorIndex) {
-            BottomQuad.ChangeColor(_colorIndex);
-            TopQuad.ChangeColor(_colorIndex);
+            MyUVController.ChangeColor(_colorIndex, _temporary: true);
+            //TopQuad.ChangeColor(_colorIndex);
         }
         public void SetActive(bool _b) {
-            BottomQuad.gameObject.SetActive(_b);
-            TopQuad.gameObject.SetActive(_b);
+            MyUVController.gameObject.SetActive(_b);
+            //TopQuad.gameObject.SetActive(_b);
         }
     }
     private GhostInfo Ghost;
@@ -128,13 +129,17 @@ public class ObjectPlacer {
 		ObjectButtons [0].group.SetAllTogglesOff ();
 		ObjectButtons [0].isOn = true;
 
-        UVController[] _allQuads = _transform.GetComponentsInChildren<UVController>(true);
-        if (_allQuads.Length > 2)
-            throw new System.NotImplementedException("ObjectPlacer currently only supports 2 UVControllers, but " + _allQuads.Length + " was found!");
+        // UVController[] _allQuads = _transform.GetComponentsInChildren<UVController>(true);
+		// if (_allQuads.Length > 2)
+		// 	throw new System.NotImplementedException("ObjectPlacer currently only supports 2 UVControllers, but " + _allQuads.Length + " was found!");
 
-        _allQuads[0].Setup();
-        _allQuads[1].Setup();
-        Ghost = new GhostInfo(_allQuads[0], _allQuads[1]);
+		// _allQuads[0].Setup();
+		// _allQuads[1].Setup();
+		// Ghost = new GhostInfo(_allQuads[0], _allQuads[1]);
+		
+		UVController _uvc = _transform.GetComponentInChildren<UVController>(true);
+        _uvc.Setup();
+        Ghost = new GhostInfo(_uvc);
 	}
 
     private void TryGetNewObjectToPlace(CanInspect _newPickedUpObject = null) {
@@ -448,29 +453,14 @@ public class ObjectPlacer {
         return true;
     }
 
-    UVController[] uvc;
     private void SetAssetBottomAndTop(CanInspect _obj) {
         AssetBottom = null;
         AssetTop = null;
         if (_obj == null)
             return;
 
-        uvc = _ObjectToPlace_.GetComponent<TileObject>().MyUVControllers;
-        if (uvc.Length > 2)
-            throw new System.NotImplementedException(_ObjectToPlace_ + " has " + uvc.Length + " UVControllers, but only 2 are supported currently!");
-
-        for (int i = 0; i < Mathf.Min(2, uvc.Length); i++) {
-            if (uvc[i].GridSorting == UVController.GridSortingEnum.Bottom) {
-                if (AssetBottom != null)
-                    throw new System.Exception(_ObjectToPlace_ + " had more than 1 UVController of the same SortingLayer!");
-                AssetBottom = uvc[i].Coordinates;
-            }
-            else if (uvc[i].GridSorting == UVController.GridSortingEnum.Top) {
-                if (AssetTop != null)
-                    throw new System.Exception(_ObjectToPlace_ + " had more than 1 UVController of the same SortingLayer!");
-
-                AssetTop = uvc[i].Coordinates;
-            }
-        }
+        UVController uvc = _ObjectToPlace_.GetComponent<TileObject>().MyUVController;
+		AssetBottom = uvc.GridLayers[(int)MeshSorter.GridLayerEnum.Bottom].Coordinates;
+		AssetTop 	= uvc.GridLayers[(int)MeshSorter.GridLayerEnum.Top].Coordinates;
     }
 }

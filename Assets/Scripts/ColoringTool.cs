@@ -90,7 +90,7 @@ public class ColoringTool : BuilderBase {
 	}
 
 	protected override bool Evaluate(Tile _tile){
-		SetColor (_tile, true);
+		SetColor (_tile, _temporarily: true);
 		selectedTiles.Add (_tile);
         return true;
 	}
@@ -115,17 +115,19 @@ public class ColoringTool : BuilderBase {
 	}
 
 	public void SetColor(Tile _tile, bool _temporarily){
-		_tile.FloorQuad.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
-		_tile.FloorCornerHider.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
-		_tile.BottomQuad.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
-		_tile.TopQuad.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
-		_tile.WallCornerHider.SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
+		_tile.MyUVController.ChangeColor(sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
+		// _tile.FloorQuad.		SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
+		// _tile.FloorCornerHider.	SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
+		// _tile.BottomQuad.		SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
+		// _tile.TopQuad.			SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
+		// _tile.WallCornerHider.	SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
 	}
 	public void ResetColor(Tile _tile){
-		_tile.FloorQuad.ResetUVColor ();
-		_tile.FloorCornerHider.ResetUVColor ();
-		_tile.BottomQuad.ResetUVColor ();
-		_tile.TopQuad.ResetUVColor ();
-		_tile.WallCornerHider.ResetUVColor ();
+		_tile.MyUVController.ResetColor();
+		// _tile.FloorQuad.ResetUVColor ();
+		// _tile.FloorCornerHider.ResetUVColor ();
+		// _tile.BottomQuad.ResetUVColor ();
+		// _tile.TopQuad.ResetUVColor ();
+		// _tile.WallCornerHider.ResetUVColor ();
 	}
 }

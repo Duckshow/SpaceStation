@@ -78,13 +78,20 @@ public class Test : MonoBehaviour
 
 	[EasyButtons.Button]
 	public void TestBitshift(){
-		int x = 0;
-		int y = 1;
-		int bits = x | (y << 16);
-		float deBittedX = (bits & 0xFFFF) * 0.001f;
-		float deBittedY = (bits >> 16 & 0xFFFF) * 0.001f;
+		int x = 255;
+		int y = 255;
+		int z = 255;
+		int w = 255;
 
-		Debug.Log((deBittedX + ", " + deBittedY).ToString().Color(Color.cyan));
+		int bits = x | (y << 8) | (z << 16) | (w << 24);
+		float deBittedX = (bits & 0xFF);
+		float deBittedY = (bits >> 8 & 0xFF);
+		float deBittedZ = (bits >> 16 & 0xFF);
+		float debittedW = (bits >> 24 & 0xFF);
+
+		Debug.Log((GetBinaryString(x) + " +\n" + GetBinaryString(y) + " +\n" + GetBinaryString(z) + " +\n" + GetBinaryString(w)).ToString().Color(Color.cyan));
+		Debug.Log((GetBinaryString(bits) + " (" + GetBinaryString(bits).ToString().Length + ")").ToString().Color(Color.cyan));
+		Debug.Log((deBittedX + ", " + deBittedY + ", " + deBittedZ + ", " + debittedW).ToString().Color(Color.cyan));
 	}
 	string GetBinaryString(int n) {
 		char[] b = new char[32];
