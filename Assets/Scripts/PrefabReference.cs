@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 public class PrefabReference : MonoBehaviour {
 	public GameObject Prefab;
-	public DoubleInt AssetBottom;
-	public DoubleInt AssetTop;
+	public Vector2i AssetBottom;
+	public Vector2i AssetTop;
 }

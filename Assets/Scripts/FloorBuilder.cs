@@ -15,21 +15,21 @@ public class FloorBuilder : BuilderBase {
 	}
 
 	protected override void ResetModifiedTiles(bool _includingMouse = false) {
-		for (int i = 0; i < modifiedTiles.Count; i++) {
-			modifiedTiles[i].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
-            modifiedTiles[i].ResetTempSettingsFloor();
-            modifiedTiles[i].ResetFloorColor();
-            modifiedTiles[i].ResetWallColor();
+		for (int i = 0; i < highlightedTiles.Count; i++) {
+			highlightedTiles[i].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
+            highlightedTiles[i].ResetTempSettingsFloor();
+            highlightedTiles[i].ResetFloorColor();
+            highlightedTiles[i].ResetWallColor();
         }
 
         base.ResetModifiedTiles ();
 	}
 	protected override void ResetSelectedTiles() {
-		for (int i = 0; i < selectedTiles.Count; i++) {
-			selectedTiles[i].SetFloorType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
-            selectedTiles[i].ResetTempSettingsFloor();
-			selectedTiles[i].ResetFloorColor();
-            selectedTiles[i].ResetWallColor();
+		for (int i = 0; i < tilesToModify.Count; i++) {
+			tilesToModify[i].SetFloorType(Tile.Type.Empty, tilesToModify[i].TempOrientation, _temporarily: true);
+            tilesToModify[i].ResetTempSettingsFloor();
+			tilesToModify[i].ResetFloorColor();
+            tilesToModify[i].ResetWallColor();
         }
 
         base.ResetSelectedTiles ();
@@ -323,8 +323,8 @@ public class FloorBuilder : BuilderBase {
     }
 
     protected override void ApplyCurrentTool() {
-		for (int i = 0; i < selectedTiles.Count; i++)
-			selectedTiles [i].SetFloorType (isDeleting ? Tile.Type.Empty : selectedTiles[i].TempType, isDeleting ? Tile.TileOrientation.None : selectedTiles[i].TempOrientation);
+		for (int i = 0; i < tilesToModify.Count; i++)
+			tilesToModify [i].SetFloorType (isDeleting ? Tile.Type.Empty : tilesToModify[i].TempType, isDeleting ? Tile.TileOrientation.None : tilesToModify[i].TempOrientation);
 		base.ApplyCurrentTool ();
 	}
 }

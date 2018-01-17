@@ -59,7 +59,7 @@ public class Tile : IHeapItem<Tile> {
     public bool _BuildingAllowed_ { get { return buildingAllowed; } private set { buildingAllowed = value; } }
     // public int GridX { get; private set; }
     // public int GridY { get; private set; }
-    public DoubleInt GridCoord { get; private set; }
+    public Vector2i GridCoord { get; private set; }
 
     public Vector2 WorldPosition { get; private set; }
     public Vector2 DefaultPositionWorld { get; private set; }
@@ -154,7 +154,7 @@ public class Tile : IHeapItem<Tile> {
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY) {
         WorldPosition = _worldPos;
-        GridCoord = new DoubleInt(_gridX, _gridY);
+        GridCoord = new Vector2i(_gridX, _gridY);
 
 		MyUVController = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
 		// FloorQuad 			= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
@@ -163,7 +163,7 @@ public class Tile : IHeapItem<Tile> {
 		// TopQuad 			= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
 		// WallCornerHider 	= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
 
-		MyUVController.name = "TileQuad " + GridCoord.X + "x" + GridCoord.Y + " (" + WorldPosition.x + ", " + WorldPosition.y + ")";
+		MyUVController.name = "TileQuad " + GridCoord.x + "x" + GridCoord.y + " (" + WorldPosition.x + ", " + WorldPosition.y + ")";
 		// FloorQuad.name = "TileQuad " + GridCoord.X + "x" + GridCoord.Y + " (" + WorldPosition.x + ", " + WorldPosition.y + ")";
 		// FloorCornerHider.transform.parent = FloorQuad.transform;
 		// BottomQuad.transform.parent = FloorQuad.transform;
@@ -329,22 +329,22 @@ public class Tile : IHeapItem<Tile> {
                 HasConnectableTemp_B = false;
             }
 
-            if (sTryTempCacheNeighbour_L(GridCoord.X, GridCoord.Y) && sCachedNeighbour_L.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_L(GridCoord.x, GridCoord.y) && sCachedNeighbour_L.TempType != Type.Empty)
                 UpdateNeighbourWall(sCachedNeighbour_L, TileOrientation.Left, true);
-            if (sTryTempCacheNeighbour_T(GridCoord.X, GridCoord.Y) && sCachedNeighbour_T.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_T(GridCoord.x, GridCoord.y) && sCachedNeighbour_T.TempType != Type.Empty)
                 UpdateNeighbourWall(sCachedNeighbour_T, TileOrientation.Top, true);
-            if (sTryTempCacheNeighbour_R(GridCoord.X, GridCoord.Y) && sCachedNeighbour_R.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_R(GridCoord.x, GridCoord.y) && sCachedNeighbour_R.TempType != Type.Empty)
                 UpdateNeighbourWall(sCachedNeighbour_R, TileOrientation.Right, true);
-            if (sTryTempCacheNeighbour_B(GridCoord.X, GridCoord.Y) && sCachedNeighbour_B.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_B(GridCoord.x, GridCoord.y) && sCachedNeighbour_B.TempType != Type.Empty)
                 UpdateNeighbourWall(sCachedNeighbour_B, TileOrientation.Bottom, true);
 
-            if (sTryTempCacheNeighbour_TL(GridCoord.X, GridCoord.Y) && sCachedNeighbour_TL.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_TL(GridCoord.x, GridCoord.y) && sCachedNeighbour_TL.TempType != Type.Empty)
                 UpdateNeighbourWall(sCachedNeighbour_TL, TileOrientation.TopLeft, true);
-            if (sTryTempCacheNeighbour_TR(GridCoord.X, GridCoord.Y) && sCachedNeighbour_TR.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_TR(GridCoord.x, GridCoord.y) && sCachedNeighbour_TR.TempType != Type.Empty)
                 UpdateNeighbourWall(sCachedNeighbour_TR, TileOrientation.TopRight, true);
-            if (sTryTempCacheNeighbour_BR(GridCoord.X, GridCoord.Y) && sCachedNeighbour_BR.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_BR(GridCoord.x, GridCoord.y) && sCachedNeighbour_BR.TempType != Type.Empty)
                 UpdateNeighbourWall(sCachedNeighbour_BR, TileOrientation.BottomRight, true);
-            if (sTryTempCacheNeighbour_BL(GridCoord.X, GridCoord.Y) && sCachedNeighbour_BL.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_BL(GridCoord.x, GridCoord.y) && sCachedNeighbour_BL.TempType != Type.Empty)
                 UpdateNeighbourWall(sCachedNeighbour_BL, TileOrientation.BottomLeft, true);
             return;
         }
@@ -359,7 +359,7 @@ public class Tile : IHeapItem<Tile> {
 		MyUVController.GridLayers[(int)MeshSorter.GridLayerEnum.Bottom].Orientation = _newOrientation;
 		MyUVController.GridLayers[(int)MeshSorter.GridLayerEnum.Top].Orientation = _newOrientation;
 		MyUVController.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-		MyUVController.Sort(GridCoord.Y); // TODO: this probably only needs to happen once, or?
+		MyUVController.Sort(GridCoord.y); // TODO: this probably only needs to happen once, or?
 		// BottomQuad.Orientation = _newOrientation;
         // BottomQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
         // BottomQuad.GridSorting = MeshSorter.GridSortingEnum.Bottom;
@@ -478,22 +478,22 @@ public class Tile : IHeapItem<Tile> {
                 throw new System.Exception(_newType.ToString() + " has not been properly implemented yet!");
         }
 
-		if (sTryTempCacheNeighbour_L(GridCoord.X, GridCoord.Y))
+		if (sTryTempCacheNeighbour_L(GridCoord.x, GridCoord.y))
 			UpdateNeighbourWall(sCachedNeighbour_L, TileOrientation.Left, false);
-		if (sTryTempCacheNeighbour_T(GridCoord.X, GridCoord.Y))
+		if (sTryTempCacheNeighbour_T(GridCoord.x, GridCoord.y))
 			UpdateNeighbourWall(sCachedNeighbour_T, TileOrientation.Top, false);
-		if (sTryTempCacheNeighbour_R(GridCoord.X, GridCoord.Y))
+		if (sTryTempCacheNeighbour_R(GridCoord.x, GridCoord.y))
 			UpdateNeighbourWall(sCachedNeighbour_R, TileOrientation.Right, false);
-		if (sTryTempCacheNeighbour_B(GridCoord.X, GridCoord.Y))
+		if (sTryTempCacheNeighbour_B(GridCoord.x, GridCoord.y))
 			UpdateNeighbourWall(sCachedNeighbour_B, TileOrientation.Bottom, false);
 
-        if (sTryTempCacheNeighbour_TL(GridCoord.X, GridCoord.Y))
+        if (sTryTempCacheNeighbour_TL(GridCoord.x, GridCoord.y))
             UpdateNeighbourWall(sCachedNeighbour_TL, TileOrientation.TopLeft, false);
-        if (sTryTempCacheNeighbour_TR(GridCoord.X, GridCoord.Y))
+        if (sTryTempCacheNeighbour_TR(GridCoord.x, GridCoord.y))
             UpdateNeighbourWall(sCachedNeighbour_TR, TileOrientation.TopRight, false);
-        if (sTryTempCacheNeighbour_BR(GridCoord.X, GridCoord.Y))
+        if (sTryTempCacheNeighbour_BR(GridCoord.x, GridCoord.y))
             UpdateNeighbourWall(sCachedNeighbour_BR, TileOrientation.BottomRight, false);
-        if (sTryTempCacheNeighbour_BL(GridCoord.X, GridCoord.Y))
+        if (sTryTempCacheNeighbour_BL(GridCoord.x, GridCoord.y))
             UpdateNeighbourWall(sCachedNeighbour_BL, TileOrientation.BottomLeft, false);
 
         ExactType = CachedAssets.Instance.GetTileDefinition(this);
@@ -529,22 +529,22 @@ public class Tile : IHeapItem<Tile> {
                 HasConnectableTempFloor_B = false;
             }
 
-            if (sTryTempCacheNeighbour_L(GridCoord.X, GridCoord.Y) && sCachedNeighbour_L.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_L(GridCoord.x, GridCoord.y) && sCachedNeighbour_L.TempType != Type.Empty)
                 UpdateNeighbourFloor(sCachedNeighbour_L, TileOrientation.Left, true);
-            if (sTryTempCacheNeighbour_T(GridCoord.X, GridCoord.Y) && sCachedNeighbour_T.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_T(GridCoord.x, GridCoord.y) && sCachedNeighbour_T.TempType != Type.Empty)
                 UpdateNeighbourFloor(sCachedNeighbour_T, TileOrientation.Top, true);
-            if (sTryTempCacheNeighbour_R(GridCoord.X, GridCoord.Y) && sCachedNeighbour_R.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_R(GridCoord.x, GridCoord.y) && sCachedNeighbour_R.TempType != Type.Empty)
                 UpdateNeighbourFloor(sCachedNeighbour_R, TileOrientation.Right, true);
-            if (sTryTempCacheNeighbour_B(GridCoord.X, GridCoord.Y) && sCachedNeighbour_B.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_B(GridCoord.x, GridCoord.y) && sCachedNeighbour_B.TempType != Type.Empty)
                 UpdateNeighbourFloor(sCachedNeighbour_B, TileOrientation.Bottom, true);
 
-            if (sTryTempCacheNeighbour_TL(GridCoord.X, GridCoord.Y) && sCachedNeighbour_TL.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_TL(GridCoord.x, GridCoord.y) && sCachedNeighbour_TL.TempType != Type.Empty)
                 UpdateNeighbourFloor(sCachedNeighbour_TL, TileOrientation.TopLeft, true);
-            if (sTryTempCacheNeighbour_TR(GridCoord.X, GridCoord.Y) && sCachedNeighbour_TR.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_TR(GridCoord.x, GridCoord.y) && sCachedNeighbour_TR.TempType != Type.Empty)
                 UpdateNeighbourFloor(sCachedNeighbour_TR, TileOrientation.TopRight, true);
-            if (sTryTempCacheNeighbour_BR(GridCoord.X, GridCoord.Y) && sCachedNeighbour_BR.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_BR(GridCoord.x, GridCoord.y) && sCachedNeighbour_BR.TempType != Type.Empty)
                 UpdateNeighbourFloor(sCachedNeighbour_BR, TileOrientation.BottomRight, true);
-            if (sTryTempCacheNeighbour_BL(GridCoord.X, GridCoord.Y) && sCachedNeighbour_BL.TempType != Type.Empty)
+            if (sTryTempCacheNeighbour_BL(GridCoord.x, GridCoord.y) && sCachedNeighbour_BL.TempType != Type.Empty)
                 UpdateNeighbourFloor(sCachedNeighbour_BL, TileOrientation.BottomLeft, true);
             return;
         }
@@ -565,7 +565,7 @@ public class Tile : IHeapItem<Tile> {
 
 		MyUVController.GridLayers[(int)MeshSorter.GridLayerEnum.Floor].Orientation = _newOrientation;
 		MyUVController.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-		MyUVController.Sort(GridCoord.Y); // TODO: this probably only needs to happen once, or?
+		MyUVController.Sort(GridCoord.y); // TODO: this probably only needs to happen once, or?
 
 		// FloorQuad.Orientation = _newOrientation;
         // FloorQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
@@ -585,22 +585,22 @@ public class Tile : IHeapItem<Tile> {
 		CanConnectFloor_R = sTypeConnectability[2];
 		CanConnectFloor_B = sTypeConnectability[3];
 
-		if (sTryTempCacheNeighbour_L(GridCoord.X, GridCoord.Y))
+		if (sTryTempCacheNeighbour_L(GridCoord.x, GridCoord.y))
 			UpdateNeighbourFloor(sCachedNeighbour_L, TileOrientation.Left, false);
-		if (sTryTempCacheNeighbour_T(GridCoord.X, GridCoord.Y))
+		if (sTryTempCacheNeighbour_T(GridCoord.x, GridCoord.y))
 			UpdateNeighbourFloor(sCachedNeighbour_T, TileOrientation.Top, false);
-		if (sTryTempCacheNeighbour_R(GridCoord.X, GridCoord.Y))
+		if (sTryTempCacheNeighbour_R(GridCoord.x, GridCoord.y))
 			UpdateNeighbourFloor(sCachedNeighbour_R, TileOrientation.Right, false);
-		if (sTryTempCacheNeighbour_B(GridCoord.X, GridCoord.Y))
+		if (sTryTempCacheNeighbour_B(GridCoord.x, GridCoord.y))
 			UpdateNeighbourFloor(sCachedNeighbour_B, TileOrientation.Bottom, false);
 
-        if (sTryTempCacheNeighbour_TL(GridCoord.X, GridCoord.Y))
+        if (sTryTempCacheNeighbour_TL(GridCoord.x, GridCoord.y))
             UpdateNeighbourFloor(sCachedNeighbour_TL, TileOrientation.TopLeft, false);
-        if (sTryTempCacheNeighbour_TR(GridCoord.X, GridCoord.Y))
+        if (sTryTempCacheNeighbour_TR(GridCoord.x, GridCoord.y))
             UpdateNeighbourFloor(sCachedNeighbour_TR, TileOrientation.TopRight, false);
-        if (sTryTempCacheNeighbour_BR(GridCoord.X, GridCoord.Y))
+        if (sTryTempCacheNeighbour_BR(GridCoord.x, GridCoord.y))
             UpdateNeighbourFloor(sCachedNeighbour_BR, TileOrientation.BottomRight, false);
-        if (sTryTempCacheNeighbour_BL(GridCoord.X, GridCoord.Y))
+        if (sTryTempCacheNeighbour_BL(GridCoord.x, GridCoord.y))
             UpdateNeighbourFloor(sCachedNeighbour_BL, TileOrientation.BottomLeft, false);
 
         ExactType = CachedAssets.Instance.GetTileDefinition(this);
@@ -839,10 +839,10 @@ public class Tile : IHeapItem<Tile> {
         if (_temporarily && _WallType_ == TempType && TempType != Type.Empty)
             return;
 
-        sTryTempCacheNeighbour_L(GridCoord.X, GridCoord.Y);
-        sTryTempCacheNeighbour_T(GridCoord.X, GridCoord.Y);
-        sTryTempCacheNeighbour_R(GridCoord.X, GridCoord.Y);
-        sTryTempCacheNeighbour_B(GridCoord.X, GridCoord.Y);
+        sTryTempCacheNeighbour_L(GridCoord.x, GridCoord.y);
+        sTryTempCacheNeighbour_T(GridCoord.x, GridCoord.y);
+        sTryTempCacheNeighbour_R(GridCoord.x, GridCoord.y);
+        sTryTempCacheNeighbour_B(GridCoord.x, GridCoord.y);
 
         if (_temporarily){
 			MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.TopCorners, CachedAssets.Instance.GetWallCornerAsset(
@@ -886,10 +886,10 @@ public class Tile : IHeapItem<Tile> {
         if (_temporarily && _FloorType_ == TempType && TempType != Type.Empty)
             return;
 
-        sTryTempCacheNeighbour_L(GridCoord.X, GridCoord.Y);
-        sTryTempCacheNeighbour_T(GridCoord.X, GridCoord.Y);
-        sTryTempCacheNeighbour_R(GridCoord.X, GridCoord.Y);
-        sTryTempCacheNeighbour_B(GridCoord.X, GridCoord.Y);
+        sTryTempCacheNeighbour_L(GridCoord.x, GridCoord.y);
+        sTryTempCacheNeighbour_T(GridCoord.x, GridCoord.y);
+        sTryTempCacheNeighbour_R(GridCoord.x, GridCoord.y);
+        sTryTempCacheNeighbour_B(GridCoord.x, GridCoord.y);
 
         if (_temporarily){
 			MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.FloorCorners, CachedAssets.Instance.GetFloorCornerAsset(
@@ -930,7 +930,7 @@ public class Tile : IHeapItem<Tile> {
     }
 
 	// TODO: could these wall/floor-methods be merged?
-    public void ChangeWallGraphics(DoubleInt _bottomAssetCoord, DoubleInt _topAssetCoord, bool _temporary) {
+    public void ChangeWallGraphics(Vector2i _bottomAssetCoord, Vector2i _topAssetCoord, bool _temporary) {
 		MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Bottom, _bottomAssetCoord, _temporary);
 		MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Top, _topAssetCoord, _temporary);
 		// BottomQuad.ChangeAsset(_bottomAssetIndices, _temporary);
@@ -943,7 +943,7 @@ public class Tile : IHeapItem<Tile> {
         // TopQuad.StopTempMode();
         UpdateWallCornerHider(false);
     }
-	public void ChangeFloorGraphics(DoubleInt _assetCoord, bool _temporary) {
+	public void ChangeFloorGraphics(Vector2i _assetCoord, bool _temporary) {
 		MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Floor, _assetCoord, _temporary);
 		//FloorQuad.ChangeAsset(_assetIndices, _temporary);
 		UpdateFloorCornerHider (_temporary);
@@ -996,8 +996,8 @@ public class Tile : IHeapItem<Tile> {
 				throw new System.NotImplementedException(_WallType_ + " hasn't been properly implemented yet!");
         }
     }
-    DoubleInt[][] animationSequenceTop;
-    DoubleInt[][] animationSequenceBottom;
+    Vector2i[][] animationSequenceTop;
+    Vector2i[][] animationSequenceBottom;
     public void OnActorEnterTile(TileOrientation _direction, out float _yieldTime) {
         _yieldTime = 0;
 		switch (_WallType_) {
@@ -1009,12 +1009,12 @@ public class Tile : IHeapItem<Tile> {
                 Animator.Animate(Animator.GetDoorAnimation(TileAnimator.AnimationContextEnum.Open).Reverse(), null, _loop: false);
                 break;
             case Type.Airlock:
-                animationSequenceTop = new DoubleInt[][] {
+                animationSequenceTop = new Vector2i[][] {
                     Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, _direction).Reverse(),
                     Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Wait, TileOrientation.None).Forward(),
                     Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)).Forward(),
                     Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Top, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)).Reverse() };
-                animationSequenceBottom = new DoubleInt[][] {
+                animationSequenceBottom = new Vector2i[][] {
                     Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, _direction).Reverse(),
                     Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Wait, TileOrientation.None).Forward(),
                     Animator.GetAirlockAnimation(TileAnimator.AnimationPartEnum.Bottom, TileAnimator.AnimationContextEnum.Open, GetReverseDirection(_direction)).Forward(),

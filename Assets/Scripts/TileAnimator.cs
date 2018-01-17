@@ -8,40 +8,40 @@ public class TileAnimator {
     private float currentFPS;
 
     public class TileAnimation {
-        private DoubleInt[] Frames;
+        private Vector2i[] Frames;
         public int FrameCount { get { return Frames.Length; } }
-        public DoubleInt First { get { return Frames[0]; } }
+        public Vector2i First { get { return Frames[0]; } }
 
-		private static List<DoubleInt> frameList = new List<DoubleInt>();
-        public TileAnimation(int texturePosY, int amountOfFrames, DoubleInt forceFirstFrame = null) {
+		private static List<Vector2i> frameList = new List<Vector2i>();
+        public TileAnimation(int texturePosY, int amountOfFrames, Vector2i? forceFirstFrame = null) {
             frameList.Clear();
             for (int i = 0; i < amountOfFrames; i++) {
-                if(i == 0 && forceFirstFrame != null)
-                    frameList.Add(forceFirstFrame);
+                if(i == 0 && forceFirstFrame.HasValue)
+                    frameList.Add(forceFirstFrame.Value);
                 else
-                    frameList.Add(new DoubleInt(i, texturePosY));
+                    frameList.Add(new Vector2i(i, texturePosY));
             }
             Frames = frameList.ToArray();
         }
-        public DoubleInt[] Forward() {
+        public Vector2i[] Forward() {
             frameList.Clear();
             frameList.AddRange(Frames);
             return frameList.ToArray();
         }
-        public DoubleInt[] Reverse() {
+        public Vector2i[] Reverse() {
             frameList.Clear();
             frameList.AddRange(Frames);
             frameList.Reverse();
             return frameList.ToArray();
         }
     }
-    public DoubleInt[] AnimationBottom;
-    public DoubleInt[] AnimationTop;
+    public Vector2i[] AnimationBottom;
+    public Vector2i[] AnimationTop;
     public int CurrentFrame { get; private set; }
     public int StartFrame { get; private set; }
     public int EndFrame { get; private set; }
     public bool IsFinished { get; private set; }
-    public bool PlayForward { get; private set; }
+    //public bool PlayForward { get; private set; }
     public bool Loop { get; private set; }
     public float TimeFinished { get; private set; }
     public float Iterations { get; private set; }
@@ -108,10 +108,10 @@ public class TileAnimator {
         }
     }
 
-    public void AnimateSequence(DoubleInt[][] _sequenceBottom, DoubleInt[][] _sequenceTop) {
+    public void AnimateSequence(Vector2i[][] _sequenceBottom, Vector2i[][] _sequenceTop) {
         Grid.Instance.StartCoroutine(_AnimateSequence(_sequenceBottom, _sequenceTop));
     }
-    IEnumerator _AnimateSequence(DoubleInt[][] _sequenceBottom, DoubleInt[][] _sequenceTop) {
+    IEnumerator _AnimateSequence(Vector2i[][] _sequenceBottom, Vector2i[][] _sequenceTop) {
         if (_sequenceBottom.Length != _sequenceTop.Length)
             throw new System.Exception("AnimationSequences must be of equal length in all parts of a tile!");
 
@@ -120,7 +120,7 @@ public class TileAnimator {
             yield return new WaitForSeconds(GetProperWaitTimeForTileAnim(_sequenceBottom[i], _sequenceTop[i]));
         }
     }
-    public void Animate(DoubleInt[] _animationBottom, DoubleInt[] _animationTop, bool _loop, float _fps = 0) {
+    public void Animate(Vector2i[] _animationBottom, Vector2i[] _animationTop, bool _loop, float _fps = 0) {
         if (!IsFinished)
             Debug.LogWarning("Animator wasn't finished but launched new animation anyway! Not sure if dangerous!");
         if (!_loop)
@@ -142,7 +142,7 @@ public class TileAnimator {
         IsFinished = false;
         Grid.LateUpdateAnimators.Add(this);
     }
-    public float GetProperWaitTimeForTileAnim(DoubleInt[] _animBottom, DoubleInt[] _animTop) {
+    public float GetProperWaitTimeForTileAnim(Vector2i[] _animBottom, Vector2i[] _animTop) {
         return (Mathf.Max(_animBottom.Length, _animTop.Length) + 1) / currentFPS;
     }
 
@@ -183,16 +183,17 @@ public class TileAnimator {
         }
     }
 
-    private DoubleInt currentFrameBottom;
-    private DoubleInt currentFrameTop;
+    private Vector2i currentFrameBottom;
+    private Vector2i currentFrameTop;
     void SwitchToNextFrame() {
 
         // set new frame and get graphics
-        CurrentFrame = Mathf.Clamp(PlayForward ? CurrentFrame + 1 : CurrentFrame - 1, Mathf.Min(StartFrame, EndFrame), Mathf.Max(StartFrame, EndFrame));
+        CurrentFrame = Mathf.Clamp(CurrentFrame + 1, StartFrame, EndFrame);
+        //CurrentFrame = Mathf.Clamp(PlayForward ? CurrentFrame + 1 : CurrentFrame - 1, Mathf.Min(StartFrame, EndFrame), Mathf.Max(StartFrame, EndFrame));
 
         // apply new frame
-        currentFrameBottom = (AnimationBottom != null && AnimationBottom.Length > CurrentFrame) ? AnimationBottom[CurrentFrame] : null;
-        currentFrameTop = (AnimationTop != null && AnimationTop.Length > CurrentFrame) ? AnimationTop[CurrentFrame] : null;
+        currentFrameBottom  = HasMoreFrames(AnimationBottom, CurrentFrame)  ? AnimationBottom[CurrentFrame] : CachedAssets.WallSet.Null;
+        currentFrameTop     = HasMoreFrames(AnimationTop, CurrentFrame)     ? AnimationTop[CurrentFrame]    : CachedAssets.WallSet.Null;
         owner.ChangeWallGraphics(currentFrameBottom, currentFrameTop, false);
 
         IsFinished = CurrentFrame == EndFrame;
@@ -201,5 +202,8 @@ public class TileAnimator {
             Grid.LateUpdateAnimators.Remove(this);
             Iterations++;
         }
+    }
+    bool HasMoreFrames(Vector2i[] _anim, int _currentFrame){
+        return _anim != null && _anim.Length > _currentFrame;
     }
 }

@@ -303,133 +303,133 @@ public class CachedAssets : MonoBehaviour {
                 Purpose.AirlockVertical_Wait_TOP
             }
         };
-        private static DoubleInt GetTextureCoord(Purpose id) {
-            DoubleInt _di = new DoubleInt();
+        private static Vector2i GetTextureCoord(Purpose id) {
+            Vector2i _di = new Vector2i();
             int _index = AllAssetPurposes.FindIndex(x => x.Contains(id));
-            _di.X = AllAssetPurposes[_index].FindIndex(x => x == id);
-            _di.Y = _index * 2; // 2 because of the height of individual tile-assets
+            _di.x = AllAssetPurposes[_index].FindIndex(x => x == id);
+            _di.y = _index * 2; // 2 because of the height of individual tile-assets
             return _di;
         }
 
-		public static DoubleInt Null 							= GetTextureCoord(Purpose.Null);
+		public static Vector2i Null 							= GetTextureCoord(Purpose.Null);
 
-		public static DoubleInt floor_Single 					= GetTextureCoord(Purpose.Floor_Single);
-        public static DoubleInt floor_FourWay 					= GetTextureCoord(Purpose.Floor_Fourway);
-        public static DoubleInt floor_Vertical_T 				= GetTextureCoord(Purpose.Floor_Vertical_T);
-        public static DoubleInt floor_Vertical_M 				= GetTextureCoord(Purpose.Floor_Vertical_M);
-        public static DoubleInt floor_Vertical_B 				= GetTextureCoord(Purpose.Floor_Vertical_B);
-        public static DoubleInt floor_Horizontal_L 				= GetTextureCoord(Purpose.Floor_Horizontal_L);
-        public static DoubleInt floor_Horizontal_M 				= GetTextureCoord(Purpose.Floor_Horizontal_M);
-        public static DoubleInt floor_Horizontal_R 				= GetTextureCoord(Purpose.Floor_Horizontal_R);
-        public static DoubleInt floor_Corner_TopRight 			= GetTextureCoord(Purpose.Floor_Corner_TR);
-        public static DoubleInt floor_Corner_TopLeft 			= GetTextureCoord(Purpose.Floor_Corner_TL);
-        public static DoubleInt floor_Corner_BottomRight 		= GetTextureCoord(Purpose.Floor_Corner_BR);
-        public static DoubleInt floor_Corner_BottomLeft 		= GetTextureCoord(Purpose.Floor_Corner_BL);
-        public static DoubleInt floor_Tee_Right 				= GetTextureCoord(Purpose.Floor_Tee_R);
-        public static DoubleInt floor_Tee_Left 					= GetTextureCoord(Purpose.Floor_Tee_L);
-        public static DoubleInt floor_Tee_Top 					= GetTextureCoord(Purpose.Floor_Tee_T);
-        public static DoubleInt floor_Tee_Bottom 				= GetTextureCoord(Purpose.Floor_Tee_B);
+		public static Vector2i floor_Single 					= GetTextureCoord(Purpose.Floor_Single);
+        public static Vector2i floor_FourWay 					= GetTextureCoord(Purpose.Floor_Fourway);
+        public static Vector2i floor_Vertical_T 				= GetTextureCoord(Purpose.Floor_Vertical_T);
+        public static Vector2i floor_Vertical_M 				= GetTextureCoord(Purpose.Floor_Vertical_M);
+        public static Vector2i floor_Vertical_B 				= GetTextureCoord(Purpose.Floor_Vertical_B);
+        public static Vector2i floor_Horizontal_L 				= GetTextureCoord(Purpose.Floor_Horizontal_L);
+        public static Vector2i floor_Horizontal_M 				= GetTextureCoord(Purpose.Floor_Horizontal_M);
+        public static Vector2i floor_Horizontal_R 				= GetTextureCoord(Purpose.Floor_Horizontal_R);
+        public static Vector2i floor_Corner_TopRight 			= GetTextureCoord(Purpose.Floor_Corner_TR);
+        public static Vector2i floor_Corner_TopLeft 			= GetTextureCoord(Purpose.Floor_Corner_TL);
+        public static Vector2i floor_Corner_BottomRight 		= GetTextureCoord(Purpose.Floor_Corner_BR);
+        public static Vector2i floor_Corner_BottomLeft 		    = GetTextureCoord(Purpose.Floor_Corner_BL);
+        public static Vector2i floor_Tee_Right 				    = GetTextureCoord(Purpose.Floor_Tee_R);
+        public static Vector2i floor_Tee_Left 					= GetTextureCoord(Purpose.Floor_Tee_L);
+        public static Vector2i floor_Tee_Top 					= GetTextureCoord(Purpose.Floor_Tee_T);
+        public static Vector2i floor_Tee_Bottom 				= GetTextureCoord(Purpose.Floor_Tee_B);
 
-        public static DoubleInt floor_Diagonal_TopRight 		= GetTextureCoord(Purpose.Floor_Diagonal_TR);
-        public static DoubleInt floor_Diagonal_TopRight_T 		= GetTextureCoord(Purpose.Floor_Diagonal_TR_T);
-        public static DoubleInt floor_Diagonal_TopRight_R 		= GetTextureCoord(Purpose.Floor_Diagonal_TR_R);
-        public static DoubleInt floor_Diagonal_TopRight_TR 		= GetTextureCoord(Purpose.Floor_Diagonal_TR_TR);
-        public static DoubleInt floor_Diagonal_TopLeft 			= GetTextureCoord(Purpose.Floor_Diagonal_TL);
-        public static DoubleInt floor_Diagonal_TopLeft_T 		= GetTextureCoord(Purpose.Floor_Diagonal_TL_T);
-        public static DoubleInt floor_Diagonal_TopLeft_L 		= GetTextureCoord(Purpose.Floor_Diagonal_TL_L);
-        public static DoubleInt floor_Diagonal_TopLeft_TL 		= GetTextureCoord(Purpose.Floor_Diagonal_TL_TL);
-        public static DoubleInt floor_Diagonal_BottomRight 		= GetTextureCoord(Purpose.Floor_Diagonal_BR);
-        public static DoubleInt floor_Diagonal_BottomRight_B 	= GetTextureCoord(Purpose.Floor_Diagonal_BR_B);
-        public static DoubleInt floor_Diagonal_BottomRight_R 	= GetTextureCoord(Purpose.Floor_Diagonal_BR_R);
-        public static DoubleInt floor_Diagonal_BottomRight_BR 	= GetTextureCoord(Purpose.Floor_Diagonal_BR_BR);
-        public static DoubleInt floor_Diagonal_BottomLeft 		= GetTextureCoord(Purpose.Floor_Diagonal_BL);
-        public static DoubleInt floor_Diagonal_BottomLeft_B 	= GetTextureCoord(Purpose.Floor_Diagonal_BL_B);
-        public static DoubleInt floor_Diagonal_BottomLeft_L 	= GetTextureCoord(Purpose.Floor_Diagonal_BL_L);
-        public static DoubleInt floor_Diagonal_BottomLeft_BL 	= GetTextureCoord(Purpose.Floor_Diagonal_BL_BL);
+        public static Vector2i floor_Diagonal_TopRight 		    = GetTextureCoord(Purpose.Floor_Diagonal_TR);
+        public static Vector2i floor_Diagonal_TopRight_T 		= GetTextureCoord(Purpose.Floor_Diagonal_TR_T);
+        public static Vector2i floor_Diagonal_TopRight_R 		= GetTextureCoord(Purpose.Floor_Diagonal_TR_R);
+        public static Vector2i floor_Diagonal_TopRight_TR 		= GetTextureCoord(Purpose.Floor_Diagonal_TR_TR);
+        public static Vector2i floor_Diagonal_TopLeft 			= GetTextureCoord(Purpose.Floor_Diagonal_TL);
+        public static Vector2i floor_Diagonal_TopLeft_T 		= GetTextureCoord(Purpose.Floor_Diagonal_TL_T);
+        public static Vector2i floor_Diagonal_TopLeft_L 		= GetTextureCoord(Purpose.Floor_Diagonal_TL_L);
+        public static Vector2i floor_Diagonal_TopLeft_TL 		= GetTextureCoord(Purpose.Floor_Diagonal_TL_TL);
+        public static Vector2i floor_Diagonal_BottomRight 		= GetTextureCoord(Purpose.Floor_Diagonal_BR);
+        public static Vector2i floor_Diagonal_BottomRight_B 	= GetTextureCoord(Purpose.Floor_Diagonal_BR_B);
+        public static Vector2i floor_Diagonal_BottomRight_R 	= GetTextureCoord(Purpose.Floor_Diagonal_BR_R);
+        public static Vector2i floor_Diagonal_BottomRight_BR 	= GetTextureCoord(Purpose.Floor_Diagonal_BR_BR);
+        public static Vector2i floor_Diagonal_BottomLeft 		= GetTextureCoord(Purpose.Floor_Diagonal_BL);
+        public static Vector2i floor_Diagonal_BottomLeft_B 	    = GetTextureCoord(Purpose.Floor_Diagonal_BL_B);
+        public static Vector2i floor_Diagonal_BottomLeft_L 	    = GetTextureCoord(Purpose.Floor_Diagonal_BL_L);
+        public static Vector2i floor_Diagonal_BottomLeft_BL 	= GetTextureCoord(Purpose.Floor_Diagonal_BL_BL);
 
-        public static DoubleInt floorCornerHider_All 			= GetTextureCoord(Purpose.FloorCornerHider_All);
-        public static DoubleInt floorCornerHider_TL_BR 			= GetTextureCoord(Purpose.FloorCornerHider_TL_BR);
-        public static DoubleInt floorCornerHider_TR_BL 			= GetTextureCoord(Purpose.FloorCornerHider_TR_BL);
-        public static DoubleInt floorCornerHider_TL 			= GetTextureCoord(Purpose.FloorCornerHider_TL);
-        public static DoubleInt floorCornerHider_TL_TR 			= GetTextureCoord(Purpose.FloorCornerHider_TL_TR);
-        public static DoubleInt floorCornerHider_TL_TR_BR 		= GetTextureCoord(Purpose.FloorCornerHider_TL_TR_BR);
-        public static DoubleInt floorCornerHider_TR 			= GetTextureCoord(Purpose.FloorCornerHider_TR);
-        public static DoubleInt floorCornerHider_TR_BR 			= GetTextureCoord(Purpose.FloorCornerHider_TR_BR);
-        public static DoubleInt floorCornerHider_TR_BR_BL 		= GetTextureCoord(Purpose.FloorCornerHider_TR_BR_BL);
-        public static DoubleInt floorCornerHider_BR 			= GetTextureCoord(Purpose.FloorCornerHider_BR);
-        public static DoubleInt floorCornerHider_BR_BL 			= GetTextureCoord(Purpose.FloorCornerHider_BR_BL);
-        public static DoubleInt floorCornerHider_BR_BL_TL 		= GetTextureCoord(Purpose.FloorCornerHider_BR_BL_TL);
-        public static DoubleInt floorCornerHider_BL 			= GetTextureCoord(Purpose.FloorCornerHider_BL);
-        public static DoubleInt floorCornerHider_BL_TL 			= GetTextureCoord(Purpose.FloorCornerHider_BL_TL);
-        public static DoubleInt floorCornerHider_BL_TL_TR 		= GetTextureCoord(Purpose.FloorCornerHider_BL_TL_TR);
+        public static Vector2i floorCornerHider_All 			= GetTextureCoord(Purpose.FloorCornerHider_All);
+        public static Vector2i floorCornerHider_TL_BR 			= GetTextureCoord(Purpose.FloorCornerHider_TL_BR);
+        public static Vector2i floorCornerHider_TR_BL 			= GetTextureCoord(Purpose.FloorCornerHider_TR_BL);
+        public static Vector2i floorCornerHider_TL 			    = GetTextureCoord(Purpose.FloorCornerHider_TL);
+        public static Vector2i floorCornerHider_TL_TR 			= GetTextureCoord(Purpose.FloorCornerHider_TL_TR);
+        public static Vector2i floorCornerHider_TL_TR_BR 		= GetTextureCoord(Purpose.FloorCornerHider_TL_TR_BR);
+        public static Vector2i floorCornerHider_TR 			    = GetTextureCoord(Purpose.FloorCornerHider_TR);
+        public static Vector2i floorCornerHider_TR_BR 			= GetTextureCoord(Purpose.FloorCornerHider_TR_BR);
+        public static Vector2i floorCornerHider_TR_BR_BL 		= GetTextureCoord(Purpose.FloorCornerHider_TR_BR_BL);
+        public static Vector2i floorCornerHider_BR 			    = GetTextureCoord(Purpose.FloorCornerHider_BR);
+        public static Vector2i floorCornerHider_BR_BL 			= GetTextureCoord(Purpose.FloorCornerHider_BR_BL);
+        public static Vector2i floorCornerHider_BR_BL_TL 		= GetTextureCoord(Purpose.FloorCornerHider_BR_BL_TL);
+        public static Vector2i floorCornerHider_BL 			    = GetTextureCoord(Purpose.FloorCornerHider_BL);
+        public static Vector2i floorCornerHider_BL_TL 			= GetTextureCoord(Purpose.FloorCornerHider_BL_TL);
+        public static Vector2i floorCornerHider_BL_TL_TR 		= GetTextureCoord(Purpose.FloorCornerHider_BL_TL_TR);
 
-        public static DoubleInt wall_Single 					= GetTextureCoord(Purpose.Wall_Single);
-        public static DoubleInt wall_FourWay 					= GetTextureCoord(Purpose.Wall_Fourway);
-        public static DoubleInt wall_Vertical_T 				= GetTextureCoord(Purpose.Wall_Vertical_T);
-        public static DoubleInt wall_Vertical_M 				= GetTextureCoord(Purpose.Wall_Vertical_M);
-        public static DoubleInt wall_Vertical_B 				= GetTextureCoord(Purpose.Wall_Vertical_B);
-        public static DoubleInt wall_Horizontal_L 				= GetTextureCoord(Purpose.Wall_Horizontal_L);
-        public static DoubleInt wall_Horizontal_M 				= GetTextureCoord(Purpose.Wall_Horizontal_M);
-        public static DoubleInt wall_Horizontal_R 				= GetTextureCoord(Purpose.Wall_Horizontal_R);
+        public static Vector2i wall_Single 					    = GetTextureCoord(Purpose.Wall_Single);
+        public static Vector2i wall_FourWay 					= GetTextureCoord(Purpose.Wall_Fourway);
+        public static Vector2i wall_Vertical_T 				    = GetTextureCoord(Purpose.Wall_Vertical_T);
+        public static Vector2i wall_Vertical_M 				    = GetTextureCoord(Purpose.Wall_Vertical_M);
+        public static Vector2i wall_Vertical_B 				    = GetTextureCoord(Purpose.Wall_Vertical_B);
+        public static Vector2i wall_Horizontal_L 				= GetTextureCoord(Purpose.Wall_Horizontal_L);
+        public static Vector2i wall_Horizontal_M 				= GetTextureCoord(Purpose.Wall_Horizontal_M);
+        public static Vector2i wall_Horizontal_R 				= GetTextureCoord(Purpose.Wall_Horizontal_R);
 
-        public static DoubleInt wall_Corner_TopRight 			= GetTextureCoord(Purpose.Wall_Corner_TR);
-        public static DoubleInt wall_Corner_TopLeft 			= GetTextureCoord(Purpose.Wall_Corner_TL);
-        public static DoubleInt wall_Corner_BottomRight 		= GetTextureCoord(Purpose.Wall_Corner_BR);
-        public static DoubleInt wall_Corner_BottomLeft 			= GetTextureCoord(Purpose.Wall_Corner_BL);
-        public static DoubleInt wall_Tee_Right 					= GetTextureCoord(Purpose.Wall_Tee_R);
-        public static DoubleInt wall_Tee_Left 					= GetTextureCoord(Purpose.Wall_Tee_L);
-        public static DoubleInt wall_Tee_Top 					= GetTextureCoord(Purpose.Wall_Tee_T);
-        public static DoubleInt wall_Tee_Bottom 				= GetTextureCoord(Purpose.Wall_Tee_B);
+        public static Vector2i wall_Corner_TopRight 			= GetTextureCoord(Purpose.Wall_Corner_TR);
+        public static Vector2i wall_Corner_TopLeft 			    = GetTextureCoord(Purpose.Wall_Corner_TL);
+        public static Vector2i wall_Corner_BottomRight 		    = GetTextureCoord(Purpose.Wall_Corner_BR);
+        public static Vector2i wall_Corner_BottomLeft 			= GetTextureCoord(Purpose.Wall_Corner_BL);
+        public static Vector2i wall_Tee_Right 					= GetTextureCoord(Purpose.Wall_Tee_R);
+        public static Vector2i wall_Tee_Left 					= GetTextureCoord(Purpose.Wall_Tee_L);
+        public static Vector2i wall_Tee_Top 					= GetTextureCoord(Purpose.Wall_Tee_T);
+        public static Vector2i wall_Tee_Bottom 				    = GetTextureCoord(Purpose.Wall_Tee_B);
 
-        public static DoubleInt wall_Diagonal_TopRight 			= GetTextureCoord(Purpose.Wall_Diagonal_TR);
-        public static DoubleInt wall_Diagonal_TopRight_T 		= GetTextureCoord(Purpose.Wall_Diagonal_TR_T);
-        public static DoubleInt wall_Diagonal_TopRight_R 		= GetTextureCoord(Purpose.Wall_Diagonal_TR_R);
-        public static DoubleInt wall_Diagonal_TopRight_TR 		= GetTextureCoord(Purpose.Wall_Diagonal_TR_TR);
-        public static DoubleInt wall_Diagonal_TopLeft 			= GetTextureCoord(Purpose.Wall_Diagonal_TL);
-        public static DoubleInt wall_Diagonal_TopLeft_T 		= GetTextureCoord(Purpose.Wall_Diagonal_TL_T);
-        public static DoubleInt wall_Diagonal_TopLeft_L 		= GetTextureCoord(Purpose.Wall_Diagonal_TL_L);
-        public static DoubleInt wall_Diagonal_TopLeft_TL 		= GetTextureCoord(Purpose.Wall_Diagonal_TL_TL);
-        public static DoubleInt wall_Diagonal_BottomRight 		= GetTextureCoord(Purpose.Wall_Diagonal_BR);
-        public static DoubleInt wall_Diagonal_BottomRight_B 	= GetTextureCoord(Purpose.Wall_Diagonal_BR_B);
-        public static DoubleInt wall_Diagonal_BottomRight_R 	= GetTextureCoord(Purpose.Wall_Diagonal_BR_R);
-        public static DoubleInt wall_Diagonal_BottomRight_BR 	= GetTextureCoord(Purpose.Wall_Diagonal_BR_BR);
-        public static DoubleInt wall_Diagonal_BottomLeft 		= GetTextureCoord(Purpose.Wall_Diagonal_BL);
-        public static DoubleInt wall_Diagonal_BottomLeft_B 		= GetTextureCoord(Purpose.Wall_Diagonal_BL_B);
-        public static DoubleInt wall_Diagonal_BottomLeft_L 		= GetTextureCoord(Purpose.Wall_Diagonal_BL_L);
-        public static DoubleInt wall_Diagonal_BottomLeft_BL 	= GetTextureCoord(Purpose.Wall_Diagonal_BL_BL);
+        public static Vector2i wall_Diagonal_TopRight 			= GetTextureCoord(Purpose.Wall_Diagonal_TR);
+        public static Vector2i wall_Diagonal_TopRight_T 		= GetTextureCoord(Purpose.Wall_Diagonal_TR_T);
+        public static Vector2i wall_Diagonal_TopRight_R 		= GetTextureCoord(Purpose.Wall_Diagonal_TR_R);
+        public static Vector2i wall_Diagonal_TopRight_TR 		= GetTextureCoord(Purpose.Wall_Diagonal_TR_TR);
+        public static Vector2i wall_Diagonal_TopLeft 			= GetTextureCoord(Purpose.Wall_Diagonal_TL);
+        public static Vector2i wall_Diagonal_TopLeft_T 		    = GetTextureCoord(Purpose.Wall_Diagonal_TL_T);
+        public static Vector2i wall_Diagonal_TopLeft_L 		    = GetTextureCoord(Purpose.Wall_Diagonal_TL_L);
+        public static Vector2i wall_Diagonal_TopLeft_TL 		= GetTextureCoord(Purpose.Wall_Diagonal_TL_TL);
+        public static Vector2i wall_Diagonal_BottomRight 		= GetTextureCoord(Purpose.Wall_Diagonal_BR);
+        public static Vector2i wall_Diagonal_BottomRight_B 	    = GetTextureCoord(Purpose.Wall_Diagonal_BR_B);
+        public static Vector2i wall_Diagonal_BottomRight_R 	    = GetTextureCoord(Purpose.Wall_Diagonal_BR_R);
+        public static Vector2i wall_Diagonal_BottomRight_BR 	= GetTextureCoord(Purpose.Wall_Diagonal_BR_BR);
+        public static Vector2i wall_Diagonal_BottomLeft 		= GetTextureCoord(Purpose.Wall_Diagonal_BL);
+        public static Vector2i wall_Diagonal_BottomLeft_B 		= GetTextureCoord(Purpose.Wall_Diagonal_BL_B);
+        public static Vector2i wall_Diagonal_BottomLeft_L 		= GetTextureCoord(Purpose.Wall_Diagonal_BL_L);
+        public static Vector2i wall_Diagonal_BottomLeft_BL 	    = GetTextureCoord(Purpose.Wall_Diagonal_BL_BL);
 
-        public static DoubleInt wallCornerHider_All 			= GetTextureCoord(Purpose.WallCornerHider_All);
-        public static DoubleInt wallCornerHider_TL_BR 			= GetTextureCoord(Purpose.WallCornerHider_TL_BR);
-        public static DoubleInt wallCornerHider_TR_BL 			= GetTextureCoord(Purpose.WallCornerHider_TR_BL);
-        public static DoubleInt wallCornerHider_TL 				= GetTextureCoord(Purpose.WallCornerHider_TL);
-        public static DoubleInt wallCornerHider_TL_TR 			= GetTextureCoord(Purpose.WallCornerHider_TL_TR);
-        public static DoubleInt wallCornerHider_TL_TR_BR 		= GetTextureCoord(Purpose.WallCornerHider_TL_TR_BR);
-        public static DoubleInt wallCornerHider_TR 				= GetTextureCoord(Purpose.WallCornerHider_TR);
-        public static DoubleInt wallCornerHider_TR_BR 			= GetTextureCoord(Purpose.WallCornerHider_TR_BR);
-        public static DoubleInt wallCornerHider_TR_BR_BL 		= GetTextureCoord(Purpose.WallCornerHider_TR_BR_BL);
-        public static DoubleInt wallCornerHider_BR 				= GetTextureCoord(Purpose.WallCornerHider_BR);
-        public static DoubleInt wallCornerHider_BR_BL 			= GetTextureCoord(Purpose.WallCornerHider_BR_BL);
-        public static DoubleInt wallCornerHider_BR_BL_TL 		= GetTextureCoord(Purpose.WallCornerHider_BR_BL_TL);
-        public static DoubleInt wallCornerHider_BL 				= GetTextureCoord(Purpose.WallCornerHider_BL);
-        public static DoubleInt wallCornerHider_BL_TL 			= GetTextureCoord(Purpose.WallCornerHider_BL_TL);
-        public static DoubleInt wallCornerHider_BL_TL_TR 		= GetTextureCoord(Purpose.WallCornerHider_BL_TL_TR);
+        public static Vector2i wallCornerHider_All 			    = GetTextureCoord(Purpose.WallCornerHider_All);
+        public static Vector2i wallCornerHider_TL_BR 			= GetTextureCoord(Purpose.WallCornerHider_TL_BR);
+        public static Vector2i wallCornerHider_TR_BL 			= GetTextureCoord(Purpose.WallCornerHider_TR_BL);
+        public static Vector2i wallCornerHider_TL 				= GetTextureCoord(Purpose.WallCornerHider_TL);
+        public static Vector2i wallCornerHider_TL_TR 			= GetTextureCoord(Purpose.WallCornerHider_TL_TR);
+        public static Vector2i wallCornerHider_TL_TR_BR 		= GetTextureCoord(Purpose.WallCornerHider_TL_TR_BR);
+        public static Vector2i wallCornerHider_TR 				= GetTextureCoord(Purpose.WallCornerHider_TR);
+        public static Vector2i wallCornerHider_TR_BR 			= GetTextureCoord(Purpose.WallCornerHider_TR_BR);
+        public static Vector2i wallCornerHider_TR_BR_BL 		= GetTextureCoord(Purpose.WallCornerHider_TR_BR_BL);
+        public static Vector2i wallCornerHider_BR 				= GetTextureCoord(Purpose.WallCornerHider_BR);
+        public static Vector2i wallCornerHider_BR_BL 			= GetTextureCoord(Purpose.WallCornerHider_BR_BL);
+        public static Vector2i wallCornerHider_BR_BL_TL 		= GetTextureCoord(Purpose.WallCornerHider_BR_BL_TL);
+        public static Vector2i wallCornerHider_BL 				= GetTextureCoord(Purpose.WallCornerHider_BL);
+        public static Vector2i wallCornerHider_BL_TL 			= GetTextureCoord(Purpose.WallCornerHider_BL_TL);
+        public static Vector2i wallCornerHider_BL_TL_TR 		= GetTextureCoord(Purpose.WallCornerHider_BL_TL_TR);
 
-        public static TileAnimator.TileAnimation anim_DoorVertical_Open 				= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.DoorVertical).Y, 4);
-        public static TileAnimator.TileAnimation anim_DoorHorizontal_Open 				= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.DoorHorizontal).Y, 4);
+        public static TileAnimator.TileAnimation anim_DoorVertical_Open 				= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.DoorVertical).y, 4);
+        public static TileAnimator.TileAnimation anim_DoorHorizontal_Open 				= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.DoorHorizontal).y, 4);
 
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_B_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_B).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_T_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_T).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Wait_TOP).Y, 8);
-        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Wait).Y, 8);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_B_TOP).y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_B_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_B).y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_T_TOP).y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Open_T_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Open_T).y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Wait_TOP).y, 8);
+        public static TileAnimator.TileAnimation anim_AirlockHorizontal_Wait_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockHorizontal_Wait).y, 8);
 
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_L_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_L).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_R_TOP).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_R).Y, 4);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Top 			= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Wait_TOP).Y, 8);
-        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Bottom 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Wait).Y, 8);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_L_TOP).y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_L_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_L).y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Top 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_R_TOP).y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Open_R_Bottom 	= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Open_R).y, 4);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Top 			= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Wait_TOP).y, 8);
+        public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Bottom 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Wait).y, 8);
 
         public Texture2D ShadowMap;
 
@@ -761,7 +761,7 @@ public class CachedAssets : MonoBehaviour {
     }
 
     // TODO: this should be able to just use the ExactType, saving some processing
-    public DoubleInt GetWallAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isBottom, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
+    public Vector2i GetWallAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _isBottom, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
 		switch (_tileType) {
             case Tile.Type.Empty:
                 return WallSet.Null;
@@ -868,9 +868,9 @@ public class CachedAssets : MonoBehaviour {
                 throw new System.NotImplementedException(_tileType + " hasn't been properly implemented yet!");
         }
 
-        return null;
+        return CachedAssets.WallSet.Null;
     }
-	public DoubleInt GetFloorAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
+	public Vector2i GetFloorAssetForTile(Tile.Type _tileType, Tile.TileOrientation _tileOrientation, int _styleIndex, bool _hasConnection_Left, bool _hasConnection_Top, bool _hasConnection_Right, bool _hasConnection_Bottom) {
 		switch (_tileType) {
 			case Tile.Type.Empty:
 				return WallSet.Null;
@@ -951,7 +951,7 @@ public class CachedAssets : MonoBehaviour {
 				throw new System.NotImplementedException(_tileType + " hasn't been properly implemented yet!");
 		}
 	}
-    public DoubleInt GetWallCornerAsset(bool _TL, bool _TR, bool _BR, bool _BL) {
+    public Vector2i GetWallCornerAsset(bool _TL, bool _TR, bool _BR, bool _BL) {
         if (_TL) {
             if (_TR) {
                 if (_BR) {
@@ -983,7 +983,7 @@ public class CachedAssets : MonoBehaviour {
         else if (_BL)			return WallSet.wallCornerHider_BL;
 		else 					return WallSet.Null;
     }
-    public DoubleInt GetFloorCornerAsset(bool _TL, bool _TR, bool _BR, bool _BL) {
+    public Vector2i GetFloorCornerAsset(bool _TL, bool _TR, bool _BR, bool _BL) {
         if (_TL) {
             if (_TR) {
                 if (_BR) {

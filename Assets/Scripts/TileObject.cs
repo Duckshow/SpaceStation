@@ -72,8 +72,8 @@ public class TileObject : MonoBehaviour {
 
     public void Sort() {
 		if (MyUVController == null)
-			transform.position = new Vector3(transform.position.x, transform.position.y, -(Grid.GridSizeY - MyTile.GridCoord.Y) * 0.5f);
+			transform.position = new Vector3(transform.position.x, transform.position.y, -(Grid.GridSizeY - MyTile.GridCoord.y) * 0.5f);
 		else
-			MyUVController.Sort(MyTile.GridCoord.Y);
+			MyUVController.Sort(MyTile.GridCoord.y);
     }
 }

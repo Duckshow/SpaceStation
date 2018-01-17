@@ -19,8 +19,8 @@ public class ObjectPlacer {
                 UISelectedObject = value;
         }
     }
-    private DoubleInt AssetBottom;
-    private DoubleInt AssetTop;
+    private Vector2i AssetBottom;
+    private Vector2i AssetTop;
     private bool activeTemporarily = false;
     private int oldObjectButtonIndex = -1;
     private bool selectedObjectButtonHasChanged = false;
@@ -64,7 +64,7 @@ public class ObjectPlacer {
             //TopQuad.transform.position = newPos;
             position = _value;
         }
-        public void ChangeAssets(DoubleInt _bottomIndices, DoubleInt _topIndices) {
+        public void ChangeAssets(Vector2i _bottomIndices, Vector2i _topIndices) {
             MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Bottom, _bottomIndices, false);
 			MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Top, _topIndices, false);
 			//TopQuad.ChangeAsset(_topIndices, false);
@@ -218,15 +218,15 @@ public class ObjectPlacer {
     }
     private void ControlMouseGhost() {
         // find current tile
-        oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridCoord.X, mouseTile.GridCoord.Y);
+        oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridCoord.x, mouseTile.GridCoord.y);
         mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
-        mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridCoord.X || oldMouseGridPos.y != mouseTile.GridCoord.Y;
+        mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridCoord.x || oldMouseGridPos.y != mouseTile.GridCoord.y;
         if (mouseGhostHasNewTile)
             mouseGhostIsDirty = true;
 
         // set ghost-transform
-        Ghost.SetPosition(new Vector3(mouseTile.GridCoord.X, mouseTile.GridCoord.Y, Grid.WORLD_BOTTOM_HEIGHT));
+        Ghost.SetPosition(new Vector3(mouseTile.GridCoord.x, mouseTile.GridCoord.y, Grid.WORLD_BOTTOM_HEIGHT));
         Ghost.Orientation = TryRotateMouseGhost();
 
         if (mouseGhostIsDirty) {
@@ -287,7 +287,7 @@ public class ObjectPlacer {
         selectedTilesNewOrientation.Clear();
 
         Ghost.SetActive(true);
-        Ghost.SetPosition(new Vector2(mouseTile.GridCoord.X, mouseTile.GridCoord.Y));
+        Ghost.SetPosition(new Vector2(mouseTile.GridCoord.x, mouseTile.GridCoord.y));
         SetGhostGraphics(mouseTile, _snapToNeighbours);
         Evaluate();
     }
@@ -379,7 +379,7 @@ public class ObjectPlacer {
 	}
     private void ApplySettingsToGhost(bool _applyToGrid, byte _newColorIndex, bool hide = false) {
         // apply color and position
-        Ghost.SetPosition(new Vector2(mouseTile.GridCoord.X, mouseTile.GridCoord.Y));
+        Ghost.SetPosition(new Vector2(mouseTile.GridCoord.x, mouseTile.GridCoord.y));
         Ghost.SetActive(!hide);
         Ghost.SetColor(_newColorIndex);
 
@@ -454,8 +454,8 @@ public class ObjectPlacer {
     }
 
     private void SetAssetBottomAndTop(CanInspect _obj) {
-        AssetBottom = null;
-        AssetTop = null;
+        AssetBottom = CachedAssets.WallSet.Null;
+        AssetTop = CachedAssets.WallSet.Null;
         if (_obj == null)
             return;
 

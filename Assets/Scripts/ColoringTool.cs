@@ -64,14 +64,14 @@ public class ColoringTool : BuilderBase {
 	}
 
 	protected override void ResetModifiedTiles(bool _includingMouse = false) {
-		for (int i = 0; i < modifiedTiles.Count; i++)
-			ResetColor (modifiedTiles[i]);
+		for (int i = 0; i < highlightedTiles.Count; i++)
+			ResetColor (highlightedTiles[i]);
 
 		base.ResetModifiedTiles (_includingMouse);
 	}
 	protected override void ResetSelectedTiles() {
-		for (int i = 0; i < selectedTiles.Count; i++)
-			ResetColor (selectedTiles[i]);
+		for (int i = 0; i < tilesToModify.Count; i++)
+			ResetColor (tilesToModify[i]);
 
 		base.ResetSelectedTiles ();
 	}
@@ -91,7 +91,7 @@ public class ColoringTool : BuilderBase {
 
 	protected override bool Evaluate(Tile _tile){
 		SetColor (_tile, _temporarily: true);
-		selectedTiles.Add (_tile);
+		tilesToModify.Add (_tile);
         return true;
 	}
 
@@ -102,14 +102,14 @@ public class ColoringTool : BuilderBase {
     }
 
     protected override void ApplyCurrentTool() {
-		for (int i = 0; i < selectedTiles.Count; i++) {
+		for (int i = 0; i < tilesToModify.Count; i++) {
 			if (isDeleting)
-				ResetColor (selectedTiles [i]);
+				ResetColor (tilesToModify [i]);
 			else
-				SetColor (selectedTiles[i], false);
+				SetColor (tilesToModify[i], false);
 		}
-		modifiedTiles.Clear ();
-		selectedTiles.Clear ();
+		highlightedTiles.Clear ();
+		tilesToModify.Clear ();
 
 		base.ApplyCurrentTool ();
 	}

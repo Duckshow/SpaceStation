@@ -11,19 +11,21 @@ public class UVControllerBasic : MeshSorter{
 	protected const int UVCHANNEL_COLOR = 2;
 	protected const int UVCHANNEL_DOUBLEDOT = 3;
 
+	public bool TotallySetTheBool = false;
+
 	[System.Serializable]
 	public class GridLayerClass{
-		public DoubleInt Coordinates;
-		public DoubleInt TemporaryCoordinates;
+		public Vector2i Coordinates = new Vector2i();
+		public Vector2i TemporaryCoordinates = new Vector2i();
 		public Tile.TileOrientation Orientation; // only used for Bottom and Floor currently
 		public Vector2[] UVs = new Vector2[MESH_VERTEXCOUNT];
 	}
 	public GridLayerClass[] GridLayers = new GridLayerClass[GRID_LAYER_COUNT];
 	public List<Vector4> CompressedUVs_0 = new List<Vector4>(MESH_VERTEXCOUNT);
 	public List<Vector4> CompressedUVs_1 = new List<Vector4>(MESH_VERTEXCOUNT);
-	protected bool hasNewAsset = false;
+	protected bool shouldApplyChanges = false;
 
-	protected MeshFilter myMeshFilter;
+	[System.NonSerialized] public MeshFilter MyMeshFilter;
 
 	protected static bool sHasSetShaderProperties = false;
 	protected bool isHidden = false;
@@ -35,7 +37,6 @@ public class UVControllerBasic : MeshSorter{
 		ApplyAssetChanges();
 	}
 
-
 	void Awake(){
 		SortingLayer = MeshSorter.SortingLayerEnum.Grid;
 	}
@@ -43,9 +44,9 @@ public class UVControllerBasic : MeshSorter{
 	public override void Setup(){
 		base.Setup();
 
-		myMeshFilter = GetComponent<MeshFilter>();
-		if (myMeshFilter.sharedMesh == null)
-			myMeshFilter.sharedMesh = GenerateMesh();
+		MyMeshFilter = GetComponent<MeshFilter>();
+		if (MyMeshFilter.sharedMesh == null)
+			MyMeshFilter.sharedMesh = GenerateMesh();
 
 		if (!sHasSetShaderProperties){
 			myRenderer.sharedMaterial.SetVectorArray("allColors", ColoringTool.sAllColorsForShaders);
@@ -91,14 +92,15 @@ public class UVControllerBasic : MeshSorter{
 		return mesh;
 	}
 
-	public void StopTempMode(){
+	public virtual void StopTempMode(){
 		for (int i = 0; i < GridLayers.Length; i++){
-			GridLayers[i].TemporaryCoordinates = null;
+			GridLayers[i].TemporaryCoordinates.x = 0;
+			GridLayers[i].TemporaryCoordinates.y = 0;
 			ChangeAsset((GridLayerEnum)i, GridLayers[i].Coordinates, false);
 		}
 	}
 	private delegate void SetUV(int _index, float _x, float _y);
-	public virtual void ChangeAsset(GridLayerEnum _layer, DoubleInt _assetCoordinates, bool _temporary){
+	public virtual void ChangeAsset(GridLayerEnum _layer, Vector2i _assetCoordinates, bool _temporary){
 		if (!Application.isPlaying)
 			return;
 		if (_assetCoordinates == null)
@@ -108,13 +110,14 @@ public class UVControllerBasic : MeshSorter{
 
 		if (_temporary)
 			GridLayers[_layerIndex].TemporaryCoordinates = _assetCoordinates;
-		else
+		else{
 			GridLayers[_layerIndex].Coordinates = _assetCoordinates;
+		}
 
-		float _uvL = Tile.RESOLUTION * _assetCoordinates.X;
-		float _uvR = Tile.RESOLUTION * (_assetCoordinates.X + 1);
-		float _uvB = Tile.RESOLUTION * _assetCoordinates.Y;
-		float _uvT = Tile.RESOLUTION * (_assetCoordinates.Y + 2);
+		float _uvL = Tile.RESOLUTION * _assetCoordinates.x;
+		float _uvR = Tile.RESOLUTION * (_assetCoordinates.x + 1);
+		float _uvB = Tile.RESOLUTION * _assetCoordinates.y;
+		float _uvT = Tile.RESOLUTION * (_assetCoordinates.y + 2);
 
 		float _halfX = (_uvR - _uvL) * 0.5f;
 		float _halfY = (_uvT - _uvB) * 0.5f;
@@ -151,17 +154,17 @@ public class UVControllerBasic : MeshSorter{
 			CompressedUVs_1.Add(_compressed1);
 		}
 
-		hasNewAsset = true;
+		shouldApplyChanges = true;
 	}
 	void LateUpdate(){
-		if (hasNewAsset){
+		if (shouldApplyChanges){
 			ApplyAssetChanges();
-			hasNewAsset = false;
+			shouldApplyChanges = false;
 		}
 	}
-	void ApplyAssetChanges(){
-		myMeshFilter.mesh.SetUVs(UVCHANNEL_UV0, CompressedUVs_0);
-		myMeshFilter.mesh.SetUVs(UVCHANNEL_UV1, CompressedUVs_1);
+	protected virtual void ApplyAssetChanges(){
+		MyMeshFilter.mesh.SetUVs(UVCHANNEL_UV0, CompressedUVs_0);
+		MyMeshFilter.mesh.SetUVs(UVCHANNEL_UV1, CompressedUVs_1);
 		myRenderer.enabled = !isHidden;
 	}
 	public void Hide(bool _b){

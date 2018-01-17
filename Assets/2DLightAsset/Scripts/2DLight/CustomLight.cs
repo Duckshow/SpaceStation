@@ -21,11 +21,10 @@ public class CustomLight : MonoBehaviour {
     public string version = "1.0.5"; //release date 09/01/2017
     public Material lightMaterial;
     public float lightRadius = 20f;
-    public int Intensity = 1;
+    [Range(0, 1)] public float Intensity = 1;
     public byte LightColor = 40; // bright yellow
     public LayerMask layer;
-    [Range(4, 40)]
-    public int lightSegments = 8;
+    [Range(4, 40)] public int lightSegments = 8;
     public Transform MeshTransform;
 
     //[HideInInspector] public PolygonCollider2D[] allMeshes; // Array for all of the meshes in our scene
@@ -586,7 +585,7 @@ public class CustomLight : MonoBehaviour {
         return Mathf.Abs(_floored - (_angle - _floored));
     }
 
-	Color GetTotalVertexLighting(Vector2 _pos, out Vector4 _highestLightLevelIndices){
+	Color GetTotalVertexLighting(Vector2 _worldPos, out Vector4 _highestLightLevelIndices){
 		Color _totalColor = new Color();
 		Vector4 _highestLightLevels = new Vector4();
 		_highestLightLevelIndices = new Vector4(-1, -1, -1, -1);
@@ -596,12 +595,12 @@ public class CustomLight : MonoBehaviour {
 		bool _illuminated;
 		
         for (int i = 0; i < AllLights.Count; i++) {
-            _newDistance = Mathf.Min(Vector2.Distance(_pos, AllLights[i].transform.position), 255);
+            _newDistance = Vector2.Distance(_worldPos, AllLights[i].transform.position);
             if (_newDistance > AllLights[i].lightRadius)
                 continue;
 
-			_illuminated = IsInsideLightMesh(_pos, AllLights[i]);
-            _newLightLevel = AllLights[i].Intensity * (1 - (_newDistance / AllLights[i].lightRadius));
+			_illuminated = IsInsideLightMesh(_worldPos, AllLights[i]);
+            _newLightLevel = AllLights[i].Intensity * Mathf.Pow(1 - (_newDistance / AllLights[i].lightRadius), 2);
 
 			// the four strongest lights will be cached and used for rendering shadows
 			TryAddToLightsCastingShadows(i, _newLightLevel, _illuminated, ref _highestLightLevels, ref _highestLightLevelIndices);

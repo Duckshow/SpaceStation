@@ -31,10 +31,10 @@ public class GridSelectShaderController : MonoBehaviour {
     }
 
     public void SetSelectSize(Tile _tile1, Tile _tile2) {
-        min.x = Mathf.Min(_tile1.GridCoord.X, _tile2.GridCoord.X);
-        min.y = Mathf.Min(_tile1.GridCoord.Y, _tile2.GridCoord.Y);
-        max.x = Mathf.Max(_tile1.GridCoord.X, _tile2.GridCoord.X);
-        max.y = Mathf.Max(_tile1.GridCoord.Y, _tile2.GridCoord.Y);
+        min.x = Mathf.Min(_tile1.GridCoord.x, _tile2.GridCoord.x);
+        min.y = Mathf.Min(_tile1.GridCoord.y, _tile2.GridCoord.y);
+        max.x = Mathf.Max(_tile1.GridCoord.x, _tile2.GridCoord.x);
+        max.y = Mathf.Max(_tile1.GridCoord.y, _tile2.GridCoord.y);
 
         selectMat.SetVector(propertyID1, min);
         selectMat.SetVector(propertyID2, max);

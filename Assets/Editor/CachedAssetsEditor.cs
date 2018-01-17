@@ -39,7 +39,7 @@ public class CachedAssetsEditor : Editor {
     private const int AMOUNT_OF_SHIT = 93;
     private int shitCount = 0;
     private bool stopThePresses = false;
-    private delegate void GenerateShadowCollidersForAnim(int _wallSetIndex, CachedAssets.WallSet.Purpose _type, DoubleInt[] _anim, ref PolygonCollider2D[] _colliders);
+    private delegate void GenerateShadowCollidersForAnim(int _wallSetIndex, CachedAssets.WallSet.Purpose _type, Vector2i[] _anim, ref PolygonCollider2D[] _colliders);
     public void GenerateShadowColliders() {
         shitCount = 0;
         shadowPixels = null;
@@ -149,7 +149,7 @@ public class CachedAssetsEditor : Editor {
     private Color32 pixel_B;
     private Color32 pixel_BL;
     private Vector2 newVertex = new Vector2();
-    void GenerateShadowCollider(int _wallSetIndex, CachedAssets.WallSet.Purpose _colliderDefinition, DoubleInt _texturePos, ref PolygonCollider2D _colliderPrefab, params CachedAssets.WallSet.Purpose[] _additionalIDs) { 
+    void GenerateShadowCollider(int _wallSetIndex, CachedAssets.WallSet.Purpose _colliderDefinition, Vector2i _texturePos, ref PolygonCollider2D _colliderPrefab, params CachedAssets.WallSet.Purpose[] _additionalIDs) { 
         if(stopThePresses)
             return;
 
@@ -165,7 +165,7 @@ public class CachedAssetsEditor : Editor {
         
         for (int y = 0; y < assetPixels.Length; y++) {
             for (int x = 0; x < assetPixels[y].Length; x++) {
-                assetPixels[y][x] = shadowPixels[Mathf.RoundToInt((CachedAssets.WallSet.TEXTURE_SIZE_X * ((_texturePos.Y * TILE_PIXEL_RES) + y)) + ((_texturePos.X * TILE_PIXEL_RES) + x))];
+                assetPixels[y][x] = shadowPixels[Mathf.RoundToInt((CachedAssets.WallSet.TEXTURE_SIZE_X * ((_texturePos.y * TILE_PIXEL_RES) + y)) + ((_texturePos.x * TILE_PIXEL_RES) + x))];
             }
         }
 

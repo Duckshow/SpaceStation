@@ -91,21 +91,21 @@ public class WallBuilder : BuilderBase {
     //}
 
     protected override void ResetModifiedTiles(bool _includingMouse = false) {
-		for (int i = 0; i < modifiedTiles.Count; i++) {
-			modifiedTiles[i].SetTileType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
-            modifiedTiles[i].ResetTempSettingsWall();
-            modifiedTiles[i].ResetFloorColor();
-            modifiedTiles[i].ResetWallColor();
+		for (int i = 0; i < highlightedTiles.Count; i++) {
+			highlightedTiles[i].SetTileType(Tile.Type.Empty, Tile.TileOrientation.None, _temporarily: true);
+            highlightedTiles[i].ResetTempSettingsWall();
+            highlightedTiles[i].ResetFloorColor();
+            highlightedTiles[i].ResetWallColor();
 		}
 
 		base.ResetModifiedTiles (_includingMouse);
 	}
 	protected override void ResetSelectedTiles() {
-		for (int i = 0; i < selectedTiles.Count; i++) {
-			selectedTiles[i].SetTileType(Tile.Type.Empty, selectedTiles[i].TempOrientation, _temporarily: true);
-            selectedTiles[i].ResetTempSettingsWall();
-            selectedTiles[i].ResetFloorColor();
-            selectedTiles[i].ResetWallColor();
+		for (int i = 0; i < tilesToModify.Count; i++) {
+			tilesToModify[i].SetTileType(Tile.Type.Empty, tilesToModify[i].TempOrientation, _temporarily: true);
+            tilesToModify[i].ResetTempSettingsWall();
+            tilesToModify[i].ResetFloorColor();
+            tilesToModify[i].ResetWallColor();
 		}
 
 		base.ResetSelectedTiles ();
@@ -494,13 +494,13 @@ public class WallBuilder : BuilderBase {
     }
 
     protected override void ApplyCurrentTool() {
-		for (int i = 0; i < selectedTiles.Count; i++) {
+		for (int i = 0; i < tilesToModify.Count; i++) {
 			//if (selectedTiles [i].TempType == Tile.Type.Door || selectedTiles [i].TempType == Tile.Type.Airlock || selectedTiles [i].TempType == Tile.Type.Diagonal) {
 			//	if (selectedTiles [i].TempOrientation == Tile.TileOrientation.None)
 			//		Debug.LogError ("A " + selectedTiles[i].TempType + " can't be " + selectedTiles[i].TempOrientation + "!");
 			//}
 
-			selectedTiles[i].SetTileType(isDeleting ? Tile.Type.Empty : selectedTiles[i].TempType, isDeleting ? Tile.TileOrientation.None : selectedTiles[i].TempOrientation);
+			tilesToModify[i].SetTileType(isDeleting ? Tile.Type.Empty : tilesToModify[i].TempType, isDeleting ? Tile.TileOrientation.None : tilesToModify[i].TempOrientation);
 		}
 
 		base.ApplyCurrentTool ();
