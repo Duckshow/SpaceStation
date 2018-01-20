@@ -111,9 +111,7 @@ public class CustomLight : MonoBehaviour {
 
     void UpdateLight() {
         GetAllMeshes();
-        PrepareGridcastColliders();
         SetLight();
-        DiscardGridcastColliders();
         RenderLightMesh();
         ResetBounds();
 		UpdatePointCollisionArray();
@@ -746,30 +744,34 @@ public class CustomLight : MonoBehaviour {
         return angle;
     }
 
-    Queue<PolygonCollider2D> collidersForGridcast = new Queue<PolygonCollider2D>();
-    void PrepareGridcastColliders(){
+    private const float GRIDCAST_TOLERANCE = 0.01f;
+    bool Gridcast(Vector2 _start, Vector2 _end, out RaycastHit2D _rayhit){
+		float _length = (_start - _end).magnitude;
+
+        // find relevant colliders
+        Queue<PolygonCollider2D> _collidersUsed = new Queue<PolygonCollider2D>();
         for (int y = 0; y < Grid.GridSizeY; y++){
             for (int x = 0; x < Grid.GridSizeX; x++){
-                if((myInspector.MyTileObject.MyTile.GridCoord - Grid.Instance.grid[x, y].WorldPosition).magnitude > lightRadius)
+                if((_start - Grid.Instance.grid[x, y].WorldPosition).magnitude > _length)
                     continue;
                 PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(Grid.Instance.grid[x, y].ExactType);
                 if(_coll == null)
                     continue;
 
                 _coll.transform.position = Grid.Instance.grid[x, y].WorldPosition;                
-                collidersForGridcast.Enqueue(_coll);
+                _collidersUsed.Enqueue(_coll);
             }
         }
-    }
-    private const float GRIDCAST_TOLERANCE = 0.01f;
-    bool Gridcast(Vector2 _start, Vector2 _end, out RaycastHit2D _rayhit){
-        Debug.Log("pew");
+
+        // pew
         _rayhit = Physics2D.Linecast(_start, _end);
+
+		// clean-up
+		int _usedAmount = _collidersUsed.Count;
+		for (int i = 0; i < _usedAmount; i++)
+            _collidersUsed.Dequeue().GetComponent<PoolerObject>().ReturnToPool();
+
         return _rayhit.collider != null && (_end - _rayhit.point).magnitude > 0.01f;
-    }
-    void DiscardGridcastColliders(){
-		for (int i = 0; i < collidersForGridcast.Count; i++)
-            collidersForGridcast.Dequeue().GetComponent<PoolerObject>().ReturnToPool();
     }
 }
 
