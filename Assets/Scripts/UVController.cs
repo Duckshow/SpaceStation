@@ -125,20 +125,16 @@ public class UVController : UVControllerBasic {
         colorIndex_8 = _color8;
         colorIndex_9 = _color9;
 
+		colorIndices.x = BitCompressor.Byte4ToInt(colorIndex_0, colorIndex_1, colorIndex_2,colorIndex_3);
+		colorIndices.y = BitCompressor.Byte4ToInt(colorIndex_4, colorIndex_5, colorIndex_6, colorIndex_7);
+		colorIndices.z = BitCompressor.Byte4ToInt(colorIndex_8, colorIndex_9, 0, 0);
+
         allColorIndices.Clear();
-
-		AssignBytesToVectorChannel(ref colorIndices.x, colorIndex_0, colorIndex_1, colorIndex_2, colorIndex_3);
-		AssignBytesToVectorChannel(ref colorIndices.y, colorIndex_4, colorIndex_5, colorIndex_6, colorIndex_7);
-		AssignBytesToVectorChannel(ref colorIndices.z, colorIndex_8, colorIndex_9, 0, 0);
-
 		for (int i = 0; i < MyMeshFilter.mesh.uv.Length; i++)
             allColorIndices.Add(colorIndices);
 
 		shouldApplyChanges = true;
     }
-	void AssignBytesToVectorChannel(ref float _channel, byte _index0, byte _index1, byte _index2, byte _index3) {
-		_channel = _index0 | (_index1 << 8) | (_index2 << 16) | (_index3 << 24);
-	}
 
     private List<Vector4> doubleDots = new List<Vector4>();
 	public void SetUVDoubleDot(int _specificUV, float _doubleDot0, float _doubleDot1, float _doubleDot2, float _doubleDot3){

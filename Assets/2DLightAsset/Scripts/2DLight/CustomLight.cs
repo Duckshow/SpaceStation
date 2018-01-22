@@ -111,8 +111,10 @@ public class CustomLight : MonoBehaviour {
 
     void UpdateLight() {
         GetAllMeshes();
-        SetLight();
-        RenderLightMesh();
+		PreparePooledColliders();
+		SetLight();
+		DiscardPooledColliders();
+		RenderLightMesh();
         ResetBounds();
 		UpdatePointCollisionArray();
 	}
@@ -431,6 +433,9 @@ public class CustomLight : MonoBehaviour {
                         float _doubleDot2 = _lights.z < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.z].transform.position);
                         float _doubleDot3 = _lights.w < 0 ? 0 : GetDoubleDotAngle(_tilePos + _offset, AllLights[(int)_lights.w].transform.position);
 
+						Vector2[] _dots = new Vector2[SHADOWCASTING_LIGHTS_MAX];
+
+
 						SetDoubleDotForTile(x, y, _vIndex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
                         _cachedColors[_totalX, _totalY] = _finalColor;
 
@@ -538,19 +543,9 @@ public class CustomLight : MonoBehaviour {
     }
 	void SetDoubleDotForTile(int _gridX, int _gridY, int _vertex, float _doubleDot0, float _doubleDot1, float _doubleDot2, float _doubleDot3){
 		Grid.Instance.grid[_gridX, _gridY].MyUVController.SetUVDoubleDot(_vertex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
-		// Grid.Instance.grid[_gridX, _gridY].FloorQuad.       SetUVDoubleDot(_vertex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
-        // Grid.Instance.grid[_gridX, _gridY].FloorCornerHider.SetUVDoubleDot(_vertex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
-        // Grid.Instance.grid[_gridX, _gridY].BottomQuad.      SetUVDoubleDot(_vertex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
-        // Grid.Instance.grid[_gridX, _gridY].TopQuad.         SetUVDoubleDot(_vertex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
-        // Grid.Instance.grid[_gridX, _gridY].WallCornerHider. SetUVDoubleDot(_vertex, _doubleDot0, _doubleDot1, _doubleDot2, _doubleDot3);
     }
     void SetVertexColorForTile(int _gridX, int _gridY, int _vertex, Color32 _color){
 		Grid.Instance.grid[_gridX, _gridY].MyUVController.SetVertexColor(_vertex, _color);
-		// Grid.Instance.grid[_gridX, _gridY].FloorQuad.       SetVertexColor(_vertex, _color);
-        // Grid.Instance.grid[_gridX, _gridY].FloorCornerHider.SetVertexColor(_vertex, _color);
-        // Grid.Instance.grid[_gridX, _gridY].BottomQuad.      SetVertexColor(_vertex, _color);
-        // Grid.Instance.grid[_gridX, _gridY].TopQuad.         SetVertexColor(_vertex, _color);
-        // Grid.Instance.grid[_gridX, _gridY].WallCornerHider. SetVertexColor(_vertex, _color);
     }
 
     static float GetAngle01(Vector2 _pos1, Vector2 _pos2, Vector2 _referenceAngle, int maxAngle) { // TODO: replace with GetAngleClockwise!
@@ -558,13 +553,12 @@ public class CustomLight : MonoBehaviour {
                                             _referenceAngle, 
                                             Vector3.Normalize(_pos1 - _pos2))));
     }
-	private const float DOUBLE_DOT_MAX_ANGLE = 1;
 	static int GetDoubleDotAngle(Vector2 _pos1, Vector2 _pos2){ // Find an angle (0->1) and convert to two dot-products concatted into one number (eg 0.25 + 0.5 = 255) 
 		// get an angle between 0->1. The angle goes all the way around, but counter-clockwise, so sorta like a clock and unlike a dot
-		float _vertical = (0.5f * (DOUBLE_DOT_MAX_ANGLE + Vector2.Dot(Vector2.down, Vector3.Normalize(_pos1 - _pos2))));
-		float _horizontal = Vector2.Dot(Vector2.left, Vector3.Normalize(_pos1 - _pos2));
+		float _vertical 	= (Vector2.Dot(Vector2.down, (_pos1 - _pos2).normalized) + 1) * 0.5f;
+		float _horizontal 	=  Vector2.Dot(Vector2.left, (_pos1 - _pos2).normalized);
 
-		_vertical = (_vertical * (DOUBLE_DOT_MAX_ANGLE * 0.5f));
+		_vertical = (_vertical * (1 * 0.5f));
 		if (_horizontal < 0)
 			_vertical = Mathf.Abs(_vertical - 1);
 
@@ -579,82 +573,93 @@ public class CustomLight : MonoBehaviour {
         // merge ints into one
 		return _dotX | (_dotY << 16);
     }
+	// find the horizontal and vertical dot-products between two vectors
+	// static Vector2 GetDotXY(Vector2 _pos1, Vector2 _pos2){ 
+
+	//   // get an angle between 0->1. The angle goes all the way around, but counter-clockwise, so sorta like a clock and unlike a dot
+	// 	float _vertical 	= (Vector2.Dot(Vector2.down, (_pos1 - _pos2).normalized) + 1) * 0.5f;
+	// 	float _horizontal 	=  Vector2.Dot(Vector2.left, (_pos1 - _pos2).normalized);
+
+	// 	_vertical *= 0.5f;
+	// 	if (_horizontal < 0)
+	// 		_vertical = Mathf.Abs(_vertical - 1);
+
+	// 	_horizontal = _vertical + 0.25f;
+	// 	_horizontal -= Mathf.Floor(_horizontal);
+
+	// 	return new Vector2(
+	// 		Mathf.Max(0.001f, GetDotifiedAngle(_horizontal)), 
+	// 		Mathf.Max(0.001f, GetDotifiedAngle(_vertical))
+	// 	);
+	// }
     static float GetDotifiedAngle(float _angle){ // Take an angle (between 0, 1) and convert to something like 0->1->0
         _angle *= 2;
         float _floored = Mathf.Floor(_angle);
         return Mathf.Abs(_floored - (_angle - _floored));
     }
 
-	Color GetTotalVertexLighting(Vector2 _worldPos, out Vector4 _highestLightLevelIndices){
-		Color _totalColor = new Color();
-		Vector4 _highestLightLevels = new Vector4();
-		_highestLightLevelIndices = new Vector4(-1, -1, -1, -1);
-
-		float _newDistance;
-		float _newLightLevel;
-		bool _illuminated;
-		
-        for (int i = 0; i < AllLights.Count; i++) {
-            _newDistance = Vector2.Distance(_worldPos, AllLights[i].transform.position);
-            if (_newDistance > AllLights[i].lightRadius)
-                continue;
-
-			_illuminated = IsInsideLightMesh(_worldPos, AllLights[i]);
-            _newLightLevel = AllLights[i].Intensity * Mathf.Pow(1 - (_newDistance / AllLights[i].lightRadius), 2);
-
-			// the four strongest lights will be cached and used for rendering shadows
-			TryAddToLightsCastingShadows(i, _newLightLevel, _illuminated, ref _highestLightLevels, ref _highestLightLevelIndices);
-
-			// but all lights will affect the luminosity and color of the vertex (if hit, that is)
-			if(_illuminated)
-				_totalColor += Mouse.Instance.Coloring.AllColors[(int)AllLights[i].LightColor] * _newLightLevel;
-		}
-
-        return _totalColor;
-    }
-	
-	List<LightIndexLevelPairClass> lightLevelList = new List<LightIndexLevelPairClass>(4);
-	class LightIndexLevelPairClass{
+	struct LightIndexLevelPairClass{
 		public float Index;
 		public float Level;
 		public LightIndexLevelPairClass(float i, float l) { Index = i; Level = l; }
 		public void Set(float i, float l) { Index = i; Level = l; }
 	}
-	void TryAddToLightsCastingShadows(int _lightIndex, float _newLightLevel, bool _illuminated, ref Vector4 _highestLightLevels, ref Vector4 _highestLightLevelIndices) { 
-		if (lightLevelList.Count != 4){
-			lightLevelList.Clear();
-			lightLevelList.Add(new LightIndexLevelPairClass(-1, 0));
-			lightLevelList.Add(new LightIndexLevelPairClass(-1, 0));
-			lightLevelList.Add(new LightIndexLevelPairClass(-1, 0));
-			lightLevelList.Add(new LightIndexLevelPairClass(-1, 0));
+	private const int SHADOWCASTING_LIGHTS_MAX = 4;
+	LightIndexLevelPairClass lightIndexLevelPairClear = new LightIndexLevelPairClass(-1, 0);
+	List<LightIndexLevelPairClass> lightLevelList = new List<LightIndexLevelPairClass>() { 
+		new LightIndexLevelPairClass(-1, 0),
+		new LightIndexLevelPairClass(-1, 0),
+		new LightIndexLevelPairClass(-1, 0),
+		new LightIndexLevelPairClass(-1, 0)
+	};
+	Color totalColor = new Color();
+	Color GetTotalVertexLighting(Vector2 _worldPos, out Vector4 _highestLightLevelIndices){
+		lightLevelList[0] = lightIndexLevelPairClear;
+		lightLevelList[1] = lightIndexLevelPairClear;
+		lightLevelList[2] = lightIndexLevelPairClear;
+		lightLevelList[3] = lightIndexLevelPairClear;
+		totalColor = Color.clear;
+
+		for (int i = 0; i < AllLights.Count; i++) {
+            float _newDistance = (_worldPos - AllLights[i].myInspector.MyTileObject.MyTile.WorldPosition).magnitude;
+            if (_newDistance > AllLights[i].lightRadius)
+                continue;
+
+			bool _illuminated = IsInsideLightMesh(_worldPos, AllLights[i]);
+            float _newLightLevel = AllLights[i].Intensity * Mathf.Pow(1 - (_newDistance / AllLights[i].lightRadius), 2);
+
+			// the four strongest lights will be cached and used for rendering shadows
+			TryAddToLightsCastingShadows(ref lightLevelList, i, _newLightLevel, _illuminated);
+
+			// but all lights will affect the luminosity and color of the vertex (if hit, that is)
+			if(_illuminated)
+				totalColor += Mouse.Instance.Coloring.AllColors[(int)AllLights[i].LightColor] * _newLightLevel;
 		}
 
-		// cache and reverse-sort previously cached lights
-		lightLevelList[0].Set(_highestLightLevelIndices.x, _highestLightLevels.x);
-		lightLevelList[1].Set(_highestLightLevelIndices.y, _highestLightLevels.y);
-		lightLevelList[2].Set(_highestLightLevelIndices.z, _highestLightLevels.z);
-		lightLevelList[3].Set(_highestLightLevelIndices.w, _highestLightLevels.w);
-		lightLevelList.OrderBy(x => -x.Level); // reverse sort
-		for (int i = 0; i < lightLevelList.Count; i++){
-			if (_illuminated && _newLightLevel >= lightLevelList[i].Level){
-				lightLevelList.Insert(i, new LightIndexLevelPairClass(_lightIndex, _newLightLevel));
+		_highestLightLevelIndices = new Vector4(
+			lightLevelList[0].Index,
+			lightLevelList[1].Index,
+			lightLevelList[2].Index,
+			lightLevelList[3].Index
+		);
+
+		return totalColor;
+    }
+
+	void TryAddToLightsCastingShadows(ref List<LightIndexLevelPairClass> _lightLevels, int _lightIndex, float _newLightLevel, bool _illuminated) { 
+		_lightLevels.OrderBy(x => -x.Level); // reverse sort
+
+		for (int i = 0; i < SHADOWCASTING_LIGHTS_MAX; i++){
+			float _level = _lightLevels[i].Level;
+			if (_illuminated && _newLightLevel >= _level){
+				_lightLevels.Insert(i, new LightIndexLevelPairClass(_lightIndex, _newLightLevel));
 				break;
 			}
-			else if (!_illuminated && lightLevelList[i].Level == 0){ // we still wanna save the index to prevent some shadow-issues around corners
-				lightLevelList.Insert(i, new LightIndexLevelPairClass(_lightIndex, 0));
+			else if (!_illuminated && _level == 0){ // we still wanna save the index to prevent some shadow-issues around corners
+				_lightLevels.Insert(i, new LightIndexLevelPairClass(_lightIndex, 0));
 				break;
 			}
 		}
-
-		// re-add lights to proper variable
-		_highestLightLevelIndices.x = lightLevelList[0].Index;
-		_highestLightLevelIndices.y = lightLevelList[1].Index;
-		_highestLightLevelIndices.z = lightLevelList[2].Index;
-		_highestLightLevelIndices.w = lightLevelList[3].Index;
-		_highestLightLevels.x = lightLevelList[0].Level;
-		_highestLightLevels.y = lightLevelList[1].Level;
-		_highestLightLevels.z = lightLevelList[2].Level;
-		_highestLightLevels.w = lightLevelList[3].Level;
 	}
 
     void RenderLightMesh() {
@@ -701,7 +706,7 @@ public class CustomLight : MonoBehaviour {
         lightMesh.bounds = _bounds;
     }
 
-	private const float VERTEX_ON_EDGE_TOLERANCE = 0.05f;
+	private const float VERTEX_ON_EDGE_TOLERANCE = 0.01f;
 	public Vector2[] PointCollisionArray;
 	void UpdatePointCollisionArray(){
 		// cache vertices relative to world - but skip zero as it messes with the IsInsideLightMesh-algorithm
@@ -714,13 +719,10 @@ public class CustomLight : MonoBehaviour {
 	bool IsInsideLightMesh(Vector2 _pos, CustomLight _light){
 		bool _inside = false;
 		for (int i = 0, i2 = _light.PointCollisionArray.Length - 1; i < _light.PointCollisionArray.Length; i2 = i, i++){
-			Vector3 _vx1 = _light.PointCollisionArray[i];
-			Vector3 _vx2 = _light.PointCollisionArray[i2];
+			Vector2 _vx1 = _light.PointCollisionArray[i];
+			Vector2 _vx2 = _light.PointCollisionArray[i2];
 
-			float _minY = Mathf.Min(_vx1.y, _vx2.y);
-			float _maxY = Mathf.Max(_vx1.y, _vx2.y);
-			bool _isBetweenVertices = _minY <= _pos.y && _pos.y < _maxY;
-
+			bool _isBetweenVertices = _vx1.y <= _pos.y && _pos.y < _vx2.y || _vx2.y <= _pos.y && _pos.y < _vx1.y;
 			float _progressY = (_pos.y - _vx1.y) / (_vx2.y - _vx1.y);
 			float _progressX = (_vx2.x - _vx1.x) * _progressY;
 			bool _isLeftOfEdge = _pos.x < _vx1.x + _progressX;
@@ -744,34 +746,29 @@ public class CustomLight : MonoBehaviour {
         return angle;
     }
 
-    private const float GRIDCAST_TOLERANCE = 0.01f;
+	Queue<PolygonCollider2D> collidersInRange = new Queue<PolygonCollider2D>();
+	void PreparePooledColliders() { 
+		for (int y = 0; y < Grid.GridSizeY; y++){
+			for (int x = 0; x < Grid.GridSizeX; x++){
+				if ((myInspector.MyTileObject.MyTile.WorldPosition - Grid.Instance.grid[x, y].WorldPosition).magnitude > lightRadius)
+					continue;
+				PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(Grid.Instance.grid[x, y].ExactType);
+				if (_coll == null)
+					continue;
+
+				_coll.transform.position = Grid.Instance.grid[x, y].WorldPosition;
+				collidersInRange.Enqueue(_coll);
+			}
+		}
+	}
+	private const float GRIDCAST_TOLERANCE = 0.05f;
     bool Gridcast(Vector2 _start, Vector2 _end, out RaycastHit2D _rayhit){
-		float _length = (_start - _end).magnitude;
-
-        // find relevant colliders
-        Queue<PolygonCollider2D> _collidersUsed = new Queue<PolygonCollider2D>();
-        for (int y = 0; y < Grid.GridSizeY; y++){
-            for (int x = 0; x < Grid.GridSizeX; x++){
-                if((_start - Grid.Instance.grid[x, y].WorldPosition).magnitude > _length)
-                    continue;
-                PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(Grid.Instance.grid[x, y].ExactType);
-                if(_coll == null)
-                    continue;
-
-                _coll.transform.position = Grid.Instance.grid[x, y].WorldPosition;                
-                _collidersUsed.Enqueue(_coll);
-            }
-        }
-
-        // pew
-        _rayhit = Physics2D.Linecast(_start, _end);
-
-		// clean-up
-		int _usedAmount = _collidersUsed.Count;
-		for (int i = 0; i < _usedAmount; i++)
-            _collidersUsed.Dequeue().GetComponent<PoolerObject>().ReturnToPool();
-
-        return _rayhit.collider != null && (_end - _rayhit.point).magnitude > 0.01f;
+		_rayhit = Physics2D.Linecast(_start, _end);
+        return _rayhit.collider != null && (_end - _rayhit.point).magnitude > GRIDCAST_TOLERANCE;
     }
+	void DiscardPooledColliders(){
+		for (int i = 0; i < collidersInRange.Count; i++)
+            collidersInRange.Dequeue().GetComponent<PoolerObject>().ReturnToPool();
+	}
 }
 
