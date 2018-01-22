@@ -150,17 +150,19 @@ Shader "Custom/Grid" {
 
 			//-- FRAG --//
 			fixed4 CalculateLighting(fixed4 _normals, fixed _dotX, fixed _dotY){
+				float _litness = 
+				max(
+					abs(_normals.r - _dotX), 		// diff between normal X and horizontal dot product to light
+					abs(_normals.g - _dotY)			// diff between normal Y and vertical dot product to light
+				);
 				return (1 - 
 					min(
 						floor(_normals.a),
 						min(
-							ceil(_normals.r + _normals.g),
-								saturate(
-									max(
-										abs(_normals.r - _dotX), 		// diff between normal X and horizontal dot product to light
-										abs(_normals.g - _dotY)			// diff between normal Y and vertical dot product to light
-									)
-								)
+							ceil(_normals.r + _normals.g),			// only if both normals are set to zero will this win, making it fully lit
+							saturate(
+								_litness + sign(_litness - 0.5) * 0.1
+							)
 						)
 					)
 				) * saturate(ceil(abs(_dotX + _dotY)));	// unless dotX and dotY forced to zero (otherwise impossible), this equals 1
