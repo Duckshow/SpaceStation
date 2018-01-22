@@ -120,8 +120,8 @@ public class CachedAssetsEditor : Editor {
     }
     private List<Color32> shadowPixels;
     private const int TILE_PIXEL_RES = Tile.RESOLUTION;
-    private const int maxIndexY = (TILE_PIXEL_RES * 2) - 1;
-    private const int maxIndexX = TILE_PIXEL_RES - 1;
+    private const int MAX_INDEX_X = TILE_PIXEL_RES - 1;
+    private const int MAX_INDEX_Y = (TILE_PIXEL_RES * 2) - 1;
     private Color32[][] assetPixels;
     private Dictionary<int, Vector2> startingPixels = new Dictionary<int, Vector2>();
     private int currentX = -1;
@@ -149,7 +149,8 @@ public class CachedAssetsEditor : Editor {
     private Color32 pixel_B;
     private Color32 pixel_BL;
     private Vector2 newVertex = new Vector2();
-    void GenerateShadowCollider(int _wallSetIndex, CachedAssets.WallSet.Purpose _colliderDefinition, Vector2i _texturePos, ref PolygonCollider2D _colliderPrefab, params CachedAssets.WallSet.Purpose[] _additionalIDs) { 
+	private Tile.TileOrientation currentHeading = Tile.TileOrientation.None;
+	void GenerateShadowCollider(int _wallSetIndex, CachedAssets.WallSet.Purpose _colliderDefinition, Vector2i _texturePos, ref PolygonCollider2D _colliderPrefab, params CachedAssets.WallSet.Purpose[] _additionalIDs) { 
         if(stopThePresses)
             return;
 
@@ -219,7 +220,7 @@ public class CachedAssetsEditor : Editor {
                     canVisit_TL = false;
                     canVisit_BL = false;
                 }
-                if(currentX == maxIndexX){
+                if(currentX == MAX_INDEX_X){
                     canVisit_R = false;
                     canVisit_TR = false;
                     canVisit_BR = false;
@@ -229,38 +230,97 @@ public class CachedAssetsEditor : Editor {
                     canVisit_BR = false;
                     canVisit_BL = false;
                 }
-                if(currentY == maxIndexY){
+                if(currentY == MAX_INDEX_Y){
                     canVisit_T = false;
                     canVisit_TR = false;
                     canVisit_TL = false;
                 }
 
-                // note: deviating from standard order of direction to prevent cutting corners
+				if (currentX - prevX == 0 && currentY - prevY == 1)
+					currentHeading = Tile.TileOrientation.Top;
+				if (currentX - prevX == 1 && currentY - prevY == 1)
+					currentHeading = Tile.TileOrientation.TopRight;
+				if (currentX - prevX == 1 && currentY - prevY == 0)
+					currentHeading = Tile.TileOrientation.Right;
+				if (currentX - prevX == 1 && currentY - prevY == -1)
+					currentHeading = Tile.TileOrientation.BottomRight;
+				if (currentX - prevX == 0 && currentY - prevY == -1)
+					currentHeading = Tile.TileOrientation.Bottom;
+				if (currentX - prevX == -1 && currentY - prevY == 1)
+					currentHeading = Tile.TileOrientation.BottomLeft;
+				if (currentX - prevX == -1 && currentY - prevY == 0)
+					currentHeading = Tile.TileOrientation.Left;
+				if (currentX - prevX == -1 && currentY - prevY == 1)
+					currentHeading = Tile.TileOrientation.TopLeft;
 
-                // are we backtracking?
-                if(prevX - currentX == -1 && prevY - currentY == 0)
-                    canVisit_L = false;
-                if(prevX - currentX == 1 && prevY - currentY == 0)
-                    canVisit_R = false;
-                if(prevX - currentX == 0 && prevY - currentY == 1)
-                    canVisit_T = false;
-                if(prevX - currentX == 0 && prevY - currentY == -1)
-                    canVisit_B = false;
-                if(prevX - currentX == -1 && prevY - currentY == 1)
-                    canVisit_TL = false;
-                if(prevX - currentX == 1 && prevY - currentY == 1)
-                    canVisit_TR = false;
-                if(prevX - currentX == 1 && prevY - currentY == -1)
-                    canVisit_BR = false;
-                if(prevX - currentX == -1 && prevY - currentY == 1)
-                    canVisit_BL = false;
+				// note: deviating from standard order of direction to prevent cutting corners
+				// are we backtracking?
+				switch (currentHeading){
+					case Tile.TileOrientation.None:
+						break;
+					case Tile.TileOrientation.Right:
+                    	canVisit_L = false;
+						break;
+					case Tile.TileOrientation.Left:
+                    	canVisit_R = false;
+						break;
+					case Tile.TileOrientation.Bottom:
+                    	canVisit_T = false;
+						break;
+					case Tile.TileOrientation.Top:
+                    	canVisit_B = false;
+						break;
+					case Tile.TileOrientation.BottomRight:
+                    	canVisit_TL = false;
+						break;
+					case Tile.TileOrientation.BottomLeft:
+                    	canVisit_TR = false;
+						break;
+					case Tile.TileOrientation.TopLeft:
+                    	canVisit_BR = false;
+						break;
+					case Tile.TileOrientation.TopRight:
+                    	canVisit_BL = false;
+						break;
+					default:
+						throw new System.Exception(currentHeading + " hasn't been properly implemented yet!");
+				}
 
-                // does the direction lead to nowhere?
-                if(canVisit_L){
-                    pixel_L = assetPixels[currentY][currentX - 1];
-                    if(pixel_L.r == 0 || pixel_L.g != pixel.Key)
-                        canVisit_L = false;
-                    else if(prevX - currentX == 1 && prevY - currentY == 0){ // keep going same direction!
+				if (canVisit_L){
+					pixel_L 	= assetPixels[currentY][currentX - 1];
+					canVisit_L = canVisit_L && pixel_L.r > 0 && pixel_L.g == pixel.Key;
+				}
+				if (canVisit_R){
+					pixel_R 	= assetPixels[currentY][currentX + 1];
+					canVisit_R = canVisit_R && pixel_R.r > 0 && pixel_R.g == pixel.Key;
+				}
+				if (canVisit_T){
+					pixel_T 	= assetPixels[currentY + 1][currentX];
+					canVisit_T = canVisit_T && pixel_T.r > 0 && pixel_T.g == pixel.Key;
+				}
+				if (canVisit_B){
+					pixel_B 	= assetPixels[currentY - 1][currentX];
+					canVisit_B = canVisit_B && pixel_B.r > 0 && pixel_B.g == pixel.Key;
+				}
+				if (canVisit_TL){
+					pixel_TL 	= assetPixels[currentY + 1][currentX - 1];
+					canVisit_TL = canVisit_TL && pixel_TL.r > 0 && pixel_TL.g == pixel.Key;
+				}
+				if (canVisit_TR){
+					pixel_TR 	= assetPixels[currentY + 1][currentX + 1];
+					canVisit_TR = canVisit_TR && pixel_TR.r > 0 && pixel_TR.g == pixel.Key;
+				}
+				if (canVisit_BR){
+					pixel_BR 	= assetPixels[currentY - 1][currentX + 1];
+					canVisit_BR = canVisit_BR && pixel_BR.r > 0 && pixel_BR.g == pixel.Key;
+				}
+				if (canVisit_BL){
+					pixel_BL 	= assetPixels[currentY - 1][currentX - 1];
+					canVisit_BL = canVisit_BL && pixel_BL.r > 0 && pixel_BL.g == pixel.Key;
+				}
+
+				if(canVisit_L){
+                    if(prevX - currentX == 1 && prevY - currentY == 0){ // keep going same direction!
                         prevX = currentX;
                         prevY = currentY;
                         currentX -= 1;
@@ -269,10 +329,7 @@ public class CachedAssetsEditor : Editor {
                     }
                 }
                 if(canVisit_R){
-                    pixel_R = assetPixels[currentY][currentX + 1];
-                    if(pixel_R.r == 0 || pixel_R.g != pixel.Key)
-                        canVisit_R = false;
-                    else if(prevX - currentX == -1 && prevY - currentY == 0){ // keep going same direction!
+                    if(prevX - currentX == -1 && prevY - currentY == 0){ // keep going same direction!
                         prevX = currentX;
                         prevY = currentY;
                         currentX += 1;
@@ -281,10 +338,7 @@ public class CachedAssetsEditor : Editor {
                     }
                 }
                 if(canVisit_T){
-                    pixel_T = assetPixels[currentY + 1][currentX];
-                    if(pixel_T.r == 0 || pixel_T.g != pixel.Key)
-                        canVisit_T = false;
-                    else if(prevX - currentX == 0 && prevY - currentY == -1){ // keep going same direction!
+                    if(prevX - currentX == 0 && prevY - currentY == -1){ // keep going same direction!
                         prevX = currentX;
                         prevY = currentY;
                         currentY += 1;
@@ -293,10 +347,7 @@ public class CachedAssetsEditor : Editor {
                     }
                 }
                 if(canVisit_B){
-                    pixel_B = assetPixels[currentY - 1][currentX];
-                    if(pixel_B.r == 0 || pixel_B.g != pixel.Key)
-                        canVisit_B = false;
-                    else if(prevX - currentX == 0 && prevY - currentY == 1){ // keep going same direction!
+                    if(prevX - currentX == 0 && prevY - currentY == 1){ // keep going same direction!
                         prevX = currentX;
                         prevY = currentY;
                         currentY -= 1;
@@ -305,10 +356,7 @@ public class CachedAssetsEditor : Editor {
                     }
                 }
                 if(canVisit_TL){
-                    pixel_TL = assetPixels[currentY + 1][currentX - 1];
-                    if(pixel_TL.r == 0 || pixel_TL.g != pixel.Key)
-                        canVisit_TL = false;
-                    else if(prevX - currentX == 1 && prevY - currentY == -1){ // keep going same direction!
+                    if(prevX - currentX == 1 && prevY - currentY == -1){ // keep going same direction!
                         prevX = currentX;
                         prevY = currentY;
                         currentX -= 1;
@@ -318,10 +366,7 @@ public class CachedAssetsEditor : Editor {
                     }
                 }
                 if(canVisit_TR){
-                    pixel_TR = assetPixels[currentY + 1][currentX + 1];
-                    if(pixel_TR.r == 0 || pixel_TR.g != pixel.Key)
-                        canVisit_TR = false;
-                    else if(prevX - currentX == -1 && prevY - currentY == -1){ // keep going same direction!
+                    if(prevX - currentX == -1 && prevY - currentY == -1){ // keep going same direction!
                         prevX = currentX;
                         prevY = currentY;
                         currentX += 1;
@@ -331,10 +376,7 @@ public class CachedAssetsEditor : Editor {
                     }
                 }
                 if(canVisit_BR){
-                    pixel_BR = assetPixels[currentY - 1][currentX + 1];
-                    if(pixel_BR.r == 0 || pixel_BR.g != pixel.Key)
-                        canVisit_BR = false;
-                    else if(prevX - currentX == -1 && prevY - currentY == 1){ // keep going same direction!
+                    if(prevX - currentX == -1 && prevY - currentY == 1){ // keep going same direction!
                         prevX = currentX;
                         prevY = currentY;
                         currentX += 1;
@@ -344,10 +386,7 @@ public class CachedAssetsEditor : Editor {
                     }
                 }
                 if(canVisit_BL){
-                    pixel_BL = assetPixels[currentY - 1][currentX - 1];
-                    if(pixel_BL.r == 0 || pixel_BL.g != pixel.Key)
-                        canVisit_BL = false;
-                    else if(prevX - currentX == 1 && prevY - currentY == 1){ // keep going same direction!
+                    if(prevX - currentX == 1 && prevY - currentY == 1){ // keep going same direction!
                         prevX = currentX;
                         prevY = currentY;
                         currentX -= 1;
@@ -406,7 +445,7 @@ public class CachedAssetsEditor : Editor {
                 }
 
                 stopThePresses = true;
-                Debug.LogErrorFormat("Failed to find path in shadowmap! | Collider: {0} | Pixel: ({1}, {2})", _colliderDefinition, currentX, currentY);
+                Debug.LogErrorFormat("Failed to find path in shadowmap! | Collider: {0} | Pixel: ({1}, {2}) | Direction: {3}", _colliderDefinition, currentX, currentY, currentHeading);
                 break;
             }
             while (pixelsIterated < 1000 && (currentX != pixel.Value.x || currentY != pixel.Value.y));
