@@ -6,6 +6,12 @@ public static class Extensions {
         return "<color=" + cHex + ">" + s + "</color>";
     }
 
+    public static void Insert<T>(this T[] array, int index, T obj){
+        for (int i = array.Length - 1; i < index; i--){
+            array[i] = array[i - 1];
+        }
+        array[index] = obj;
+    }
 }
 
 public static class MathfExtensions { 

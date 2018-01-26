@@ -96,13 +96,21 @@ public class ObjectPooler : MonoBehaviour {
 		}
 	}
     public T GetPooledObject<T>(CachedAssets.WallSet.Purpose _id) where T : Component {
-		CachedAssets.WallSet.Purpose _poolID;
+		Pool _pool = GetPoolForID(_id);
+		if(_pool == null)
+	        return null;
+		return _pool.GetObject().GetComponent<T>();
+	}
+	public bool HasPoolForID(CachedAssets.WallSet.Purpose _id){
+		return GetPoolForID(_id) != null;
+	}
+	public Pool GetPoolForID(CachedAssets.WallSet.Purpose _id){
 		Pool _pool = null;
 		int _idIndex = 0;
 		int _poolIndex = 0;
 
 		for (int i = 0; i < allPoolIDs.Length; i++){
-			_poolID = allPoolIDs[i];
+			CachedAssets.WallSet.Purpose _poolID = allPoolIDs[i];
 			if (_poolID == _id)
 				_pool = MyPools[_poolIndex];
 
@@ -113,12 +121,11 @@ public class ObjectPooler : MonoBehaviour {
 			}
 		}
 
-		if(_pool == null)
-	        return null;
-    
-		return _pool.GetObject().GetComponent<T>();
+		return _pool;
 	}
-	public bool HasPoolForID(CachedAssets.WallSet.Purpose _id){
+
+	// should only be used in editor since it's not optimized, and optimizing it could be a bit annoying.
+	public bool HasPoolForID_EDITOR(CachedAssets.WallSet.Purpose _id){
 		for (int i = 0; i < MyPools.Count; i++){
 			for (int j = 0; j < MyPools[i].IDs.Count; j++){
 				if(MyPools[i].IDs[j] == _id)

@@ -137,20 +137,20 @@ public class UVController : UVControllerBasic {
     }
 
     private List<Vector4> doubleDots = new List<Vector4>();
-	public void SetUVDoubleDot(int _specificUV, float _doubleDot0, float _doubleDot1, float _doubleDot2, float _doubleDot3){
+	public void SetUVDots(int _specificUV, Vector2 _dot0, Vector2 _dot1, Vector2 _dot2, Vector2 _dot3){
 		// setup list for caching UVs
 		if (doubleDots.Count != MyMeshFilter.mesh.vertexCount) {
-			doubleDots = new List<Vector4>(MyMeshFilter.mesh.vertexCount);
+			doubleDots.Clear();
 			for (int i = 0; i < MyMeshFilter.mesh.vertexCount; i++)
 				doubleDots.Add(new Vector4());
 		}
 
 		// apply UVs
         Vector4 _doubleDot = doubleDots[_specificUV];
-        _doubleDot.x = _doubleDot0;
-        _doubleDot.y = _doubleDot1;
-        _doubleDot.z = _doubleDot2;
-        _doubleDot.w = _doubleDot3;
+        _doubleDot.x = BitCompressor.Int2ToInt((int)(_dot0.x * DOT_PRECISION), (int)(_dot0.y * DOT_PRECISION));
+        _doubleDot.y = BitCompressor.Int2ToInt((int)(_dot1.x * DOT_PRECISION), (int)(_dot1.y * DOT_PRECISION));
+        _doubleDot.z = BitCompressor.Int2ToInt((int)(_dot2.x * DOT_PRECISION), (int)(_dot2.y * DOT_PRECISION));
+        _doubleDot.w = BitCompressor.Int2ToInt((int)(_dot3.x * DOT_PRECISION), (int)(_dot3.y * DOT_PRECISION));
 		doubleDots[_specificUV] = _doubleDot;
 		shouldApplyChanges = true;
     }

@@ -4,12 +4,15 @@ using System.Collections.Generic;
 public class UVControllerBasic : MeshSorter{
 
 	public const int MESH_VERTEXCOUNT = 14;
+	public const int MESH_VERTICES_PER_X = 3;
+	public const int MESH_VERTICES_PER_Y = 3;
 	public static readonly int GRID_LAYER_COUNT = System.Enum.GetNames(typeof(GridLayerEnum)).Length;
 
 	protected const int UVCHANNEL_UV0 = 0;
 	protected const int UVCHANNEL_UV1 = 1;
 	protected const int UVCHANNEL_COLOR = 2;
 	protected const int UVCHANNEL_DOUBLEDOT = 3;
+	protected const int DOT_PRECISION = 10000;
 
 	public bool TotallySetTheBool = false;
 
@@ -52,6 +55,7 @@ public class UVControllerBasic : MeshSorter{
 			myRenderer.sharedMaterial.SetVectorArray("allColors", ColoringTool.sAllColorsForShaders);
 			myRenderer.sharedMaterial.SetInt("TextureSizeX", CachedAssets.WallSet.TEXTURE_SIZE_X);
 			myRenderer.sharedMaterial.SetInt("TextureSizeY", CachedAssets.WallSet.TEXTURE_SIZE_Y);
+			myRenderer.sharedMaterial.SetInt("DotPrecision", DOT_PRECISION);
 			sHasSetShaderProperties = true;
 		}
 	}

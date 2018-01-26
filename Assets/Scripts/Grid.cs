@@ -25,6 +25,11 @@ public class Grid : MonoBehaviour {
     public static int GridSizeXHalf { get { return Mathf.RoundToInt(GridSizeX * 0.5f); } }
     public static int GridSizeYHalf { get { return Mathf.RoundToInt(GridSizeY * 0.5f); } }
 
+    private static bool IsDirty = false;
+    public static void SetGridAsDirty(){
+        IsDirty = true;
+    }
+
 
     void Awake() {
         Instance = this;
@@ -41,6 +46,14 @@ public class Grid : MonoBehaviour {
         for (int i = 0; i < LateUpdateAnimators.Count; i++) {
             LateUpdateAnimators[i].LateUpdate();
         }
+
+        if (IsDirty){
+            OnGridDirty();
+            IsDirty = false;    
+        }
+    }
+    void OnGridDirty(){
+        CustomLight.UpdateAllLights();
     }
 
 	[SerializeField] private int Seed;

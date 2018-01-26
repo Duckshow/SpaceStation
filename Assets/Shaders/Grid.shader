@@ -36,6 +36,7 @@ Shader "Custom/Grid" {
 
 			uniform fixed TextureSizeX;
 			uniform fixed TextureSizeY;
+			uniform fixed DotPrecision;
 			uniform fixed4 allColors[128];
 			uniform fixed colorIndices [10];
 
@@ -74,14 +75,6 @@ Shader "Custom/Grid" {
 					(_channel >> 16 & 0xFFFF) / TextureSizeY 
 				);
 			}
-			// float3 DecompressUVChannel(int _channel){
-			// 	return float3(
-			// 		// 0x3FF == 1023 == 1111111111 (10 bits)
-			// 		(_channel 		& 0x3FF) * 0.001,
-			// 		(_channel >> 10 & 0x3FF) * 0.001, 
-			// 		(_channel >> 20 & 0x3FF) * 0.001
-			// 	);
-			// }
 			float4 DecompressColorIndices(int _channel){
 				return float4(
 					// 0xFF == 255 == 11111111 (8 bits)
@@ -92,21 +85,23 @@ Shader "Custom/Grid" {
 				);
 			}
 			float4 DecompressDoubleDotsToDotXs(int4 _doubleDots){
+				float _precision = 1 / DotPrecision;
 				return float4(
 					// 0xFFFF == 65535 == 1111111111111111 (16 bits)
-					(_doubleDots.x & 0xFFFF) * 0.001,
-					(_doubleDots.y & 0xFFFF) * 0.001, 
-					(_doubleDots.z & 0xFFFF) * 0.001, 
-					(_doubleDots.w & 0xFFFF) * 0.001
+					(_doubleDots.x & 0xFFFF) * _precision,
+					(_doubleDots.y & 0xFFFF) * _precision, 
+					(_doubleDots.z & 0xFFFF) * _precision, 
+					(_doubleDots.w & 0xFFFF) * _precision
 				);
 			}
 			float4 DecompressDoubleDotsToDotYs(int4 _doubleDots){
+				float _precision = 1 / DotPrecision;
 				return float4(
 					// 0xFFFF == 65535 == 1111111111111111 (16 bits)
-					(_doubleDots.x >> 16 & 0xFFFF) * 0.001, 
-					(_doubleDots.y >> 16 & 0xFFFF) * 0.001, 
-					(_doubleDots.z >> 16 & 0xFFFF) * 0.001, 
-					(_doubleDots.w >> 16 & 0xFFFF) * 0.001
+					(_doubleDots.x >> 16 & 0xFFFF) * _precision, 
+					(_doubleDots.y >> 16 & 0xFFFF) * _precision, 
+					(_doubleDots.z >> 16 & 0xFFFF) * _precision, 
+					(_doubleDots.w >> 16 & 0xFFFF) * _precision
 				);
 			}
 			v2f vert(appData v) {
@@ -115,31 +110,11 @@ Shader "Custom/Grid" {
 				o.WorldPos = mul(unity_ObjectToWorld, v.Vertex);
 				o.VColor = v.VColor;
 
-				// float3 _uv012Xs = DecompressUVChannel(v.UV0123.x);
-				// float3 _uv012Ys = DecompressUVChannel(v.UV0123.y);
-				// float2 _uv34Xs 	= DecompressUVChannel(v.UV0123.z);
-				// float2 _uv34Ys 	= DecompressUVChannel(v.UV0123.w);
 				o.UV01.xy = DecompressAssetCoordChannelToUV(v.AssetCoord_0123.x);
 				o.UV01.zw = DecompressAssetCoordChannelToUV(v.AssetCoord_0123.y);
 				o.UV23.xy = DecompressAssetCoordChannelToUV(v.AssetCoord_0123.z);
 				o.UV23.zw = DecompressAssetCoordChannelToUV(v.AssetCoord_0123.w);
 				o.UV4.xy  = DecompressAssetCoordChannelToUV(v.AssetCoord_4.x);
-
-				// float3 _uv012Xs = DecompressUVChannel(v.UV01234.x);
-				// float3 _uv012Ys = DecompressUVChannel(v.UV01234.y);
-				// float2 _uv34Xs 	= DecompressUVChannel(v.UV01234.z);
-				// float2 _uv34Ys 	= DecompressUVChannel(v.UV01234.w);
-				// o.UV01 = fixed4(
-				// 	_uv012Xs.x, _uv012Ys.x, 
-				// 	_uv012Xs.y, _uv012Ys.y
-				// );
-				// o.UV23 = fixed4(
-				// 	_uv012Xs.z, _uv012Ys.z, 
-				// 	_uv34Xs.x, _uv34Ys.x
-				// );
-				// o.UV4 = fixed2(
-				// 	_uv34Xs.y, _uv34Ys.y
-				// );
 				o.ColorIndices0to3 = DecompressColorIndices(v.ColorIndices.x);
 				o.ColorIndices4to7 = DecompressColorIndices(v.ColorIndices.y);
 				o.ColorIndices8to9 = DecompressColorIndices(v.ColorIndices.z);
@@ -175,10 +150,11 @@ Shader "Custom/Grid" {
 			}
 			void TryApplyTextures(fixed2 _uv, inout fixed4 _tex, inout fixed4 _nrm, inout fixed4 _emi, inout fixed4 _pal){
 				fixed4 _sampleMainTex = tex2D(_MainTex, _uv);
+				fixed4 _sampleEmissive = tex2D(_EmissiveMap, _uv);
 				_tex = AddOrOverwriteColors(_tex, _sampleMainTex, 				_sampleMainTex.a);
 				_nrm = AddOrOverwriteColors(_nrm, tex2D(_NrmMap, 		_uv), 	_sampleMainTex.a);
-				_emi = AddOrOverwriteColors(_emi, tex2D(_EmissiveMap, 	_uv), 	_sampleMainTex.a);
 				_pal = AddOrOverwriteColors(_pal, tex2D(_PalletteMap, 	_uv), 	_sampleMainTex.a);
+				_emi = AddOrOverwriteColors(_emi, _sampleEmissive, 				_sampleEmissive.a);
 			}
 			fixed4 frag(v2f i) : COLOR {
 				TryApplyTextures(i.UV01.xy, tex, nrmTex, emTex, palTex); // floor
@@ -208,8 +184,9 @@ Shader "Custom/Grid" {
 				);
 
 				// final apply
+				fixed3 litRGB = i.VColor * tex.rgb * colorToUse.rgb * mod;
 				return fixed4(
-					i.VColor * tex.rgb * colorToUse.rgb * mod, 
+					lerp(litRGB, emTex, emTex.a),
 					tex.a
 				);
 			}

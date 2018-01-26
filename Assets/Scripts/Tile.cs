@@ -231,38 +231,38 @@ public class Tile : IHeapItem<Tile> {
         return sCachedNeighbour_BL != null;
     }
 
-    private static bool[] sTypeConnectability = new bool[4];
-    private static void sAssignTypeConnectability(Type _type, TileOrientation _orientation = TileOrientation.None) {
-        sTypeConnectability[0] = false; //L
-        sTypeConnectability[1] = false; //T
-        sTypeConnectability[2] = false; //R
-        sTypeConnectability[3] = false; //B
+    private static bool[] sConnectability = new bool[4];
+    private static bool[] sGetConnectability(Type _type, TileOrientation _orientation = TileOrientation.None) {
+        sConnectability[0] = false; //L
+        sConnectability[1] = false; //T
+        sConnectability[2] = false; //R
+        sConnectability[3] = false; //B
         switch (_type) {
             case Type.Empty:
                 break;
             case Type.Solid:
-                sTypeConnectability[0] = true;
-                sTypeConnectability[1] = true;
-                sTypeConnectability[2] = true;
-                sTypeConnectability[3] = true;
+                sConnectability[0] = true;
+                sConnectability[1] = true;
+                sConnectability[2] = true;
+                sConnectability[3] = true;
                 break;
             case Type.Diagonal:
                 switch (_orientation) {
                     case TileOrientation.BottomLeft:
-                        sTypeConnectability[0] = true;
-                        sTypeConnectability[3] = true;
+                        sConnectability[0] = true;
+                        sConnectability[3] = true;
                         break;
                     case TileOrientation.TopLeft:
-                        sTypeConnectability[0] = true;
-                        sTypeConnectability[1] = true;
+                        sConnectability[0] = true;
+                        sConnectability[1] = true;
                         break;
                     case TileOrientation.TopRight:
-                        sTypeConnectability[1] = true;
-                        sTypeConnectability[2] = true;
+                        sConnectability[1] = true;
+                        sConnectability[2] = true;
                         break;
                     case TileOrientation.BottomRight:
-                        sTypeConnectability[2] = true;
-                        sTypeConnectability[3] = true;
+                        sConnectability[2] = true;
+                        sConnectability[3] = true;
                         break;
                 }
                 break;
@@ -271,14 +271,14 @@ public class Tile : IHeapItem<Tile> {
                     // vertical
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
-                        sTypeConnectability[1] = true;
-                        sTypeConnectability[3] = true;
+                        sConnectability[1] = true;
+                        sConnectability[3] = true;
                         break;
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
-                        sTypeConnectability[0] = true;
-                        sTypeConnectability[2] = true;
+                        sConnectability[0] = true;
+                        sConnectability[2] = true;
                         break;
                 }
                 break;
@@ -287,20 +287,21 @@ public class Tile : IHeapItem<Tile> {
                     // vertical
                     case TileOrientation.Bottom:
                     case TileOrientation.Top:
-                        sTypeConnectability[1] = true;
-                        sTypeConnectability[3] = true;
+                        sConnectability[1] = true;
+                        sConnectability[3] = true;
                         break;
                     // horizontal
                     case TileOrientation.Left:
                     case TileOrientation.Right:
-                        sTypeConnectability[0] = true;
-                        sTypeConnectability[2] = true;
+                        sConnectability[0] = true;
+                        sConnectability[2] = true;
                         break;
                 }
                 break;
             default:
                 throw new System.Exception(_type.ToString() + " has not been properly implemented yet!");
         }
+        return sConnectability;
     }
 
     public void SetTileType(Type _newType, TileOrientation _newOrientation, bool _temporarily = false) {
@@ -315,11 +316,11 @@ public class Tile : IHeapItem<Tile> {
                 CanConnectTemp_B = false;
             }
             else {
-                sAssignTypeConnectability(_newType, _newOrientation);
-                CanConnectTemp_L = sTypeConnectability[0];
-                CanConnectTemp_T = sTypeConnectability[1];
-                CanConnectTemp_R = sTypeConnectability[2];
-                CanConnectTemp_B = sTypeConnectability[3];
+                sConnectability = sGetConnectability(_newType, _newOrientation);
+                CanConnectTemp_L = sConnectability[0];
+                CanConnectTemp_T = sConnectability[1];
+                CanConnectTemp_R = sConnectability[2];
+                CanConnectTemp_B = sConnectability[3];
             }
 
             if (_newType == Type.Empty) {
@@ -360,44 +361,11 @@ public class Tile : IHeapItem<Tile> {
 		MyUVController.GridLayers[(int)MeshSorter.GridLayerEnum.Top].Orientation = _newOrientation;
 		MyUVController.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
 		MyUVController.Sort(GridCoord.y); // TODO: this probably only needs to happen once, or?
-		// BottomQuad.Orientation = _newOrientation;
-        // BottomQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        // BottomQuad.GridSorting = MeshSorter.GridSortingEnum.Bottom;
-        // BottomQuad.Sort(GridCoord.Y);
-
-        // TopQuad.Orientation = _newOrientation;
-        // TopQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        // TopQuad.GridSorting = MeshSorter.GridSortingEnum.Top;
-        // TopQuad.Sort(GridCoord.Y);
-
-        // WallCornerHider.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        // WallCornerHider.GridSorting = MeshSorter.GridSortingEnum.TopCorners;
-        // WallCornerHider.Sort(GridCoord.Y);
 
         ForceActorStopWhenPassingThis = false;
         MovementPenalty = 0; //TODO: use this for something!
 
-		//if (prevType == Type.Door || prevType == Type.Airlock) {
-  //          Grid.Instance.grid[GridX + 1, GridY].SetBuildingAllowed(true);
-  //          Grid.Instance.grid[GridX - 1, GridY].SetBuildingAllowed(true);
-  //          Grid.Instance.grid[GridX, GridY + 1].SetBuildingAllowed(true);
-  //          Grid.Instance.grid[GridX, GridY - 1].SetBuildingAllowed(true);
-
-  //          Grid.Instance.grid[GridX - 1, GridY].ConnectedDoorOrAirlock_R = null;
-  //          Grid.Instance.grid[GridX + 1, GridY].ConnectedDoorOrAirlock_L = null;
-  //          Grid.Instance.grid[GridX, GridY - 1].ConnectedDoorOrAirlock_T = null;
-  //          Grid.Instance.grid[GridX, GridY + 1].ConnectedDoorOrAirlock_B = null;
-  //      }
         if (prevType == Type.Diagonal) {
-            //if(GridX > 0)
-            //    Grid.Instance.grid[GridX - 1, GridY].ConnectedDiagonal_R = null;
-            //if(GridX < Grid.Instance.GridSizeX - 1)
-            //    Grid.Instance.grid[GridX + 1, GridY].ConnectedDiagonal_L = null;
-            //if(GridY > 0)
-            //    Grid.Instance.grid[GridX, GridY - 1].ConnectedDiagonal_T = null;
-            //if (GridY < Grid.Instance.GridSizeY - 1)
-            //    Grid.Instance.grid[GridX, GridY + 1].ConnectedDiagonal_B = null;
-
 			if ((prevOrientation == TileOrientation.BottomLeft && !CanConnectFloor_T && !CanConnectFloor_R) ||
 			   (prevOrientation == TileOrientation.TopLeft && !CanConnectFloor_B && !CanConnectFloor_R) ||
 			   (prevOrientation == TileOrientation.TopRight && !CanConnectFloor_B && !CanConnectFloor_L) ||
@@ -405,11 +373,11 @@ public class Tile : IHeapItem<Tile> {
 				SetFloorType (Type.Empty, _newOrientation);
         }
 
-        sAssignTypeConnectability(_newType, _newOrientation);
-        CanConnect_L = sTypeConnectability[0];
-        CanConnect_T = sTypeConnectability[1];
-        CanConnect_R = sTypeConnectability[2];
-        CanConnect_B = sTypeConnectability[3];
+        sConnectability = sGetConnectability(_newType, _newOrientation);
+        CanConnect_L = sConnectability[0];
+        CanConnect_T = sConnectability[1];
+        CanConnect_R = sConnectability[2];
+        CanConnect_B = sConnectability[3];
 
         switch (_newType) {
             case Type.Empty:
@@ -502,6 +470,8 @@ public class Tile : IHeapItem<Tile> {
 			CachedAssets.Instance.GetWallAssetForTile (_WallType_, _Orientation_, 0, false, HasConnectable_L, HasConnectable_T, HasConnectable_R, HasConnectable_B),
             false
         );
+
+        Grid.SetGridAsDirty();
     }
     public void SetFloorType(Type _newType, TileOrientation _newOrientation, bool _temporarily = false){
         if (_temporarily) {
@@ -515,11 +485,11 @@ public class Tile : IHeapItem<Tile> {
                 CanConnectTempFloor_B = false;
             }
             else {
-                sAssignTypeConnectability(_newType, _newOrientation);
-                CanConnectTempFloor_L = sTypeConnectability[0];
-                CanConnectTempFloor_T = sTypeConnectability[1];
-                CanConnectTempFloor_R = sTypeConnectability[2];
-                CanConnectTempFloor_B = sTypeConnectability[3];
+                sConnectability = sGetConnectability(_newType, _newOrientation);
+                CanConnectTempFloor_L = sConnectability[0];
+                CanConnectTempFloor_T = sConnectability[1];
+                CanConnectTempFloor_R = sConnectability[2];
+                CanConnectTempFloor_B = sConnectability[3];
             }
 
             if (_newType == Type.Empty) {
@@ -549,17 +519,6 @@ public class Tile : IHeapItem<Tile> {
             return;
         }
 
-  //      if (_FloorType_ == Type.Diagonal) {
-		//	if(GridX > 0)
-		//		Grid.Instance.grid[GridX - 1, GridY].ConnectedDiagonalFloor_R = null;
-		//	if(GridX < Grid.Instance.GridSizeX - 1)
-		//		Grid.Instance.grid[GridX + 1, GridY].ConnectedDiagonalFloor_L = null;
-		//	if(GridY > 0)
-		//		Grid.Instance.grid[GridX, GridY - 1].ConnectedDiagonalFloor_T = null;
-		//	if (GridY < Grid.Instance.GridSizeY - 1)
-		//		Grid.Instance.grid[GridX, GridY + 1].ConnectedDiagonalFloor_B = null;
-		//}
-
 		_FloorType_ = _newType;
 		_FloorOrientation_ = _newOrientation;
 
@@ -567,23 +526,14 @@ public class Tile : IHeapItem<Tile> {
 		MyUVController.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
 		MyUVController.Sort(GridCoord.y); // TODO: this probably only needs to happen once, or?
 
-		// FloorQuad.Orientation = _newOrientation;
-        // FloorQuad.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        // FloorQuad.GridSorting = MeshSorter.GridSortingEnum.Floor;
-		// FloorQuad.Sort(GridCoord.Y);
-
-        // FloorCornerHider.SortingLayer = MeshSorter.SortingLayerEnum.Grid;
-        // FloorCornerHider.GridSorting = MeshSorter.GridSortingEnum.FloorCorners;
-        // FloorCornerHider.Sort(GridCoord.Y);
-
         //ForceActorStopWhenPassingThis = false; // if floor actually needs this, it has to be its own - otherwise breaks airlocks and such!
 		MovementPenalty = 0; //TODO: use this for something!
 
-        sAssignTypeConnectability(_newType, _newOrientation);
-		CanConnectFloor_L = sTypeConnectability[0];
-		CanConnectFloor_T = sTypeConnectability[1];
-		CanConnectFloor_R = sTypeConnectability[2];
-		CanConnectFloor_B = sTypeConnectability[3];
+        sConnectability = sGetConnectability(_newType, _newOrientation);
+		CanConnectFloor_L = sConnectability[0];
+		CanConnectFloor_T = sConnectability[1];
+		CanConnectFloor_R = sConnectability[2];
+		CanConnectFloor_B = sConnectability[3];
 
 		if (sTryTempCacheNeighbour_L(GridCoord.x, GridCoord.y))
 			UpdateNeighbourFloor(sCachedNeighbour_L, TileOrientation.Left, false);
@@ -608,6 +558,8 @@ public class Tile : IHeapItem<Tile> {
             CachedAssets.Instance.GetFloorAssetForTile(_FloorType_, _FloorOrientation_, 0, HasConnectableFloor_L, HasConnectableFloor_T, HasConnectableFloor_R, HasConnectableFloor_B),
             false
         );
+
+        Grid.SetGridAsDirty();
 	}
 
 	// WARNING: this doesn't support changing the type and orientation of the tile, so if you're gonna change the type of a tile
@@ -933,47 +885,31 @@ public class Tile : IHeapItem<Tile> {
     public void ChangeWallGraphics(Vector2i _bottomAssetCoord, Vector2i _topAssetCoord, bool _temporary) {
 		MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Bottom, _bottomAssetCoord, _temporary);
 		MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Top, _topAssetCoord, _temporary);
-		// BottomQuad.ChangeAsset(_bottomAssetIndices, _temporary);
-		// TopQuad.ChangeAsset(_topAssetIndices, _temporary);
 		UpdateWallCornerHider (_temporary);
     }
     public void ResetTempSettingsWall() {
 		MyUVController.StopTempMode();
-		// BottomQuad.StopTempMode();
-        // TopQuad.StopTempMode();
         UpdateWallCornerHider(false);
     }
 	public void ChangeFloorGraphics(Vector2i _assetCoord, bool _temporary) {
 		MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Floor, _assetCoord, _temporary);
-		//FloorQuad.ChangeAsset(_assetIndices, _temporary);
 		UpdateFloorCornerHider (_temporary);
 	}
     public void ResetTempSettingsFloor() {
 		MyUVController.StopTempMode();
-		//FloorQuad.StopTempMode();
         UpdateFloorCornerHider(false);
     }
     public void SetFloorColor(byte _colorIndex, bool _temporary) {
 		MyUVController.ChangeColor(_colorIndex, _temporary);
-		//FloorQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _temporary);
-        //FloorCornerHider.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _temporary);
     }
     public void ResetFloorColor(){
 		MyUVController.ResetColor();
-		//FloorQuad.ResetUVColor();
-        //FloorCornerHider.ResetUVColor();
     }
     public void SetWallColor(byte _colorIndex, bool _temporary) {
 		MyUVController.ChangeColor(_colorIndex, _temporary);
-		//BottomQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
-        //TopQuad.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
-        //WallCornerHider.SetUVColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, temporary);
     }
     public void ResetWallColor(){
 		MyUVController.ResetColor();
-		// BottomQuad.ResetUVColor();
-        // TopQuad.ResetUVColor();
-        // WallCornerHider.ResetUVColor();
     }
 
     public void OnActorApproachingTile(TileOrientation _direction) {

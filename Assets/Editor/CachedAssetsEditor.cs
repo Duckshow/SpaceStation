@@ -488,7 +488,7 @@ public class CachedAssetsEditor : Editor {
         }
 
         ObjectPooler _pooler = FindObjectOfType<ObjectPooler>();
-        if (!_pooler.HasPoolForID(_colliderDefinition))
+        if (!_pooler.HasPoolForID_EDITOR(_colliderDefinition))
             _pooler.AddPool(_colliderDefinition, _colliderPrefab.GetComponent<PoolerObject>(), _additionalIDs);
 
         _colliderPrefab.pathCount = vertices.Length;
