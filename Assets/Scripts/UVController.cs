@@ -26,7 +26,10 @@ public class UVController : UVControllerBasic {
     private byte setColorIndex_8;
     private byte setColorIndex_9;
 
-    public override void Setup() {
+	public Color[] VColors = new Color[9];
+
+
+	public override void Setup() {
         base.Setup();
 		ChangeColor (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
     }
@@ -164,6 +167,7 @@ public class UVController : UVControllerBasic {
 				vertexColors.Add(new Color32());
 		}
 
+		VColors[_specificVertex] = _color;
 		vertexColors[_specificVertex] = _color;
 		shouldApplyChanges = true;
 	}

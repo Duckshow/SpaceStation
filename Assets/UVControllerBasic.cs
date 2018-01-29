@@ -4,8 +4,7 @@ using System.Collections.Generic;
 public class UVControllerBasic : MeshSorter{
 
 	public const int MESH_VERTEXCOUNT = 14;
-	public const int MESH_VERTICES_PER_X = 3;
-	public const int MESH_VERTICES_PER_Y = 3;
+	public const int MESH_VERTICES_PER_EDGE = 3;
 	public static readonly int GRID_LAYER_COUNT = System.Enum.GetNames(typeof(GridLayerEnum)).Length;
 
 	protected const int UVCHANNEL_UV0 = 0;

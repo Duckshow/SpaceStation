@@ -20,10 +20,12 @@ public class SetToolMode : MonoBehaviour {
 			ExtraStuff.SetActive (false);
     }
     void OnEnable() {
-        MyToggle.onValueChanged.AddListener(OnToggleValueChanged);
+		if(MyToggle != null)
+			MyToggle.onValueChanged.AddListener(OnToggleValueChanged);
     }
     void OnDisable() {
-        MyToggle.onValueChanged.RemoveListener(OnToggleValueChanged);
+		if(MyToggle != null)
+	        MyToggle.onValueChanged.RemoveListener(OnToggleValueChanged);
     }
     public void OnToggleValueChanged(bool _b) {
         if (OverrideOtherButton != null) {
