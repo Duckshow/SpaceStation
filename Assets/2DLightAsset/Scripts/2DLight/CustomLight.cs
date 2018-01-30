@@ -504,6 +504,9 @@ public class CustomLight : MonoBehaviour {
 			int _xWorld = tilesInRange[_xLocal, _yLocal].GridCoord.x;
 			int _yWorld = tilesInRange[_xLocal, _yLocal].GridCoord.y;
 
+			if(_vIndex == 4)
+		Debug.Log(tilesInRange[_xLocal, _yLocal].GridCoord);
+
 			//int _vIndex = vy * 3 + vx;
 			// int _totalX = x * 3 + vx;
 			// int _totalY = y * 3 + vy;
@@ -513,34 +516,33 @@ public class CustomLight : MonoBehaviour {
 			float _dist = (_vertexWorldPos - myInspector.MyTileObject.MyTile.WorldPosition).magnitude;
 			bool _illuminated;
 			float _lightFromThis;
-			Color _finalColor = GetColorForVertex(_xWorld, _yWorld, _vertexWorldPos, _dist, out _illuminated, out _lightFromThis);
+			Color _finalColor = GetColorForVertex(_xWorld, _yWorld, _xLocal, _yLocal, _vIndex, _vertexWorldPos, _dist, out _illuminated, out _lightFromThis);
 			_finalColor.a = 1;
 			
 			// get two dots per light describing angle to four strongest lights
-			Vector4 _dominantLightIndices = GetShadowCastingLightsIndices(_xWorld, _yWorld, _vertexWorldPos, _illuminated, _lightFromThis);
-			_dots[0] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.x);
-			_dots[1] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.y);
-			_dots[2] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.z);
-			_dots[3] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.w);
+			// Vector4 _dominantLightIndices = GetShadowCastingLightsIndices(_xWorld, _yWorld, _vertexWorldPos, _illuminated, _lightFromThis);
+			// _dots[0] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.x);
+			// _dots[1] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.y);
+			// _dots[2] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.z);
+			// _dots[3] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.w);
 
-			int _vxLocal = _xLocal * UVControllerBasic.MESH_VERTICES_PER_EDGE + vx;
-			int _vyLocal = _yLocal * UVControllerBasic.MESH_VERTICES_PER_EDGE + vy;
+			 int _vxLocal = _xLocal * UVControllerBasic.MESH_VERTICES_PER_EDGE + vx;
+			 int _vyLocal = _yLocal * UVControllerBasic.MESH_VERTICES_PER_EDGE + vy;
 
-			mApplyToVertex ApplyUVDots = delegate (int _x, int _y, int _vertex){
-				if(tilesInRange[_x, _y] == null)
-					return;
-				tilesInRange[_x, _y].MyUVController.SetUVDots(_vertex, _dots[0], _dots[1], _dots[2], _dots[3]);
-			};
+			// mApplyToVertex ApplyUVDots = delegate (int _x, int _y, int _vertex){
+			// 	if(tilesInRange[_x, _y] == null)
+			// 		return;
+			// 	tilesInRange[_x, _y].MyUVController.SetUVDots(_vertex, _dots[0], _dots[1], _dots[2], _dots[3]);
+			// };
 			Vector3i[] _neighbourIndices;
-			_neighbourIndices = GetNeighboursToApplyStuffTo(_xLocal, _yLocal, _xWorld, _yWorld, vx, vy, _includeTopHalfStuff: true, _xLocalMax: tilesInRange.GetLength(0), _yLocalMax: tilesInRange.GetLength(1));
-			for (int i2 = 0; i2 < _neighbourIndices.Length; i2++){
-				ApplyUVDots(_neighbourIndices[i2].x, _neighbourIndices[i2].y, _neighbourIndices[i2].z);
-			}
-			_neighbourIndices = GetNeighboursToApplyStuffTo(_vxLocal, _vyLocal, _xWorld, _yWorld, vx, vy, _includeTopHalfStuff: false, _xLocalMax: _cachedColors.GetLength(0), _yLocalMax: _cachedColors.GetLength(1));
-			for (int i2 = 0; i2 < _neighbourIndices.Length; i2++){
-				_cachedColors[_neighbourIndices[i2].x, _neighbourIndices[i2].y] = _finalColor;
-			}
-
+			// _neighbourIndices = GetNeighboursToApplyStuffTo(_xLocal, _yLocal, _xWorld, _yWorld, vx, vy, _includeTopHalfStuff: true, _xLocalMax: tilesInRange.GetLength(0), _yLocalMax: tilesInRange.GetLength(1));
+			// for (int i2 = 0; i2 < _neighbourIndices.Length; i2++){
+			// 	ApplyUVDots(_neighbourIndices[i2].x, _neighbourIndices[i2].y, _neighbourIndices[i2].z);
+			// }
+			// _neighbourIndices = GetGridVerticesAtSamePosition(_vxLocal, _vyLocal, _xWorld, _yWorld, vx, vy, _includeTopHalfStuff: false, _xLocalMax: _cachedColors.GetLength(0), _yLocalMax: _cachedColors.GetLength(1));
+			// for (int i2 = 0; i2 < _neighbourIndices.Length; i2++){
+			// 	_cachedColors[_neighbourIndices[i2].x, _neighbourIndices[i2].y] = _finalColor;
+			// }
 
 
 
@@ -550,7 +552,7 @@ public class CustomLight : MonoBehaviour {
 					return;
 				tilesInRange[_x, _y].MyUVController.SetVertexColor(_vertex, _finalColor);
 			};
-			_neighbourIndices = GetNeighboursToApplyStuffTo(_xLocal, _yLocal, _xWorld, _yWorld, vx, vy, _includeTopHalfStuff: false, _xLocalMax: tilesInRange.GetLength(0), _yLocalMax: tilesInRange.GetLength(1));
+			_neighbourIndices = GetGridVerticesAtSamePosition(_xLocal, _yLocal, _xWorld, _yWorld, vx, vy, _includeTopHalfStuff: false, _xLocalMax: tilesInRange.GetLength(0), _yLocalMax: tilesInRange.GetLength(1));
 			for (int i2 = 0; i2 < _neighbourIndices.Length; i2++){
 				ApplyVertexColor(_neighbourIndices[i2].x, _neighbourIndices[i2].y, _neighbourIndices[i2].z);
 			}
@@ -609,7 +611,7 @@ public class CustomLight : MonoBehaviour {
 			_myColor /= Mathf.Max(_neighbourColors.Length - _failAmount, 1);
 
 
-
+			// debug
 			_myColor = _cachedColors[_xLocal, _yLocal];
 
 
@@ -622,7 +624,7 @@ public class CustomLight : MonoBehaviour {
 					return;
 				tilesInRange[_x, _y].MyUVController.SetVertexColor(_vertex, _myColor);
 			};
-			Vector3i[] _neighbourIndices = GetNeighboursToApplyStuffTo(_xLocal, _yLocal, _xWorld, _yWorld, vx, vy, _includeTopHalfStuff: false, _xLocalMax: tilesInRange.GetLength(0), _yLocalMax: tilesInRange.GetLength(1));
+			Vector3i[] _neighbourIndices = GetGridVerticesAtSamePosition(_xLocal, _yLocal, _xWorld, _yWorld, vx, vy, _includeTopHalfStuff: false /* DEBUG (should be true) */, _xLocalMax: tilesInRange.GetLength(0), _yLocalMax: tilesInRange.GetLength(1));
 			for (int i2 = 0; i2 < _neighbourIndices.Length; i2++){
 				ApplyVertexColor(_neighbourIndices[i2].x, _neighbourIndices[i2].y, _neighbourIndices[i2].z);
 			}
@@ -777,7 +779,7 @@ public class CustomLight : MonoBehaviour {
 	//     }
 	// }
 
-	Vector3i[] GetNeighboursToApplyStuffTo(int _xLocal, int _yLocal, int _xWorld, int _yWorld, int _vx, int _vy, bool _includeTopHalfStuff, int _xLocalMax = -1, int _yLocalMax = -1) {
+	Vector3i[] GetGridVerticesAtSamePosition(int _xLocal, int _yLocal, int _xWorld, int _yWorld, int _vx, int _vy, bool _includeTopHalfStuff, int _xLocalMax = -1, int _yLocalMax = -1) {
 		int _vertsPerEdge = UVControllerBasic.MESH_VERTICES_PER_EDGE;
 		int _vIndex = _vy * _vertsPerEdge + _vx;
 
@@ -861,12 +863,15 @@ public class CustomLight : MonoBehaviour {
 		new LightIndexLevelPairClass(-1, 0),
 		new LightIndexLevelPairClass(-1, 0)
 	};
-	private Color GetColorForVertex(int _xWorld, int _yWorld, Vector2 _worldPos, float _distance, out bool _illuminated, out float _lightFromThis){
-		_lightFromThis = Intensity * Mathf.Pow(1 - (_distance / lightRadius), 2); dwaodnwa // this is the issue right here! _distance can't be zero!
+	private Color GetColorForVertex(int _xWorld, int _yWorld, int _xLocal, int _yLocal, int _vIndex, Vector2 _worldPos, float _distance, out bool _illuminated, out float _lightFromThis){
+		_lightFromThis = Intensity * Mathf.Pow(1 - (_distance / lightRadius), 2);
+
 
 		Color _cachedColor = lightColorMap[_xWorld, _yWorld];
 		Color lightColor = Mouse.Instance.Coloring.AllColors[(int)LightColor];
 		Color newColor = Mouse.Instance.Coloring.AllColors[(int)LightColor] * _lightFromThis;
+
+		tilesInRange[_xLocal, _yLocal].MyUVController.VColors[_vIndex] = _cachedColor;
 
 		_illuminated = IsInsideLightMesh(_worldPos);
 		if(_illuminated){
@@ -878,6 +883,7 @@ public class CustomLight : MonoBehaviour {
 				_cachedColor.b = Mathf.Min(_cachedColor.b + newColor.b, lightColor.b);
 		}
 
+		_cachedColor.a = 1;
 		lightColorMap[_xWorld, _yWorld] = _cachedColor;
 		return _cachedColor;
     }
