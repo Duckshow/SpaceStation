@@ -106,8 +106,6 @@ public class UVControllerBasic : MeshSorter{
 	public virtual void ChangeAsset(GridLayerEnum _layer, Vector2i _assetCoordinates, bool _temporary){
 		if (!Application.isPlaying)
 			return;
-		if (_assetCoordinates == null)
-			Debug.Log("_assetCoordinates was null!");
 
 		int _layerIndex = (int)_layer;
 

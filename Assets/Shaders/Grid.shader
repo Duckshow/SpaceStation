@@ -183,8 +183,6 @@ Shader "Custom/Grid" {
 					CalculateLighting(nrmTex, i.DotXs.a, i.DotYs.a)
 				);
 
-				return i.VColor;
-
 				// final apply
 				fixed3 litRGB = i.VColor * tex.rgb * colorToUse.rgb * mod;
 				return fixed4(
