@@ -488,25 +488,33 @@ public class CustomLight : MonoBehaviour {
 			_dots[2] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.z);
 			_dots[3] = GetDotXY(_vertexWorldPos, (int)_dominantLightIndices.w);
 
-			List<int> _xGridNeighbours;
-			List<int> _yGridNeighbours;
-			List<int> _vIndexNeighbours;
+			int[] _xGridNeighbours;
+			int[] _yGridNeighbours;
+			int[] _vIndexNeighbours;
 			GetGridVerticesAtSamePosition(vx, vy, _xGrid, _yGrid, _xLight == 0, true, out _xGridNeighbours, out _yGridNeighbours, out _vIndexNeighbours);
-			for (int i2 = 0; i2 < _xGridNeighbours.Count; i2++){
+			for (int i2 = 0; i2 < _xGridNeighbours.Length; i2++){
 				Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetUVDots(_vIndexNeighbours[i2], _dots[0], _dots[1], _dots[2], _dots[3]);
 			}
 
 			GetGridVerticesAtSamePosition(vx, vy, _xGrid, _yGrid, _xLight == 0, false, out _xGridNeighbours, out _yGridNeighbours, out _vIndexNeighbours);
-			for (int i2 = 0; i2 < _xGridNeighbours.Count; i2++){
+			for (int i2 = 0; i2 < _xGridNeighbours.Length; i2++){
 				int _yL = GetYLight(_yGridNeighbours[i2]);
 				int _xL = GetXLight(_xGridNeighbours[i2]);
 				int _vy = GetVYUVController(_vIndexNeighbours[i2]);
 				int _vx = GetVXUVController(_vIndexNeighbours[i2], _vy);
 				int _vyG = GetVYGrid(_yL, _vy);
 				int _vxG = GetVXGrid(_xL, _vx);
+				//Debug.Log(_vIndexNeighbours[i2] + ": " + _vx + ", " + _vy);
+				//Debug.LogFormat("{0}, {1}, {2}, {3}", _vy, _yL, _vyG, _yGridNeighbours[i2]);
+				//Debug.LogFormat("{0}, {1}, {2}, {3}", _vxG, _vyG, vertexColorMap.GetLength(0), vertexColorMap.GetLength(1));
+				//Debug.LogFormat("{0}, {1}, {2}, {3}", _xGridNeighbours[i2], _yGridNeighbours[i2], Grid.Instance.grid.GetLength(0), Grid.Instance.grid.GetLength(1));
+
 				vertexColorMap[_vxG, _vyG] = _newVertexColor;
+				Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetVertexColor(_vIndexNeighbours[i2], _newVertexColor);
 			}
 		}
+
+		return;
 
 		// blur and apply colors
 		Color[] _neighbourColors = new Color[9];
@@ -560,15 +568,14 @@ public class CustomLight : MonoBehaviour {
 			_myColor /= Mathf.Max(_neighbourColors.Length - _failAmount, 1);
 			_myColor.a = 1;
 
-			List<int> _xGridForNeighbours;
-			List<int> _yGridForNeighbours;
-			List<int> _vIndexForNeighbours;
+			int[] _xGridForNeighbours;
+			int[] _yGridForNeighbours;
+			int[] _vIndexForNeighbours;
 			mApplyToVertex ApplyVertexColor = delegate (int _x, int _y, int _vertex){
-				Grid.Instance.grid[_x, _y].MyUVController.VColors[_vIndex] = _myColor;
 				Grid.Instance.grid[_x, _y].MyUVController.SetVertexColor(_vertex, _myColor);
 			};
 			GetGridVerticesAtSamePosition(vx, vy, _xGrid, _yGrid, _xLight == 0, true, out _xGridForNeighbours, out _yGridForNeighbours, out _vIndexForNeighbours);
-			for (int i2 = 0; i2 < _xGridForNeighbours.Count; i2++){
+			for (int i2 = 0; i2 < _xGridForNeighbours.Length; i2++){
 				ApplyVertexColor(_xGridForNeighbours[i2], _yGridForNeighbours[i2], _vIndexForNeighbours[i2]);
 			}
 		}
@@ -754,60 +761,133 @@ public class CustomLight : MonoBehaviour {
 	//     }
 	// }
 
-
-	void GetGridVerticesAtSamePosition(int _vx, int _vy, int _xGrid, int _yGrid, bool _isOnLeftEdge, bool _includeTopHalfStuff, out List<int> _xGridForNeighbours, out List<int> _yGridForNeighbours, out List<int> _vIndexForNeighbours) { awdoiwn // try again making these arrays :c
+	enum VertexNeighbourEnum { TileAbove, TopHalf, TopHalfLeft, TopHalfRight, TileRight, TileRightTopHalf, TileRightTopHalfLeft, TileTopRight };
+	struct VertexNeighbourStruct {
+		public bool Affected;
+		public VertexNeighbourEnum Neighbour;
+		public VertexNeighbourStruct(bool _affected, VertexNeighbourEnum _neighbour) { Affected = _affected; Neighbour = _neighbour; }
+	}
+	private delegate bool mNeighbourTestDelegate1(VertexNeighbourEnum _neighbour, int _vertexX, int _vertexY, int _gridX, int _gridY);
+	private delegate int  mNeighbourTestDelegate2(VertexNeighbourEnum _neighbour);
+	void GetGridVerticesAtSamePosition(int _vx, int _vy, int _xGrid, int _yGrid, bool _isOnLeftEdge, bool _includeTopHalfStuff, out int[] _xGridForNeighbours, out int[] _yGridForNeighbours, out int[] _vIndexForNeighbours) {
 		int _vertsPerEdge = UVControllerBasic.MESH_VERTICES_PER_EDGE;
-		int _vIndex = _vy * _vertsPerEdge + _vx;
-		bool _affectsTopNeighbour = _yGrid + 1 < Grid.GridSizeY && _vy == _vertsPerEdge - 1;
-		bool _affectsTopHalf = _includeTopHalfStuff && _vy == _vertsPerEdge - 1;
-		bool _affectsTopHalfLeft = _affectsTopHalf && _isOnLeftEdge;
-		bool _affectsTopHalfRight = _affectsTopHalf && _vx == 2;
-		bool _affectsRightNeighbour = _xGrid + 1 < Grid.GridSizeX && _vx == 2;
-		bool _affectsRightNeighbourTop = _affectsTopHalf && _affectsRightNeighbour;
-		bool _affectsTopRightNeighbour = _affectsRightNeighbour && _affectsTopNeighbour;
+		int _vIndex = _vy * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vx;
 
-		_xGridForNeighbours 	= new List<int>() { _xGrid };
-		_yGridForNeighbours 	= new List<int>() { _yGrid };
-		_vIndexForNeighbours 	= new List<int>() { _vIndex };
+		mNeighbourTestDelegate1 AffectsVertex = null;
+		AffectsVertex = delegate (VertexNeighbourEnum _neighbour, int _vertexX, int _vertexY, int _gridX, int _gridY){
+			switch (_neighbour){
+				case VertexNeighbourEnum.TileAbove:
+					return _gridY + 1 < Grid.GridSizeY && _vertexY == _vertsPerEdge - 1;
+				case VertexNeighbourEnum.TopHalf:
+					return _includeTopHalfStuff && _vertexY == _vertsPerEdge - 1;
+				case VertexNeighbourEnum.TopHalfLeft:
+					return AffectsVertex(VertexNeighbourEnum.TopHalf, _vertexX, _vertexY, _gridX, _gridY) && _isOnLeftEdge;
+				case VertexNeighbourEnum.TopHalfRight:
+					return AffectsVertex(VertexNeighbourEnum.TopHalf, _vertexX, _vertexY, _gridX, _gridY) && _vertexX == _vertsPerEdge - 1;
+				case VertexNeighbourEnum.TileRight:
+					return _gridX + 1 < Grid.GridSizeX && _vertexX == _vertsPerEdge - 1;
+				case VertexNeighbourEnum.TileRightTopHalf:
+				case VertexNeighbourEnum.TileRightTopHalfLeft:
+					return AffectsVertex(VertexNeighbourEnum.TopHalf, _vertexX, _vertexY, _gridX, _gridY) && AffectsVertex(VertexNeighbourEnum.TileRight, _vertexX, _vertexY, _gridX, _gridY);
+				case VertexNeighbourEnum.TileTopRight:
+					return AffectsVertex(VertexNeighbourEnum.TileRight, _vertexX, _vertexY, _gridX, _gridY) && AffectsVertex(VertexNeighbourEnum.TileAbove, _vertexX, _vertexY, _gridX, _gridY);
+				default:
+					Debug.LogError(_neighbour.ToString() + " hans't been properly implemented yet!");
+					return false;
+			}
+		};
+		mNeighbourTestDelegate2 GetXGridForNeighbour = delegate (VertexNeighbourEnum _neighbour){
+			switch (_neighbour)
+			{
+				case VertexNeighbourEnum.TileAbove:
+				case VertexNeighbourEnum.TopHalf:
+				case VertexNeighbourEnum.TopHalfLeft:
+				case VertexNeighbourEnum.TopHalfRight:
+					return _xGrid;
+				case VertexNeighbourEnum.TileRight:
+				case VertexNeighbourEnum.TileRightTopHalf:
+				case VertexNeighbourEnum.TileRightTopHalfLeft:
+				case VertexNeighbourEnum.TileTopRight:
+					return _xGrid + 1;
+				default:
+					Debug.LogError(_neighbour.ToString() + " hans't been properly implemented yet!");
+					return 0;
+			}
+		};
+		mNeighbourTestDelegate2 GetYGridForNeighbour = delegate (VertexNeighbourEnum _neighbour){
+			switch (_neighbour){
+				case VertexNeighbourEnum.TopHalf:
+				case VertexNeighbourEnum.TopHalfLeft:
+				case VertexNeighbourEnum.TopHalfRight:
+				case VertexNeighbourEnum.TileRight:
+				case VertexNeighbourEnum.TileRightTopHalf:
+				case VertexNeighbourEnum.TileRightTopHalfLeft:
+					return _yGrid;
+				case VertexNeighbourEnum.TileAbove:
+				case VertexNeighbourEnum.TileTopRight:
+					return _yGrid + 1;
+				default:
+					Debug.LogError(_neighbour.ToString() + " hans't been properly implemented yet!");
+					return 0;
+			}
+		};
+		mNeighbourTestDelegate2 GetVIndexForNeighbour = delegate (VertexNeighbourEnum _neighbour){
+			switch (_neighbour){
+				case VertexNeighbourEnum.TileAbove: 			return _vx;
+				case VertexNeighbourEnum.TopHalf: 				return (_vy + 1) * _vertsPerEdge + _vx;
+				case VertexNeighbourEnum.TopHalfLeft:			return (_vy + 2) * _vertsPerEdge;
+				case VertexNeighbourEnum.TopHalfRight:			return (_vy + 2) * _vertsPerEdge + 1; // +1 instead of _vx because top-half has fewer vertices ^^'
+				case VertexNeighbourEnum.TileRight:				return _vIndex - _vx;
+				case VertexNeighbourEnum.TileRightTopHalf:		return (_vy + 1) * _vertsPerEdge;
+				case VertexNeighbourEnum.TileRightTopHalfLeft:	return (_vy + 2) * _vertsPerEdge;
+				case VertexNeighbourEnum.TileTopRight:			return 0;
+				default:
+					Debug.LogError(_neighbour.ToString() + " hans't been properly implemented yet!");
+					return 0;
+			}
+		};
 
-		if (_affectsTopNeighbour){
-			_xGridForNeighbours.Add(_xGrid);
-			_yGridForNeighbours.Add(_yGrid + 1);
-			_vIndexForNeighbours.Add(_vx);
-		}
-		if (_affectsTopHalf){
-			_xGridForNeighbours.Add(_xGrid);
-			_yGridForNeighbours.Add(_yGrid);
-			_vIndexForNeighbours.Add((_vy + 1) * _vertsPerEdge + _vx);
-		}
-		if (_affectsTopHalfLeft){
-			_xGridForNeighbours.Add(_xGrid);
-			_yGridForNeighbours.Add(_yGrid);
-			_vIndexForNeighbours.Add((_vy + 2) * _vertsPerEdge);
-		}
-		if (_affectsTopHalfRight){
-			_xGridForNeighbours.Add(_xGrid);
-			_yGridForNeighbours.Add(_yGrid);
-			_vIndexForNeighbours.Add((_vy + 2) * _vertsPerEdge + 1); // +1 instead of _vx because top-half has fewer vertices ^^'
-		}
-		if (_affectsRightNeighbour){
-			_xGridForNeighbours.Add(_xGrid + 1);
-			_yGridForNeighbours.Add(_yGrid);
-			_vIndexForNeighbours.Add(_vIndex - _vx);
-		}
-		if (_affectsRightNeighbourTop){
-			_xGridForNeighbours.Add(_xGrid + 1);
-			_yGridForNeighbours.Add(_yGrid);
-			_vIndexForNeighbours.Add((_vy + 1) * _vertsPerEdge);
+		bool _tileAbove 			= AffectsVertex(VertexNeighbourEnum.TileAbove, 			_vx, _vy, _xGrid, _yGrid);
+		bool _topHalf 				= AffectsVertex(VertexNeighbourEnum.TopHalf, 			_vx, _vy, _xGrid, _yGrid);
+		bool _topHalf_L 			= AffectsVertex(VertexNeighbourEnum.TopHalfLeft, 		_vx, _vy, _xGrid, _yGrid);
+		bool _topHalf_R 			= AffectsVertex(VertexNeighbourEnum.TopHalfRight, 		_vx, _vy, _xGrid, _yGrid);
+		bool _tileRight 			= AffectsVertex(VertexNeighbourEnum.TileRight, 			_vx, _vy, _xGrid, _yGrid);
+		bool _tileRightTopHalf 		= AffectsVertex(VertexNeighbourEnum.TileRightTopHalf, 	_vx, _vy, _xGrid, _yGrid);
+		bool _tileRightTopHalf_L 	= AffectsVertex(VertexNeighbourEnum.TileRightTopHalf, _vx, _vy, _xGrid, _yGrid);
+		bool _tileTopRight 			= AffectsVertex(VertexNeighbourEnum.TileTopRight, 		_vx, _vy, _xGrid, _yGrid);
 
-			_xGridForNeighbours.Add(_xGrid + 1);
-			_yGridForNeighbours.Add(_yGrid);
-			_vIndexForNeighbours.Add((_vy + 2) * _vertsPerEdge);
+		//Debug.LogFormat("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}", _tileAbove, _topHalf, _topHalf_L, _topHalf_R, _tileRight, _tileRightTopHalf, _tileRightTopHalf_L, _tileTopRight);
+		VertexNeighbourStruct[] _theNeighbours = new VertexNeighbourStruct[] { 
+			new VertexNeighbourStruct(_tileAbove, 			VertexNeighbourEnum.TileAbove),
+			new VertexNeighbourStruct(_topHalf, 			VertexNeighbourEnum.TopHalf),
+			new VertexNeighbourStruct(_topHalf_L, 			VertexNeighbourEnum.TopHalfLeft),
+			new VertexNeighbourStruct(_topHalf_R, 			VertexNeighbourEnum.TopHalfRight),
+			new VertexNeighbourStruct(_tileRight, 			VertexNeighbourEnum.TileRight),
+			new VertexNeighbourStruct(_tileRightTopHalf, 	VertexNeighbourEnum.TileRightTopHalf),
+			new VertexNeighbourStruct(_tileRightTopHalf_L, 	VertexNeighbourEnum.TileRightTopHalfLeft),
+			new VertexNeighbourStruct(_tileTopRight, 		VertexNeighbourEnum.TileTopRight)
+		};
+
+		int _amountTrue = 1; // 1 because *this* vertex is always affected
+		for (int i = 0; i < _theNeighbours.Length; i++){
+			if(_theNeighbours[i].Affected)
+				_amountTrue++;
 		}
-		if (_affectsTopRightNeighbour){
-			_xGridForNeighbours.Add(_xGrid + 1);
-			_yGridForNeighbours.Add(_yGrid + 1);
-			_vIndexForNeighbours.Add(0);
+		_xGridForNeighbours 	= new int[_amountTrue];
+		_yGridForNeighbours 	= new int[_amountTrue];
+		_vIndexForNeighbours 	= new int[_amountTrue];
+		_xGridForNeighbours[0] 	= _xGrid;
+		_yGridForNeighbours[0] 	= _yGrid;
+		_vIndexForNeighbours[0] = _vIndex;
+
+		for (int _index = 0, _affectIndex = 1; _index < _theNeighbours.Length; _index++){
+			if(!_theNeighbours[_index].Affected)
+				continue;
+
+			_xGridForNeighbours[_affectIndex] 	= GetXGridForNeighbour(_theNeighbours[_index].Neighbour);
+			_yGridForNeighbours[_affectIndex] 	= GetYGridForNeighbour(_theNeighbours[_index].Neighbour);
+			_vIndexForNeighbours[_affectIndex] 	= GetVIndexForNeighbour(_theNeighbours[_index].Neighbour);
+			_affectIndex++;
 		}
 	}
 

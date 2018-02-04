@@ -167,7 +167,7 @@ public class UVController : UVControllerBasic {
 				vertexColors.Add(new Color32());
 		}
 
-		//VColors[_specificVertex] = _color;
+		VColors[_specificVertex] = _color;
 		vertexColors[_specificVertex] = _color;
 		shouldApplyChanges = true;
 	}
