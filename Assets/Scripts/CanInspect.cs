@@ -126,10 +126,19 @@ public class CanInspect : MonoBehaviour {
         if (!hasSetup)
             Setup();
 
-        MyUVC.Hide(_b); // TODO: this will have to support multiple because top+bottom and such
+        MyUVC.Hide(_b);
+
+        CustomLight _light = GetComponent<CustomLight>();
+        if (_light != null){
+            if(_b)
+                _light.OnTurnedOff();
+            else
+                _light.OnTurnedOn();
+        }
 
 		if(CanBePickedUp)
 			Clickable.Enabled = !_b;
+
         if (_b)
             MyTileObject.DeActivate();
         else

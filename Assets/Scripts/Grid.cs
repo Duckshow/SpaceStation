@@ -53,7 +53,7 @@ public class Grid : MonoBehaviour {
         }
     }
     void OnGridDirty(){
-        CustomLight.UpdateAllLights();
+        CustomLight.ForceUpdateAllLights();
     }
 
 	[SerializeField] private int Seed;

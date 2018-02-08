@@ -127,16 +127,18 @@ Shader "Custom/Grid" {
 			fixed4 CalculateLighting(fixed4 _normals, fixed _dotX, fixed _dotY){
 				float _litness = 
 				max(
-					abs(_normals.r - _dotX), 		// diff between normal X and horizontal dot product to light
-					abs(_normals.g - _dotY)			// diff between normal Y and vertical dot product to light
+					// 0 if facing light head-on, 1 if opposite
+					abs(_normals.r - _dotX),
+					abs(_normals.g - _dotY)	
 				);
+
 				return (1 - 
 					min(
 						floor(_normals.a),
 						min(
 							ceil(_normals.r + _normals.g),			// only if both normals are set to zero will this win, making it fully lit
 							saturate(
-								_litness + sign(_litness - 0.5) * 0.1
+								round(_litness)
 							)
 						)
 					)
@@ -185,6 +187,7 @@ Shader "Custom/Grid" {
 
 				// final apply
 				fixed3 litRGB = i.VColor * tex.rgb * colorToUse.rgb * mod;
+				//litRGB = mod;
 				return fixed4(
 					lerp(litRGB, emTex, emTex.a),
 					tex.a
