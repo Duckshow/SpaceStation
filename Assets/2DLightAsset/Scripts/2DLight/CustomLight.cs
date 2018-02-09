@@ -70,6 +70,11 @@ public class CustomLight : MonoBehaviour {
         myInspector.PostPutDown -= PostPutDown;
     }
 
+	void Start(){
+		if(!hasInited)
+			Init();
+	}
+
     void PostPickUp(){ // TODO: would be good if picked-up objects were visible and jumped between tiles when moving. that way the light can update as it's moved as well.
         ForceUpdateAllLights();
     }
@@ -77,13 +82,14 @@ public class CustomLight : MonoBehaviour {
         ForceUpdateAllLights();
     }
 
-
+	private static bool hasInited = false;
 	private const int MAX_LIGHTS_AFFECTING_VERTEX = 32;
 	private static int[,][] vertexLightsInRangeMap;		// indices for each light that can reach each vertex
 	private static Vector4[,] vertexLightIndexMap; 		// the four most dominant lights' indices for each vertex
 	private static Vector4[,] vertexLightIntensityMap; 	// how strongly the dominant lights hit each vertex
 	private static Color[,] vertexColorMap; 			// the current color of each vertex (without blur!)
 	private static void Init(){
+		hasInited = true;
 		GridMaterial = Grid.Instance.grid[0, 0].MyUVController.Renderer.sharedMaterial;
 
 		int _mapSizeX = Grid.GridSizeX * UVControllerBasic.MESH_VERTICES_PER_EDGE;
@@ -93,20 +99,22 @@ public class CustomLight : MonoBehaviour {
 		vertexColorMap 				= new Color		[_mapSizeX, _mapSizeY];
 		vertexLightsInRangeMap		= new int		[Grid.GridSizeX, Grid.GridSizeY][];
 
-		int _vxGrid = 0, _vyGrid = 0;
+		int _xGrid = 0, _yGrid = 0;
 		mIterateVariables IterateExtraVariables = delegate (){
-			_vxGrid++;
-			if (_vxGrid == _mapSizeX * UVControllerBasic.MESH_VERTICES_PER_EDGE){
-				_vxGrid = 0;
-				_vyGrid++;
+			_xGrid++;
+			if (_xGrid == Grid.GridSizeX){
+				_xGrid = 0;
+				_yGrid++;
 			}
 		};
 		int _totalIterations = Grid.GridSizeX * Grid.GridSizeY;
 		for (int i = 0; i < _totalIterations; i++){
-			vertexLightsInRangeMap[_vxGrid, _vyGrid] = new int[MAX_LIGHTS_AFFECTING_VERTEX];
-			for (int i2 = 0; i2 < vertexLightsInRangeMap.Length; i2++){
-				vertexLightsInRangeMap[_vxGrid, _vyGrid][i2] = -1;
+			int[] _lightIndices = new int[MAX_LIGHTS_AFFECTING_VERTEX];
+			for (int i2 = 0; i2 < _lightIndices.Length; i2++){
+				_lightIndices[i2] = -1;
 			}
+
+			vertexLightsInRangeMap[_xGrid, _yGrid] = _lightIndices;
 		}
 	}
 
@@ -198,7 +206,7 @@ public class CustomLight : MonoBehaviour {
     }
 
     void UpdateLight() {
-        GetTilesInRange();
+        GetAllTilesInRange();
 		PreparePooledColliders();
 		SetVertices();
 		DiscardPooledColliders();
@@ -207,8 +215,8 @@ public class CustomLight : MonoBehaviour {
 		UpdatePointCollisionArray();
 		CalculateLightingForTilesInRange(_excludeMe: false);
 	}
-	void RemoveLightsEffectOnGrid(){ eaoadfna // I think it's time to test this out. Just fix the compiler issues first.
-		GetTilesInRange();
+	void RemoveLightsEffectOnGrid(){
+		GetAllTilesInRange();
 		CalculateLightingForTilesInRange(_excludeMe: true);
 	}
 
@@ -216,7 +224,7 @@ public class CustomLight : MonoBehaviour {
     private bool breakLoops = false;
     private Vector2i[,] tilesInRange;
     private Vector2i[,] tilesInRangeWithCollider;
-	void GetTilesInRange() {
+	void GetAllTilesInRange() {
 		int _radius = lightRadius;
 		int _diameter = _radius * 2 + 1; // +1 to account for center tile
 		int _leftMostX = Mathf.Max(myInspector.MyTileObject.MyTile.GridCoord.x - _radius, 0);
@@ -234,7 +242,11 @@ public class CustomLight : MonoBehaviour {
 			for (int x = 0, _xGrid = _myX - lightRadius; x < _diameter; x++, _xGrid++){
 				_tiles[x, y] = new Vector2i(_xGrid, _yGrid);
 				
-				if(_onlyWithColliders && !ObjectPooler.Instance.HasPoolForID(Grid.Instance.grid[_xGrid, _yGrid].ExactType)){
+				if (_xGrid < 0 || _xGrid >= Grid.GridSizeX || _yGrid < 0 || _yGrid >= Grid.GridSizeY){
+					_tiles[x, y].x = -1;
+					_tiles[x, y].y = -1;
+				}
+				else if(_onlyWithColliders && !ObjectPooler.Instance.HasPoolForID(Grid.Instance.grid[_xGrid, _yGrid].ExactType)){
 					_tiles[x, y].x = -1;
 					_tiles[x, y].y = -1;
 				}
@@ -291,11 +303,13 @@ public class CustomLight : MonoBehaviour {
 		};
 		int _totalIterations = tilesInRangeWithCollider.GetLength(0) * tilesInRangeWithCollider.GetLength(1);
 		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()) {
-			Tile _t = tilesInRangeWithCollider[x, y];
-			if(_t == null)
+			Vector2i _tileCoord = tilesInRangeWithCollider[x, y];
+			if(_tileCoord.x < 0 || _tileCoord.y < 0)
 				continue;
-            PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(tilesInRangeWithCollider[x, y].ExactType);
-            _coll.transform.position = tilesInRangeWithCollider[x, y].WorldPosition;
+
+			Tile _t = Grid.Instance.grid[_tileCoord.x, _tileCoord.y];
+            PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(_t.ExactType);
+            _coll.transform.position = _t.WorldPosition;
 
 			tempVerts.Clear();
             
@@ -529,7 +543,7 @@ public class CustomLight : MonoBehaviour {
 				continue;
 			if (_yLight > 0 && vy == 0)
 				continue;
-			if(tilesInRange[_xLight, _yLight] == null)
+			if(tilesInRange[_xLight, _yLight].x < 0 || tilesInRange[_xLight, _yLight].y < 0)
 				continue;
 
 			int _vxLight 	= GetVXLight(_xLight, vx);
@@ -548,7 +562,6 @@ public class CustomLight : MonoBehaviour {
 			
 			// get two dots per light describing angle to four strongest lights
 			Vector4 _dominantLightIndices = GetShadowCastingLightsIndices(_vxLight, _vyLight, _excludeMe, _illuminated, _lightFromThis);
-			Debug.Log(_dominantLightIndices);
 			_dots[0] = GetDotXY(_vxWorld, _vyWorld, (int)_dominantLightIndices.x);
 			_dots[1] = GetDotXY(_vxWorld, _vyWorld, (int)_dominantLightIndices.y);
 			_dots[2] = GetDotXY(_vxWorld, _vyWorld, (int)_dominantLightIndices.z);
@@ -1011,14 +1024,16 @@ public class CustomLight : MonoBehaviour {
 		};
 		int _totalIterations = tilesInRangeWithCollider.GetLength(0) * tilesInRangeWithCollider.GetLength(1);
 		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
-			Tile _t = tilesInRangeWithCollider[x, y];
-			if(_t == null)
+			Vector2i _tileCoord = tilesInRangeWithCollider[x, y];
+			if(_tileCoord.x < 0 || _tileCoord.y < 0)
 				continue;
+
+			Tile _t = Grid.Instance.grid[_tileCoord.x, _tileCoord.y];
 			PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(_t.ExactType);
             if (_coll == null)
                 continue;
 
-            _coll.transform.position = tilesInRangeWithCollider[x, y].WorldPosition;
+            _coll.transform.position = _t.WorldPosition;
             pooledColliders.Enqueue(_coll);
         }
 	}
