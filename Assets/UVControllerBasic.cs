@@ -13,8 +13,6 @@ public class UVControllerBasic : MeshSorter{
 	protected const int UVCHANNEL_DOUBLEDOT = 3;
 	protected const int DOT_PRECISION = 10000;
 
-	public bool TotallySetTheBool = false;
-
 	[System.Serializable]
 	public class GridLayerClass{
 		public Vector2i Coordinates = new Vector2i();
@@ -49,6 +47,8 @@ public class UVControllerBasic : MeshSorter{
 		MyMeshFilter = GetComponent<MeshFilter>();
 		if (MyMeshFilter.sharedMesh == null)
 			MyMeshFilter.sharedMesh = GenerateMesh();
+
+		myRenderer.sharedMaterial = CachedAssets.Instance.MaterialGrid;
 
 		if (!sHasSetShaderProperties){
 			myRenderer.sharedMaterial.SetVectorArray("allColors", ColoringTool.sAllColorsForShaders);

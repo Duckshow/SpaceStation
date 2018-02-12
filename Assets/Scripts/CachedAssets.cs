@@ -431,7 +431,7 @@ public class CachedAssets : MonoBehaviour {
         public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Top 			= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Wait_TOP).y, 8);
         public static TileAnimator.TileAnimation anim_AirlockVertical_Wait_Bottom 		= new TileAnimator.TileAnimation(GetTextureCoord(Purpose.AirlockVertical_Wait).y, 8);
 
-        public Texture2D ShadowMap;
+		public Texture2D ShadowMap;
 
         // note: code for generating these can be found in CachedAssetsEditor.cs
         public PolygonCollider2D wall_Single_shadow;
@@ -475,84 +475,87 @@ public class CachedAssets : MonoBehaviour {
         public PolygonCollider2D anim_AirlockVertical_shadow;
     }
 
-    // [System.Serializable]
-    // public class MovableCollider { // workaround for moving a collider and raycasting against it on the same frame
-    //     public Vector2 WorldPosition;
-    //     public ColliderVertices[] Paths;
-    //     public MovableCollider() { }
-    //     public MovableCollider(int _length) { Paths = new ColliderVertices[_length]; }
+	// [System.Serializable]
+	// public class MovableCollider { // workaround for moving a collider and raycasting against it on the same frame
+	//     public Vector2 WorldPosition;
+	//     public ColliderVertices[] Paths;
+	//     public MovableCollider() { }
+	//     public MovableCollider(int _length) { Paths = new ColliderVertices[_length]; }
 
-    //     public void SetPaths(ColliderVertices[] _p) {
-    //         if (_p == null) {
-    //             Paths = new ColliderVertices[0];
-    //             return;
-    //         }
+	//     public void SetPaths(ColliderVertices[] _p) {
+	//         if (_p == null) {
+	//             Paths = new ColliderVertices[0];
+	//             return;
+	//         }
 
-    //         Paths = _p;
-    //     }
-    //     public void SetPath(int _path, Vector2[] _vertices) {
-    //         Paths[_path].Vertices = _vertices;
-    //     }
-    //     //private int totalCount;
-    //     //public int GetTotalPointCount() {
-    //     //    totalCount = 0;
-    //     //    for (int i = 0; i < Paths.Length; i++)
-    //     //        totalCount += Paths[i].Vertices.Length;
-    //     //    return totalCount;
-    //     //}
+	//         Paths = _p;
+	//     }
+	//     public void SetPath(int _path, Vector2[] _vertices) {
+	//         Paths[_path].Vertices = _vertices;
+	//     }
+	//     //private int totalCount;
+	//     //public int GetTotalPointCount() {
+	//     //    totalCount = 0;
+	//     //    for (int i = 0; i < Paths.Length; i++)
+	//     //        totalCount += Paths[i].Vertices.Length;
+	//     //    return totalCount;
+	//     //}
 
-    //     private bool intersect = false;
-    //     private Vector2 point;
-    //     private Vector2[] vertices;
-    //     private int j;
-    //     private const float VERTEX_HIT_DISTANCE = 0.01f;
-    //     public bool OverlapPointOrAlmost(Vector2 _pos, out float closest) {
-    //         point = _pos - WorldPosition;
-    //         intersect = false;
-    //         closest = 10000;
-    //         for (int p = 0; p < Paths.Length; p++) {
-    //             j = Paths[p].Vertices.Length - 1;
-    //             vertices = Paths[p].Vertices;
+	//     private bool intersect = false;
+	//     private Vector2 point;
+	//     private Vector2[] vertices;
+	//     private int j;
+	//     private const float VERTEX_HIT_DISTANCE = 0.01f;
+	//     public bool OverlapPointOrAlmost(Vector2 _pos, out float closest) {
+	//         point = _pos - WorldPosition;
+	//         intersect = false;
+	//         closest = 10000;
+	//         for (int p = 0; p < Paths.Length; p++) {
+	//             j = Paths[p].Vertices.Length - 1;
+	//             vertices = Paths[p].Vertices;
 
-    //             // is point inside collider?
-    //             for (int v = 0; v < vertices.Length; j = v++) {
-    //                 // stolen from the internets D:
-    //                 if (((vertices[v].y <= point.y && point.y < vertices[j].y) || (vertices[j].y <= point.y && point.y < vertices[v].y)) &&
-    //                     (point.x < (vertices[j].x - vertices[v].x) * (point.y - vertices[v].y) / (vertices[j].y - vertices[v].y) + vertices[v].x))
-    //                     intersect = !intersect;
-    //             }
-    //             if (intersect)
-    //                 return true;
+	//             // is point inside collider?
+	//             for (int v = 0; v < vertices.Length; j = v++) {
+	//                 // stolen from the internets D:
+	//                 if (((vertices[v].y <= point.y && point.y < vertices[j].y) || (vertices[j].y <= point.y && point.y < vertices[v].y)) &&
+	//                     (point.x < (vertices[j].x - vertices[v].x) * (point.y - vertices[v].y) / (vertices[j].y - vertices[v].y) + vertices[v].x))
+	//                     intersect = !intersect;
+	//             }
+	//             if (intersect)
+	//                 return true;
 
-    //             // is point super-close to any of the vertices?
-    //             for (int v = 0; v < vertices.Length; v++) { 
-    //                 if((point - vertices[v]).magnitude < closest)
-    //                     closest = (point - vertices[v]).magnitude;
+	//             // is point super-close to any of the vertices?
+	//             for (int v = 0; v < vertices.Length; v++) { 
+	//                 if((point - vertices[v]).magnitude < closest)
+	//                     closest = (point - vertices[v]).magnitude;
 
-    //                 if ((point - vertices[v]).magnitude < VERTEX_HIT_DISTANCE)
-    //                     return true;
-    //             }
-    //         }
+	//                 if ((point - vertices[v]).magnitude < VERTEX_HIT_DISTANCE)
+	//                     return true;
+	//             }
+	//         }
 
-    //         return false;
-    //     }
-    // }
-    // [System.Serializable]
-    // public class ColliderVertices { // workaround for serializing jagged array
-    //     public Vector2[] Vertices;
-    //     public ColliderVertices() { }
-    //     public ColliderVertices(int _length) { Vertices = new Vector2[_length]; }
-    // }
+	//         return false;
+	//     }
+	// }
+	// [System.Serializable]
+	// public class ColliderVertices { // workaround for serializing jagged array
+	//     public Vector2[] Vertices;
+	//     public ColliderVertices() { }
+	//     public ColliderVertices(int _length) { Vertices = new Vector2[_length]; }
+	// }
 
-    public WallSet[] WallSets;
-    //public PolygonCollider2D ShadowCollider;
+	public Material MaterialGrid;
     public GameObject TilePrefab;
-
+   
     [Header("Character Assets")]
     public OrientedAsset[] HairStyles;
     public OrientedAsset[] Heads;
     public OrientedAsset[] Eyes;
     public OrientedAsset[] Beards;
+	
+	[Header("Grid Assets")]
+	public WallSet[] WallSets;
+
 
 
     void Awake() {

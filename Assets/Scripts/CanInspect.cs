@@ -15,6 +15,7 @@ public class CanInspect : MonoBehaviour {
     public GUIManager.WindowType Window_Inspector;
     public GUIManager.WindowType Window_ObjectPlacer;
     public bool CanBePickedUp = false;
+	public bool IsHidden { get; private set; }
 
     [Header("Info Window Settings (Leave null if unused)")]
 	[SerializeField] private Image OnClickImage;
@@ -36,9 +37,11 @@ public class CanInspect : MonoBehaviour {
     public delegate void InspectEvent();
     public InspectEvent PostPickUp;
     public InspectEvent PostPutDown;
+	public delegate void InspectEventTrueFalse(bool _b);
+	public InspectEventTrueFalse OnHide;
 
 
-    void Awake() {
+	void Awake() {
         if (!hasSetup)
             Setup();
     }
@@ -62,7 +65,6 @@ public class CanInspect : MonoBehaviour {
     }
 
     void Start() {
-        //Renderer.material.SetColor("_OutlineColor", new Color32(0, 0, 0, 0));
         MyUVC.ChangeColor(ColoringTool.COLOR_WHITE, _temporary: true);
     }
 
@@ -112,36 +114,24 @@ public class CanInspect : MonoBehaviour {
 
         MyTileObject.SetParent(_parent);
 		transform.localPosition = _localPos;
-        // might need a Sort() here, but if it's offgrid, as intended, then it shouldn't be needed, right?
+        // TODO: might need a Sort() here, but if it's offgrid, as intended, then it shouldn't be needed, right?
         Hide(_hide);
 	}
 
     public void ShowOutline(bool _true) {
         byte alpha = _true ? OUTLINE_ALPHA_SELECTED : (byte)0;
         MyUVC.ChangeColor(_true ? ColoringTool.COLOR_GREY : ColoringTool.COLOR_WHITE, _temporary: true);
-        //Renderer.material.SetColor("_OutlineColor", new Color32(0, 0, 0, alpha));
     }
 
     public void Hide(bool _b) {
-        if (!hasSetup)
+		IsHidden = _b;
+
+		if (!hasSetup)
             Setup();
 
         MyUVC.Hide(_b);
 
-        CustomLight _light = GetComponent<CustomLight>();
-        if (_light != null){
-            if(_b)
-                _light.OnTurnedOff();
-            else
-                _light.OnTurnedOn();
-        }
-
-		if(CanBePickedUp)
-			Clickable.Enabled = !_b;
-
-        if (_b)
-            MyTileObject.DeActivate();
-        else
-            MyTileObject.Activate();
+		if(OnHide != null)
+			OnHide(_b);
     }
 }

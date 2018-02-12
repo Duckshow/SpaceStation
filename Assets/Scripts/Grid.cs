@@ -25,11 +25,6 @@ public class Grid : MonoBehaviour {
     public static int GridSizeXHalf { get { return Mathf.RoundToInt(GridSizeX * 0.5f); } }
     public static int GridSizeYHalf { get { return Mathf.RoundToInt(GridSizeY * 0.5f); } }
 
-    private static bool IsDirty = false;
-    public static void SetGridAsDirty(){
-        IsDirty = true;
-    }
-
 
     void Awake() {
         Instance = this;
@@ -37,23 +32,17 @@ public class Grid : MonoBehaviour {
         nodeDiameter = Tile.RADIUS * 2;
         GridSizeX = Mathf.RoundToInt(GridWorldSize.x / nodeDiameter);
         GridSizeY = Mathf.RoundToInt(GridWorldSize.y / nodeDiameter);
-
-        CreateGrid();
     }
 
-    public static List<TileAnimator> LateUpdateAnimators = new List<TileAnimator>();
+	void Start() { 
+        CreateGrid();
+	}
+
+	public static List<TileAnimator> LateUpdateAnimators = new List<TileAnimator>();
     void LateUpdate() {
         for (int i = 0; i < LateUpdateAnimators.Count; i++) {
             LateUpdateAnimators[i].LateUpdate();
         }
-
-        if (IsDirty){
-            OnGridDirty();
-            IsDirty = false;    
-        }
-    }
-    void OnGridDirty(){
-        CustomLight.ForceUpdateAllLights();
     }
 
 	[SerializeField] private int Seed;
@@ -209,7 +198,7 @@ public class Grid : MonoBehaviour {
         return neighbours;
     }
 
-    public Tile GetTileFromWorldPoint(Vector3 _worldPosition) {
+	public Vector2i GetTileCoordFromWorldPoint(Vector3 _worldPosition) { 
         float percentX = (_worldPosition.x - Tile.RADIUS + GridWorldSize.x * 0.5f) / GridWorldSize.x;
         float percentY = (_worldPosition.y - Tile.RADIUS + GridWorldSize.y * 0.5f) / GridWorldSize.y;
         percentX = Mathf.Clamp01(percentX);
@@ -220,7 +209,11 @@ public class Grid : MonoBehaviour {
         x = (int)Mathf.Clamp(x, 0, GridWorldSize.x - 1);
         y = (int)Mathf.Clamp(y, 0, GridWorldSize.y - 1);
 
-        return grid[x, y];
+		return new Vector2i(x, y);
+	}
+	public Tile GetTileFromWorldPoint(Vector3 _worldPosition) {
+		Vector2i _coord = GetTileCoordFromWorldPoint(_worldPosition);
+		return grid[_coord.x, _coord.y];
     }
 
     public Tile GetClosestFreeNode(Vector3 _worldPosition) {

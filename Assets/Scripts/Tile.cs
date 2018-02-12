@@ -471,7 +471,7 @@ public class Tile : IHeapItem<Tile> {
             false
         );
 
-        Grid.SetGridAsDirty();
+		CustomLight.ScheduleUpdateLights(GridCoord);
     }
     public void SetFloorType(Type _newType, TileOrientation _newOrientation, bool _temporarily = false){
         if (_temporarily) {
@@ -559,7 +559,7 @@ public class Tile : IHeapItem<Tile> {
             false
         );
 
-        Grid.SetGridAsDirty();
+		CustomLight.ScheduleUpdateLights(GridCoord);
 	}
 
 	// WARNING: this doesn't support changing the type and orientation of the tile, so if you're gonna change the type of a tile

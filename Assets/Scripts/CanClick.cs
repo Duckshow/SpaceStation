@@ -9,7 +9,7 @@ public class CanClick : MonoBehaviour {
 	public float ClickableRange = 1;
     public bool UseTileAsRange = true;
 	public bool IsOnGUI = false;
-	[HideInInspector] public bool Enabled = true;
+	public bool Enabled { get; private set; }
 
 	public delegate void DefaultEvent();
 	public DefaultEvent _OnWithinRange;
@@ -17,20 +17,32 @@ public class CanClick : MonoBehaviour {
 	public DefaultEvent _OnRightClickRelease;
 
     private Renderer myRenderer;
+	private CanInspect myInspector;
 
 
-    void Awake() {
+	void Awake() {
         myRenderer = GetComponentInChildren<Renderer>();
-    }
+		myInspector = GetComponent<CanInspect>();
+	}
 	void OnEnable() {
 		AllClickables.Add(this);
+
+		if(myInspector != null)
+			myInspector.OnHide += OnHide;
 	}
 	void OnDisable() {
-		AllClickables.Remove(this);        
+		AllClickables.Remove(this);  
+	
+		if(myInspector != null)
+			myInspector.OnHide -= OnHide;      
 	}
 
-    public bool IsVisible() {
-        return myRenderer.isVisible;
+	void OnHide(bool _b) {
+		Enabled = !_b;
+	}
+
+	public bool IsVisible() {
+        return myRenderer.isVisible && myInspector.IsHidden;
     }
     private Vector2 bottomLeft = new Vector3(-0.5f, -0.5f);
     private Vector2 topRight = new Vector3(0.5f, 0.5f);

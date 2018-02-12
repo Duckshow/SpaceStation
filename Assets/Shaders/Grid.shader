@@ -187,7 +187,7 @@ Shader "Custom/Grid" {
 
 				// final apply
 				fixed3 litRGB = i.VColor * tex.rgb * colorToUse.rgb * mod;
-				//litRGB = mod;
+				//litRGB = i.VColor;
 				return fixed4(
 					lerp(litRGB, emTex, emTex.a),
 					tex.a

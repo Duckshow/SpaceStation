@@ -6,16 +6,35 @@ public class TileObject : MonoBehaviour {
     //public UVController[] MyUVControllers;
 	public UVController MyUVController;
 	public TileObject Parent { get; private set; }
+	private CanInspect myInspector;
 
+
+	void Awake() {
+		myInspector = GetComponent<CanInspect>();
+	}
+	void OnEnable() { 
+		if(myInspector != null)
+			myInspector.OnHide += OnHide;
+	}
+	void OnDisable() {
+		if (myInspector != null)
+			myInspector.OnHide -= OnHide;
+	}
 	void Start () {
         if (Grid.Instance == null)
             return;
 
-        //myUVControllers = GetComponentsInChildren<UVController>();
         SetGridPosition(Grid.Instance.GetClosestFreeNode(transform.position));
 	}
 
-    public void SetGridPosition(Tile _tile, bool _setPosition = true) {
+	void OnHide(bool _b) { 
+		if(_b)
+			DeActivate();
+		else
+			Activate();
+	}
+
+	public void SetGridPosition(Tile _tile, bool _setPosition = true) {
         if (Parent != null)
             return;
 

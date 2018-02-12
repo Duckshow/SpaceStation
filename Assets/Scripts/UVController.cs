@@ -3,6 +3,8 @@ using System.Linq;
 using System.Collections.Generic;
 public class UVController : UVControllerBasic {
 
+	public Color[] VColors = new Color[9];
+
 	private UVControllerBasic MyTopUVC;
 
 	private byte colorIndex_0;
@@ -26,7 +28,6 @@ public class UVController : UVControllerBasic {
     private byte setColorIndex_8;
     private byte setColorIndex_9;
 
-	public Color[] VColors = new Color[9];
 
 
 	public override void Setup() {
@@ -75,7 +76,6 @@ public class UVController : UVControllerBasic {
 			else if (MyTopUVC != null){
 				MyTopUVC.ChangeAsset(_layer, _assetCoordinates, _temporary);
 				MyTopUVC.ChangeAsset(GridLayerEnum.TopCorners, _assetCoordinates, _temporary);
-				MyTopUVC.TotallySetTheBool = false;
 
 				MyTopUVC.GetComponent<PoolerObject>().ReturnToPool();
 				MyTopUVC = null;
@@ -83,7 +83,6 @@ public class UVController : UVControllerBasic {
 		}
 		
 		if (_layer == GridLayerEnum.TopCorners && MyTopUVC != null){
-			MyTopUVC.TotallySetTheBool = true;
 			MyTopUVC.ChangeAsset(_layer, _assetCoordinates, _temporary);
 		}
 
