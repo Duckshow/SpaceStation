@@ -53,8 +53,7 @@ public class Tile : IHeapItem<Tile> {
     //[NonSerialized] public bool HasBeenEvaluated = false;
 
     public bool Walkable { get; private set; }
-    public bool IsOccupiedByObject = false;
-    public CanInspect OccupyingInspectable;
+
     private bool buildingAllowed = true;
     public bool _BuildingAllowed_ { get { return buildingAllowed; } private set { buildingAllowed = value; } }
     // public int GridX { get; private set; }
@@ -138,11 +137,6 @@ public class Tile : IHeapItem<Tile> {
     }
 
 	public UVController MyUVController;
-	// public UVController FloorQuad;
-    // public UVController FloorCornerHider;
-    // public UVController BottomQuad;
-    // public UVController TopQuad;
-    // public UVController WallCornerHider;
     public TileAnimator Animator;
 
     public bool StopAheadAndBehindMeWhenCrossing { get; private set; }
@@ -151,34 +145,29 @@ public class Tile : IHeapItem<Tile> {
 
 	public int ThingsUsingThis = 0;
 
+    private TileObject occupyingTileObject = null;
+    public TileObject GetOccupyingTileObject(){ 
+        return occupyingTileObject; 
+    }
+    public void SetOccupyingTileObject(TileObject _newOccupant){
+        if (occupyingTileObject != null && occupyingTileObject != _newOccupant)
+            Debug.LogErrorFormat("{0}'s new tile ({1}) is occupied by {2}! This shouldn't happen!", _newOccupant.transform.name, GridCoord, occupyingTileObject.transform.name);
+        occupyingTileObject = _newOccupant;
+    }
+    public void ClearOccupyingTileObject(TileObject _caller){
+        if(occupyingTileObject != null && occupyingTileObject != _caller)
+            Debug.LogErrorFormat("{0} tried to set Tile({1})'s occupyingTileObject to null, but isn't actually its current occupant!", _caller.transform.name, GridCoord);
+        occupyingTileObject = null;
+    }
+
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY) {
         WorldPosition = _worldPos;
         GridCoord = new Vector2i(_gridX, _gridY);
 
 		MyUVController = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-		// FloorQuad 			= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-		// FloorCornerHider 	= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-		// BottomQuad 			= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-		// TopQuad 			= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-		// WallCornerHider 	= ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
-
 		MyUVController.name = "TileQuad " + GridCoord.x + "x" + GridCoord.y + " (" + WorldPosition.x + ", " + WorldPosition.y + ")";
-		// FloorQuad.name = "TileQuad " + GridCoord.X + "x" + GridCoord.Y + " (" + WorldPosition.x + ", " + WorldPosition.y + ")";
-		// FloorCornerHider.transform.parent = FloorQuad.transform;
-		// BottomQuad.transform.parent = FloorQuad.transform;
-		// TopQuad.transform.parent = BottomQuad.transform;
-		// WallCornerHider.transform.parent = FloorQuad.transform;
-
-		// FloorCornerHider.transform.localPosition = new Vector3(0, 0, -0.01f);
-		// WallCornerHider.transform.localPosition = new Vector3(0, 0, -0.01f);
-
 		MyUVController.Setup();
-		// FloorQuad.Setup ();
-        // FloorCornerHider.Setup();
-		// BottomQuad.Setup();
-        // TopQuad.Setup();
-        // WallCornerHider.Setup();
         Animator = new TileAnimator(this);
     }
 		

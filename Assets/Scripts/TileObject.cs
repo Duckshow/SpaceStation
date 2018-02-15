@@ -38,9 +38,14 @@ public class TileObject : MonoBehaviour {
         if (Parent != null)
             return;
 
+        TileObject _occupant = _tile.GetOccupyingTileObject();
+        if (_occupant != null && _occupant != this)
+            Debug.LogError(transform.name + "'s new tile is occupied by someone! This shouldn't happen!");
         if (MyTile != null) {
-            MyTile.IsOccupiedByObject = false; // TODO: not really futureproof, is it?
-            MyTile.OccupyingInspectable = null;
+            if(MyTile.GetOccupyingTileObject() != this)
+                Debug.LogError("MyTile is occupied by someone other than me! This shouldn't happen!");
+                
+            MyTile.ClearOccupyingTileObject(this);
         }
 
         MyTile = _tile;
@@ -48,8 +53,7 @@ public class TileObject : MonoBehaviour {
             transform.position = GetComponent<Actor>() ? MyTile.CharacterPositionWorld : MyTile.DefaultPositionWorld;
 
         if (isActive) {
-            MyTile.IsOccupiedByObject = true;
-            MyTile.OccupyingInspectable = GetComponent<CanInspect>();
+            MyTile.SetOccupyingTileObject(this);
         }
 
         Sort();
@@ -72,8 +76,7 @@ public class TileObject : MonoBehaviour {
         if (MyTile == null)
             throw new System.Exception(name + " couldn't find a free tile!");
 
-        MyTile.IsOccupiedByObject = true;
-        MyTile.OccupyingInspectable = GetComponent<CanInspect>();
+        MyTile.SetOccupyingTileObject(this);
         transform.position = GetComponent<Actor>() ? MyTile.CharacterPositionWorld : MyTile.DefaultPositionWorld;
 
         Sort();
@@ -85,8 +88,7 @@ public class TileObject : MonoBehaviour {
             return;
 
         isActive = false;
-        MyTile.IsOccupiedByObject = false;
-        MyTile.OccupyingInspectable = null;
+        MyTile.ClearOccupyingTileObject(this);
     }
 
     public void Sort() {

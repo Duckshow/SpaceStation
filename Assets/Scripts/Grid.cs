@@ -215,10 +215,16 @@ public class Grid : MonoBehaviour {
 		Vector2i _coord = GetTileCoordFromWorldPoint(_worldPosition);
 		return grid[_coord.x, _coord.y];
     }
+    public Vector3 GetWorldPointFromTileCoord(Vector2i _tileCoord){
+        Vector3 _pos = _tileCoord;
+        _pos.x -= (GridSizeXHalf - 0.5f);
+        _pos.y -= (GridSizeYHalf - 0.5f);
+        return _pos;
+    }
 
     public Tile GetClosestFreeNode(Vector3 _worldPosition) {
         Tile _tile = GetTileFromWorldPoint(_worldPosition);
-        if (_tile.Walkable && !_tile.IsOccupiedByObject)
+        if (_tile.Walkable && _tile.GetOccupyingTileObject() == null)
             return _tile;
 
         List<Tile> _neighbours = GetNeighbours(_tile.GridCoord.x, _tile.GridCoord.y);
@@ -228,10 +234,8 @@ public class Grid : MonoBehaviour {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
-                if (!_neighbours[i].Walkable || _neighbours[i].IsOccupiedByObject)
-                    continue;
-
-                return _neighbours[i];
+                if (_neighbours[i].Walkable && _neighbours[i].GetOccupyingTileObject() == null)
+                    return _neighbours[i];
             }
 
             int _prevLastCount = _lastCount;
@@ -252,7 +256,7 @@ public class Grid : MonoBehaviour {
         return null;
     }
     public Tile GetClosestFreeNode(Tile _tile) { // todo: diagonals can be seen as "free" depending on the usage - fix that! Removed diagonals from consideration for now.
-        if (_tile._WallType_ == Tile.Type.Empty && !_tile.IsOccupiedByObject)
+        if (_tile._WallType_ == Tile.Type.Empty && _tile.GetOccupyingTileObject() == null)
             return _tile;
 
         List<Tile> _neighbours = GetNeighbours(_tile.GridCoord.x, _tile.GridCoord.y);
@@ -262,10 +266,8 @@ public class Grid : MonoBehaviour {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
-                if (_neighbours[i]._WallType_ != Tile.Type.Empty || _neighbours[i].IsOccupiedByObject)
-                    continue;
-
-                return _neighbours[i];
+                if (_neighbours[i]._WallType_ == Tile.Type.Empty && _neighbours[i].GetOccupyingTileObject() == null)
+                    return _neighbours[i];
             }
 
             int _prevLastCount = _lastCount;

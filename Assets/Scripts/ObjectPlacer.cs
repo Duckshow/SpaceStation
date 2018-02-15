@@ -359,8 +359,10 @@ public class ObjectPlacer {
 			return;
 		}
         // is the tile below occupied by another object (or actor)?
-		if (mouseTile.IsOccupiedByObject) {
-            if (mouseTile.OccupyingInspectable != null) {
+        TileObject _occupant = mouseTile.GetOccupyingTileObject();
+		if (_occupant != null) {
+            bool _isInspectable = _occupant.GetComponent<CanInspect>() != null;
+            if (_isInspectable) {
                 ApplySettingsToGhost(false, ColoringTool.COLOR_WHITE, hide: true);
                 return;
             }
@@ -393,9 +395,11 @@ public class ObjectPlacer {
 
     private void ApplyCurrentTool() {
         if (selectedTiles.Count > 0) {
-            if (selectedTiles[0].OccupyingInspectable != null) {
+            TileObject _occupant = selectedTiles[0].GetOccupyingTileObject();
+            CanInspect _occupyingInspectable = _occupant != null ? _occupant.GetComponent<CanInspect>() : null;
+            if (_occupyingInspectable != null) {
                 CanInspect _formerlyPickedUp;
-				TrySwitchComponents(selectedTiles[0].OccupyingInspectable, selectedTiles[0].OccupyingInspectable.MyTileObject.Parent, true, /*false, */out _formerlyPickedUp);
+				TrySwitchComponents(_occupyingInspectable, _occupant.Parent, true, /*false, */out _formerlyPickedUp);
             }
             else
                 PutDownPickedUp(selectedTiles[0], selectedTilesNewOrientation[0]);

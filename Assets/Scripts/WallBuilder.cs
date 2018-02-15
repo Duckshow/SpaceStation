@@ -153,7 +153,7 @@ public class WallBuilder : BuilderBase {
 			return false;
 		}
         // is the tile occupied?
-        if (_tile.IsOccupiedByObject) {
+        if (_tile.GetOccupyingTileObject() != null) {
             ApplySettingsToGhost(_tile, false, ColorIndex_Blocked);
             return false;
         }

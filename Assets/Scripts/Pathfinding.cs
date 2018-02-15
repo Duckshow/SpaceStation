@@ -62,7 +62,7 @@ public class Pathfinding : MonoBehaviour {
                 foreach (Tile neighbour in grid.GetNeighbours(currentNode.GridCoord.x, currentNode.GridCoord.y)) {
                     if (!neighbour.Walkable)
                         continue;
-                    if (neighbour.IsOccupiedByObject && neighbour != targetNode)
+                    if (neighbour.GetOccupyingTileObject() != null && neighbour != targetNode)
                         continue;
                     if (closedSet.Contains(neighbour))
                         continue;
