@@ -4,7 +4,8 @@ using System;
 public class Tile : IHeapItem<Tile> {
 
     public const float RADIUS = 0.5f;
-    public const int RESOLUTION = 64;
+	public const float DIAMETER = 1;
+	public const int RESOLUTION = 64;
     public const float PIXEL_RADIUS = 0.0078125f;
 
     public CachedAssets.WallSet.Purpose ExactType;
@@ -460,7 +461,7 @@ public class Tile : IHeapItem<Tile> {
             false
         );
 
-		CustomLight.ScheduleUpdateLights(GridCoord);
+		LightManager.ScheduleUpdateLights(GridCoord);
     }
     public void SetFloorType(Type _newType, TileOrientation _newOrientation, bool _temporarily = false){
         if (_temporarily) {
@@ -548,7 +549,7 @@ public class Tile : IHeapItem<Tile> {
             false
         );
 
-		CustomLight.ScheduleUpdateLights(GridCoord);
+		LightManager.ScheduleUpdateLights(GridCoord);
 	}
 
 	// WARNING: this doesn't support changing the type and orientation of the tile, so if you're gonna change the type of a tile

@@ -40,7 +40,7 @@ public class ObjectPlacer {
     public class GhostInfo {
         public UVController MyUVController;
         //public UVController TopQuad;
-        public Vector3 position { get; private set; }
+        public Vector3 posGrid { get; private set; }
         public Tile.Type Type;
         public Tile.TileOrientation Orientation;
 
@@ -53,16 +53,13 @@ public class ObjectPlacer {
         }
 
         private const float DEFAULT_OFFSET_Y = 0.5f;
-        private Vector3 newPos;
-        public void SetPosition(Vector3 _value) {
-			if (Grid.Instance != null)
-				newPos = new Vector3 (Grid.Instance.grid [0, 0].WorldPosition.x + _value.x /*TODO: <-- this seems awfully weird*/, Grid.Instance.grid [0, 0].WorldPosition.y + _value.y + DEFAULT_OFFSET_Y, Grid.WORLD_TOP_HEIGHT);
-			else
-				newPos = Vector3.zero;
+        public void SetPosition(Vector3 _posGrid) {
+			Vector3 _posWorld = Grid.Instance.GetWorldPointFromTileCoord(new Vector2i((int)_posGrid.x, (int)_posGrid.y));
+			_posWorld.y += DEFAULT_OFFSET_Y;
+			_posWorld.z = Grid.WORLD_TOP_HEIGHT;
 
-			MyUVController.transform.position = newPos;
-            //TopQuad.transform.position = newPos;
-            position = _value;
+			MyUVController.transform.position = _posWorld;
+            posGrid = _posGrid;
         }
         public void ChangeAssets(Vector2i _bottomIndices, Vector2i _topIndices) {
             MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Bottom, _bottomIndices, false);

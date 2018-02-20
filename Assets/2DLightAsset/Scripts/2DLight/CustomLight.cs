@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor; // for debug-gizmos only
+using System;
 
 public class Verts {
     public float Angle;
@@ -18,10 +19,15 @@ public class CustomLight : MonoBehaviour {
 
     public string version = "1.0.5"; //release date 09/01/2017
     public Material lightMaterial;
-    public int lightRadius = 20;
+    public int Radius = 20;
     [Range(0, 1)] public float Intensity = 1;
-    public byte LightColor = 40; // bright yellow
-    public LayerMask layer;
+    
+	public byte LightColor = 40; // bright yellow
+	public Color GetLightColor() {
+		return Mouse.Instance.Coloring.AllColors[LightColor];
+	}
+
+	public LayerMask layer;
     [Range(4, 40)] public int lightSegments = 8;
     public Transform MeshTransform;
 
@@ -29,13 +35,15 @@ public class CustomLight : MonoBehaviour {
     [HideInInspector]
     public List<Verts> allVertices = new List<Verts>(); // Array for all of the vertices in our meshes
 
-    private Mesh lightMesh; // Mesh for our light mesh
+	[NonSerialized] public Mesh MyMesh; // Mesh for our light mesh
     private new MeshRenderer renderer;
     private CanInspect myInspector;
 
-	private bool isTurnedOn = true;
-	private bool isBeingRemoved = false;
-	private Vector2i MyGridCoord;
+	[NonSerialized] public int MyIndex = -1;
+
+	public bool isTurnedOn { get; private set; }
+	public bool isBeingRemoved { get; private set; }
+	[NonSerialized] public Vector2i MyGridCoord;
 	void UpdateGridCoord(){
 		MyGridCoord = Grid.Instance.GetTileCoordFromWorldPoint(transform.position);
 	}
@@ -44,6 +52,10 @@ public class CustomLight : MonoBehaviour {
 
 	private const string MESH_NAME = "Light Mesh";
 
+	public bool[,] VXLightMap_Hit;
+	public float[,] VXLightMap_Intensity;
+
+
 	[EasyButtons.Button]
 	public void TestGridCoord(){
 		Debug.Log(Grid.Instance.GetTileCoordFromWorldPoint(transform.position));
@@ -51,7 +63,11 @@ public class CustomLight : MonoBehaviour {
 
 
 	void Awake(){
-        LightManager.AllLights.Add(this);
+		isTurnedOn = true;
+		isBeingRemoved = false;
+
+		MyIndex = LightManager.AllLights.Count;
+		LightManager.AllLights.Add(this);
         
 		myInspector = GetComponent<CanInspect>();
 
@@ -59,10 +75,13 @@ public class CustomLight : MonoBehaviour {
         renderer = MeshTransform.GetComponent<MeshRenderer>();
         renderer.sharedMaterial = lightMaterial;
         
-		lightMesh = new Mesh();
-        meshFilter.mesh = lightMesh;
-        lightMesh.name = MESH_NAME;
-        lightMesh.MarkDynamic();      
+		MyMesh = new Mesh();
+        meshFilter.mesh = MyMesh;
+        MyMesh.name = MESH_NAME;
+        MyMesh.MarkDynamic();
+
+		VXLightMap_Hit 			= new bool	[Radius * 2 * UVControllerBasic.MESH_VERTICES_PER_EDGE, Radius * 2 * UVControllerBasic.MESH_VERTICES_PER_EDGE];
+		VXLightMap_Intensity 	= new float	[Radius * 2 * UVControllerBasic.MESH_VERTICES_PER_EDGE, Radius * 2 * UVControllerBasic.MESH_VERTICES_PER_EDGE];
 	}
 	void OnDestroy(){
        LightManager.AllLights.Remove(this);		
@@ -80,35 +99,35 @@ public class CustomLight : MonoBehaviour {
 
 	void Start(){
 		UpdateGridCoord(); // TODO: caching gridcoord is probably unnecessary
-		OnTurnedOn();
+		
+		if (isTurnedOn){
+			OnTurnedOn(_b: true);
+		}
 	}
 
     void PostPickUp(){ // TODO: would be good if picked-up objects were visible and jumped between tiles when moving. that way the light can update as it's moved as well.
-		//ForceUpdateAllLights();
     }
     void PostPutDown() {
 		UpdateGridCoord();
-        //ForceUpdateAllLights();
     }
 
 	void OnHide(bool _b) {
-		if (_b)
-			OnTurnedOff();
+		TurnOn(!_b);
+	}
+	void TurnOn(bool _b) {
+		isTurnedOn = _b;
+		OnTurnedOn(_b);
+	}
+	void OnTurnedOn(bool _b){
+		isTurnedOn = _b;
+		LightManager.AddToLightsInRangeMap(this, _b);
+		if(_b)
+			LightManager.ScheduleUpdateLights(MyGridCoord);
 		else
-			OnTurnedOn();
+			LightManager.ScheduleRemoveLight(LightManager.AllLights.FindIndex(x => x == this));
 	}
-	void OnTurnedOn(){
-		isTurnedOn = true;
-		LightManager.AddThisToLightsInRangeMap(_b: true);
-		LightManager.ScheduleUpdateLights(MyGridCoord);		
-	}
-	void OnTurnedOff(){
-		isTurnedOn = false;
-		LightManager.AddThisToLightsInRangeMap(_b: false);
-		LightManager.ScheduleRemoveLight(LightManager.AllLights.FindIndex(x => x == this));		
-	}
-	
-    void UpdateLight() {
+
+	public void UpdateLight() {
 		GetAllTilesInRange();
 		PreparePooledColliders();
 		SetVertices();
@@ -118,7 +137,7 @@ public class CustomLight : MonoBehaviour {
 		UpdatePointCollisionArray();
 		CalculateLightingForTilesInRange(_excludeMe: false);
 	}
-	void RemoveLightsEffectOnGrid(){
+	public void RemoveLightsEffectOnGrid(){
 		GetAllTilesInRange();
 		CalculateLightingForTilesInRange(_excludeMe: true);
 	}
@@ -131,12 +150,12 @@ public class CustomLight : MonoBehaviour {
 		tilesInRange 				= GetTilesInRange(_onlyWithColliders: false);
 		tilesInRangeWithCollider 	= GetTilesInRange(_onlyWithColliders: true);
 	}
-	Vector2i[,] GetTilesInRange(bool _onlyWithColliders){
-		int _diameter = lightRadius * 2 + 1; // +1 to account for center tile
+	public Vector2i[,] GetTilesInRange(bool _onlyWithColliders){
+		int _diameter = Radius * 2 + 1; // +1 to account for center tile
 		Vector2i[,] _tiles = new Vector2i[_diameter, _diameter];
 
-		for 	(int y = 0, _yGrid = MyGridCoord.y - lightRadius; y < _diameter; y++, _yGrid++){
-			for (int x = 0, _xGrid = MyGridCoord.x - lightRadius; x < _diameter; x++, _xGrid++){
+		for 	(int y = 0, _yGrid = MyGridCoord.y - Radius; y < _diameter; y++, _yGrid++){
+			for (int x = 0, _xGrid = MyGridCoord.x - Radius; x < _diameter; x++, _xGrid++){
 				_tiles[x, y] = new Vector2i(_xGrid, _yGrid);
 				
 				if (_xGrid < 0 || _xGrid >= Grid.GridSizeX || _yGrid < 0 || _yGrid >= Grid.GridSizeY){
@@ -250,7 +269,7 @@ public class CustomLight : MonoBehaviour {
                         highs = true;
 
                     //--Add verts to the main list
-                    if ((v.Pos).magnitude <= lightRadius)
+                    if ((v.Pos).magnitude <= Radius)
                         tempVerts.Add(v);
 
                     if (sortAngles == false)
@@ -312,16 +331,16 @@ public class CustomLight : MonoBehaviour {
 
                     if (isEndpoint == true) {
                         dir = fromCast - transform.position;
-                        mag = lightRadius;
+                        mag = Radius;
                         from = (Vector2)fromCast + (dir * CHECK_POINT_LAST_RAY_OFFSET);
 
                         int debugger = -1;
 
-                        if(Gridcast(from, (from + dir.normalized * lightRadius), out rayHit)){
+                        if(Gridcast(from, (from + dir.normalized * Radius), out rayHit)){
                             hitPos = rayHit.point;
                             debugger = 1;
 
-                            if (Vector2.Distance(hitPos, transform.position) > lightRadius){
+                            if (Vector2.Distance(hitPos, transform.position) > Radius){
                                 dir = transform.InverseTransformDirection(dir); //local p
                                 hitPos = transform.TransformPoint(dir.normalized * mag); // world p
                             }
@@ -364,7 +383,7 @@ public class CustomLight : MonoBehaviour {
             v = new Verts();
             v.Pos = new Vector3((LightManager.SinCosTable.sSinArray[theta]), (LightManager.SinCosTable.sCosArray[theta]), 0); // in degrees (previous calculate)
             v.Angle = GetVectorAngle(v.Pos.x, v.Pos.y);
-            v.Pos *= lightRadius;
+            v.Pos *= Radius;
             v.Pos += (Vector2)transform.position;
 
             if(Gridcast(transform.position, v.Pos, out rayHit))
@@ -409,10 +428,23 @@ public class CustomLight : MonoBehaviour {
         }
 	}
 
+	// private void ClearCachedVColorsForTilesInRange() {
+	// 	int vxGrid = 0, vyGrid = 0;
+	// 	mIterateVariables IterateExtraVariables = delegate (){
+	// 		vxGrid++;
+	// 		if (vxGrid == Grid.GridSizeX * UVControllerBasic.MESH_VERTICES_PER_EDGE){
+	// 			vxGrid = 0;
+	// 			vyGrid++;
+	// 		}
+	// 	};
+	// 	for (int i = 0; i < LightManager.VertMap_TotalColorNoBlur.Length; i++, IterateExtraVariables()){
+	// 		LightManager.VertMap_TotalColorNoBlur[vxGrid, vyGrid] = Color.black;
+	// 	}
+	// }
+
 	private delegate Color mTryGetNeighbourColor(int _x, int _y);
     private delegate void mApplyToVertex(int _x, int _y, int _vertex);
 	private void CalculateLightingForTilesInRange(bool _excludeMe){
-
 		// find colors and dots for all lights and apply
 		Vector2[] _dots = new Vector2[4];
 
@@ -452,12 +484,10 @@ public class CustomLight : MonoBehaviour {
 			float _vxWorld 	= GetVXWorld(_xGrid, vx);
 			float _vyWorld 	= GetVYWorld(_yGrid, vy);
 
-			Debug.Log(_xGrid + ", " + _xLight + ", " + MyGridCoord.x);
-
 			// get colors from lights
 			bool _illuminated;
 			float _lightFromThis;
-			Color _newVertexColor = GetColorForVertex(_vxGrid, _vyGrid, _xLight, _yLight, _vIndex, _vxWorld, _vyWorld, _excludeMe, out _illuminated, out _lightFromThis);
+			Color _newVertexColor = GetColorForVertex(_vxGrid, _vyGrid, _xGrid, _yGrid, _xLight, _yLight, _vxLight, _vyLight, _vIndex, _vxWorld, _vyWorld, _excludeMe, out _illuminated, out _lightFromThis);
 
 			// get two dots per light describing angle to four strongest lights
 			Vector4 _dominantLightIndices = GetShadowCastingLightsIndices(_vxGrid, _vyGrid, _excludeMe, _illuminated, _lightFromThis);
@@ -482,26 +512,24 @@ public class CustomLight : MonoBehaviour {
 				int _vx = GetVXUVController(_vIndexNeighbours[i2], _vy);
 				int _vyG = GetVYGrid(_yL, _vy);
 				int _vxG = GetVXGrid(_xL, _vx);
-				LightManager.VertMap_ColorNoBlur[_vxG, _vyG] = _newVertexColor;
+				LightManager.VertMap_TotalColorNoBlur[_vxG, _vyG] = _newVertexColor;
 			}
 
-			int[] _xGridForNeighbours;
-			int[] _yGridForNeighbours;
-			int[] _vIndexForNeighbours;
+
+			// DEBUG 
 			mApplyToVertex ApplyVertexColor = delegate (int _x, int _y, int _vertex){
-				Grid.Instance.grid[_x, _y].MyUVController.SetVertexColor(_vertex, Color.cyan);
+				Grid.Instance.grid[_x, _y].MyUVController.SetVertexColor(_vertex, _newVertexColor);
 			};
-			ApplyVertexColor(_xGrid, _yGrid, _vIndex);
-			// GetGridVerticesAtSamePosition(vx, vy, _xGrid, _yGrid, _xLight == 0, false, out _xGridForNeighbours, out _yGridForNeighbours, out _vIndexForNeighbours);
-			// for (int i2 = 0; i2 < _xGridForNeighbours.Length; i2++){
-			// 	ApplyVertexColor(_xGridForNeighbours[i2], _yGridForNeighbours[i2], _vIndexForNeighbours[i2]);
-			// }
+			for (int i2 = 0; i2 < _xGridNeighbours.Length; i2++){
+				ApplyVertexColor(_xGridNeighbours[i2], _yGridNeighbours[i2], _vIndexNeighbours[i2]);
+			}
 		}
 
+	// DEBUG
 	return;
 
 		// blur and apply colors
-		Color[] _neighbourColors = new Color[9];
+		Color[] _adjacentColors = new Color[9];
 		
 		vx = 0; 
 		vy = 0; 
@@ -525,31 +553,31 @@ public class CustomLight : MonoBehaviour {
 			int _diffToRightX = vx == 0 ? 1 : 2;
 			int _diffToAboveY = vy == 0 ? 1 : 2;
 			int _failAmount = 0;
-			mTryGetNeighbourColor TryGetNeighbourColor = delegate (int _x, int _y){
-				if (_x < 0 || _y < 0 || _x >= LightManager.VertMap_ColorNoBlur.GetLength(0) || _y >= LightManager.VertMap_ColorNoBlur.GetLength(1)){
+			mTryGetNeighbourColor TryGetAdjacentColor = delegate (int _x, int _y){
+				if (_x < 0 || _y < 0 || _x >= LightManager.VertMap_TotalColorNoBlur.GetLength(0) || _y >= LightManager.VertMap_TotalColorNoBlur.GetLength(1)){
 					_failAmount++;
 					return Color.clear;
 				}
-				return LightManager.VertMap_ColorNoBlur[_x, _y];
+				return LightManager.VertMap_TotalColorNoBlur[_x, _y];
 			};
 
 			int _vxGrid = GetVXGrid(_xLight, vx);
 			int _vyGrid = GetVYGrid(_yLight, vy);
-			_neighbourColors[0] = TryGetNeighbourColor(_vxGrid - 1, 				_vyGrid - 1);
-			_neighbourColors[1] = TryGetNeighbourColor(_vxGrid, 					_vyGrid - 1);
-			_neighbourColors[2] = TryGetNeighbourColor(_vxGrid + _diffToRightX, 	_vyGrid - 1);
-			_neighbourColors[3] = TryGetNeighbourColor(_vxGrid - 1, 				_vyGrid);
-			_neighbourColors[4] = TryGetNeighbourColor(_vxGrid, _vyGrid); // this tile
-			_neighbourColors[5] = TryGetNeighbourColor(_vxGrid + _diffToRightX, 	_vyGrid);
-			_neighbourColors[6] = TryGetNeighbourColor(_vxGrid - 1, 				_vyGrid + _diffToAboveY);
-			_neighbourColors[7] = TryGetNeighbourColor(_vxGrid, 					_vyGrid + _diffToAboveY);
-			_neighbourColors[8] = TryGetNeighbourColor(_vxGrid + _diffToRightX, 	_vyGrid + _diffToAboveY);
+			_adjacentColors[0] = TryGetAdjacentColor(_vxGrid - 1, 				_vyGrid - 1);
+			_adjacentColors[1] = TryGetAdjacentColor(_vxGrid, 					_vyGrid - 1);
+			_adjacentColors[2] = TryGetAdjacentColor(_vxGrid + _diffToRightX, 	_vyGrid - 1);
+			_adjacentColors[3] = TryGetAdjacentColor(_vxGrid - 1, 				_vyGrid);
+			_adjacentColors[4] = TryGetAdjacentColor(_vxGrid, _vyGrid); // this tile
+			_adjacentColors[5] = TryGetAdjacentColor(_vxGrid + _diffToRightX, 	_vyGrid);
+			_adjacentColors[6] = TryGetAdjacentColor(_vxGrid - 1, 				_vyGrid + _diffToAboveY);
+			_adjacentColors[7] = TryGetAdjacentColor(_vxGrid, 					_vyGrid + _diffToAboveY);
+			_adjacentColors[8] = TryGetAdjacentColor(_vxGrid + _diffToRightX, 	_vyGrid + _diffToAboveY);
 
 			Color _myColor = new Color();
-			for (int i2 = 0; i2 < _neighbourColors.Length; i2++)
-				_myColor += _neighbourColors[i2];
+			for (int i2 = 0; i2 < _adjacentColors.Length; i2++)
+				_myColor += _adjacentColors[i2];
 
-			_myColor /= Mathf.Max(_neighbourColors.Length - _failAmount, 1);
+			_myColor /= Mathf.Max(_adjacentColors.Length - _failAmount, 1);
 			_myColor.a = 1;
 
 			int[] _xGridForNeighbours;
@@ -566,10 +594,10 @@ public class CustomLight : MonoBehaviour {
 	}
 
 	int GetXGrid(int _xLight){
-		return MyGridCoord.x - (lightRadius - _xLight);
+		return MyGridCoord.x - (Radius - _xLight);
 	}
 	int GetYGrid(int _yLight){
-		return MyGridCoord.y - (lightRadius - _yLight);
+		return MyGridCoord.y - (Radius - _yLight);
 	}
 	int GetVXGrid(int _xLight, int _xUVC){
 		return GetXGrid(_xLight) * UVControllerBasic.MESH_VERTICES_PER_EDGE + _xUVC;
@@ -578,10 +606,10 @@ public class CustomLight : MonoBehaviour {
 		return GetYGrid(_yLight) * UVControllerBasic.MESH_VERTICES_PER_EDGE + _yUVC;
 	}
 	int GetXLight(int _xGrid){
-		return _xGrid - (MyGridCoord.x - lightRadius);
+		return _xGrid - (MyGridCoord.x - Radius);
 	}
 	int GetYLight(int _yGrid){
-		return _yGrid - (MyGridCoord.y - lightRadius);
+		return _yGrid - (MyGridCoord.y - Radius);
 	}
 	int GetVXLight(int _xLight, int _xUVC){
 		return _xLight * UVControllerBasic.MESH_VERTICES_PER_EDGE + _xUVC;
@@ -611,7 +639,7 @@ public class CustomLight : MonoBehaviour {
 	}
 	private delegate bool mNeighbourTestDelegate1(VertexNeighbourEnum _neighbour, int _vertexX, int _vertexY, int _gridX, int _gridY);
 	private delegate int  mNeighbourTestDelegate2(VertexNeighbourEnum _neighbour);
-	void GetGridVerticesAtSamePosition(int _vx, int _vy, int _xGrid, int _yGrid, bool _isOnLeftEdge, bool _includeTopHalfStuff, out int[] _xGridForNeighbours, out int[] _yGridForNeighbours, out int[] _vIndexForNeighbours) {
+	public static void GetGridVerticesAtSamePosition(int _vx, int _vy, int _xGrid, int _yGrid, bool _isOnLeftEdge, bool _includeTopHalfStuff, out int[] _xGridForNeighbours, out int[] _yGridForNeighbours, out int[] _vIndexForNeighbours) {
 		int _vertsPerEdge = UVControllerBasic.MESH_VERTICES_PER_EDGE;
 		int _vIndex = _vy * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vx;
 
@@ -780,27 +808,48 @@ public class CustomLight : MonoBehaviour {
 		new LightIndexLevelPairClass(-1, 0),
 		new LightIndexLevelPairClass(-1, 0)
 	};
-	private Color GetColorForVertex(int _vxGrid, int _vyGrid, int _xLight, int _yLight, int _vIndex, float _vxWorld, float _vyWorld, bool _excludeMe, out bool _illuminated, out float _lightFromThis){
-		float _distance = (new Vector2(_vxWorld, _vyWorld) - myInspector.MyTileObject.MyTile.WorldPosition).magnitude;
-		_lightFromThis = Intensity * Mathf.Pow(1 - (_distance / lightRadius), 2);
+	private Color GetColorForVertex(int _vxGrid, int _vyGrid, int _xGrid, int _yGrid, int _xLight, int _yLight, int _vxLight, int _vyLight, int _vIndex, float _vxWorld, float _vyWorld, bool _excludeMe, out bool _illuminated, out float _lightFromThis){
+		Color _cachedColor = Color.clear;
 
-		Color _cachedColor = LightManager.VertMap_ColorNoBlur[_vxGrid, _vyGrid];
+		// take all previously hit light and recompile into one color
+		int[] _lightsInRange = LightManager.GridMap_LightsInRange[_xGrid, _yGrid];
+		for (int i = 0; i < _lightsInRange.Length; i++){
+			if(_lightsInRange[i] == -1)
+				break;
 
-		_illuminated = !_excludeMe && IsInsideLightMesh(_vxWorld, _vyWorld);
-		if(_illuminated){
-			Color _newColor = _lightFromThis * Mouse.Instance.Coloring.AllColors[(int)LightColor];
-			if(_cachedColor.r < _newColor.r)
-				_cachedColor.r += _newColor.r;
-			if(_cachedColor.g < _newColor.g)
-				_cachedColor.g += _newColor.g;
-			if(_cachedColor.b < _newColor.b)
-				_cachedColor.b += _newColor.b;
+			CustomLight _otherLight = LightManager.AllLights[_lightsInRange[i]];
+			if(_otherLight == this)
+				continue;
+			if(!_otherLight.VXLightMap_Hit[_vxLight, _vyLight])
+				continue;
+
+			CombineLightWithOthersLight(_otherLight.VXLightMap_Intensity[_vxLight, _vyLight], _otherLight.GetLightColor(), ref _cachedColor);
 		}
 
+		float _distance = (new Vector2(_vxWorld, _vyWorld) - myInspector.MyTileObject.MyTile.WorldPosition).magnitude;
+		_lightFromThis = Intensity * Mathf.Pow(1 - (_distance / Radius), 2);
+		_illuminated = !_excludeMe && IsInsideLightMesh(_vxWorld, _vyWorld);
+
+		// apply new light to total color
+		Debug.LogFormat("{0}, {1}/{2}, {3}", _vxLight, _vyLight, VXLightMap_Hit.GetLength(0), VXLightMap_Hit.GetLength(1));dawundwa // this seems to freeze everything, so look into that
+		VXLightMap_Hit[_vxLight, _vyLight] = _illuminated;
+		VXLightMap_Intensity[_vxLight, _vyLight] = _lightFromThis;
+		if(_illuminated)
+			CombineLightWithOthersLight(_lightFromThis, GetLightColor(), ref _cachedColor);
+
 		_cachedColor.a = 1;
-		LightManager.VertMap_ColorNoBlur[_vxGrid, _vyGrid] = _cachedColor;
+		LightManager.VertMap_TotalColorNoBlur[_vxGrid, _vyGrid] = _cachedColor;
 		return _cachedColor;
     }
+	private void CombineLightWithOthersLight(float _newIntensity, Color _newColor, ref Color _total) {
+		_newColor *= _newIntensity;
+		if (_total.r < _newColor.r)
+			_total.r += _newColor.r;
+		if (_total.g < _newColor.g)
+			_total.g += _newColor.g;
+		if (_total.b < _newColor.b)
+			_total.b += _newColor.b;
+	}
 	private Vector4 GetShadowCastingLightsIndices(int _vxGrid, int _vyGrid, bool _excludeMe, bool _illuminated, float _lightFromThis){
 		lightLevelList[0].Index = LightManager.VertMap_DomLightIndices[_vxGrid, _vyGrid].x;
 		lightLevelList[1].Index = LightManager.VertMap_DomLightIndices[_vxGrid, _vyGrid].y;
@@ -849,14 +898,14 @@ public class CustomLight : MonoBehaviour {
         for (int i = 0; i < allVertices.Count; i++)
             initVerticesMeshLight[i + 1] = allVertices[i].Pos;
 
-        lightMesh.Clear();
-        lightMesh.vertices = initVerticesMeshLight;
+        MyMesh.Clear();
+        MyMesh.vertices = initVerticesMeshLight;
 
         Vector2[] uvs = new Vector2[initVerticesMeshLight.Length];
         for (int i = 0; i < initVerticesMeshLight.Length; i++)
             uvs[i] = new Vector2(initVerticesMeshLight[i].x, initVerticesMeshLight[i].y);
 
-        lightMesh.uv = uvs;
+        MyMesh.uv = uvs;
 
         // triangles
         int index = 0;
@@ -873,25 +922,25 @@ public class CustomLight : MonoBehaviour {
             index++;
         }
 
-        lightMesh.triangles = triangles;
+        MyMesh.triangles = triangles;
         renderer.sharedMaterial = lightMaterial;
-        renderer.material.SetFloat("_UVScale", 1 / lightRadius);
+        renderer.material.SetFloat("_UVScale", 1 / Radius);
 	}
 
     void ResetBounds() {
-        Bounds _bounds = lightMesh.bounds;
+        Bounds _bounds = MyMesh.bounds;
         _bounds.center = Vector3.zero;
-        lightMesh.bounds = _bounds;
+        MyMesh.bounds = _bounds;
     }
 
 	private const float VERTEX_ON_EDGE_TOLERANCE = 0.01f;
 	public Vector2[] PointCollisionArray;
 	void UpdatePointCollisionArray(){
 		// cache vertices relative to world - but skip zero as it messes with the IsInsideLightMesh-algorithm
-		PointCollisionArray = new Vector2[lightMesh.vertexCount - 1];
+		PointCollisionArray = new Vector2[MyMesh.vertexCount - 1];
 		for (int i = 0; i < PointCollisionArray.Length; i++){
-			Vector3 _dir = (lightMesh.vertices[i + 1] - transform.position).normalized;
-			PointCollisionArray[i] = transform.position + lightMesh.vertices[i + 1] + _dir * VERTEX_ON_EDGE_TOLERANCE;
+			Vector3 _dir = (MyMesh.vertices[i + 1] - transform.position).normalized;
+			PointCollisionArray[i] = transform.position + MyMesh.vertices[i + 1] + _dir * VERTEX_ON_EDGE_TOLERANCE;
 		}
 	}
 	private bool IsInsideLightMesh(float _xWorld, float _yWorld){

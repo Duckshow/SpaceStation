@@ -3,7 +3,14 @@ using System.Collections.Generic;
 
 public class Grid : MonoBehaviour {
 
-    public static Grid Instance;
+	private static Grid instance;
+	public static Grid Instance {
+		get { 
+			if(instance == null)
+				instance = FindObjectOfType<Grid>();
+			return instance;
+		}
+	}
 	public Material GridMaterial;
 
     public const float WORLD_BOTTOM_HEIGHT = 0.01f;
@@ -17,22 +24,44 @@ public class Grid : MonoBehaviour {
 
     [HideInInspector]
     public Tile[,] grid; // should make 1D
-    private float nodeDiameter;
 
     public static int MaxSize { get { return GridSizeX * GridSizeY; } }
-    public static int GridSizeX { get; private set; }
-    public static int GridSizeY { get; private set; }
-    public static int GridSizeXHalf { get { return Mathf.RoundToInt(GridSizeX * 0.5f); } }
-    public static int GridSizeYHalf { get { return Mathf.RoundToInt(GridSizeY * 0.5f); } }
+	private int sizeX = -1;
+	public static int GridSizeX { 
+		get { 
+			if(Grid.Instance.sizeX == -1)
+				Grid.Instance.sizeX = Mathf.RoundToInt(Grid.Instance.GridWorldSize.x / Tile.DIAMETER);
+			return Grid.Instance.sizeX;
+		} 
+	}
+	private int sizeY = -1;
+	public static int GridSizeY{
+		get{
+			if (Grid.Instance.sizeY == -1)
+				Grid.Instance.sizeY = Mathf.RoundToInt(Grid.Instance.GridWorldSize.y / Tile.DIAMETER);
+			return Grid.Instance.sizeY;
+		}
+	}
+	private int sizeXHalf = -1;
+	public static int GridSizeXHalf{
+		get{
+			if (Grid.Instance.sizeXHalf == -1)
+				Grid.Instance.sizeXHalf = Mathf.RoundToInt(Grid.GridSizeX * 0.5f);
+			return Grid.Instance.sizeXHalf;
+		}
+	}
+	private int sizeYHalf = -1;
+	public static int GridSizeYHalf{
+		get{
+			if (Grid.Instance.sizeYHalf == -1)
+				Grid.Instance.sizeYHalf = Mathf.RoundToInt(Grid.GridSizeY * 0.5f);
+			return Grid.Instance.sizeYHalf;
+		}
+	}
 
 
-    void Awake() {
-        Instance = this;
-
-        nodeDiameter = Tile.RADIUS * 2;
-        GridSizeX = Mathf.RoundToInt(GridWorldSize.x / nodeDiameter);
-        GridSizeY = Mathf.RoundToInt(GridWorldSize.y / nodeDiameter);
-    }
+	void Awake() {
+	}
 
 	void Start() { 
         CreateGrid();
@@ -53,7 +82,7 @@ public class Grid : MonoBehaviour {
         Vector3 worldBottomLeft = transform.position - (Vector3.right * GridWorldSize.x / 2) - (Vector3.up * GridWorldSize.y / 2) - new Vector3(0, 0.5f, 0); // 0.5f because of the +1 for diagonals
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + Tile.RADIUS) + Vector3.up * (y * nodeDiameter + Tile.RADIUS + 0.5f); // +0.5f for diagonals
+                Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * Tile.DIAMETER + Tile.RADIUS) + Vector3.up * (y * Tile.DIAMETER + Tile.RADIUS + 0.5f); // +0.5f for diagonals
 
                 grid[x, y] = new Tile(worldPoint, x, y);
             }
@@ -347,7 +376,7 @@ public class Grid : MonoBehaviour {
         if (grid != null && DisplayGridGizmos) {
             foreach (Tile n in grid) {
                 Gizmos.color = n.Walkable ? Color.white : Color.red;
-                Gizmos.DrawWireCube(n.WorldPosition, Vector3.one * (nodeDiameter - 0.1f));
+                Gizmos.DrawWireCube(n.WorldPosition, Vector3.one * (Tile.DIAMETER - 0.1f));
             }
         }
     }
