@@ -20,6 +20,7 @@ public class CustomLight : MonoBehaviour {
     public string version = "1.0.5"; //release date 09/01/2017
     public Material lightMaterial;
     public int Radius = 20;
+	public int Diameter { get { return Radius * 2 + 1; } }
     [Range(0, 1)] public float Intensity = 1;
     
 	public byte LightColor = 40; // bright yellow
@@ -55,6 +56,35 @@ public class CustomLight : MonoBehaviour {
 	public bool[,] VXLightMap_Hit;
 	public float[,] VXLightMap_Intensity;
 
+	private enum CoordinateSpaceEnum { VTile, VLight, Light, VGrid, Grid, VWorld }
+	void AssignValueToVertMap<T>(T[,] _vertexLightMap, int _vxGrid, int _vyGrid, T _value, CoordinateSpaceEnum _space){
+		
+		int _x = 0;
+		int _y = 0;
+
+		// switch (_space){
+		// 	case CoordinateSpaceEnum.VTile:
+		// 	break;
+		// 	case CoordinateSpaceEnum.VLight:
+		// 	break;
+		// 	case CoordinateSpaceEnum.Light:
+		// 	break;
+		// 	case CoordinateSpaceEnum.VGrid:
+		// 	break;
+		// 	case CoordinateSpaceEnum.Grid:
+		// 	break;
+		// 	case CoordinateSpaceEnum.VWorld:
+		// 	break;
+		// 	default:
+		// 		Debug.LogError(_space + " hasn't been properly implemented yet!");
+		// 	break;
+		// }
+		
+		// _vertexLightMap[_vxLight, _vyLight] = _value;
+
+		//GetGridVerticesAtSamePosition(GetVXGrid(, _vyGrid, )
+	}
+
 
 	[EasyButtons.Button]
 	public void TestGridCoord(){
@@ -80,8 +110,8 @@ public class CustomLight : MonoBehaviour {
         MyMesh.name = MESH_NAME;
         MyMesh.MarkDynamic();
 
-		VXLightMap_Hit 			= new bool	[Radius * 2 * UVControllerBasic.MESH_VERTICES_PER_EDGE, Radius * 2 * UVControllerBasic.MESH_VERTICES_PER_EDGE];
-		VXLightMap_Intensity 	= new float	[Radius * 2 * UVControllerBasic.MESH_VERTICES_PER_EDGE, Radius * 2 * UVControllerBasic.MESH_VERTICES_PER_EDGE];
+		VXLightMap_Hit 			= new bool	[Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE];
+		VXLightMap_Intensity 	= new float	[Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE];
 	}
 	void OnDestroy(){
        LightManager.AllLights.Remove(this);		
@@ -128,6 +158,7 @@ public class CustomLight : MonoBehaviour {
 	}
 
 	public void UpdateLight() {
+		Debug.Log(transform.name);
 		GetAllTilesInRange();
 		PreparePooledColliders();
 		SetVertices();
@@ -151,11 +182,10 @@ public class CustomLight : MonoBehaviour {
 		tilesInRangeWithCollider 	= GetTilesInRange(_onlyWithColliders: true);
 	}
 	public Vector2i[,] GetTilesInRange(bool _onlyWithColliders){
-		int _diameter = Radius * 2 + 1; // +1 to account for center tile
-		Vector2i[,] _tiles = new Vector2i[_diameter, _diameter];
+		Vector2i[,] _tiles = new Vector2i[Diameter, Diameter];
 
-		for 	(int y = 0, _yGrid = MyGridCoord.y - Radius; y < _diameter; y++, _yGrid++){
-			for (int x = 0, _xGrid = MyGridCoord.x - Radius; x < _diameter; x++, _xGrid++){
+		for 	(int y = 0, _yGrid = MyGridCoord.y - Radius; y < Diameter; y++, _yGrid++){
+			for (int x = 0, _xGrid = MyGridCoord.x - Radius; x < Diameter; x++, _xGrid++){
 				_tiles[x, y] = new Vector2i(_xGrid, _yGrid);
 				
 				if (_xGrid < 0 || _xGrid >= Grid.GridSizeX || _yGrid < 0 || _yGrid >= Grid.GridSizeY){
@@ -448,15 +478,18 @@ public class CustomLight : MonoBehaviour {
 		// find colors and dots for all lights and apply
 		Vector2[] _dots = new Vector2[4];
 
-		int vx = 0, vy = 0, _vIndex = 0, _xLight = 0, _yLight = 0;
+
+		pamndpmwd // continue here. Can't I replace these iteration-variables with _vxGrid/_vyGrid? That way I can more easily use the new conversion-methods. Also less code ^^'
+
+		int _vxTile = 0, _vyTile = 0, _vIndex = 0, _xLight = 0, _yLight = 0;
 		mIterateVariables IterateExtraVariables = delegate (){
-			vx++;
+			_vxTile++;
 			_vIndex++;
-			if (vx == UVControllerBasic.MESH_VERTICES_PER_EDGE){
-				vx = 0;
-				vy++;
-				if (vy == UVControllerBasic.MESH_VERTICES_PER_EDGE){
-					vy = 0;
+			if (_vxTile == UVControllerBasic.MESH_VERTICES_PER_EDGE){
+				_vxTile = 0;
+				_vyTile++;
+				if (_vyTile == UVControllerBasic.MESH_VERTICES_PER_EDGE){
+					_vyTile = 0;
 					_vIndex = 0;
 					_xLight++;
 					if (_xLight == tilesInRange.GetLength(0)){
@@ -468,27 +501,33 @@ public class CustomLight : MonoBehaviour {
 		};
 		int _totalIterations = (int)(tilesInRange.GetLength(0) * UVControllerBasic.MESH_VERTICES_PER_EDGE * tilesInRange.GetLength(1) * UVControllerBasic.MESH_VERTICES_PER_EDGE);
 		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
-			if (_xLight > 0 && vx == 0)
+			if (_xLight > 0 && _vxTile == 0)
 				continue;
-			if (_yLight > 0 && vy == 0)
+			if (_yLight > 0 && _vyTile == 0)
 				continue;
 			if(tilesInRange[_xLight, _yLight].x < 0 || tilesInRange[_xLight, _yLight].y < 0)
 				continue;
 
-			int _vxLight 	= GetVXLight(_xLight, vx); // UNUSED!
-			int _vyLight 	= GetVYLight(_yLight, vy); // UNUSED!
+			int _vxLight 	= GetVXLight(_xLight, _vxTile);
+			int _vyLight 	= GetVYLight(_yLight, _vyTile);
+			int _vxGrid 	= GetVXGrid	(_xGrid, _vxTile);
+			int _vyGrid 	= GetVYGrid	(_yGrid, _vyTile);
 			int _xGrid 		= GetXGrid	(_xLight);
 			int _yGrid 		= GetYGrid	(_yLight);
-			int _vxGrid 	= GetVXGrid	(_xLight, vx);
-			int _vyGrid 	= GetVYGrid	(_yLight, vy);
-			float _vxWorld 	= GetVXWorld(_xGrid, vx);
-			float _vyWorld 	= GetVYWorld(_yGrid, vy);
+			float _vxWorld 	= GetVXWorld(_xGrid, _vxTile);
+			float _vyWorld 	= GetVYWorld(_yGrid, _vyTile);
+
+			if (_xGrid == 13 && _yGrid == 14){
+				Debug.Log((_vxWorld + ", " + _vyWorld).ToString().Color(Color.cyan));
+			
+			}
+			
 
 			// get colors from lights
 			bool _illuminated;
 			float _lightFromThis;
 			Color _newVertexColor = GetColorForVertex(_vxGrid, _vyGrid, _xGrid, _yGrid, _xLight, _yLight, _vxLight, _vyLight, _vIndex, _vxWorld, _vyWorld, _excludeMe, out _illuminated, out _lightFromThis);
-
+			
 			// get two dots per light describing angle to four strongest lights
 			Vector4 _dominantLightIndices = GetShadowCastingLightsIndices(_vxGrid, _vyGrid, _excludeMe, _illuminated, _lightFromThis);
 			_dots[0] = GetDotXY(_vxWorld, _vyWorld, (int)_dominantLightIndices.x);
@@ -499,29 +538,27 @@ public class CustomLight : MonoBehaviour {
 			int[] _xGridNeighbours;
 			int[] _yGridNeighbours;
 			int[] _vIndexNeighbours;
-			GetGridVerticesAtSamePosition(vx, vy, _xGrid, _yGrid, _xLight == 0, true, out _xGridNeighbours, out _yGridNeighbours, out _vIndexNeighbours);
+			GetGridVerticesAtSamePosition(_vxTile, _vyTile, _xGrid, _yGrid, _xLight == 0, true, out _xGridNeighbours, out _yGridNeighbours, out _vIndexNeighbours);
 			for (int i2 = 0; i2 < _xGridNeighbours.Length; i2++){
 				Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetUVDots(_vIndexNeighbours[i2], _dots[0], _dots[1], _dots[2], _dots[3]);
 			}
 
-			GetGridVerticesAtSamePosition(vx, vy, _xGrid, _yGrid, _xLight == 0, false, out _xGridNeighbours, out _yGridNeighbours, out _vIndexNeighbours);
+			GetGridVerticesAtSamePosition(_vxTile, _vyTile, _xGrid, _yGrid, _xLight == 0, false, out _xGridNeighbours, out _yGridNeighbours, out _vIndexNeighbours);
 			for (int i2 = 0; i2 < _xGridNeighbours.Length; i2++){
-				int _yL = GetYLight(_yGridNeighbours[i2]);
-				int _xL = GetXLight(_xGridNeighbours[i2]);
-				int _vy = GetVYUVController(_vIndexNeighbours[i2]);
-				int _vx = GetVXUVController(_vIndexNeighbours[i2], _vy);
-				int _vyG = GetVYGrid(_yL, _vy);
-				int _vxG = GetVXGrid(_xL, _vx);
+				int _vy = GetVYTile(_vIndexNeighbours[i2]);
+				int _vx = GetVXTile(_vIndexNeighbours[i2], _vy);
+				int _vyG = GetVYGrid(_yGridNeighbours[i2], _vy);
+				int _vxG = GetVXGrid(_xGridNeighbours[i2], _vx);
 				LightManager.VertMap_TotalColorNoBlur[_vxG, _vyG] = _newVertexColor;
 			}
 
 
 			// DEBUG 
-			mApplyToVertex ApplyVertexColor = delegate (int _x, int _y, int _vertex){
-				Grid.Instance.grid[_x, _y].MyUVController.SetVertexColor(_vertex, _newVertexColor);
-			};
 			for (int i2 = 0; i2 < _xGridNeighbours.Length; i2++){
-				ApplyVertexColor(_xGridNeighbours[i2], _yGridNeighbours[i2], _vIndexNeighbours[i2]);
+				// if(_xLight == 0 && vx == 0 || _yLight == 0 && vy == 0)
+				// 	Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetVertexColor(_vIndexNeighbours[i2], Color.red);
+				// else
+					Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetVertexColor(_vIndexNeighbours[i2], _newVertexColor);
 			}
 		}
 
@@ -531,27 +568,27 @@ public class CustomLight : MonoBehaviour {
 		// blur and apply colors
 		Color[] _adjacentColors = new Color[9];
 		
-		vx = 0; 
-		vy = 0; 
+		_vxTile = 0; 
+		_vyTile = 0; 
 		_vIndex = 0; 
 		_xLight = 0; 
 		_yLight = 0;
 		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
-			if (_xLight > 0 && vx == 0)
+			if (_xLight > 0 && _vxTile == 0)
 				continue;
-			if (_yLight > 0 && vy == 0)
+			if (_yLight > 0 && _vyTile == 0)
 				continue;
 			if(tilesInRange[_xLight, _yLight].x < 0 || tilesInRange[_xLight, _yLight].y < 0)
 				continue;
 
 			int _xGrid 		= GetXGrid(_xLight);
 			int _yGrid 		= GetYGrid(_yLight);
-			int _vxLight 	= GetVXLight(_xLight, vx);
-			int _vyLight 	= GetVYLight(_yLight, vy);
+			int _vxLight 	= GetVXLight(_xLight, _vxTile);
+			int _vyLight 	= GetVYLight(_yLight, _vyTile);
 
 			// try get colors from neighbouring vertices (for smoothing)
-			int _diffToRightX = vx == 0 ? 1 : 2;
-			int _diffToAboveY = vy == 0 ? 1 : 2;
+			int _diffToRightX = _vxTile == 0 ? 1 : 2;
+			int _diffToAboveY = _vyTile == 0 ? 1 : 2;
 			int _failAmount = 0;
 			mTryGetNeighbourColor TryGetAdjacentColor = delegate (int _x, int _y){
 				if (_x < 0 || _y < 0 || _x >= LightManager.VertMap_TotalColorNoBlur.GetLength(0) || _y >= LightManager.VertMap_TotalColorNoBlur.GetLength(1)){
@@ -561,8 +598,8 @@ public class CustomLight : MonoBehaviour {
 				return LightManager.VertMap_TotalColorNoBlur[_x, _y];
 			};
 
-			int _vxGrid = GetVXGrid(_xLight, vx);
-			int _vyGrid = GetVYGrid(_yLight, vy);
+			int _vxGrid = GetVXGrid(_xGrid, _vxTile);
+			int _vyGrid = GetVYGrid(_yGrid, _vyTile);
 			_adjacentColors[0] = TryGetAdjacentColor(_vxGrid - 1, 				_vyGrid - 1);
 			_adjacentColors[1] = TryGetAdjacentColor(_vxGrid, 					_vyGrid - 1);
 			_adjacentColors[2] = TryGetAdjacentColor(_vxGrid + _diffToRightX, 	_vyGrid - 1);
@@ -586,50 +623,92 @@ public class CustomLight : MonoBehaviour {
 			mApplyToVertex ApplyVertexColor = delegate (int _x, int _y, int _vertex){
 				Grid.Instance.grid[_x, _y].MyUVController.SetVertexColor(_vertex, _myColor);
 			};
-			GetGridVerticesAtSamePosition(vx, vy, _xGrid, _yGrid, _xLight == 0, false, out _xGridForNeighbours, out _yGridForNeighbours, out _vIndexForNeighbours);
+			GetGridVerticesAtSamePosition(_vxTile, _vyTile, _xGrid, _yGrid, _xLight == 0, false, out _xGridForNeighbours, out _yGridForNeighbours, out _vIndexForNeighbours);
 			for (int i2 = 0; i2 < _xGridForNeighbours.Length; i2++){
 				ApplyVertexColor(_xGridForNeighbours[i2], _yGridForNeighbours[i2], _vIndexForNeighbours[i2]);
 			}
 		}
 	}
 
-	int GetXGrid(int _xLight){
-		return MyGridCoord.x - (Radius - _xLight);
+	// static int GetXGrid(int _xLight, CustomLight _light){
+	// 	return _light.MyGridCoord.x - (_light.Radius - _xLight);
+	// }
+	// static int GetYGrid(int _yLight, CustomLight _light){
+	// 	return _light.MyGridCoord.y - (_light.Radius - _yLight);
+	// }
+	// static int GetVXGrid(int _xGrid, int _vxTile){
+	// 	return _xGrid * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vxTile;
+	// }
+	// static int GetVYGrid(int _yGrid, int _vyTile){
+	// 	return _yGrid * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vyTile;
+	// }
+	// static int GetXLight(int _xGrid, CustomLight _light){
+	// 	return _xGrid - (_light.MyGridCoord.x - _light.Radius);
+	// }
+	// static int GetYLight(int _yGrid, CustomLight _light){
+	// 	return _yGrid - (_light.MyGridCoord.y - _light.Radius);
+	// }
+	// static int GetVXLight(int _xLight, int _vxTile){
+	// 	return _xLight * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vxTile;
+	// }
+	// static int GetVYLight(int _yLight, int _vyTile){
+	// 	return _yLight * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vyTile;
+	// }
+	// static int GetVXTile(int _vIndex, int _vyTile){
+	// 	return _vIndex - _vyTile * UVControllerBasic.MESH_VERTICES_PER_EDGE;
+	// }
+	// static int GetVYTile(int _vIndex){
+	// 	return Mathf.FloorToInt(_vIndex / UVControllerBasic.MESH_VERTICES_PER_EDGE);
+	// }
+	// private const float VERTEX_DISTANCE = 0.5f;
+    // float GetVXWorld(int _xGrid, int _vx){
+    //     return Grid.Instance.grid[_xGrid, 0].WorldPosition.x + (_vx - 1) * VERTEX_DISTANCE;
+    // }
+	// float GetVYWorld(int _yGrid, int _vy){
+    //     return Grid.Instance.grid[0, _yGrid].WorldPosition.y + (_vy - 1) * VERTEX_DISTANCE;
+    // }
+
+	static int GetVXGrid(int _vxLight, CustomLight _light){
+		return _vxLight + UVControllerBasic.MESH_VERTICES_PER_EDGE * (_light.MyGridCoord.x - _light.Radius);
 	}
-	int GetYGrid(int _yLight){
-		return MyGridCoord.y - (Radius - _yLight);
+	static int GetVYGrid(int _vyLight, CustomLight _light){
+		return _vyLight + UVControllerBasic.MESH_VERTICES_PER_EDGE * (_light.MyGridCoord.y - _light.Radius);
 	}
-	int GetVXGrid(int _xLight, int _xUVC){
-		return GetXGrid(_xLight) * UVControllerBasic.MESH_VERTICES_PER_EDGE + _xUVC;
+	static int GetXGrid(int _vxGrid){
+		return _vxGrid / UVController.MESH_VERTICES_PER_EDGE;
 	}
-	int GetVYGrid(int _yLight, int _yUVC){
-		return GetYGrid(_yLight) * UVControllerBasic.MESH_VERTICES_PER_EDGE + _yUVC;
+	static int GetYGrid(int _vyGrid){
+		return _vyGrid / UVController.MESH_VERTICES_PER_EDGE;
 	}
-	int GetXLight(int _xGrid){
-		return _xGrid - (MyGridCoord.x - Radius);
+	static int GetXLight(int _vxGrid, CustomLight _light){
+		return GetXGrid(_vxGrid) - (_light.MyGridCoord.x - _light.Radius);
 	}
-	int GetYLight(int _yGrid){
-		return _yGrid - (MyGridCoord.y - Radius);
+	static int GetYLight(int _vyGrid, CustomLight _light){
+		return GetYGrid(_vyGrid) - (_light.MyGridCoord.y - _light.Radius);
 	}
-	int GetVXLight(int _xLight, int _xUVC){
-		return _xLight * UVControllerBasic.MESH_VERTICES_PER_EDGE + _xUVC;
+	static int GetVXLight(int _vxGrid, CustomLight _light){
+		return _vxGrid - UVControllerBasic.MESH_VERTICES_PER_EDGE * (_light.MyGridCoord.x - _light.Radius);
 	}
-	int GetVYLight(int _yLight, int _yUVC){
-		return _yLight * UVControllerBasic.MESH_VERTICES_PER_EDGE + _yUVC;
+	static int GetVYLight(int _vyGrid, CustomLight _light){
+		return _vyGrid - UVControllerBasic.MESH_VERTICES_PER_EDGE * (_light.MyGridCoord.y - _light.Radius);
 	}
-	int GetVXUVController(int _vIndex, int _vy){
-		return _vIndex - _vy * UVControllerBasic.MESH_VERTICES_PER_EDGE;
+	static int GetVXTile(int _vxGrid){
+		return _vxGrid - GetXGrid(_vxGrid);
 	}
-	int GetVYUVController(int _vIndex){
-		return Mathf.FloorToInt(_vIndex / UVControllerBasic.MESH_VERTICES_PER_EDGE);
+	static int GetVYTile(int _vyGrid){
+		return _vyGrid - GetYGrid(_vyGrid);
 	}
 	private const float VERTEX_DISTANCE = 0.5f;
-    float GetVXWorld(int _xGrid, int _vx){
-        return Grid.Instance.grid[_xGrid, 0].WorldPosition.x + (_vx - 1) * VERTEX_DISTANCE;
+    float GetVXWorld(int _vxGrid){
+		float _distance = _vxGrid * VERTEX_DISTANCE;
+		float _correction = GetXGrid(_vxGrid) * VERTEX_DISTANCE; // discount every third vertex (except first) since they overlap
+		return (Grid.Instance.transform.position.x - Grid.GridSizeXHalf) + (_distance - _correction);
     }
-	float GetVYWorld(int _yGrid, int _vy){
-        return Grid.Instance.grid[0, _yGrid].WorldPosition.y + (_vy - 1) * VERTEX_DISTANCE;
-    }
+	float GetVYWorld(int _vyGrid){
+		float _distance = _vyGrid * VERTEX_DISTANCE;
+		float _correction = GetYGrid(_vyGrid) * VERTEX_DISTANCE; // discount every third vertex (except first) since they overlap
+		return (Grid.Instance.transform.position.y - Grid.GridSizeYHalf) + (_distance - _correction);    
+	}
 
 	enum VertexNeighbourEnum { TileAbove, TopHalf, TopHalfLeft, TopHalfRight, TileRight, TileRightTopHalf, TileRightTopHalfLeft, TileTopRight };
 	struct VertexNeighbourStruct {
@@ -639,23 +718,28 @@ public class CustomLight : MonoBehaviour {
 	}
 	private delegate bool mNeighbourTestDelegate1(VertexNeighbourEnum _neighbour, int _vertexX, int _vertexY, int _gridX, int _gridY);
 	private delegate int  mNeighbourTestDelegate2(VertexNeighbourEnum _neighbour);
-	public static void GetGridVerticesAtSamePosition(int _vx, int _vy, int _xGrid, int _yGrid, bool _isOnLeftEdge, bool _includeTopHalfStuff, out int[] _xGridForNeighbours, out int[] _yGridForNeighbours, out int[] _vIndexForNeighbours) {
+	public static void GetGridVerticesAtSamePosition(int _vxGrid, int _vyGrid, bool _isOnLeftEdge, bool _includeTopHalfStuff, out int[] _xGridForNeighbours, out int[] _yGridForNeighbours, out int[] _vIndexForNeighbours) {
 		int _vertsPerEdge = UVControllerBasic.MESH_VERTICES_PER_EDGE;
-		int _vIndex = _vy * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vx;
+		int _vertEdgeMaxIndex = _vertsPerEdge - 1;
+		int _xGrid = Mathf.FloorToInt(_vxGrid / UVControllerBasic.MESH_VERTICES_PER_EDGE);
+		int _yGrid = Mathf.FloorToInt(_vxGrid / UVControllerBasic.MESH_VERTICES_PER_EDGE);
+		int _vxTile = _vxGrid - _xGrid * UVControllerBasic.MESH_VERTICES_PER_EDGE;
+		int _vyTile = _vyGrid - _yGrid * UVControllerBasic.MESH_VERTICES_PER_EDGE;
+		int _vIndex = _vyTile * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vxTile;
 
 		mNeighbourTestDelegate1 AffectsVertex = null;
 		AffectsVertex = delegate (VertexNeighbourEnum _neighbour, int _vertexX, int _vertexY, int _gridX, int _gridY){
 			switch (_neighbour){
 				case VertexNeighbourEnum.TileAbove:
-					return _gridY + 1 < Grid.GridSizeY && _vertexY == _vertsPerEdge - 1;
+					return _gridY + 1 < Grid.GridSizeY && _vertexY == _vertEdgeMaxIndex;
 				case VertexNeighbourEnum.TopHalf:
-					return _includeTopHalfStuff && _vertexY == _vertsPerEdge - 1;
+					return _includeTopHalfStuff && _vertexY == _vertEdgeMaxIndex;
 				case VertexNeighbourEnum.TopHalfLeft:
 					return AffectsVertex(VertexNeighbourEnum.TopHalf, _vertexX, _vertexY, _gridX, _gridY) && _isOnLeftEdge;
 				case VertexNeighbourEnum.TopHalfRight:
-					return AffectsVertex(VertexNeighbourEnum.TopHalf, _vertexX, _vertexY, _gridX, _gridY) && _vertexX == _vertsPerEdge - 1;
+					return AffectsVertex(VertexNeighbourEnum.TopHalf, _vertexX, _vertexY, _gridX, _gridY) && _vertexX == _vertEdgeMaxIndex;
 				case VertexNeighbourEnum.TileRight:
-					return _gridX + 1 < Grid.GridSizeX && _vertexX == _vertsPerEdge - 1;
+					return _gridX + 1 < Grid.GridSizeX && _vertexX == _vertEdgeMaxIndex;
 				case VertexNeighbourEnum.TileRightTopHalf:
 				case VertexNeighbourEnum.TileRightTopHalfLeft:
 					return AffectsVertex(VertexNeighbourEnum.TopHalf, _vertexX, _vertexY, _gridX, _gridY) && AffectsVertex(VertexNeighbourEnum.TileRight, _vertexX, _vertexY, _gridX, _gridY);
@@ -703,13 +787,13 @@ public class CustomLight : MonoBehaviour {
 		};
 		mNeighbourTestDelegate2 GetVIndexForNeighbour = delegate (VertexNeighbourEnum _neighbour){
 			switch (_neighbour){
-				case VertexNeighbourEnum.TileAbove: 			return _vx;
-				case VertexNeighbourEnum.TopHalf: 				return (_vy + 1) * _vertsPerEdge + _vx;
-				case VertexNeighbourEnum.TopHalfLeft:			return (_vy + 2) * _vertsPerEdge;
-				case VertexNeighbourEnum.TopHalfRight:			return (_vy + 2) * _vertsPerEdge + 1; // +1 instead of _vx because top-half has fewer vertices ^^'
-				case VertexNeighbourEnum.TileRight:				return _vIndex - _vx;
-				case VertexNeighbourEnum.TileRightTopHalf:		return (_vy + 1) * _vertsPerEdge;
-				case VertexNeighbourEnum.TileRightTopHalfLeft:	return (_vy + 2) * _vertsPerEdge;
+				case VertexNeighbourEnum.TileAbove: 			return _vxTile;
+				case VertexNeighbourEnum.TopHalf: 				return (_vyTile + 1) * _vertsPerEdge + _vxTile;
+				case VertexNeighbourEnum.TopHalfLeft:			return (_vyTile + 2) * _vertsPerEdge;
+				case VertexNeighbourEnum.TopHalfRight:			return (_vyTile + 2) * _vertsPerEdge + 1; // +1 instead of _vx because top-half has fewer vertices ^^'
+				case VertexNeighbourEnum.TileRight:				return _vIndex - _vxTile;
+				case VertexNeighbourEnum.TileRightTopHalf:		return (_vyTile + 1) * _vertsPerEdge;
+				case VertexNeighbourEnum.TileRightTopHalfLeft:	return (_vyTile + 2) * _vertsPerEdge;
 				case VertexNeighbourEnum.TileTopRight:			return 0;
 				default:
 					Debug.LogError(_neighbour.ToString() + " hans't been properly implemented yet!");
@@ -717,14 +801,14 @@ public class CustomLight : MonoBehaviour {
 			}
 		};
 
-		bool _tileAbove 			= AffectsVertex(VertexNeighbourEnum.TileAbove, 			_vx, _vy, _xGrid, _yGrid);
-		bool _topHalf 				= AffectsVertex(VertexNeighbourEnum.TopHalf, 			_vx, _vy, _xGrid, _yGrid);
-		bool _topHalf_L 			= AffectsVertex(VertexNeighbourEnum.TopHalfLeft, 		_vx, _vy, _xGrid, _yGrid);
-		bool _topHalf_R 			= AffectsVertex(VertexNeighbourEnum.TopHalfRight, 		_vx, _vy, _xGrid, _yGrid);
-		bool _tileRight 			= AffectsVertex(VertexNeighbourEnum.TileRight, 			_vx, _vy, _xGrid, _yGrid);
-		bool _tileRightTopHalf 		= AffectsVertex(VertexNeighbourEnum.TileRightTopHalf, 	_vx, _vy, _xGrid, _yGrid);
-		bool _tileRightTopHalf_L 	= AffectsVertex(VertexNeighbourEnum.TileRightTopHalf, _vx, _vy, _xGrid, _yGrid);
-		bool _tileTopRight 			= AffectsVertex(VertexNeighbourEnum.TileTopRight, 		_vx, _vy, _xGrid, _yGrid);
+		bool _tileAbove 			= AffectsVertex(VertexNeighbourEnum.TileAbove, 			_vxTile, _vyTile, _xGrid, _yGrid);
+		bool _topHalf 				= AffectsVertex(VertexNeighbourEnum.TopHalf, 			_vxTile, _vyTile, _xGrid, _yGrid);
+		bool _topHalf_L 			= AffectsVertex(VertexNeighbourEnum.TopHalfLeft, 		_vxTile, _vyTile, _xGrid, _yGrid);
+		bool _topHalf_R 			= AffectsVertex(VertexNeighbourEnum.TopHalfRight, 		_vxTile, _vyTile, _xGrid, _yGrid);
+		bool _tileRight 			= AffectsVertex(VertexNeighbourEnum.TileRight, 			_vxTile, _vyTile, _xGrid, _yGrid);
+		bool _tileRightTopHalf 		= AffectsVertex(VertexNeighbourEnum.TileRightTopHalf, 	_vxTile, _vyTile, _xGrid, _yGrid);
+		bool _tileRightTopHalf_L 	= AffectsVertex(VertexNeighbourEnum.TileRightTopHalf, 	_vxTile, _vyTile, _xGrid, _yGrid);
+		bool _tileTopRight 			= AffectsVertex(VertexNeighbourEnum.TileTopRight, 		_vxTile, _vyTile, _xGrid, _yGrid);
 
 		//Debug.LogFormat("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}", _tileAbove, _topHalf, _topHalf_L, _topHalf_R, _tileRight, _tileRightTopHalf, _tileRightTopHalf_L, _tileTopRight);
 		VertexNeighbourStruct[] _theNeighbours = new VertexNeighbourStruct[] { 
@@ -811,31 +895,56 @@ public class CustomLight : MonoBehaviour {
 	private Color GetColorForVertex(int _vxGrid, int _vyGrid, int _xGrid, int _yGrid, int _xLight, int _yLight, int _vxLight, int _vyLight, int _vIndex, float _vxWorld, float _vyWorld, bool _excludeMe, out bool _illuminated, out float _lightFromThis){
 		Color _cachedColor = Color.clear;
 
+		int _vyTile = GetVYTile(_vIndex);
+		int _vxTile = GetVXTile(_vIndex, _vyTile);
 		// take all previously hit light and recompile into one color
 		int[] _lightsInRange = LightManager.GridMap_LightsInRange[_xGrid, _yGrid];
+		int actualCount = 0;
 		for (int i = 0; i < _lightsInRange.Length; i++){
 			if(_lightsInRange[i] == -1)
 				break;
 
 			CustomLight _otherLight = LightManager.AllLights[_lightsInRange[i]];
+			int _xLightOther = _otherLight.GetXLight(_xGrid); 
+			int _yLightOther = _otherLight.GetYLight(_yGrid);
+			int _vxLightOther = _otherLight.GetVXLight(_xLightOther, _vxTile);
+			int _vyLightOther = _otherLight.GetVYLight(_yLightOther, _vyTile);
+
 			if(_otherLight == this)
 				continue;
-			if(!_otherLight.VXLightMap_Hit[_vxLight, _vyLight])
+		
+			if (_vxWorld == -10 && _vyWorld == -10){
+				Debug.Log("Illuminated 1: " + _otherLight.VXLightMap_Hit[_vxLightOther, _vyLightOther] + " (" + _vxLightOther + ", " + _vyLightOther + ")"+ " (" + _xLightOther + ", " + _yLightOther + ")"+ " (" + _xGrid + ", " + _yGrid + ")");
+			}
+		
+			if(!_otherLight.VXLightMap_Hit[_vxLightOther, _vyLightOther])
 				continue;
 
-			CombineLightWithOthersLight(_otherLight.VXLightMap_Intensity[_vxLight, _vyLight], _otherLight.GetLightColor(), ref _cachedColor);
+			actualCount++;
+			CombineLightWithOthersLight(_otherLight.VXLightMap_Intensity[_vxLightOther, _vyLightOther], _otherLight.GetLightColor(), ref _cachedColor);
 		}
+
+		if (_xLight == 0 || _yLight == 0){
+			SuperDebug.Log(new Vector3(_vxWorld, _vyWorld, 0), Color.red, _vxWorld.ToString(), _vyWorld.ToString());
+		}
+
 
 		float _distance = (new Vector2(_vxWorld, _vyWorld) - myInspector.MyTileObject.MyTile.WorldPosition).magnitude;
 		_lightFromThis = Intensity * Mathf.Pow(1 - (_distance / Radius), 2);
 		_illuminated = !_excludeMe && IsInsideLightMesh(_vxWorld, _vyWorld);
 
+		if (_vxWorld == -10 && _vyWorld == -10){
+			int _vxLightOther = GetVXLight(GetXLight(_xGrid), _vxTile);
+			int _vyLightOther = GetVYLight(GetYLight(_yGrid), _vyTile);
+			Debug.Log("Illuminated 2: " + _illuminated + " (" + _vxLight + ", " + _vyLight + ")" + " (" + _xLight + ", " + _yLight + ")"+ " (" + _xGrid + ", " + _yGrid + ")");
+		}
+
 		// apply new light to total color
-		Debug.LogFormat("{0}, {1}/{2}, {3}", _vxLight, _vyLight, VXLightMap_Hit.GetLength(0), VXLightMap_Hit.GetLength(1));dawundwa // this seems to freeze everything, so look into that
 		VXLightMap_Hit[_vxLight, _vyLight] = _illuminated;
 		VXLightMap_Intensity[_vxLight, _vyLight] = _lightFromThis;
-		if(_illuminated)
+		if(_illuminated){
 			CombineLightWithOthersLight(_lightFromThis, GetLightColor(), ref _cachedColor);
+		}
 
 		_cachedColor.a = 1;
 		LightManager.VertMap_TotalColorNoBlur[_vxGrid, _vyGrid] = _cachedColor;
@@ -946,13 +1055,13 @@ public class CustomLight : MonoBehaviour {
 	private bool IsInsideLightMesh(float _xWorld, float _yWorld){
 		bool _inside = false;
 		for (int i = 0, i2 = PointCollisionArray.Length - 1; i < PointCollisionArray.Length; i2 = i, i++){
-			Vector2 _vx1 = PointCollisionArray[i];
-			Vector2 _vx2 = PointCollisionArray[i2];
+			Vector2 _vert1 = PointCollisionArray[i];
+			Vector2 _vert2 = PointCollisionArray[i2];
 
-			bool _isBetweenVertices = _vx1.y <= _yWorld && _yWorld < _vx2.y || _vx2.y <= _yWorld && _yWorld < _vx1.y;
-			float _progressY = (_yWorld - _vx1.y) / (_vx2.y - _vx1.y);
-			float _progressX = (_vx2.x - _vx1.x) * _progressY;
-			bool _isLeftOfEdge = _xWorld < _vx1.x + _progressX;
+			bool _isBetweenVertices = _vert1.y <= _yWorld && _yWorld < _vert2.y || _vert2.y <= _yWorld && _yWorld < _vert1.y;
+			float _progressY = (_yWorld - _vert1.y) / (_vert2.y - _vert1.y);
+			float _progressX = (_vert2.x - _vert1.x) * _progressY;
+			bool _isLeftOfEdge = _xWorld < _vert1.x + _progressX;
 
 			if (_isBetweenVertices && _isLeftOfEdge)
 				_inside = !_inside;

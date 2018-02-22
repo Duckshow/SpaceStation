@@ -111,7 +111,6 @@ public class LightManager : MonoBehaviour {
 		}
 
 		if (lightsToUpdate.Count > 0){
-			Debug.Log(lightsToUpdate.Count);
 			//ClearVColorsForLights(lightsToUpdate);
 			for (int i = 0; i < lightsToUpdate.Count; i++){
 				CustomLight _light = AllLights[lightsToUpdate[i]];
@@ -119,6 +118,10 @@ public class LightManager : MonoBehaviour {
 					continue;
 
 				_light.UpdateLight();
+			}
+
+			for (int i = 0; i < lightsToUpdate.Count; i++){
+				SuperDebug.LogArray(Vector3.zero + new Vector3(0, i * AllLights[lightsToUpdate[i]].VXLightMap_Hit.GetLength(1), 0), AllLights[lightsToUpdate[i]].VXLightMap_Hit);
 			}
 
 			lightsToUpdate.Clear();

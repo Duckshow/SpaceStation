@@ -22,6 +22,18 @@ public class SuperDebug : MonoBehaviour {
     public static void Log(Vector3 _pos, Color _color, params string[] _text) {
         sThingsToDebug.Add(new DebugObject(_pos, _color, _text));
     }
+    public static void LogArray(Vector3 _pos, bool[,] _array) {
+        for (int x = 0; x < _array.GetLength(0); x++){
+            for (int y = 0; y < _array.GetLength(1); y++){
+                Color32 _color = _array[x, y] ? Color.green : Color.red;
+                Debug.DrawLine(_pos + new Vector3(x, y, 0), _pos + new Vector3(x + 1, y + 1, 0), _color, Mathf.Infinity);
+                Debug.DrawLine(_pos + new Vector3(x, y + 1, 0), _pos + new Vector3(x + 1, y, 0), _color, Mathf.Infinity);
+
+                Debug.DrawLine(_pos + new Vector3(x, y + 0.5f, 0), _pos + new Vector3(x + 1, y + 0.5f, 0), _color, Mathf.Infinity);
+                Debug.DrawLine(_pos + new Vector3(x + 0.5f, y, 0), _pos + new Vector3(x + 0.5f, y + 1, 0), _color, Mathf.Infinity); 
+            }
+        }
+    }
 
     int fontSize = 0;
     void Update() {
