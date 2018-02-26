@@ -35,18 +35,18 @@ public class UVController : UVControllerBasic {
 		ChangeColor (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
     }
 
-	[System.Serializable]
-	public class DebugData{
-		public GridLayerEnum Layer;
-		public Vector2i AssetCoordinates;
-		public bool Temporary;
-		public DebugData(GridLayerEnum _layer, Vector2i _coord, bool _temporary){
-			Layer = _layer;
-			AssetCoordinates = _coord;
-			Temporary = _temporary;
-		}
-	}
-	public List<DebugData> StackTrace = new List<DebugData>();
+	// [System.Serializable]
+	// public class DebugData{
+	// 	public GridLayerEnum Layer;
+	// 	public Vector2i AssetCoordinates;
+	// 	public bool Temporary;
+	// 	public DebugData(GridLayerEnum _layer, Vector2i _coord, bool _temporary){
+	// 		Layer = _layer;
+	// 		AssetCoordinates = _coord;
+	// 		Temporary = _temporary;
+	// 	}
+	// }
+	// public List<DebugData> StackTrace = new List<DebugData>();
 
 	public override void StopTempMode(){
 		base.StopTempMode();
@@ -55,7 +55,7 @@ public class UVController : UVControllerBasic {
 	}
 	public override void ChangeAsset(GridLayerEnum _layer, Vector2i _assetCoordinates, bool _temporary){
 		
-		StackTrace.Add(new DebugData(_layer, _assetCoordinates, _temporary));
+		//StackTrace.Add(new DebugData(_layer, _assetCoordinates, _temporary));
 
 		if (_layer == GridLayerEnum.Top){
 			if (_assetCoordinates != CachedAssets.WallSet.Null){
@@ -68,10 +68,13 @@ public class UVController : UVControllerBasic {
 				}
 
 				MyTopUVC.ChangeAsset(_layer, _assetCoordinates, _temporary);
-				if(_temporary && GridLayers[(int)GridLayerEnum.TopCorners].TemporaryCoordinates != null)
-					MyTopUVC.ChangeAsset(GridLayerEnum.TopCorners, GridLayers[(int)GridLayerEnum.TopCorners].TemporaryCoordinates, _temporary);
-				else if(!_temporary && GridLayers[(int)GridLayerEnum.TopCorners].Coordinates != null)
-					MyTopUVC.ChangeAsset(GridLayerEnum.TopCorners, GridLayers[(int)GridLayerEnum.TopCorners].Coordinates, _temporary);
+				GridLayerClass _topCornerLayer = GridLayers[(int)GridLayerEnum.TopCorners];
+				if (_temporary && _topCornerLayer.TemporaryCoordinates.y > 0) { 
+					MyTopUVC.ChangeAsset(GridLayerEnum.TopCorners, _topCornerLayer.TemporaryCoordinates, _temporary);
+				}
+				else if (!_temporary && _topCornerLayer.Coordinates.y > 0) { 
+					MyTopUVC.ChangeAsset(GridLayerEnum.TopCorners, _topCornerLayer.Coordinates, _temporary);
+				}
 			}
 			else if (MyTopUVC != null){
 				MyTopUVC.ChangeAsset(_layer, _assetCoordinates, _temporary);
@@ -99,9 +102,8 @@ public class UVController : UVControllerBasic {
         ChangeColor(setColorIndex_0, setColorIndex_1, setColorIndex_2, setColorIndex_3, setColorIndex_4, setColorIndex_5, setColorIndex_6, setColorIndex_7, setColorIndex_8, setColorIndex_9, false);
     }
     private Vector4 UV01234 = new Vector4();
-    private Vector4 colorIndices = new Vector4();
-    private List<Vector4> allColorIndices = new List<Vector4>();
-    public void ChangeColor(byte _color0, byte _color1, byte _color2, byte _color3, byte _color4, byte _color5, byte _color6, byte _color7, byte _color8, byte _color9, bool _temporarily) {
+	private Vector4[] allColorIndices;
+	public void ChangeColor(byte _color0, byte _color1, byte _color2, byte _color3, byte _color4, byte _color5, byte _color6, byte _color7, byte _color8, byte _color9, bool _temporarily) {
         if (!_temporarily) {
 			setColorIndex_0 = _color0;
 			setColorIndex_1 = _color1;
@@ -127,13 +129,17 @@ public class UVController : UVControllerBasic {
         colorIndex_8 = _color8;
         colorIndex_9 = _color9;
 
-		colorIndices.x = BitCompressor.Byte4ToInt(colorIndex_0, colorIndex_1, colorIndex_2,colorIndex_3);
-		colorIndices.y = BitCompressor.Byte4ToInt(colorIndex_4, colorIndex_5, colorIndex_6, colorIndex_7);
-		colorIndices.z = BitCompressor.Byte4ToInt(colorIndex_8, colorIndex_9, 0, 0);
+		Vector4 _indices = new Vector4();
+		_indices.x = BitCompressor.Byte4ToInt(colorIndex_0, colorIndex_1, colorIndex_2,colorIndex_3);
+		_indices.y = BitCompressor.Byte4ToInt(colorIndex_4, colorIndex_5, colorIndex_6, colorIndex_7);
+		_indices.z = BitCompressor.Byte4ToInt(colorIndex_8, colorIndex_9, 0, 0);
 
-        allColorIndices.Clear();
-		for (int i = 0; i < MyMeshFilter.mesh.uv.Length; i++)
-            allColorIndices.Add(colorIndices);
+		if (allColorIndices == null) { 
+			allColorIndices = new Vector4[MyMeshFilter.mesh.vertexCount];
+		}
+		for (int i = 0; i < MyMeshFilter.mesh.vertexCount; i++) {
+			allColorIndices[i] = _indices;
+		}
 
 		shouldApplyChanges = true;
     }
@@ -148,7 +154,7 @@ public class UVController : UVControllerBasic {
 		}
 
 		// apply UVs
-        Vector4 _doubleDot = doubleDots[_specificUV];
+		Vector4 _doubleDot = doubleDots[_specificUV];
         _doubleDot.x = BitCompressor.Int2ToInt((int)(_dot0.x * DOT_PRECISION), (int)(_dot0.y * DOT_PRECISION));
         _doubleDot.y = BitCompressor.Int2ToInt((int)(_dot1.x * DOT_PRECISION), (int)(_dot1.y * DOT_PRECISION));
         _doubleDot.z = BitCompressor.Int2ToInt((int)(_dot2.x * DOT_PRECISION), (int)(_dot2.y * DOT_PRECISION));
@@ -173,12 +179,12 @@ public class UVController : UVControllerBasic {
 
 	protected override void ApplyAssetChanges(){
 		//Debug.Log(sAllColorIndices.Count + ", " + sUVDoubleDots.Count + ", " + sVertexColors.Count);
-		MyMeshFilter.mesh.SetUVs(UVCHANNEL_COLOR, allColorIndices);
+		MyMeshFilter.mesh.SetUVs(UVCHANNEL_COLOR, allColorIndices.ToList());
 		MyMeshFilter.mesh.SetUVs(UVCHANNEL_DOUBLEDOT, doubleDots);
 		MyMeshFilter.mesh.SetColors(vertexColors);
 
 		if (MyTopUVC != null){
-			MyTopUVC.MyMeshFilter.mesh.SetUVs(UVCHANNEL_COLOR, allColorIndices);
+			MyTopUVC.MyMeshFilter.mesh.SetUVs(UVCHANNEL_COLOR, allColorIndices.ToList());
 			MyTopUVC.MyMeshFilter.mesh.SetUVs(UVCHANNEL_DOUBLEDOT, doubleDots);
 			MyTopUVC.MyMeshFilter.mesh.SetColors(vertexColors);
 		}

@@ -125,24 +125,15 @@ Shader "Custom/Grid" {
 
 			//-- FRAG --//
 			fixed4 CalculateLighting(fixed4 _normals, fixed _dotX, fixed _dotY){
-				float _litness = 
-				max(
-					// 0 if facing light head-on, 1 if opposite
-					abs(_normals.r - _dotX),
-					abs(_normals.g - _dotY)	
-				);
+				fixed _xFacingAmount = abs(_normals.r - _dotX);
+				fixed _yFacingAmount = abs(_normals.g - _dotY);
 
-				return (1 - 
-					min(
-						floor(_normals.a),
-						min(
-							ceil(_normals.r + _normals.g),			// only if both normals are set to zero will this win, making it fully lit
-							saturate(
-								round(_litness)
-							)
-						)
-					)
-				) * saturate(ceil(abs(_dotX + _dotY)));	// unless dotX and dotY forced to zero (otherwise impossible), this equals 1
+				fixed _isUnlit 			= floor(_normals.a);					// <1 == unlit, 1 == lit
+				fixed _isFlatSurface 	= ceil(_normals.r + _normals.g);		// 0 == fully lit, >0 use regular lighting
+				fixed _lightIntensity 	= max(_xFacingAmount, _yFacingAmount);	// 0 if facing light head-on, 1 if opposite
+				fixed _pickedAlternative = min(_isUnlit, min(_isFlatSurface, _lightIntensity));
+
+				return (1 - _pickedAlternative) * saturate(ceil(abs(_dotX + _dotY)));	// unless dotX and dotY forced to zero (otherwise impossible), this equals 1
 			}
 			fixed4 AddOrOverwriteColors(fixed4 _oldColor, fixed3 _newColor, fixed _newAlpha){
 				return fixed4(
@@ -187,7 +178,7 @@ Shader "Custom/Grid" {
 
 				// final apply
 				fixed3 litRGB = i.VColor * tex.rgb * colorToUse.rgb * mod;
-				litRGB = i.VColor;
+				//litRGB = i.VColor;
 				return fixed4(
 					lerp(litRGB, emTex, emTex.a),
 					tex.a

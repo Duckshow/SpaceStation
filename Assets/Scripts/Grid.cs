@@ -78,8 +78,9 @@ public class Grid : MonoBehaviour {
 	void CreateGrid() {
 		Random.InitState(Seed);
 		grid = new Tile[GridSizeX, GridSizeY];
+		Tile _tile;
 
-        Vector3 worldBottomLeft = transform.position - (Vector3.right * GridWorldSize.x / 2) - (Vector3.up * GridWorldSize.y / 2) - new Vector3(0, 0.5f, 0); // 0.5f because of the +1 for diagonals
+		Vector3 worldBottomLeft = transform.position - (Vector3.right * GridWorldSize.x / 2) - (Vector3.up * GridWorldSize.y / 2) - new Vector3(0, 0.5f, 0); // 0.5f because of the +1 for diagonals
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
                 Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * Tile.DIAMETER + Tile.RADIUS) + Vector3.up * (y * Tile.DIAMETER + Tile.RADIUS + 0.5f); // +0.5f for diagonals
@@ -90,26 +91,34 @@ public class Grid : MonoBehaviour {
         // for testing-purposes
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                // generate one wall in the center
+				_tile = grid[x, y];
+
+				// generate one wall in the center
 				// if (GenerateWalls && y == (GridSizeY * 0.5f) && x == (GridSizeX * 0.5f)) {
-                //     grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
-                //     continue;
-                // }
-                // generate walls randomly
-                if (GenerateWalls && Random.value > 0.9f) {
-                    grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
+				//     grid[x, y].SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
+				//     continue;
+				// }
+				// generate walls randomly
+				if (GenerateWalls && Random.value > 0.9f) {
+                    _tile.SetTileType(Tile.Type.Solid, Tile.TileOrientation.None);
                     continue;
                 }
 
-				grid[x, y].SetTileType(Tile.Type.Empty, Tile.TileOrientation.None);
-				grid[x, y].SetFloorType(Tile.Type.Solid, Tile.TileOrientation.None);
+				_tile.SetTileType(Tile.Type.Empty, Tile.TileOrientation.None);
+				_tile.SetFloorType(Tile.Type.Solid, Tile.TileOrientation.None);
             }
         }
 		bool _b;
 		bool _success;
+		Tile _neighbourL;
+		Tile _neighbourR;
+		Tile _neighbourT;
+		Tile _neighbourB;
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                if (grid[x, y]._WallType_ == Tile.Type.Solid)
+				_tile = grid[x, y];
+
+				if (_tile._WallType_ == Tile.Type.Solid)
                     continue;
 				#if !UNITY_EDITOR_OSX
 				_b = RUL.Rul.RandBool () ;
@@ -121,66 +130,72 @@ public class Grid : MonoBehaviour {
 				if (_b) {
 					_success = false;
 
-					// LT
-					if (x > 0 && grid[x - 1, y].CanConnect_R && y < GridSizeY - 1 && grid[x, y + 1].CanConnect_B){
-						grid[x, y].SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.TopLeft);
+					_neighbourL = x > 0 ? 				grid[x - 1, y] : null;
+					_neighbourR = x < GridSizeX - 1 ? 	grid[x + 1, y] : null;
+					_neighbourT = y < GridSizeY - 1 ? 	grid[x, y + 1] : null;
+					_neighbourB = y > 0 ? 				grid[x, y - 1] : null;
+
+					// TL
+					if (_neighbourT != null && _neighbourL != null && _neighbourT.CanConnect_B && _neighbourL.CanConnect_R){
+						_tile.SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.TopLeft);
 						_success = true;
 					}
 					// TR
-					else if (x < GridSizeX - 1 && grid[x + 1, y].CanConnect_L && y < GridSizeY - 1 && grid[x, y + 1].CanConnect_B){
-						grid[x, y].SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.TopRight);
+					else if (_neighbourT != null && _neighbourR != null && _neighbourT.CanConnect_B && _neighbourR.CanConnect_L){
+						_tile.SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.TopRight);
 						_success = true;
 					}
-					// RB
-					else if (x < GridSizeX - 1 && grid[x + 1, y].CanConnect_L && y > 0 && grid[x, y - 1].CanConnect_T){
-						grid[x, y].SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.BottomRight);
+					// BR
+					else if (_neighbourB != null && _neighbourR != null && _neighbourB.CanConnect_T && _neighbourR.CanConnect_L){
+						_tile.SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.BottomRight);
 						_success = true;
 					}
 					// BL
-					else if (x > 0 && grid[x - 1, y].CanConnect_R && y > 0 && grid[x, y - 1].CanConnect_T){
-						grid[x, y].SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.BottomLeft);
+					else if (_neighbourB != null && _neighbourL != null && _neighbourB.CanConnect_T && _neighbourL.CanConnect_R){
+						_tile.SetTileType(Tile.Type.Diagonal, Tile.TileOrientation.BottomLeft);
 						_success = true;
 					}
 
 					if(_success)
-						grid[x, y].SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None);
+						_tile.SetFloorType(Tile.Type.Empty, Tile.TileOrientation.None);
 				}
 
 				// floor stuff
 
-				if (grid[x, y]._FloorType_ == Tile.Type.Solid)
+				if (_tile._FloorType_ == Tile.Type.Solid)
 					continue;
-				if (grid [x, y]._WallType_ == Tile.Type.Diagonal)
-					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.GetReverseDirection(grid[x, y]._Orientation_));
-				
-				// LT
-				if (x > 0 && grid [x - 1, y].CanConnectFloor_R && y < GridSizeY - 1 && grid [x, y + 1].CanConnectFloor_B)
-					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.TileOrientation.TopLeft);
+				if (_tile._WallType_ == Tile.Type.Diagonal)
+					_tile.SetFloorType (Tile.Type.Diagonal, Tile.GetReverseDirection(_tile._Orientation_));
+
+
+				_neighbourL = grid[x - 1, y];
+				_neighbourR = grid[x + 1, y];
+				_neighbourT = grid[x, y + 1];
+				_neighbourB = grid[x, y + 1];
+
+				// TL
+				if (_neighbourT != null && _neighbourL != null && _neighbourT.CanConnectFloor_B && _neighbourL.CanConnectFloor_R){
+					_tile.SetFloorType(Tile.Type.Diagonal, Tile.TileOrientation.TopLeft);
+				}
 				// TR
-				else if (x < GridSizeX - 1 && grid [x + 1, y].CanConnectFloor_L && y < GridSizeY - 1 && grid [x, y + 1].CanConnectFloor_B)
-					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.TileOrientation.TopRight);
-				// RB
-				else if (x < GridSizeX - 1 && grid [x + 1, y].CanConnectFloor_L && y > 0 && grid [x, y - 1].CanConnectFloor_T)
-					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.TileOrientation.BottomRight);
+				else if (_neighbourT != null && _neighbourR != null && _neighbourT.CanConnectFloor_B && _neighbourR.CanConnectFloor_L){
+					_tile.SetFloorType(Tile.Type.Diagonal, Tile.TileOrientation.TopRight);
+				}
+				// BR
+				else if (_neighbourB != null && _neighbourR != null && _neighbourB.CanConnectFloor_T && _neighbourR.CanConnectFloor_L){
+					_tile.SetFloorType(Tile.Type.Diagonal, Tile.TileOrientation.BottomRight);
+				}
 				// BL
-				else if (x > 0 && grid [x - 1, y].CanConnectFloor_R && y > 0 && grid [x, y - 1].CanConnectFloor_T)
-					grid [x, y].SetFloorType (Tile.Type.Diagonal, Tile.TileOrientation.BottomLeft);
+				else if (_neighbourB != null && _neighbourL != null && _neighbourB.CanConnectFloor_T && _neighbourL.CanConnectFloor_R){
+					_tile.SetFloorType(Tile.Type.Diagonal, Tile.TileOrientation.BottomLeft);
+				}
             }
         }
         for (int y = 0; y < GridSizeY; y++) {
             for (int x = 0; x < GridSizeX; x++) {
-                grid[x, y].UpdateWallCornerHider(false);
-                grid[x, y].UpdateFloorCornerHider(false);
-
-                // CachedAssets.MovableCollider myCollider = new CachedAssets.MovableCollider();
-                // if(CachedAssets.Instance.WallSets[0].GetShadowCollider(grid[x, y].ExactType, grid[x, y].Animator.CurrentFrame, grid[x, y].WorldPosition, ref myCollider)) {
-                //     for(int i = 0; i < myCollider.Paths.Length; i++){
-                //         for(int j = 1; j < myCollider.Paths[i].Vertices.Length; j++){
-                //             Debug.DrawLine(myCollider.WorldPosition + myCollider.Paths[i].Vertices[j - 1], myCollider.WorldPosition + myCollider.Paths[i].Vertices[j], Color.red, 1);
-                //         }
-                //     }
-                // }
-                //Debug.Break();
+				_tile = grid[x, y];
+				_tile.UpdateWallCornerHider(false);
+				_tile.UpdateFloorCornerHider(false);
             }
         }
     }

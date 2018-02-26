@@ -22,6 +22,7 @@ public class LightManager : MonoBehaviour {
     public static List<CustomLight> AllLights = new List<CustomLight>();
 	public const int MAX_LIGHTS_AFFECTING_VERTEX = 32;
 	public static Material 		GridMaterial;
+	public static bool[,] 		GridMap_TilesUpdated;          	// bool for each tile, to track if they need updating or not
 	public static int[,][] 		GridMap_LightsInRange;          // indices for each light that can reach each vertex
 	//public static float[,][] 	VertMap_LightReceived;          // how much light every vertex receives from every light in range
 	public static Vector4[,] 	VertMap_DomLightIndices; 		// the four most dominant lights' indices for each vertex
@@ -39,6 +40,7 @@ public class LightManager : MonoBehaviour {
 		GridMaterial = CachedAssets.Instance.MaterialGrid;
 
 		// Grid stuff
+		GridMap_TilesUpdated = new bool[Grid.GridSizeX, Grid.GridSizeY];
 		GridMap_LightsInRange = new int[Grid.GridSizeX, Grid.GridSizeY][];
 		int _xGrid = 0, _yGrid = 0;
 		mIterateVariables IterateGridVariables = delegate (){
@@ -87,19 +89,22 @@ public class LightManager : MonoBehaviour {
 	private static Queue<Vector2i> tilesNeedingUpdate = new Queue<Vector2i>();
 	private static Queue<int> lightsNeedingRemoval = new Queue<int>();
 	public static void ScheduleUpdateLights(Vector2i _posGrid){
-		if (!tilesNeedingUpdate.Contains(_posGrid))
-			tilesNeedingUpdate.Enqueue(_posGrid);
+		if (GridMap_TilesUpdated[_posGrid.x, _posGrid.y]) 
+			return;
+		GridMap_TilesUpdated[_posGrid.x, _posGrid.y] = true;
+		tilesNeedingUpdate.Enqueue(_posGrid);
 	}
 	public static void ScheduleRemoveLight(int _lightIndex){
-		if (!lightsNeedingRemoval.Contains(_lightIndex))
-			lightsNeedingRemoval.Enqueue(_lightIndex);
+		if (AllLights[_lightIndex].IsBeingRemoved)
+			return;
+		AllLights[_lightIndex].IsBeingRemoved = true;
+		lightsNeedingRemoval.Enqueue(_lightIndex);
 	}
 	List<int> lightsToUpdate = new List<int>();
 	void LateUpdate(){
 		while (tilesNeedingUpdate.Count > 0){
 			Vector2i _posGrid = tilesNeedingUpdate.Dequeue();
 			int[] _lightsInRange = GridMap_LightsInRange[_posGrid.x, _posGrid.y];
-
 			for (int i = 0; i < _lightsInRange.Length; i++){
 				int _index = _lightsInRange[i];
 				if (_index == -1)
@@ -108,27 +113,26 @@ public class LightManager : MonoBehaviour {
 				if(!lightsToUpdate.Contains(_index))
 					lightsToUpdate.Add(_index);
 			}
+
+			GridMap_TilesUpdated[_posGrid.x, _posGrid.y] = false;
 		}
 
 		if (lightsToUpdate.Count > 0){
-			//ClearVColorsForLights(lightsToUpdate);
 			for (int i = 0; i < lightsToUpdate.Count; i++){
 				CustomLight _light = AllLights[lightsToUpdate[i]];
-				if(_light.isBeingRemoved)
+				if(_light.IsBeingRemoved)
 					continue;
 
 				_light.UpdateLight();
-			}
-
-			for (int i = 0; i < lightsToUpdate.Count; i++){
-				SuperDebug.LogArray(Vector3.zero + new Vector3(0, i * AllLights[lightsToUpdate[i]].VXLightMap_Hit.GetLength(1), 0), AllLights[lightsToUpdate[i]].VXLightMap_Hit);
 			}
 
 			lightsToUpdate.Clear();
 		}
 
 		while (lightsNeedingRemoval.Count > 0){
-			AllLights[lightsNeedingRemoval.Dequeue()].RemoveLightsEffectOnGrid();
+			int _index = lightsNeedingRemoval.Dequeue();
+			AllLights[_index].RemoveLightsEffectOnGrid();
+			AllLights[_index].IsBeingRemoved = false;
 		}
 	}
 
@@ -226,10 +230,6 @@ public class LightManager : MonoBehaviour {
 				int _index = GridMap_LightsInRange[_xGrid, _yGrid][i2];
 				if(_b && _index == -1){
 					Vector2 _pos = Grid.Instance.GetWorldPointFromTileCoord(new Vector2i(_xGrid, _yGrid));
-					Debug.DrawLine(_pos + new Vector2(0, 0.1f), _pos + new Vector2(0.1f, 0), Color.red, Mathf.Infinity);
-					Debug.DrawLine(_pos + new Vector2(0.1f, 0), _pos + new Vector2(0, -0.1f), Color.red, Mathf.Infinity);
-					Debug.DrawLine(_pos + new Vector2(0, -0.1f), _pos + new Vector2(-0.1f, 0), Color.red, Mathf.Infinity);
-					Debug.DrawLine(_pos + new Vector2(-0.1f, 0), _pos + new Vector2(0, 0.1f), Color.red, Mathf.Infinity);
 					GridMap_LightsInRange[_xGrid, _yGrid][i2] = _light.MyIndex;
 					break;
 				}

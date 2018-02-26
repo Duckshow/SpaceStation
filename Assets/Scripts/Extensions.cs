@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using Utilities;
 public static class Extensions {
     public static string Color(this string s, Color c) {
         Color32 c32 = c;
@@ -12,6 +13,13 @@ public static class Extensions {
         }
         array[index] = obj;
     }
+
+	public static float GetXOrY(this Vector3 _vector, XYEnum _axis){
+		return _axis == XYEnum.X ? _vector.x : _vector.y;
+	}
+	public static int GetXOrY(this Vector2i _vector, XYEnum _axis){
+		return _axis == XYEnum.X ? _vector.x : _vector.y;
+	}
 }
 
 public static class MathfExtensions { 

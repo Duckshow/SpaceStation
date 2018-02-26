@@ -591,61 +591,18 @@ public class Tile : IHeapItem<Tile> {
 			case TileOrientation.Bottom:
 				_neighbour.HasConnectable_T = CanConnect_B;
 				_neighbour.IsBlocked_T = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Top);
-				//_neighbour.ConnectedDiagonal_T = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.BottomLeft || _Orientation_ == TileOrientation.BottomRight)) ? this : null;
-				//_neighbour.ConnectedDoorOrAirlock_T = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
-
-                // prevent building in front of door
-				//if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsHorizontal_)
-    //                _neighbour.SetBuildingAllowed(false);
                 break;
             case TileOrientation.Left:
                 _neighbour.HasConnectable_R = CanConnect_L;
 				_neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Left);
-				//_neighbour.ConnectedDiagonal_R = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.BottomLeft)) ? this : null;
-				//_neighbour.ConnectedDoorOrAirlock_R = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
-
-                // prevent building in front of door
-				//if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsVertical_)
-    //                _neighbour.SetBuildingAllowed(false);
                 break;
             case TileOrientation.Top:
                 _neighbour.HasConnectable_B = CanConnect_T;
 				_neighbour.IsBlocked_B = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Bottom);
-				//_neighbour.ConnectedDiagonal_B = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.TopLeft || _Orientation_ == TileOrientation.TopRight)) ? this : null;
-				//_neighbour.ConnectedDoorOrAirlock_B = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
-
-                // prevent building in front of door
-                //if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsHorizontal_)
-                //    _neighbour.SetBuildingAllowed(false);
-
-                //if (_WallType_ == Type.Door || _WallType_ == Type.Airlock) {
-                //                // prevent building in front of door
-                //	if (_IsHorizontal_)
-                //                    _neighbour.SetBuildingAllowed(false);
-
-                //                // sort connected neighbour of door on top, so as to hide actors moving through it
-                //	else if (_IsVertical_) {
-                //                    _neighbour.BottomQuad.SortCustom(TopQuad.GetSortOrder() - 2);
-                //                    _neighbour.TopQuad.SortCustom(TopQuad.GetSortOrder() - 1);
-                //                }
-                //            }
-                //else if (_PrevType_ == Type.Door || _PrevType_ == Type.Airlock) {
-                //                // reset to ordinary sorting
-                //	if (_IsVertical_) {
-                //                    _neighbour.BottomQuad.RemoveCustomSort();
-                //                    _neighbour.TopQuad.RemoveCustomSort();
-                //                }
-                //            }
                 break;
             case TileOrientation.Right:
                 _neighbour.HasConnectable_L = CanConnect_R;
 				_neighbour.IsBlocked_L = Grid.OtherTileIsBlockingPath(_WallType_, _Orientation_, TileOrientation.Left);
-				//_neighbour.ConnectedDiagonal_L = (_WallType_ == Type.Diagonal && (_Orientation_ == TileOrientation.BottomRight || _Orientation_ == TileOrientation.TopRight)) ? this : null;
-				//_neighbour.ConnectedDoorOrAirlock_L = (_WallType_ == Type.Door || _WallType_ == Type.Airlock) ? this : null;
-
-                // prevent building in front of door
-				//if ((_WallType_ == Type.Door || _WallType_ == Type.Airlock) && _IsVertical_)
-    //               _neighbour.SetBuildingAllowed(false);
                 break;
 			case TileOrientation.TopLeft:
 			case TileOrientation.TopRight:

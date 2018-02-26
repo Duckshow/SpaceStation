@@ -18,7 +18,7 @@ public class UVControllerBasic : MeshSorter{
 		public Vector2i Coordinates = new Vector2i();
 		public Vector2i TemporaryCoordinates = new Vector2i();
 		public Tile.TileOrientation Orientation; // only used for Bottom and Floor currently
-		public Vector2[] UVs = new Vector2[MESH_VERTEXCOUNT];
+		public Vector2i[] UVs = new Vector2i[MESH_VERTEXCOUNT];
 	}
 	public GridLayerClass[] GridLayers = new GridLayerClass[GRID_LAYER_COUNT];
 	public List<Vector4> CompressedUVs_0 = new List<Vector4>(MESH_VERTEXCOUNT);
@@ -102,7 +102,7 @@ public class UVControllerBasic : MeshSorter{
 			ChangeAsset((GridLayerEnum)i, GridLayers[i].Coordinates, false);
 		}
 	}
-	private delegate void SetUV(int _index, float _x, float _y);
+
 	public virtual void ChangeAsset(GridLayerEnum _layer, Vector2i _assetCoordinates, bool _temporary){
 		if (!Application.isPlaying)
 			return;
@@ -115,48 +115,53 @@ public class UVControllerBasic : MeshSorter{
 			GridLayers[_layerIndex].Coordinates = _assetCoordinates;
 		}
 
-		float _uvL = Tile.RESOLUTION * _assetCoordinates.x;
-		float _uvR = Tile.RESOLUTION * (_assetCoordinates.x + 1);
-		float _uvB = Tile.RESOLUTION * _assetCoordinates.y;
-		float _uvT = Tile.RESOLUTION * (_assetCoordinates.y + 2);
+		int _uvL = Tile.RESOLUTION * _assetCoordinates.x;
+		int _uvR = Tile.RESOLUTION * (_assetCoordinates.x + 1);
+		int _uvB = Tile.RESOLUTION * _assetCoordinates.y;
+		int _uvT = Tile.RESOLUTION * (_assetCoordinates.y + 2);
 
-		float _halfX = (_uvR - _uvL) * 0.5f;
-		float _halfY = (_uvT - _uvB) * 0.5f;
-		float _quarterY = _halfY * 0.5f;
+		int _halfX 		= Mathf.RoundToInt((_uvR - _uvL) * 0.5f);
+		int _halfY 		= Mathf.RoundToInt((_uvT - _uvB) * 0.5f);
+		int _quarterY 	= Mathf.RoundToInt(_halfY * 0.5f);
 
-		SetUV _SetUV = delegate (int _index, float _x, float _y){
-			GridLayers[_layerIndex].UVs[_index].x = _x;
-			GridLayers[_layerIndex].UVs[_index].y = _y;
-		};
-		_SetUV(0, _uvL, _uvB); _SetUV(1, _uvL + _halfX, _uvB); _SetUV(2, _uvR, _uvB);
-		_SetUV(3, _uvL, _uvB + _quarterY); _SetUV(4, _uvL + _halfX, _uvB + _quarterY); _SetUV(5, _uvR, _uvB + _quarterY);
-		_SetUV(6, _uvL, _uvB + _halfY); _SetUV(7, _uvL + _halfX, _uvB + _halfY); _SetUV(8, _uvR, _uvB + _halfY);
-		_SetUV(9, _uvL, _uvB + _halfY); _SetUV(10, _uvL + _halfX, _uvB + _halfY); _SetUV(11, _uvR, _uvB + _halfY);
-		_SetUV(12, _uvL, _uvT); _SetUV(13, _uvR, _uvT);
+		SetUV(_layerIndex, 0, _uvL, _uvB); 				SetUV(_layerIndex, 1, _uvL + _halfX, _uvB); 			SetUV(_layerIndex, 2, _uvR, _uvB);
+		SetUV(_layerIndex, 3, _uvL, _uvB + _quarterY); 	SetUV(_layerIndex, 4, _uvL + _halfX, _uvB + _quarterY); SetUV(_layerIndex, 5, _uvR, _uvB + _quarterY);
+		SetUV(_layerIndex, 6, _uvL, _uvB + _halfY); 	SetUV(_layerIndex, 7, _uvL + _halfX, _uvB + _halfY); 	SetUV(_layerIndex, 8, _uvR, _uvB + _halfY);
+		SetUV(_layerIndex, 9, _uvL, _uvB + _halfY); 	SetUV(_layerIndex, 10, _uvL + _halfX, _uvB + _halfY); 	SetUV(_layerIndex, 11, _uvR, _uvB + _halfY);
+		SetUV(_layerIndex, 12, _uvL, _uvT); 																	SetUV(_layerIndex, 13, _uvR, _uvT);
 
 		if (GridLayers.Length != 5)
 			Debug.LogError("The amount of grid layers doesn't match the loop below! Not sure how to softcode this sadly!");
 		CompressedUVs_0.Clear();
 		CompressedUVs_1.Clear();
-		Vector4 _compressed0 = new Vector4();
-		Vector4 _compressed1 = new Vector4();
 		for (int i = 0; i < MESH_VERTEXCOUNT; i++){
-			_compressed0.x = BitCompressor.Int2ToInt((int)(GridLayers[0].UVs[i].x), (int)(GridLayers[0].UVs[i].y));
-			_compressed0.y = BitCompressor.Int2ToInt((int)(GridLayers[1].UVs[i].x), (int)(GridLayers[1].UVs[i].y));
-			_compressed0.z = BitCompressor.Int2ToInt((int)(GridLayers[2].UVs[i].x), (int)(GridLayers[2].UVs[i].y));
-			_compressed0.w = BitCompressor.Int2ToInt((int)(GridLayers[3].UVs[i].x), (int)(GridLayers[3].UVs[i].y));
+			Vector2i _uv0 = GridLayers[0].UVs[i];
+			Vector2i _uv1 = GridLayers[1].UVs[i];
+			Vector2i _uv2 = GridLayers[2].UVs[i];
+			Vector2i _uv3 = GridLayers[3].UVs[i];
+			Vector2i _uv4 = GridLayers[4].UVs[i];
 
-			_compressed1.x = BitCompressor.Int2ToInt((int)(GridLayers[4].UVs[i].x), (int)(GridLayers[4].UVs[i].y));
-			_compressed1.y = BitCompressor.Int2ToInt(0, 0);
-			_compressed1.z = BitCompressor.Int2ToInt(0, 0);
-			_compressed1.w = BitCompressor.Int2ToInt(0, 0);
+			Vector4 _compressed = new Vector4();
+			_compressed.x = BitCompressor.Int2ToInt(_uv0.x, _uv0.y);
+			_compressed.y = BitCompressor.Int2ToInt(_uv1.x, _uv1.y);
+			_compressed.z = BitCompressor.Int2ToInt(_uv2.x, _uv2.y);
+			_compressed.w = BitCompressor.Int2ToInt(_uv3.x, _uv3.y);
+			CompressedUVs_0.Add(_compressed);
 
-			CompressedUVs_0.Add(_compressed0);
-			CompressedUVs_1.Add(_compressed1);
+			_compressed.x = BitCompressor.Int2ToInt(_uv4.x, _uv4.y);
+			_compressed.y = BitCompressor.Int2ToInt(0, 0);
+			_compressed.z = BitCompressor.Int2ToInt(0, 0);
+			_compressed.w = BitCompressor.Int2ToInt(0, 0);
+			CompressedUVs_1.Add(_compressed);
 		}
 
 		shouldApplyChanges = true;
 	}
+	void SetUV(int _layerIndex, int _uvIndex, int _x, int _y){
+		GridLayers[_layerIndex].UVs[_uvIndex].x = _x;
+		GridLayers[_layerIndex].UVs[_uvIndex].y = _y;
+	}
+
 	void LateUpdate(){
 		if (shouldApplyChanges){
 			ApplyAssetChanges();

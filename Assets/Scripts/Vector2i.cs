@@ -1,15 +1,15 @@
 using System;
 using UnityEngine;
+using Utilities;
 
 [Serializable]
 public struct Vector2i
 {	
 // Fields
 	public int x;
-	
 	public int y;
 
-// Indexer
+	// Indexer
 	public int this [int index]
 	{
 		get
