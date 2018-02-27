@@ -168,10 +168,10 @@ public class Grid : MonoBehaviour {
 					_tile.SetFloorType (Tile.Type.Diagonal, Tile.GetReverseDirection(_tile._Orientation_));
 
 
-				_neighbourL = grid[x - 1, y];
-				_neighbourR = grid[x + 1, y];
-				_neighbourT = grid[x, y + 1];
-				_neighbourB = grid[x, y + 1];
+				_neighbourL = x > 0 ?               grid[x - 1, y] : null;
+				_neighbourR = x < GridSizeX - 2 ?   grid[x + 1, y] : null;
+				_neighbourT = y < GridSizeY - 2 ?   grid[x, y + 1] : null;
+				_neighbourB = y > 0 ?               grid[x, y - 1] : null;
 
 				// TL
 				if (_neighbourT != null && _neighbourL != null && _neighbourT.CanConnectFloor_B && _neighbourL.CanConnectFloor_R){

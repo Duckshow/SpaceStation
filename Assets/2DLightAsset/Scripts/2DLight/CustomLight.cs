@@ -542,17 +542,17 @@ public class CustomLight : MonoBehaviour {
 			}
 
 
-			// DEBUG 
-			for (int i2 = 0; i2 < _xGridNeighbours.Length; i2++){
-				// if(_xLight == 0 && vx == 0 || _yLight == 0 && vy == 0)
-				// 	Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetVertexColor(_vIndexNeighbours[i2], Color.red);
-				// else
-					Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetVertexColor(_vIndexNeighbours[i2], _newVertexColor);
-			}
+			// // DEBUG 
+			// for (int i2 = 0; i2 < _xGridNeighbours.Length; i2++){
+			// 	// if(_xLight == 0 && vx == 0 || _yLight == 0 && vy == 0)
+			// 	// 	Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetVertexColor(_vIndexNeighbours[i2], Color.red);
+			// 	// else
+			// 		Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetVertexColor(_vIndexNeighbours[i2], _newVertexColor);
+			// }
 		}
 
 	// DEBUG
-	return;
+	//return;
 
 		// blur and apply colors
 		Color[] _adjacentColors = new Color[9];
@@ -784,8 +784,6 @@ public class CustomLight : MonoBehaviour {
 			_affectIndex++;
 		}
 	}
-
-	awdpomawpdm // continue here. Just keep profiling and optimizing for now.
 
 	static bool AffectsVertex(VertexNeighbourEnum _neighbour, Vector2i _vTileSpace, Vector2i _gGridSpace, bool _isOnLeftEdge, bool _includeTopHalf){
 		int _vertEdgeMaxIndex = UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
