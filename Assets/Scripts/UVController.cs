@@ -145,7 +145,9 @@ public class UVController : UVControllerBasic {
     }
 
     private List<Vector4> doubleDots = new List<Vector4>();
-	public void SetUVDots(int _specificUV, Vector2 _dot0, Vector2 _dot1, Vector2 _dot2, Vector2 _dot3){
+	public void SetUVDots(Vector2i _specificUV, Vector2 _dot0, Vector2 _dot1, Vector2 _dot2, Vector2 _dot3){
+		int _uvIndex = _specificUV.y * MESH_VERTICES_PER_EDGE + _specificUV.x;
+		
 		// setup list for caching UVs
 		if (doubleDots.Count != MyMeshFilter.mesh.vertexCount) {
 			doubleDots.Clear();
@@ -154,17 +156,19 @@ public class UVController : UVControllerBasic {
 		}
 
 		// apply UVs
-		Vector4 _doubleDot = doubleDots[_specificUV];
+		Vector4 _doubleDot = doubleDots[_uvIndex];
         _doubleDot.x = BitCompressor.Int2ToInt((int)(_dot0.x * DOT_PRECISION), (int)(_dot0.y * DOT_PRECISION));
         _doubleDot.y = BitCompressor.Int2ToInt((int)(_dot1.x * DOT_PRECISION), (int)(_dot1.y * DOT_PRECISION));
         _doubleDot.z = BitCompressor.Int2ToInt((int)(_dot2.x * DOT_PRECISION), (int)(_dot2.y * DOT_PRECISION));
         _doubleDot.w = BitCompressor.Int2ToInt((int)(_dot3.x * DOT_PRECISION), (int)(_dot3.y * DOT_PRECISION));
-		doubleDots[_specificUV] = _doubleDot;
+		doubleDots[_uvIndex] = _doubleDot;
 		shouldApplyChanges = true;
     }
 
 	private List<Color32> vertexColors = new List<Color32>();
-	public void SetVertexColor(int _specificVertex, Color32 _color){
+	public void SetVertexColor(Vector2i _specificVertex, Color32 _color){
+		int _vertexIndex = _specificVertex.y * MESH_VERTICES_PER_EDGE + _specificVertex.x;
+
 		// setup list for caching colors
 		if (vertexColors.Count != MyMeshFilter.mesh.vertexCount){
 			vertexColors = new List<Color32>(MyMeshFilter.mesh.vertexCount);
@@ -172,8 +176,8 @@ public class UVController : UVControllerBasic {
 				vertexColors.Add(new Color32());
 		}
 
-		VColors[_specificVertex] = _color;
-		vertexColors[_specificVertex] = _color;
+		VColors[_vertexIndex] = _color;
+		vertexColors[_vertexIndex] = _color;
 		shouldApplyChanges = true;
 	}
 

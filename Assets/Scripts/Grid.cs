@@ -23,45 +23,26 @@ public class Grid : MonoBehaviour {
     public Vector2 GridWorldSize;
 
     [HideInInspector]
-    public Tile[,] grid; // should make 1D
+    public Tile[,] grid; // todo: should make 1D
 
-    public static int MaxSize { get { return GridSizeX * GridSizeY; } }
-	private int sizeX = -1;
-	public static int GridSizeX { 
-		get { 
-			if(Grid.Instance.sizeX == -1)
-				Grid.Instance.sizeX = Mathf.RoundToInt(Grid.Instance.GridWorldSize.x / Tile.DIAMETER);
-			return Grid.Instance.sizeX;
-		} 
-	}
-	private int sizeY = -1;
-	public static int GridSizeY{
+    public static int MaxSize { get { return GridSize.x * GridSize.y; } }
+    private Vector2i size = new Vector2i(-1, -1);
+	public static Vector2i GridSize{
 		get{
-			if (Grid.Instance.sizeY == -1)
-				Grid.Instance.sizeY = Mathf.RoundToInt(Grid.Instance.GridWorldSize.y / Tile.DIAMETER);
-			return Grid.Instance.sizeY;
+			if (Grid.Instance.size.x == -1) Grid.Instance.size.x = Mathf.RoundToInt(Grid.Instance.GridWorldSize.x / Tile.DIAMETER);
+            if (Grid.Instance.size.y == -1) Grid.Instance.size.y = Mathf.RoundToInt(Grid.Instance.GridWorldSize.y / Tile.DIAMETER);
+			return Grid.Instance.size;
 		}
 	}
-	private int sizeXHalf = -1;
-	public static int GridSizeXHalf{
+    private Vector2i sizeHalf = new Vector2i(-1, -1);
+	public static Vector2i GridSizeHalf{
 		get{
-			if (Grid.Instance.sizeXHalf == -1)
-				Grid.Instance.sizeXHalf = Mathf.RoundToInt(Grid.GridSizeX * 0.5f);
-			return Grid.Instance.sizeXHalf;
-		}
-	}
-	private int sizeYHalf = -1;
-	public static int GridSizeYHalf{
-		get{
-			if (Grid.Instance.sizeYHalf == -1)
-				Grid.Instance.sizeYHalf = Mathf.RoundToInt(Grid.GridSizeY * 0.5f);
-			return Grid.Instance.sizeYHalf;
+			if (Grid.Instance.sizeHalf.x == -1) Grid.Instance.sizeHalf.x = Mathf.RoundToInt(Grid.GridSize.x * 0.5f);
+            if (Grid.Instance.sizeHalf.y == -1) Grid.Instance.sizeHalf.y = Mathf.RoundToInt(Grid.GridSize.y * 0.5f);
+			return Grid.Instance.sizeHalf;
 		}
 	}
 
-
-	void Awake() {
-	}
 
 	void Start() { 
         CreateGrid();
@@ -77,20 +58,20 @@ public class Grid : MonoBehaviour {
 	[SerializeField] private int Seed;
 	void CreateGrid() {
 		Random.InitState(Seed);
-		grid = new Tile[GridSizeX, GridSizeY];
+		grid = new Tile[GridSize.x, GridSize.y];
 		Tile _tile;
 
 		Vector3 worldBottomLeft = transform.position - (Vector3.right * GridWorldSize.x / 2) - (Vector3.up * GridWorldSize.y / 2) - new Vector3(0, 0.5f, 0); // 0.5f because of the +1 for diagonals
-        for (int y = 0; y < GridSizeY; y++) {
-            for (int x = 0; x < GridSizeX; x++) {
+        for (int y = 0; y < GridSize.y; y++) {
+            for (int x = 0; x < GridSize.x; x++) {
                 Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * Tile.DIAMETER + Tile.RADIUS) + Vector3.up * (y * Tile.DIAMETER + Tile.RADIUS + 0.5f); // +0.5f for diagonals
 
                 grid[x, y] = new Tile(worldPoint, x, y);
             }
         }
         // for testing-purposes
-        for (int y = 0; y < GridSizeY; y++) {
-            for (int x = 0; x < GridSizeX; x++) {
+        for (int y = 0; y < GridSize.y; y++) {
+            for (int x = 0; x < GridSize.x; x++) {
 				_tile = grid[x, y];
 
 				// generate one wall in the center
@@ -114,8 +95,8 @@ public class Grid : MonoBehaviour {
 		Tile _neighbourR;
 		Tile _neighbourT;
 		Tile _neighbourB;
-        for (int y = 0; y < GridSizeY; y++) {
-            for (int x = 0; x < GridSizeX; x++) {
+        for (int y = 0; y < GridSize.y; y++) {
+            for (int x = 0; x < GridSize.x; x++) {
 				_tile = grid[x, y];
 
 				if (_tile._WallType_ == Tile.Type.Solid)
@@ -131,8 +112,8 @@ public class Grid : MonoBehaviour {
 					_success = false;
 
 					_neighbourL = x > 0 ? 				grid[x - 1, y] : null;
-					_neighbourR = x < GridSizeX - 1 ? 	grid[x + 1, y] : null;
-					_neighbourT = y < GridSizeY - 1 ? 	grid[x, y + 1] : null;
+					_neighbourR = x < GridSize.x - 1 ? 	grid[x + 1, y] : null;
+					_neighbourT = y < GridSize.y - 1 ? 	grid[x, y + 1] : null;
 					_neighbourB = y > 0 ? 				grid[x, y - 1] : null;
 
 					// TL
@@ -169,8 +150,8 @@ public class Grid : MonoBehaviour {
 
 
 				_neighbourL = x > 0 ?               grid[x - 1, y] : null;
-				_neighbourR = x < GridSizeX - 2 ?   grid[x + 1, y] : null;
-				_neighbourT = y < GridSizeY - 2 ?   grid[x, y + 1] : null;
+				_neighbourR = x < GridSize.x - 2 ?   grid[x + 1, y] : null;
+				_neighbourT = y < GridSize.y - 2 ?   grid[x, y + 1] : null;
 				_neighbourB = y > 0 ?               grid[x, y - 1] : null;
 
 				// TL
@@ -191,8 +172,8 @@ public class Grid : MonoBehaviour {
 				}
             }
         }
-        for (int y = 0; y < GridSizeY; y++) {
-            for (int x = 0; x < GridSizeX; x++) {
+        for (int y = 0; y < GridSize.y; y++) {
+            for (int x = 0; x < GridSize.x; x++) {
 				_tile = grid[x, y];
 				_tile.UpdateWallCornerHider(false);
 				_tile.UpdateFloorCornerHider(false);
@@ -233,7 +214,7 @@ public class Grid : MonoBehaviour {
                 int checkX = _gridX + x;
                 int checkY = _gridY + y;
 
-                if (checkX >= 0 && checkX < GridSizeX && checkY >= 0 && checkY < GridSizeY) {
+                if (checkX >= 0 && checkX < GridSize.x && checkY >= 0 && checkY < GridSize.y) {
                     neighbours.Add(grid[checkX, checkY]);
                 }
             }
@@ -248,8 +229,8 @@ public class Grid : MonoBehaviour {
         percentX = Mathf.Clamp01(percentX);
         percentY = Mathf.Clamp01(percentY);
 
-        int x = Mathf.RoundToInt(GridSizeX * percentX);
-        int y = Mathf.RoundToInt(GridSizeY * percentY);
+        int x = Mathf.RoundToInt(GridSize.x * percentX);
+        int y = Mathf.RoundToInt(GridSize.y * percentY);
         x = (int)Mathf.Clamp(x, 0, GridWorldSize.x - 1);
         y = (int)Mathf.Clamp(y, 0, GridWorldSize.y - 1);
 
@@ -261,8 +242,8 @@ public class Grid : MonoBehaviour {
     }
     public Vector3 GetWorldPointFromTileCoord(Vector2i _tileCoord){
         Vector3 _pos = _tileCoord;
-        _pos.x -= (GridSizeXHalf - 0.5f);
-        _pos.y -= (GridSizeYHalf - 0.5f);
+        _pos.x -= (GridSizeHalf.x - 0.5f);
+        _pos.y -= (GridSizeHalf.y - 0.5f);
         return _pos;
     }
 
@@ -274,7 +255,7 @@ public class Grid : MonoBehaviour {
         List<Tile> _neighbours = GetNeighbours(_tile.GridCoord.x, _tile.GridCoord.y);
         int _lastCount = 0;
 
-        while (_neighbours.Count < (GridSizeX * GridSizeY)) {
+        while (_neighbours.Count < (GridSize.x * GridSize.y)) {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
@@ -306,7 +287,7 @@ public class Grid : MonoBehaviour {
         List<Tile> _neighbours = GetNeighbours(_tile.GridCoord.x, _tile.GridCoord.y);
         int _lastCount = 0;
 
-        while (_neighbours.Count < (GridSizeX * GridSizeY)) {
+        while (_neighbours.Count < (GridSize.x * GridSize.y)) {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {

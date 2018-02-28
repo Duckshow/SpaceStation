@@ -334,9 +334,9 @@ public class BuilderBase {
 							ghostTile_GridY = distY < 0 ? startTile.GridCoord.y - i : startTile.GridCoord.y + i;
 
 						// if outside grid, break
-						if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSizeX)
+						if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSize.x)
 							break;
-						if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSizeY)
+						if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSize.y)
 							break;
 
 						AddNextGhost (ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
@@ -350,9 +350,9 @@ public class BuilderBase {
                             ghostTile_GridY = distY < 0 ? startTile.GridCoord.y - i : startTile.GridCoord.y + i;
 
                         // if outside grid, break
-                        if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSizeX)
+                        if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSize.x)
                             break;
-                        if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSizeY)
+                        if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSize.y)
                             break;
 
                         SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
@@ -366,9 +366,9 @@ public class BuilderBase {
 							ghostTile_GridY = distY < 0 ? startTile.GridCoord.y - i : startTile.GridCoord.y + i;
 
 						// if outside grid, break
-						if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSizeX)
+						if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSize.x)
 							break;
-						if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSizeY)
+						if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSize.y)
 							break;
 
 						SetGhostGraphics (Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);
@@ -404,9 +404,9 @@ public class BuilderBase {
 							ghostTile_GridY = distY < 0 ? startTile.GridCoord.y - y : startTile.GridCoord.y + y;
 
 							// if outside grid, continue (would break, but orka)
-							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSizeX)
+							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSize.x)
 								continue;
-							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSizeY)
+							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSize.y)
 								continue;
 
                             AddNextGhost(ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
@@ -426,9 +426,9 @@ public class BuilderBase {
 							ghostTile_GridY = distY < 0 ? startTile.GridCoord.y - y : startTile.GridCoord.y + y;
 
 							// if outside grid, continue (would break, but orka)
-							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSizeX)
+							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSize.x)
 								continue;
-							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSizeY)
+							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSize.y)
 								continue;
 
                             SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
@@ -448,9 +448,9 @@ public class BuilderBase {
                             ghostTile_GridY = distY < 0 ? startTile.GridCoord.y - y : startTile.GridCoord.y + y;
 
                             // if outside grid, continue (would break, but orka)
-                            if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSizeX)
+                            if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSize.x)
                                 continue;
-                            if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSizeY)
+                            if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSize.y)
                                 continue;
 
                             SetGhostGraphics(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);
@@ -478,9 +478,9 @@ public class BuilderBase {
 							ghostTile_GridY = distY < 0 ? startTile.GridCoord.y - y : startTile.GridCoord.y + y;
 
 							// if outside grid, continue (would break, but orka)
-							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSizeX)
+							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSize.x)
 								continue;
-							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSizeY)
+							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSize.y)
 								continue;
 
                             AddNextGhost(ghostTile_GridX, ghostTile_GridY, DetermineGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]), DetermineGhostOrientation(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours), _snapToNeighbours);
@@ -493,9 +493,9 @@ public class BuilderBase {
 							ghostTile_GridY = distY < 0 ? startTile.GridCoord.y - y : startTile.GridCoord.y + y;
 
 							// if outside grid, continue (would break, but orka)
-							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSizeX)
+							if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSize.x)
 								continue;
-							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSizeY)
+							if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSize.y)
 								continue;
 
                             SetGhostType(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY]);
@@ -508,9 +508,9 @@ public class BuilderBase {
                             ghostTile_GridY = distY < 0 ? startTile.GridCoord.y - y : startTile.GridCoord.y + y;
 
                             // if outside grid, continue (would break, but orka)
-                            if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSizeX)
+                            if (ghostTile_GridX < 0 || ghostTile_GridX >= Grid.GridSize.x)
                                 continue;
-                            if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSizeY)
+                            if (ghostTile_GridY < 0 || ghostTile_GridY >= Grid.GridSize.y)
                                 continue;
 
                             SetGhostGraphics(Grid.Instance.grid[ghostTile_GridX, ghostTile_GridY], _snapToNeighbours);

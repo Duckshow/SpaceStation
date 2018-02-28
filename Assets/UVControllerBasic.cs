@@ -5,6 +5,7 @@ public class UVControllerBasic : MeshSorter{
 
 	public const int MESH_VERTEXCOUNT = 14;
 	public const int MESH_VERTICES_PER_EDGE = 3;
+	public static readonly Vector2i MESH_VERTICES_PER_EDGE_AS_VECTOR = new Vector2i(MESH_VERTICES_PER_EDGE, MESH_VERTICES_PER_EDGE);
 	public static readonly int GRID_LAYER_COUNT = System.Enum.GetNames(typeof(GridLayerEnum)).Length;
 
 	protected const int UVCHANNEL_UV0 = 0;

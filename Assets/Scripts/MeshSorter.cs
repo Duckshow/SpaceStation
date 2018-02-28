@@ -49,7 +49,7 @@ public class MeshSorter : MonoBehaviour {
         }
 	}
 
-	public static int GetSortOrderFromGridY(int _gridY) { return (Grid.GridSizeY * GameManager.Instance.SortingTransformsPerPosY) - (_gridY * GameManager.Instance.SortingTransformsPerPosY); }
+	public static int GetSortOrderFromGridY(int _gridY) { return (Grid.GridSize.y * GameManager.Instance.SortingTransformsPerPosY) - (_gridY * GameManager.Instance.SortingTransformsPerPosY); }
     public int GetSortOrder() { return regularSortOrder; }
     //public int GetSortOrder() { return (customSortOrder.HasValue ? (int)customSortOrder : regularSortOrder); }
     private int regularSortOrder = 0;

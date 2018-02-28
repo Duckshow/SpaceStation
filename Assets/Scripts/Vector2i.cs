@@ -85,7 +85,6 @@ public struct Vector2i
 			a.y * b.y
 		);
 	}
-
 // Rotations
 	public void RotateCW()
 	{

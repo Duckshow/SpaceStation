@@ -52,9 +52,9 @@ public class CameraController : MonoBehaviour {
         if (mousePos.y < 0 + Boundary)
             move.y = ((Boundary - mousePos.y) / Boundary) * -adjustedSpeed * Time.deltaTime; // move on -Z axis
 
-        if (Mathf.Abs(transform.position.x + move.x) > Grid.GridSizeX * 0.5f)
+        if (Mathf.Abs(transform.position.x + move.x) > Grid.GridSize.x * 0.5f)
             return;
-        if (Mathf.Abs(transform.position.y + move.y) > Grid.GridSizeY * 0.5f)
+        if (Mathf.Abs(transform.position.y + move.y) > Grid.GridSize.y * 0.5f)
             return;
 
         transform.position = new Vector3(transform.position.x + move.x, transform.position.y + move.y, transform.position.z);

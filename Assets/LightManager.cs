@@ -40,17 +40,17 @@ public class LightManager : MonoBehaviour {
 		GridMaterial = CachedAssets.Instance.MaterialGrid;
 
 		// Grid stuff
-		GridMap_TilesUpdated = new bool[Grid.GridSizeX, Grid.GridSizeY];
-		GridMap_LightsInRange = new int[Grid.GridSizeX, Grid.GridSizeY][];
+		GridMap_TilesUpdated = new bool[Grid.GridSize.x, Grid.GridSize.y];
+		GridMap_LightsInRange = new int[Grid.GridSize.x, Grid.GridSize.y][];
 		int _xGrid = 0, _yGrid = 0;
 		mIterateVariables IterateGridVariables = delegate (){
 			_xGrid++;
-			if (_xGrid == Grid.GridSizeX){
+			if (_xGrid == Grid.GridSize.x){
 				_xGrid = 0;
 				_yGrid++;
 			}
 		};
-		int _totalIterations = Grid.GridSizeX * Grid.GridSizeY;
+		int _totalIterations = Grid.GridSize.x * Grid.GridSize.y;
 		for (int i = 0; i < _totalIterations; i++, IterateGridVariables()){
 			int[] _lightIndices = new int[MAX_LIGHTS_AFFECTING_VERTEX];
 			for (int i2 = 0; i2 < _lightIndices.Length; i2++){
@@ -61,8 +61,8 @@ public class LightManager : MonoBehaviour {
 		}
 
 		// Vertex stuff
-		int _mapSizeX = Grid.GridSizeX * UVControllerBasic.MESH_VERTICES_PER_EDGE;
-		int _mapSizeY = Grid.GridSizeY * UVControllerBasic.MESH_VERTICES_PER_EDGE;
+		int _mapSizeX = Grid.GridSize.x * UVControllerBasic.MESH_VERTICES_PER_EDGE;
+		int _mapSizeY = Grid.GridSize.y * UVControllerBasic.MESH_VERTICES_PER_EDGE;
 		//VertMap_LightReceived 			= new float[_mapSizeX, _mapSizeY][];
 		VertMap_DomLightIndices 		= new Vector4	[_mapSizeX, _mapSizeY];
 		VertMap_DomLightIntensities 	= new Vector4	[_mapSizeX, _mapSizeY];
@@ -221,9 +221,9 @@ public class LightManager : MonoBehaviour {
 		};
 
 		for (int i = 0; i < _tiles.Length; i++, IterateExtraVariables()){
-			if(_yGrid >= Grid.GridSizeY)
+			if(_yGrid >= Grid.GridSize.y)
 				break;
-			if(_yGrid < 0 || _xGrid < 0 || _xGrid >= Grid.GridSizeX)
+			if(_yGrid < 0 || _xGrid < 0 || _xGrid >= Grid.GridSize.x)
 				continue;
 
 			for (int i2 = 0; i2 < GridMap_LightsInRange[_xGrid, _yGrid].Length; i2++){
