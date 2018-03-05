@@ -21,6 +21,7 @@ public class LightManager : MonoBehaviour {
 
     public static List<CustomLight> AllLights = new List<CustomLight>();
 	public const int MAX_LIGHTS_AFFECTING_VERTEX = 32;
+	public const int MAX_LIGHTS_CASTING_SHADOWS = 4;
 	public static Material 		GridMaterial;
 	public static bool[,] 		GridMap_TilesUpdated;          	// bool for each tile, to track if they need updating or not
 	public static int[,][] 		GridMap_LightsInRange;          // indices for each light that can reach each vertex
@@ -230,10 +231,10 @@ public class LightManager : MonoBehaviour {
 				int _index = GridMap_LightsInRange[_xGrid, _yGrid][i2];
 				if(_b && _index == -1){
 					Vector2 _pos = Grid.Instance.GetWorldPointFromTileCoord(new Vector2i(_xGrid, _yGrid));
-					GridMap_LightsInRange[_xGrid, _yGrid][i2] = _light.MyIndex;
+					GridMap_LightsInRange[_xGrid, _yGrid][i2] = _light.LightIndex;
 					break;
 				}
-				else if(!_b && _index == _light.MyIndex){
+				else if(!_b && _index == _light.LightIndex){
 					GridMap_LightsInRange[_xGrid, _yGrid][i2] = -1;
 					//ClearCachedLightForTileVertices(_xGrid, _yGrid, i2);
 					break;

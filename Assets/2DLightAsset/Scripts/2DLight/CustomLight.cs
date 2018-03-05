@@ -8,17 +8,12 @@ using Utilities;
 public class Verts {
     public float Angle;
     public int Location; // 1 = left end point | 0 = middle | -1 = right endpoint
-    public Vector2 Pos;
+    public Vector2 LocalPos;
     public bool Endpoint;
 }
 
 public class CustomLight : MonoBehaviour {
 
-    public bool DebugMode = false;
-
-    [Space]
-
-    public string version = "1.0.5"; //release date 09/01/2017
     public Material lightMaterial;
     public int Radius = 20;
 	public Vector2i radiusVector;
@@ -46,7 +41,7 @@ public class CustomLight : MonoBehaviour {
     private new MeshRenderer renderer;
     private CanInspect myInspector;
 
-	[NonSerialized] public int MyIndex = -1;
+	[NonSerialized] public int LightIndex = -1;
 
 	public bool isTurnedOn { get; private set; }
 	[NonSerialized] public bool IsBeingRemoved;
@@ -59,35 +54,16 @@ public class CustomLight : MonoBehaviour {
 
 	private const string MESH_NAME = "Light Mesh";
 
-	public bool[,] VXLightMap_Hit;
+	public bool[,] VXLightMap_Hit; // TODO: a huge chunk of all my maps represent vertices on the same worldpos, so... superfluous info. Maybe make a map-class?
 	public float[,] VXLightMap_Intensity;
 
-	void AssignValueToVertMap<T>(T[,] _vertexLightMap, Vector2i _vGridPos, T _value) {
-		Vector2i _vLightPos = ConvertToVertexLightSpace(_vGridPos, this);
-		_vertexLightMap[_vLightPos.x, _vLightPos.y] = _value;
-
-		Vector2i[] _gGridPosNeighbours;
-		Vector2i[] _vTilePosNeighbours;
-		GetGridVerticesAtSamePosition(
-			_gGridPos: 				ConvertToGridSpace(_vGridPos), 
-			_vTilePos: 				ConvertToVertexTileSpace(_vGridPos), 
-			_isOnLeftEdge: 			_vLightPos.x == 0, 
-			_includeTopHalfStuff: 	false, 
-			_gGridPosNeighbours: 	out _gGridPosNeighbours, 
-			_vTilePosNeighbours: 	out _vTilePosNeighbours
-		);
-		for (int i = 0; i < _gGridPosNeighbours.Length; i++){
-			Vector2i _vGridPosNeighbour = ConvertToVertexGridSpace(_gGridPosNeighbours[i], _vTilePosNeighbours[i]);
-			Vector2i _vLightPosNeighbour = ConvertToVertexLightSpace(_vGridPosNeighbour, this);
-			// if(_vLightPosNeighbour.x < 0 ||_vLightPosNeighbour.x >= _vertexLightMap.GetLength(0)) 
-			// 	continue;
-			// if (_vLightPosNeighbour.y < 0 || _vLightPosNeighbour.y >= _vertexLightMap.GetLength(1))
-			// 	continue;
-
-			_vertexLightMap[_vLightPosNeighbour.x, _vLightPosNeighbour.y] = _value;
+	T TryGetAdjacentValueInVertexGridMap<T>(T[,] _vertexGridMap, int _x, int _y, ref int _failIncrement){
+		if (_x < 0 || _y < 0 || _x >= _vertexGridMap.GetLength(0) || _y >= _vertexGridMap.GetLength(1)){
+			_failIncrement++;
+			return default(T);
 		}
+		return _vertexGridMap[_x, _y]; ;
 	}
-
 
 	[EasyButtons.Button]
 	public void TestGridCoord(){
@@ -99,7 +75,7 @@ public class CustomLight : MonoBehaviour {
 		isTurnedOn = true;
 		IsBeingRemoved = false;
 
-		MyIndex = LightManager.AllLights.Count;
+		LightIndex = LightManager.AllLights.Count;
 		LightManager.AllLights.Add(this);
         
 		myInspector = GetComponent<CanInspect>();
@@ -117,7 +93,8 @@ public class CustomLight : MonoBehaviour {
 		VXLightMap_Intensity 	= new float	[Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE];
 	}
 	void OnDestroy(){
-       LightManager.AllLights.Remove(this);		
+		LightManager.AllLights.Remove(this);
+		LightIndex = -1;
 	}
 	void OnEnable() {
         myInspector.PostPickUp += PostPickUp;
@@ -206,12 +183,10 @@ public class CustomLight : MonoBehaviour {
 	}
 
     private bool sortAngles = false;
-    private bool lows = false; // check si hay menores a -0.5
-    private bool highs = false; // check si hay mayores a 2.0
-    private float magRange = 0.15f;
+    private bool _bottomLeftQuadrant = false; // check si hay menores a -0.5
+    private bool _bottomRightQuadrant = false; // check si hay mayores a 2.0
+    private const float MAGNITUDE_RANGE = 0.15f;
     private List<Verts> tempVerts = new List<Verts>();
-    private Verts v;
-    private Vector3 worldPoint;
     private RaycastHit2D rayHit;
     private int posLowAngle;
     private int posHighAngle;
@@ -219,13 +194,10 @@ public class CustomLight : MonoBehaviour {
     private float highestAngle;
     private Vector3 fromCast;
     private bool isEndpoint;
-    private Vector2 from;
-    private Vector2 dir;
+    private Vector2 rayOrigin;
     private float mag;
     private const float CHECK_POINT_LAST_RAY_OFFSET = 0.005f;
     private Vector2 rayCont;
-    private Vector3 hitPos;
-    private Vector2 newDir;
     private Verts vL;
     private int theta;
     private int amount;
@@ -234,82 +206,76 @@ public class CustomLight : MonoBehaviour {
     private Verts vertex2;
 	private delegate void mSortList(List<Verts> _list);
 	void SetVertices() {
+		Vector2 _lightPosWorld = transform.position;
+
 		mSortList SortList = delegate(List<Verts> _list) {
 			_list.Sort((item1, item2) => (item2.Angle.CompareTo(item1.Angle)));
 		};
 
-		allVertices.Clear();// Since these lists are populated every frame, clear them first to prevent overpopulation
+		allVertices.Clear();
 
-        magRange = 0.15f;
-        tempVerts.Clear();
 		int x = 0, y = 0;
+		Vector2i _gGridPos = tilesInRangeWithCollider[0, 0];
 		mIterateVariables IterateExtraVariables = delegate (){
 			x++;
-			if (x == tilesInRangeWithCollider.GetLength(0)){
+			if (x >= tilesInRangeWithCollider.GetLength(0)){
 				x = 0;
 				y++;
+				if (y >= tilesInRangeWithCollider.GetLength(1)){
+					return;
+				}
 			}
+
+			_gGridPos = tilesInRangeWithCollider[x, y];
 		};
 		int _totalIterations = tilesInRangeWithCollider.GetLength(0) * tilesInRangeWithCollider.GetLength(1);
 		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()) {
-			Vector2i _tileCoord = tilesInRangeWithCollider[x, y];
-			if(_tileCoord.x < 0 || _tileCoord.y < 0)
-				continue;
+			if(_gGridPos.x < 0 || _gGridPos.y < 0) continue;
 
-			Tile _t = Grid.Instance.grid[_tileCoord.x, _tileCoord.y];
-            PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(_t.ExactType);
-            _coll.transform.position = _t.WorldPosition;
+			// get collider
+			Tile _colliderTile = Grid.Instance.grid[_gGridPos.x, _gGridPos.y];
+            PolygonCollider2D _collider = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(_colliderTile.ExactType);
+            _collider.transform.position = _colliderTile.WorldPosition;
 
 			tempVerts.Clear();
             
-            // the following variables used to fix sorting bug
-            // the calculated angles are in mixed quadrants (1 and 4)
-            lows = false; // check for minors at -0.5
-            highs = false; // check for majors at 2.0
+            _bottomLeftQuadrant = false;
+            _bottomRightQuadrant = false;
 
+            for (int pIndex = 0; pIndex < _collider.pathCount; pIndex++){ 					// iterate over collider-paths
+                for (int vIndex = 0; vIndex < _collider.GetPath(pIndex).Length; vIndex++){ 	// iterate over path-vertices
+                    Vector2 _targetPosWorld = (Vector2)_collider.transform.position + _collider.GetPath(pIndex)[vIndex];
+                    Verts _newVertex = new Verts();
 
-            for (int pIndex = 0; pIndex < _coll.pathCount; pIndex++){
-                for (int vIndex = 0; vIndex < _coll.GetPath(pIndex).Length; vIndex++){ // ...and for every vertex we have of each collider...
-                    v = new Verts();
-
-                    // Convert vertex to world space
-                    worldPoint = (Vector2)_coll.transform.position + _coll.GetPath(pIndex)[vIndex];
-                    if (Gridcast(transform.position, worldPoint, out rayHit)) {
-                        v.Pos = rayHit.point;
-                        if (worldPoint.sqrMagnitude >= (rayHit.point.sqrMagnitude - magRange) && worldPoint.sqrMagnitude <= (rayHit.point.sqrMagnitude + magRange)) {
-                            v.Endpoint = true;
-                            if (DebugMode)
-                                Debug.DrawLine(transform.position, v.Pos, Color.red);
-                        }
+                    if (Gridcast(_lightPosWorld, _targetPosWorld, out rayHit)) {
+                        _newVertex.LocalPos = rayHit.point;
+						_newVertex.Endpoint = false;
                     }
                     else {
-                        v.Pos = worldPoint;
-                        v.Endpoint = true;
-                        if (DebugMode)
-                            Debug.DrawLine(transform.position, v.Pos, Color.yellow);
+                        _newVertex.LocalPos = _targetPosWorld;
+                        _newVertex.Endpoint = true;
                     }
 
-                    //--Convert To local space for build mesh (mesh craft only in local vertex)
-                    v.Pos = transform.InverseTransformPoint(v.Pos);
-                    v.Angle = GetVectorAngle(v.Pos.x, v.Pos.y); //--Calculate angle
+                    _newVertex.LocalPos = transform.InverseTransformPoint(_newVertex.LocalPos);	// to local
+                    _newVertex.Angle = GetQuadrantSortingAngle(_newVertex.LocalPos.x, _newVertex.LocalPos.y);
 
-                    // -- bookmark if an angle is lower than 0 or higher than 2f --//
-                    //-- helper method for fix bug on shape located in 2 or more quadrants
-                    if (v.Angle < 0f)
-                        lows = true;
+					// -- bookmark if an angle is lower than 0 or higher than 2f --//
+					//-- helper method for fix bug on shape located in 2 or more quadrants
+					if (_newVertex.Angle < 0f)
+                        _bottomLeftQuadrant = true;
 
-                    if (v.Angle > 2f)
-                        highs = true;
+                    if (_newVertex.Angle > 2f)
+                        _bottomRightQuadrant = true;
 
                     //--Add verts to the main list
-                    if ((v.Pos).magnitude <= Radius)
-                        tempVerts.Add(v);
+                    if (_newVertex.LocalPos.magnitude <= Radius) adpmawp // continue here
+                        tempVerts.Add(_newVertex);
 
                     if (sortAngles == false)
                         sortAngles = true;
                 }
             }
-            _coll.GetComponent<PoolerObject>().ReturnToPool();
+            _collider.GetComponent<PoolerObject>().ReturnToPool();
 
             // Identify the endpoints (left and right)
             if (tempVerts.Count > 0) {
@@ -318,7 +284,7 @@ public class CustomLight : MonoBehaviour {
                 posLowAngle = 0; // save the indice of left ray
                 posHighAngle = 0; // same last in right side
 
-                if (highs == true && lows == true) {  //-- FIX BUG OF SORTING CUANDRANT 1-4 --//
+                if (_bottomRightQuadrant == true && _bottomLeftQuadrant == true) {  //-- FIX BUG OF SORTING CUANDRANT 1-4 --//
                     lowestAngle = -1f; //tempVerts[0].angle; // init with first data
                     highestAngle = tempVerts[0].Angle;
 
@@ -335,7 +301,7 @@ public class CustomLight : MonoBehaviour {
                 }
                 else {
                     //-- conventional position of ray points
-                    // save the indice of left ray
+                    // save the index of left ray
                     posLowAngle = 0;
                     posHighAngle = tempVerts.Count - 1;
                 }
@@ -343,65 +309,12 @@ public class CustomLight : MonoBehaviour {
                 tempVerts[posLowAngle].Location = 1; // right
                 tempVerts[posHighAngle].Location = -1; // left
 
-                //--Add vertices to the main mesh's vertices--//
                 allVertices.AddRange(tempVerts);
 
-                // -- r == 0 --> right ray
-                // -- r == 1 --> left ray
-                for (int r = 0; r < 2; r++) {
-                    //-- Cast a ray in same direction continuos mode, start a last point of last ray --//
-                    fromCast = new Vector3();
-                    isEndpoint = false;
-
-                    if (r == 0) {
-                        fromCast = transform.TransformPoint(tempVerts[posLowAngle].Pos);
-                        isEndpoint = tempVerts[posLowAngle].Endpoint;
-                    }
-                    else if (r == 1) {
-                        fromCast = transform.TransformPoint(tempVerts[posHighAngle].Pos);
-                        isEndpoint = tempVerts[posHighAngle].Endpoint;
-                    }
-
-                    if (isEndpoint == true) {
-                        dir = fromCast - transform.position;
-                        mag = Radius;
-                        from = (Vector2)fromCast + (dir * CHECK_POINT_LAST_RAY_OFFSET);
-
-                        int debugger = -1;
-
-                        if(Gridcast(from, (from + dir.normalized * Radius), out rayHit)){
-                            hitPos = rayHit.point;
-                            debugger = 1;
-
-                            if (Vector2.Distance(hitPos, transform.position) > Radius){
-                                dir = transform.InverseTransformDirection(dir); //local p
-                                hitPos = transform.TransformPoint(dir.normalized * mag); // world p
-                            }
-                        }
-                        else {
-                            newDir = transform.InverseTransformDirection(dir);  //local p
-                            hitPos = (Vector2)transform.TransformPoint(newDir.normalized * mag); //world p
-                            debugger = 2;
-                        }
-
-                        if (DebugMode) { 
-                            if(debugger == 0)
-                                Debug.DrawLine(fromCast, hitPos, Color.green);
-                            if (debugger == 1)
-                                Debug.DrawLine(fromCast, hitPos, Color.cyan);
-                            if (debugger == 2)
-                                Debug.DrawLine(fromCast, hitPos, Color.red);
-                            if (debugger == 3)
-                                Debug.DrawLine(fromCast, hitPos, Color.magenta);
-                        }
-
-                        vL = new Verts();
-                        vL.Pos = transform.InverseTransformPoint(hitPos);
-                        vL.Angle = GetVectorAngle(vL.Pos.x, vL.Pos.y);
-                        allVertices.Add(vL);
-                    }
-                }
-            }
+				// right ray, then left ray
+				ShootRay(transform.TransformPoint(tempVerts[posLowAngle].LocalPos), 	isEndpoint: tempVerts[posLowAngle].Endpoint);
+				ShootRay(transform.TransformPoint(tempVerts[posHighAngle].LocalPos), isEndpoint: tempVerts[posHighAngle].Endpoint);
+			}
         }
         //--Step 3: Generate vectors for light cast--//
         //---------------------------------------------------------------------//
@@ -413,16 +326,16 @@ public class CustomLight : MonoBehaviour {
             if (theta == 360)
                 theta = 0;
 
-            v = new Verts();
-            v.Pos = new Vector3((LightManager.SinCosTable.sSinArray[theta]), (LightManager.SinCosTable.sCosArray[theta]), 0); // in degrees (previous calculate)
-            v.Angle = GetVectorAngle(v.Pos.x, v.Pos.y);
-            v.Pos *= Radius;
-            v.Pos += (Vector2)transform.position;
+            Verts v = new Verts();
+            v.LocalPos = new Vector3((LightManager.SinCosTable.sSinArray[theta]), (LightManager.SinCosTable.sCosArray[theta]), 0); // in degrees (previous calculate)
+            v.Angle = GetQuadrantSortingAngle(v.LocalPos.x, v.LocalPos.y);
+            v.LocalPos *= Radius;
+            v.LocalPos += (Vector2)transform.position;
 
-            if(Gridcast(transform.position, v.Pos, out rayHit))
-                v.Pos = transform.InverseTransformPoint(rayHit.point);
+            if(Gridcast(transform.position, v.LocalPos, out rayHit))
+                v.LocalPos = transform.InverseTransformPoint(rayHit.point);
             else
-                v.Pos = transform.InverseTransformPoint(v.Pos);
+                v.LocalPos = transform.InverseTransformPoint(v.LocalPos);
             allVertices.Add(v);
         }
 
@@ -444,7 +357,7 @@ public class CustomLight : MonoBehaviour {
             // -- Compare the local angle of each vertex and decide if we have to make an exchange-- //
             if (vertex1.Angle >= vertex2.Angle - rangeAngleComparision && vertex1.Angle <= vertex2.Angle + rangeAngleComparision) {
                 if (vertex2.Location == -1) { // Right Ray
-                    if (vertex1.Pos.sqrMagnitude > vertex2.Pos.sqrMagnitude) {
+                    if (vertex1.LocalPos.sqrMagnitude > vertex2.LocalPos.sqrMagnitude) {
                         allVertices[i] = vertex2;
                         allVertices[i + 1] = vertex1;
                     }
@@ -452,7 +365,7 @@ public class CustomLight : MonoBehaviour {
 
                 // ALREADY DONE!!
                 if (vertex1.Location == 1) { // Left Ray
-                    if (vertex1.Pos.sqrMagnitude < vertex2.Pos.sqrMagnitude) {
+                    if (vertex1.LocalPos.sqrMagnitude < vertex2.LocalPos.sqrMagnitude) {
                         allVertices[i] = vertex2;
                         allVertices[i + 1] = vertex1;
                     }
@@ -460,33 +373,116 @@ public class CustomLight : MonoBehaviour {
             }
         }
 	}
+	void ShootRay(Vector2 fromCast, bool isEndpoint) {
+		if(!isEndpoint) return;
 
-	// private void ClearCachedVColorsForTilesInRange() {
-	// 	int vxGrid = 0, vyGrid = 0;
-	// 	mIterateVariables IterateExtraVariables = delegate (){
-	// 		vxGrid++;
-	// 		if (vxGrid == Grid.GridSizeX * UVControllerBasic.MESH_VERTICES_PER_EDGE){
-	// 			vxGrid = 0;
-	// 			vyGrid++;
-	// 		}
-	// 	};
-	// 	for (int i = 0; i < LightManager.VertMap_TotalColorNoBlur.Length; i++, IterateExtraVariables()){
-	// 		LightManager.VertMap_TotalColorNoBlur[vxGrid, vyGrid] = Color.black;
-	// 	}
-	// }
+		Vector2 dirLocal;
+		Vector2 dirWorld = fromCast - (Vector2)transform.position;
+		Vector2 rayOrigin = fromCast + (dirWorld * CHECK_POINT_LAST_RAY_OFFSET);
+		Vector2 rayEnd = rayOrigin + dirWorld.normalized * Radius;
+		Vector2 hitPos;
 
-	private delegate Color mTryGetNeighbourColor(int _x, int _y);
+		if (Gridcast(rayOrigin, rayEnd, out rayHit)){
+			hitPos = rayHit.point;
+
+			if (Vector2.Distance(hitPos, transform.position) > Radius){
+				dirLocal = transform.InverseTransformDirection(dirWorld); 			//local p
+				hitPos = transform.TransformPoint(dirLocal.normalized * Radius); 	// world p
+			}
+		}
+		else{
+			// TODO: does this need to convert to local?
+			dirLocal = transform.InverseTransformDirection(dirWorld);  			//to local
+			hitPos = transform.TransformPoint(dirLocal.normalized * Radius); 	//to world
+		}
+
+		vL = new Verts();
+		vL.LocalPos = transform.InverseTransformPoint(hitPos);	// to local
+		vL.Angle = GetQuadrantSortingAngle(vL.LocalPos.x, vL.LocalPos.y);
+		allVertices.Add(vL);
+	}
+
+	static class VertexSiblings { // vertices sharing the same world pos
+		public class Sibling {
+			public bool Affected = false;
+			public Vector2i vGridPos;
+			public Vector2i gGridPos;
+			public Vector2i vTilePos;
+
+			public void SetNewValues(bool _affected, int _gGridPosX, int _gGridPosY, int _vTilePosX, int _vTilePosY) {
+				Affected = _affected;
+				if(!_affected) return;
+
+				gGridPos.x = _gGridPosX;
+				gGridPos.y = _gGridPosY;
+				vTilePos.x = _vTilePosX;
+				vTilePos.y = _vTilePosY;
+				vGridPos = ConvertToVertexGridSpace(gGridPos, vTilePos);
+			}
+
+			public void SetUVDots(Vector2 _doubleDot_0, Vector2 _doubleDot_1, Vector2 _doubleDot_2, Vector2 _doubleDot_3) {
+				Grid.Instance.grid[gGridPos.x, gGridPos.y].MyUVController.SetUVDots(vTilePos, _doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			}
+			public void SetVertexColor(Color _color){
+				Grid.Instance.grid[gGridPos.x, gGridPos.y].MyUVController.SetVertexColor(vTilePos, _color);
+			}
+			public void SetValueInVertexLightMap<T>(T[,] _vertexLightMap, T _value, CustomLight _light){
+				Vector2i _vLightPos = ConvertToVertexLightSpace(vGridPos, _light);
+				_vertexLightMap[_vLightPos.x, _vLightPos.y] = _value;
+			}
+		}
+		public static Sibling Current 			= new Sibling();
+		public static Sibling OwnTopHalf 		= new Sibling();
+		public static Sibling OwnTopHalfLeft 	= new Sibling();
+		public static Sibling OwnTopHalfRight 	= new Sibling();
+		public static Sibling Top 				= new Sibling();
+		public static Sibling Right 			= new Sibling();
+		public static Sibling RightTopHalf 		= new Sibling();
+		public static Sibling RightTopHalfLeft 	= new Sibling();
+		public static Sibling TopRight 			= new Sibling();
+		public static void SetUVDots(Vector2 _doubleDot_0, Vector2 _doubleDot_1, Vector2 _doubleDot_2, Vector2 _doubleDot_3) {
+			if (Current.Affected) 			Current.			SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			if (OwnTopHalf.Affected) 		OwnTopHalf.			SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			if (OwnTopHalfLeft.Affected) 	OwnTopHalfLeft.		SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			if (OwnTopHalfRight.Affected) 	OwnTopHalfRight.	SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			if (Top.Affected) 				Top.				SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			if (Right.Affected) 			Right.				SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			if (RightTopHalf.Affected) 		RightTopHalf.		SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			if (RightTopHalfLeft.Affected) 	RightTopHalfLeft.	SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			if (TopRight.Affected) 			TopRight.			SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+		}
+		public static void SetVertexColor(Color _color){
+			if (Current.Affected) 	Current.	SetVertexColor(_color);
+			if (Top.Affected) 		Top.		SetVertexColor(_color);
+			if (Right.Affected) 	Right.		SetVertexColor(_color);
+			if (TopRight.Affected) 	TopRight.	SetVertexColor(_color);
+		}
+
+		public static void SetValueInVertexGridMap<T>(T[,] _vertexGridMap, T _value) {
+			if (Current.Affected) 	_vertexGridMap[Current.vGridPos.x, 	Current.vGridPos.y] 	= _value;
+			if (Top.Affected) 		_vertexGridMap[Top.vGridPos.x, 		Top.vGridPos.y] 		= _value;
+			if (Right.Affected)		_vertexGridMap[Right.vGridPos.x, 	Right.vGridPos.y] 		= _value;
+			if (TopRight.Affected)	_vertexGridMap[TopRight.vGridPos.x, TopRight.vGridPos.y] 	= _value;
+		}
+		public static void SetValueInVertexLightMap<T>(T[,] _vertexLightMap, T _value, CustomLight _light){
+			if (Current.Affected) 	Current.	SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
+			if (Top.Affected)		Top.		SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
+			if (Right.Affected)		Right.		SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
+			if (TopRight.Affected)	TopRight.	SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
+		}
+	}
+
+
 	private void CalculateLightingForTilesInRange(bool _excludeMe){
-		// find colors and dots for all lights and apply
-		Vector2[] _dots = new Vector2[4];
+		Color _vertexColor;
 
 		Vector2i _vGridPosStart = ConvertToVertexGridSpace(new Vector2i(0, 0), this);
 		Vector2i _vGridPosEnd 	= ConvertToVertexGridSpace(new Vector2i((Diameter - 1) * UVControllerBasic.MESH_VERTICES_PER_EDGE, (Diameter - 1) * UVControllerBasic.MESH_VERTICES_PER_EDGE), this);
-		_vGridPosStart.x 	= Mathf.Clamp(_vGridPosStart.x, 0, Grid.GridSize.x * UVControllerBasic.MESH_VERTICES_PER_EDGE);
-		_vGridPosStart.y 	= Mathf.Clamp(_vGridPosStart.y, 0, Grid.GridSize.y * UVControllerBasic.MESH_VERTICES_PER_EDGE);
-		_vGridPosEnd.x 		= Mathf.Clamp(_vGridPosEnd.x,	0, Grid.GridSize.x * UVControllerBasic.MESH_VERTICES_PER_EDGE);
-		_vGridPosEnd.y 		= Mathf.Clamp(_vGridPosEnd.y, 	0, Grid.GridSize.y * UVControllerBasic.MESH_VERTICES_PER_EDGE);
-		Vector2i _vGridPos = _vGridPosStart;
+		_vGridPosStart.x 		= Mathf.Clamp(_vGridPosStart.x, 0, Grid.GridSize.x * UVControllerBasic.MESH_VERTICES_PER_EDGE);
+		_vGridPosStart.y 		= Mathf.Clamp(_vGridPosStart.y, 0, Grid.GridSize.y * UVControllerBasic.MESH_VERTICES_PER_EDGE);
+		_vGridPosEnd.x 			= Mathf.Clamp(_vGridPosEnd.x,	0, Grid.GridSize.x * UVControllerBasic.MESH_VERTICES_PER_EDGE);
+		_vGridPosEnd.y 			= Mathf.Clamp(_vGridPosEnd.y, 	0, Grid.GridSize.y * UVControllerBasic.MESH_VERTICES_PER_EDGE);
+		Vector2i _vGridPos 		= _vGridPosStart;
 
 		mIterateVariables IterateExtraVariables = delegate (){
 			_vGridPos.x++;
@@ -504,161 +500,68 @@ public class CustomLight : MonoBehaviour {
 			if (_gLightPos.y > 0 && _vTilePos.y == 0) continue;
 			if(tilesInRange[_gLightPos.x, _gLightPos.y].x < 0) 	continue;
 
-			Vector2i _gGridPos = ConvertToGridSpace(_vGridPos);
-			Vector2i _vLightPos = ConvertToVertexLightSpace(_vGridPos, this);
+			SetVertexSiblings(_vGridPos);
+
 			Vector2 _vWorldPos = ConvertToWorldSpace(_vGridPos);
 			int _vTileIndex = _vTilePos.y * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vTilePos.x;
-
-			// get colors from lights
 			bool _illuminated;
 			float _lightFromThis;
-			Color _newVertexColor = GetColorForVertex(_vTilePos, _vLightPos, _gLightPos, _vGridPos, _gGridPos, _vWorldPos, _vTileIndex, _excludeMe, out _illuminated, out _lightFromThis);
+			_vertexColor = GetColorForVertex(
+				_vTilePos: 		_vTilePos, 
+				_vLightPos: 	ConvertToVertexLightSpace(_vGridPos, this), 
+				_gLightPos: 	_gLightPos, 
+				_vGridPos: 		_vGridPos, 
+				_gGridPos:		ConvertToGridSpace(_vGridPos), 
+				_vWorldPos: 	_vWorldPos, 
+				_vIndex: 		_vTileIndex, 
+				_excludeMe: 	_excludeMe, 
+				_illuminated: 	out _illuminated, 
+				_lightFromThis: out _lightFromThis
+			);
+
+			VertexSiblings.SetValueInVertexLightMap<bool>(VXLightMap_Hit, _illuminated, this);
+			VertexSiblings.SetValueInVertexLightMap<float>(VXLightMap_Intensity, _lightFromThis, this);
 			
 			// get two dots per light describing angle to four strongest lights
 			Vector4 _dominantLightIndices = GetShadowCastingLightsIndices(_vGridPos, _excludeMe, _illuminated, _lightFromThis);
-			_dots[0] = _dominantLightIndices.x >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.x]) : Vector2.zero;
-			_dots[1] = _dominantLightIndices.y >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.y]) : Vector2.zero;
-			_dots[2] = _dominantLightIndices.z >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.z]) : Vector2.zero;
-			_dots[3] = _dominantLightIndices.w >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.w]) : Vector2.zero;
+			Vector2 _doubleDot_0 = _dominantLightIndices.x >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.x]) : Vector2.zero;
+			Vector2 _doubleDot_1 = _dominantLightIndices.y >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.y]) : Vector2.zero;
+			Vector2 _doubleDot_2 = _dominantLightIndices.z >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.z]) : Vector2.zero;
+			Vector2 _doubleDot_3 = _dominantLightIndices.w >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.w]) : Vector2.zero;
 
-			Vector2i[] _gGridPosNeighbours;
-			Vector2i[] _vTilePosNeighbours;
-			GetGridVerticesAtSamePosition(
-				_gGridPos:	 			_gGridPos, 
-				_vTilePos:				_vTilePos,
-				_isOnLeftEdge: 			_gLightPos.x == 0, 
-				_includeTopHalfStuff: 	true, 
-				_gGridPosNeighbours: 	out _gGridPosNeighbours, 
-				_vTilePosNeighbours: 	out _vTilePosNeighbours
-			);
-
-			for (int i2 = 0; i2 < _gGridPosNeighbours.Length; i2++){
-				Grid.Instance.grid[_gGridPosNeighbours[i2].x, _gGridPosNeighbours[i2].y].MyUVController.SetUVDots(_vTilePosNeighbours[i2], _dots[0], _dots[1], _dots[2], _dots[3]);
-			}
-
-			GetGridVerticesAtSamePosition(
-				_gGridPos:  			_gGridPos, 
-				_vTilePos:				_vTilePos,
-				_isOnLeftEdge: 			_gLightPos.x == 0, 
-				_includeTopHalfStuff: 	false, 
-				_gGridPosNeighbours: 	out _gGridPosNeighbours, 
-				_vTilePosNeighbours: 	out _vTilePosNeighbours
-			);
-			for (int i2 = 0; i2 < _gGridPosNeighbours.Length; i2++){
-				Vector2i _vGridSpace = ConvertToVertexGridSpace(_gGridPosNeighbours[i2], _vTilePosNeighbours[i2]);
-				LightManager.VertMap_TotalColorNoBlur[_vGridSpace.x, _vGridSpace.y] = _newVertexColor;
-			}
-
-
-			// // DEBUG 
-			// for (int i2 = 0; i2 < _gGridPosNeighbours.Length; i2++){
-			// 	// if(_xLight == 0 && vx == 0 || _yLight == 0 && vy == 0)
-			// 	// 	Grid.Instance.grid[_xGridNeighbours[i2], _yGridNeighbours[i2]].MyUVController.SetVertexColor(_vIndexNeighbours[i2], Color.red);
-			// 	// else
-			// 		Grid.Instance.grid[_gGridPosNeighbours[i2].x, _gGridPosNeighbours[i2].y].MyUVController.SetVertexColor(_vTilePosNeighbours[i2], _newVertexColor);
-			// }
+			VertexSiblings.SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			VertexSiblings.SetValueInVertexGridMap<Color>(LightManager.VertMap_TotalColorNoBlur, _vertexColor);
 		}
 
-	//DEBUG
-	//return;
-
-		// blur and apply colors
-		Color[] _adjacentColors = new Color[9];
-		
 		_vGridPos = _vGridPosStart;
 		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
 			Vector2i _gLightPos = ConvertToLightSpace(_vGridPos, this);
 			Vector2i _vTilePos = ConvertToVertexTileSpace(_vGridPos);
-
 			if (_gLightPos.x > 0 && _vTilePos.x == 0) continue;
 			if (_gLightPos.y > 0 && _vTilePos.y == 0) continue;
 			if(tilesInRange[_gLightPos.x, _gLightPos.y].x < 0) 	continue;
 
-			Vector2i _gGridPos = ConvertToGridSpace(_vGridPos);
-			Vector2i _vLightPos = ConvertToVertexLightSpace(_vGridPos, this);
-
-			// try get colors from neighbouring vertices (for smoothing)
+			int _failAmount = 0;
 			int _diffToRightX = _vTilePos.x == 0 ? 1 : 2; // TODO: this can't be right. It should be == 1, right?
 			int _diffToAboveY = _vTilePos.y == 0 ? 1 : 2;
-			int _failAmount = 0;
-			mTryGetNeighbourColor TryGetAdjacentColor = delegate (int _x, int _y){
-				if (_x < 0 || _y < 0 || _x >= LightManager.VertMap_TotalColorNoBlur.GetLength(0) || _y >= LightManager.VertMap_TotalColorNoBlur.GetLength(1)){
-					_failAmount++;
-					return Color.clear;
-				}
-				return LightManager.VertMap_TotalColorNoBlur[_x, _y];
-			};
 
-			_adjacentColors[0] = TryGetAdjacentColor(_vGridPos.x - 1, 				_vGridPos.y - 1);
-			_adjacentColors[1] = TryGetAdjacentColor(_vGridPos.x, 					_vGridPos.y - 1);
-			_adjacentColors[2] = TryGetAdjacentColor(_vGridPos.x + _diffToRightX, 	_vGridPos.y - 1);
-			_adjacentColors[3] = TryGetAdjacentColor(_vGridPos.x - 1, 				_vGridPos.y);
-			_adjacentColors[4] = TryGetAdjacentColor(_vGridPos.x, _vGridPos.y); // this tile
-			_adjacentColors[5] = TryGetAdjacentColor(_vGridPos.x + _diffToRightX, 	_vGridPos.y);
-			_adjacentColors[6] = TryGetAdjacentColor(_vGridPos.x - 1, 				_vGridPos.y + _diffToAboveY);
-			_adjacentColors[7] = TryGetAdjacentColor(_vGridPos.x, 					_vGridPos.y + _diffToAboveY);
-			_adjacentColors[8] = TryGetAdjacentColor(_vGridPos.x + _diffToRightX, 	_vGridPos.y + _diffToAboveY);
+			_vertexColor = Color.clear;
+			_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x - 1, 				_vGridPos.y - 1, 				ref _failAmount);
+			_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x, 					_vGridPos.y - 1, 				ref _failAmount);
+			_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x + _diffToRightX, 	_vGridPos.y - 1, 				ref _failAmount);
+			_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x - 1, 				_vGridPos.y, 					ref _failAmount);
+			_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x, 					_vGridPos.y, 					ref _failAmount); // this vertex
+			_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x + _diffToRightX, _vGridPos.y, 					ref _failAmount);
+			_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x - 1, 				_vGridPos.y + _diffToAboveY, 	ref _failAmount);
+			_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x, 					_vGridPos.y + _diffToAboveY, 	ref _failAmount);
+			_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x + _diffToRightX, 	_vGridPos.y + _diffToAboveY, 	ref _failAmount);
+			_vertexColor /= Mathf.Max(Mathf.Pow(UVControllerBasic.MESH_VERTICES_PER_EDGE, 2) - _failAmount, 1);
+			_vertexColor.a = 1;
 
-			Color _myColor = new Color();
-			for (int i2 = 0; i2 < _adjacentColors.Length; i2++)
-				_myColor += _adjacentColors[i2];
-
-			_myColor /= Mathf.Max(_adjacentColors.Length - _failAmount, 1);
-			_myColor.a = 1;
-
-			Vector2i[] _gGridPosNeighbours;
-			Vector2i[] _vTilePosNeighbours;
-			GetGridVerticesAtSamePosition(
-				_gGridPos:  			_gGridPos, 
-				_vTilePos:  			_vTilePos, 
-				_isOnLeftEdge: 			_gLightPos.x == 0, 
-				_includeTopHalfStuff: 	false, 
-				_gGridPosNeighbours: 	out _gGridPosNeighbours, 
-				_vTilePosNeighbours: 	out _vTilePosNeighbours
-			);
-			for (int i2 = 0; i2 < _gGridPosNeighbours.Length; i2++){
-				Grid.Instance.grid[_gGridPosNeighbours[i2].x, _gGridPosNeighbours[i2].y].MyUVController.SetVertexColor(_vTilePosNeighbours[i2], _myColor);
-			}
+			SetVertexSiblings(_vGridPos);
+			VertexSiblings.SetVertexColor(_vertexColor);
 		}
 	}
-
-	// static int GetXGrid(int _xLight, CustomLight _light){
-	// 	return _light.MyGridCoord.x - (_light.Radius - _xLight);
-	// }
-	// static int GetYGrid(int _yLight, CustomLight _light){
-	// 	return _light.MyGridCoord.y - (_light.Radius - _yLight);
-	// }
-	// static int GetVXGrid(int _xGrid, int _vxTile){
-	// 	return _xGrid * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vxTile;
-	// }
-	// static int GetVYGrid(int _yGrid, int _vyTile){
-	// 	return _yGrid * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vyTile;
-	// }
-	// static int GetXLight(int _xGrid, CustomLight _light){
-	// 	return _xGrid - (_light.MyGridCoord.x - _light.Radius);
-	// }
-	// static int GetYLight(int _yGrid, CustomLight _light){
-	// 	return _yGrid - (_light.MyGridCoord.y - _light.Radius);
-	// }
-	// static int GetVXLight(int _xLight, int _vxTile){
-	// 	return _xLight * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vxTile;
-	// }
-	// static int GetVYLight(int _yLight, int _vyTile){
-	// 	return _yLight * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vyTile;
-	// }
-	// static int GetVXTile(int _vIndex, int _vyTile){
-	// 	return _vIndex - _vyTile * UVControllerBasic.MESH_VERTICES_PER_EDGE;
-	// }
-	// static int GetVYTile(int _vIndex){
-	// 	return Mathf.FloorToInt(_vIndex / UVControllerBasic.MESH_VERTICES_PER_EDGE);
-	// }
-	private const float VERTEX_DISTANCE = 0.5f;
-    // float GetVXWorld(int _xGrid, int _vx){
-    //     return Grid.Instance.grid[_xGrid, 0].WorldPosition.x + (_vx - 1) * VERTEX_DISTANCE;
-    // }
-	// float GetVYWorld(int _yGrid, int _vy){
-    //     return Grid.Instance.grid[0, _yGrid].WorldPosition.y + (_vy - 1) * VERTEX_DISTANCE;
-    // }
 
 	static Vector2i edgeVertexCount = UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR;
 	static Vector2i ConvertToVertexGridSpace(Vector2i _vLightPos, CustomLight _light){
@@ -676,141 +579,69 @@ public class CustomLight : MonoBehaviour {
 	static Vector2i ConvertToVertexLightSpace(Vector2i _vGridPos, CustomLight _light){
 		return _vGridPos - Vector2i.Scale(edgeVertexCount, _light.MyGridCoord - _light.GetRadiusAsVector());
 	}
-	static Vector2i ConvertToVertexTileSpace(Vector2i _vGridPos){
+	static Vector2i ConvertToVertexTileSpace(Vector2i _vGridPos){ // WARNING: does not support top-half vertices! Confusing? Yes!
 		return _vGridPos - ConvertToGridSpace(_vGridPos) * UVControllerBasic.MESH_VERTICES_PER_EDGE;
 	}
     Vector2 ConvertToWorldSpace(Vector2i _vGridPos){
 		Vector2i _gGridPos 	= ConvertToGridSpace(_vGridPos);
-		Vector2 _localPos 	= new Vector2(_vGridPos.x * VERTEX_DISTANCE, _vGridPos.y * VERTEX_DISTANCE);
-		Vector2 _correction = new Vector2(_gGridPos.x * VERTEX_DISTANCE, _gGridPos.y * VERTEX_DISTANCE); // discount every third vertex (except first) since they overlap
+		Vector2 _localPos 	= new Vector2(_vGridPos.x * UVControllerBasic.MESH_VERTEX_SEPARATION, _vGridPos.y * UVControllerBasic.MESH_VERTEX_SEPARATION);
+		Vector2 _correction = new Vector2(_gGridPos.x * UVControllerBasic.MESH_VERTEX_SEPARATION, _gGridPos.y * UVControllerBasic.MESH_VERTEX_SEPARATION); // discount every third vertex (except first) since they overlap
 		Vector2 _gridWorldPos = Grid.Instance.transform.position;
 		return _gridWorldPos - Grid.GridSizeHalf + _localPos - _correction;
     }
 
-	private enum VertexNeighbourEnum { TileAbove, TopHalf, TopHalfLeft, TopHalfRight, TileRight, TileRightTopHalf, TileRightTopHalfLeft, TileTopRight };
-	private static Array vertexNeighbourArray = System.Enum.GetValues(typeof(VertexNeighbourEnum));
-	public static void GetGridVerticesAtSamePosition(Vector2i _gGridPos, Vector2i _vTilePos, bool _isOnLeftEdge, bool _includeTopHalfStuff, out Vector2i[] _gGridPosNeighbours, out Vector2i[] _vTilePosNeighbours) {
+	void SetVertexSiblings(Vector2i _vGridPos) {
+		Vector2i _vTilePos = ConvertToVertexTileSpace(_vGridPos);
+		Vector2i _gGridPos = ConvertToGridSpace(_vGridPos);
+		bool _isOnLeftEdge = _vTilePos.x == 0;
+		bool _isOnRightEdge = _vTilePos.x == UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
+		bool _affectsTopHalf = _vTilePos.y == UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
 
-		int _verticesAffectedCount = 1;
-		bool[] _cachedAffectsVertexResults = new bool[vertexNeighbourArray.Length];
-		for (int i = 0; i < vertexNeighbourArray.Length; i++){
-			bool _affects = AffectsVertex((VertexNeighbourEnum)i, _vTilePos, _gGridPos, _isOnLeftEdge, _includeTopHalfStuff);
-			_cachedAffectsVertexResults[i] = _affects;
-			if(_affects) _verticesAffectedCount++;
-		}
-		
-		_gGridPosNeighbours = new Vector2i[_verticesAffectedCount];
-		_vTilePosNeighbours = new Vector2i[_verticesAffectedCount];
-		_gGridPosNeighbours[0] = _gGridPos;
-		_vTilePosNeighbours[0] = _vTilePos;
-
-		for (int i = 0, _affectIndex = 1; i < vertexNeighbourArray.Length; i++){
-			if (!_cachedAffectsVertexResults[i]) continue;
-
-			VertexNeighbourEnum _neighbourDirection = (VertexNeighbourEnum)i;
-			_gGridPosNeighbours[_affectIndex] = GetGridSpacePosForNeighbour(_neighbourDirection, _gGridPos);
-			_vTilePosNeighbours[_affectIndex] = GetVertexTilePosForNeighbour(_neighbourDirection, _vTilePos);
-			_affectIndex++;
-		}
-	}
-
-	static bool AffectsVertex(VertexNeighbourEnum _neighbour, Vector2i _vTileSpace, Vector2i _gGridSpace, bool _isOnLeftEdge, bool _includeTopHalf){
-		int _vertEdgeMaxIndex = UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
-		switch (_neighbour){
-			case VertexNeighbourEnum.TileAbove:
-				return _gGridSpace.y + 1 < Grid.GridSize.y && _vTileSpace.y == _vertEdgeMaxIndex;
-			case VertexNeighbourEnum.TopHalf:
-				return _includeTopHalf && _vTileSpace.y == _vertEdgeMaxIndex;
-			case VertexNeighbourEnum.TopHalfLeft:
-				return AffectsVertex(VertexNeighbourEnum.TopHalf, _vTileSpace, _gGridSpace, _isOnLeftEdge, _includeTopHalf) && _isOnLeftEdge;
-			case VertexNeighbourEnum.TopHalfRight:
-				return AffectsVertex(VertexNeighbourEnum.TopHalf, _vTileSpace, _gGridSpace, _isOnLeftEdge, _includeTopHalf) && _vTileSpace.x == _vertEdgeMaxIndex;
-			case VertexNeighbourEnum.TileRight:
-				return _gGridSpace.x + 1 < Grid.GridSize.x && _vTileSpace.x == _vertEdgeMaxIndex;
-			case VertexNeighbourEnum.TileRightTopHalf:
-			case VertexNeighbourEnum.TileRightTopHalfLeft:
-				return AffectsVertex(VertexNeighbourEnum.TopHalf, _vTileSpace, _gGridSpace, _isOnLeftEdge, _includeTopHalf) && AffectsVertex(VertexNeighbourEnum.TileRight, _vTileSpace, _gGridSpace, _isOnLeftEdge, _includeTopHalf);
-			case VertexNeighbourEnum.TileTopRight:
-				return AffectsVertex(VertexNeighbourEnum.TileRight, _vTileSpace, _gGridSpace, _isOnLeftEdge, _includeTopHalf) && AffectsVertex(VertexNeighbourEnum.TileAbove, _vTileSpace, _gGridSpace, _isOnLeftEdge, _includeTopHalf);
-			default:
-				Debug.LogError(_neighbour.ToString() + " hasn't been properly implemented yet!");
-				return false;
-		}
-	}
-	static Vector2i GetGridSpacePosForNeighbour(VertexNeighbourEnum _neighbour, Vector2i _gGridPos){
-		switch (_neighbour){
-			case VertexNeighbourEnum.TopHalf:
-			case VertexNeighbourEnum.TopHalfLeft:
-			case VertexNeighbourEnum.TopHalfRight:{
-				break;
-			}
-			case VertexNeighbourEnum.TileRight:
-			case VertexNeighbourEnum.TileRightTopHalf:
-			case VertexNeighbourEnum.TileRightTopHalfLeft:{
-				_gGridPos.x += 1;
-				break;
-			}
-			case VertexNeighbourEnum.TileAbove:{
-				_gGridPos.y += 1;
-				break;
-			}
-			case VertexNeighbourEnum.TileTopRight:{
-				_gGridPos.x += 1;
-				_gGridPos.y += 1;
-				break;
-			}
-			default:{
-				Debug.LogError(_neighbour.ToString() + " hans't been properly implemented yet!");
-				break;
-			}
-		}
-		return _gGridPos;
-	}
-	static Vector2i GetVertexTilePosForNeighbour(VertexNeighbourEnum _neighbour, Vector2i _vTilePos){
-		switch (_neighbour){
-			case VertexNeighbourEnum.TileAbove: {
-				_vTilePos.y = 0;
-				break;
-			}			
-			case VertexNeighbourEnum.TopHalf:{
-				_vTilePos.y += 1;
-				break;
-			}
-			case VertexNeighbourEnum.TopHalfLeft:{
-				_vTilePos.x = 0;
-				_vTilePos.y += 2;
-				break;
-			}
-			case VertexNeighbourEnum.TopHalfRight:{
-				_vTilePos.x = 1;  // 1 because top-half has two, not three, vertices ^^'
-				_vTilePos.y += 2;
-				break;
-			}
-			case VertexNeighbourEnum.TileRight:{
-				_vTilePos.x = 0;
-				break;
-			}
-			case VertexNeighbourEnum.TileRightTopHalf:{
-				_vTilePos.x = 0;
-				_vTilePos.y += 1;
-				break;
-			}
-			case VertexNeighbourEnum.TileRightTopHalfLeft:{
-				_vTilePos.x = 0;
-				_vTilePos.y += 2;
-				break;
-			}
-			case VertexNeighbourEnum.TileTopRight:{
-				_vTilePos.x = 0;
-				_vTilePos.y = 0;
-				break;
-			}	
-			default:{
-				Debug.LogError(_neighbour.ToString() + " hans't been properly implemented yet!");
-				break;
-			}
-		}
-		return _vTilePos;
+		VertexSiblings.Current.SetNewValues(
+			true,
+			_gGridPos.x, _gGridPos.y,
+			_vTilePos.x, _vTilePos.y
+		);
+		VertexSiblings.OwnTopHalf.SetNewValues(
+			_affectsTopHalf,
+			_gGridPos.x, _gGridPos.y,
+			_vTilePos.x, _vTilePos.y + 1
+		);
+		VertexSiblings.OwnTopHalfLeft.SetNewValues(
+			_affectsTopHalf && _isOnLeftEdge,
+			_gGridPos.x, _gGridPos.y,
+			0, _vTilePos.y + 2
+		);
+		VertexSiblings.OwnTopHalfRight.SetNewValues(
+			_affectsTopHalf && _isOnRightEdge,
+			_gGridPos.x, _gGridPos.y,
+			1, _vTilePos.y + 2
+		);
+		VertexSiblings.Right.SetNewValues(
+			_isOnRightEdge && _gGridPos.x + 1 < Grid.GridSize.x,
+			_gGridPos.x + 1, _gGridPos.y,
+			0, _vTilePos.y
+		);
+		VertexSiblings.RightTopHalf.SetNewValues(
+			_isOnRightEdge && _affectsTopHalf,
+			_gGridPos.x + 1, _gGridPos.y,
+			0, _vTilePos.y + 1
+		);
+		VertexSiblings.RightTopHalfLeft.SetNewValues(
+			_isOnRightEdge && _affectsTopHalf,
+			_gGridPos.x + 1, _gGridPos.y,
+			0, _vTilePos.y + 2
+		);
+		VertexSiblings.Top.SetNewValues(
+			_affectsTopHalf && _gGridPos.y + 1 < Grid.GridSize.y,
+			_gGridPos.x, _gGridPos.y + 1,
+			_vTilePos.x, 0
+		);
+		VertexSiblings.TopRight.SetNewValues(
+			VertexSiblings.Top.Affected && VertexSiblings.Right.Affected,
+			_gGridPos.x + 1, _gGridPos.y + 1,
+			0, 0
+		);
 	}
 
 	static float GetAngle01(Vector2 _pos1, Vector2 _pos2, Vector2 _referenceAngle, int maxAngle) { // TODO: replace with GetAngleClockwise!
@@ -844,54 +675,34 @@ public class CustomLight : MonoBehaviour {
         return Mathf.Abs(_floored - (_angle - _floored));
     }
 
-	struct LightIndexLevelPairClass{
-		public float Index;
-		public float Level;
-		public LightIndexLevelPairClass(float i, float l) { Index = i; Level = l; }
-		public void Set(float i, float l) { Index = i; Level = l; }
-	}
-	private static LightIndexLevelPairClass[] lightLevelList = new LightIndexLevelPairClass[] {
-		new LightIndexLevelPairClass(-1, 0),
-		new LightIndexLevelPairClass(-1, 0),
-		new LightIndexLevelPairClass(-1, 0),
-		new LightIndexLevelPairClass(-1, 0)
-	};
 	private Color GetColorForVertex(Vector2i _vTilePos, Vector2i _vLightPos, Vector2i _gLightPos, Vector2i _vGridPos, Vector2i _gGridPos, Vector2 _vWorldPos,  int _vIndex, bool _excludeMe, out bool _illuminated, out float _lightFromThis){
-		Color _cachedColor = Color.clear;
-
 		// take all previously hit light and recompile into one color
+		Color _totalColor = Color.clear;
 		int[] _lightsInRange = LightManager.GridMap_LightsInRange[_gGridPos.x, _gGridPos.y];
 		int actualCount = 0;
 		for (int i = 0; i < _lightsInRange.Length; i++){
-			if(_lightsInRange[i] == -1)
-				break;
+			if (_lightsInRange[i] == -1) break;
 
 			CustomLight _otherLight = LightManager.AllLights[_lightsInRange[i]];
-			if(_otherLight == this)
-				continue;
-		
+			if (_otherLight == this) continue;
+
 			Vector2i _vLightPosOtherLight = ConvertToVertexLightSpace(_vGridPos, _otherLight);
-			if(!_otherLight.VXLightMap_Hit[_vLightPosOtherLight.x, _vLightPosOtherLight.y])
-				continue;
+			bool _hit = _otherLight.VXLightMap_Hit[_vLightPosOtherLight.x, _vLightPosOtherLight.y];
+			if (!_hit) continue;
 
 			actualCount++;
-			CombineLightWithOthersLight(_otherLight.VXLightMap_Intensity[_vLightPosOtherLight.x, _vLightPosOtherLight.y], _otherLight.GetLightColor(), ref _cachedColor);
+			CombineLightWithOthersLight(_otherLight.VXLightMap_Intensity[_vLightPosOtherLight.x, _vLightPosOtherLight.y], _otherLight.GetLightColor(), ref _totalColor);
 		}
 
 		float _distance = (_vWorldPos - myInspector.MyTileObject.MyTile.WorldPosition).magnitude;
 		_lightFromThis = Intensity * Mathf.Pow(1 - (_distance / Radius), 2);
 		_illuminated = !_excludeMe && IsInsideLightMesh(_vWorldPos);
 
-		// apply new light to total color
-		AssignValueToVertMap<bool>(VXLightMap_Hit, _vGridPos, _illuminated);
-		AssignValueToVertMap<float>(VXLightMap_Intensity, _vGridPos, _lightFromThis);
 		if(_illuminated){
-			CombineLightWithOthersLight(_lightFromThis, GetLightColor(), ref _cachedColor);
+			CombineLightWithOthersLight(_lightFromThis, GetLightColor(), ref _totalColor);
 		}
 
-		_cachedColor.a = 1;
-		LightManager.VertMap_TotalColorNoBlur[_vGridPos.x, _vGridPos.y] = _cachedColor;
-		return _cachedColor;
+		return _totalColor;
     }
 	private void CombineLightWithOthersLight(float _newIntensity, Color _newColor, ref Color _total) {
 		_newColor *= _newIntensity;
@@ -902,43 +713,47 @@ public class CustomLight : MonoBehaviour {
 		if (_total.b < _newColor.b)
 			_total.b += _newColor.b;
 	}
+
+	private int[] _indices 			= new int[LightManager.MAX_LIGHTS_CASTING_SHADOWS];
+	private float[] _intensities 	= new float[LightManager.MAX_LIGHTS_CASTING_SHADOWS];
 	private Vector4 GetShadowCastingLightsIndices(Vector2i _vGridPos, bool _excludeMe, bool _illuminated, float _lightFromThis){
-		lightLevelList[0].Index = LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y].x;
-		lightLevelList[1].Index = LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y].y;
-		lightLevelList[2].Index = LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y].z;
-		lightLevelList[3].Index = LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y].w;
+		Vector4 _currentIndices = LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y];
 
-		lightLevelList[0].Level = LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y].x;
-		lightLevelList[1].Level = LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y].y;
-		lightLevelList[2].Level = LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y].z;
-		lightLevelList[3].Level = LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y].w;
-
-		lightLevelList.OrderBy(x => -x.Level); // reverse sort
 		if (!_excludeMe){
-			for (int i = 0; i < 4; i++){
-				float _lightFromOther = lightLevelList[i].Level;
-				if (_illuminated && _lightFromThis >= _lightFromOther){
-					lightLevelList.Insert(i, new LightIndexLevelPairClass(LightManager.AllLights.FindIndex(x => x == this), _lightFromThis));
-					break;
-				}
-				else if (!_illuminated && _lightFromOther == 0){ // we still wanna save the index to prevent some shadow-issues around corners
-					lightLevelList.Insert(i, new LightIndexLevelPairClass(LightManager.AllLights.FindIndex(x => x == this), 0));
+			_indices[0] = (int)_currentIndices.x;
+			_indices[1] = (int)_currentIndices.y;
+			_indices[2] = (int)_currentIndices.z;
+			_indices[3] = (int)_currentIndices.w;
+
+			Vector4 _currentIntensities = LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y];
+			_intensities[0] = _currentIntensities.x;
+			_intensities[1] = _currentIntensities.y;
+			_intensities[2] = _currentIntensities.z;
+			_intensities[3] = _currentIntensities.w;
+
+			if(!_illuminated) _lightFromThis = 0;
+			for (int i = LightManager.MAX_LIGHTS_CASTING_SHADOWS - 1; i >= 0; i--){
+				if (_lightFromThis >= _intensities[i] && (i == 0 || _lightFromThis <= _intensities[i - 1])) {
+					_indices.Insert(i, LightIndex);
+					_intensities.Insert(i, _lightFromThis);
 					break;
 				}
 			}
+
+			_currentIndices.x = _indices[0];
+			_currentIndices.y = _indices[1];
+			_currentIndices.z = _indices[2];
+			_currentIndices.w = _indices[3];
+			LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y] = _currentIndices;
+
+			_currentIntensities.x = _intensities[0];
+			_currentIntensities.y = _intensities[1];
+			_currentIntensities.z = _intensities[2];
+			_currentIntensities.w = _intensities[3];
+			LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y] = _currentIntensities;
 		}
 
-		LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y].x = lightLevelList[0].Index;
-		LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y].y = lightLevelList[1].Index;
-		LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y].z = lightLevelList[2].Index;
-		LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y].w = lightLevelList[3].Index;
-
-		LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y].x = lightLevelList[0].Level;
-		LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y].y = lightLevelList[1].Level;
-		LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y].z = lightLevelList[2].Level;
-		LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y].w = lightLevelList[3].Level;
-
-		return LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y];
+		return _currentIndices;
 	}
 
     void RenderLightMesh() {
@@ -948,7 +763,7 @@ public class CustomLight : MonoBehaviour {
         initVerticesMeshLight[0] = Vector3.zero;
 
         for (int i = 0; i < allVertices.Count; i++)
-            initVerticesMeshLight[i + 1] = allVertices[i].Pos;
+            initVerticesMeshLight[i + 1] = allVertices[i].LocalPos;
 
         MyMesh.Clear();
         MyMesh.vertices = initVerticesMeshLight;
@@ -1015,15 +830,10 @@ public class CustomLight : MonoBehaviour {
 		return _inside;
 	}
 
-    float GetVectorAngle(float x, float y) {
-		// Height performance for calculate angle on a vector (only for sort)
-        // APROXIMATE VALUES -- NOT EXACT!! //
-        float ax = Mathf.Abs(x);
-        float ay = Mathf.Abs(y);
-        float angle = y / (ax + ay);
-        if (x < 0)
-            angle = 2 - angle;
-
+	// approximate but high performance way of calculating angle. Range: -1 to 2.99
+    private float GetQuadrantSortingAngle(float x, float y) { 
+        float angle = y / (Mathf.Abs(x) + Mathf.Abs(y));
+        if (x < 0) angle = 2 - angle;
         return angle;
     }
 

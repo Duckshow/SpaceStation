@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 public class UVControllerBasic : MeshSorter{
 
+	public const float MESH_VERTEX_SEPARATION = 0.5f;
 	public const int MESH_VERTEXCOUNT = 14;
 	public const int MESH_VERTICES_PER_EDGE = 3;
 	public static readonly Vector2i MESH_VERTICES_PER_EDGE_AS_VECTOR = new Vector2i(MESH_VERTICES_PER_EDGE, MESH_VERTICES_PER_EDGE);

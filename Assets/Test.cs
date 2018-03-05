@@ -70,11 +70,23 @@ public class Test : MonoBehaviour
     float tan;
     int deg;
     byte reportAngle;
-    // void Update(){
-    //     tan = GetAngleClockwise(light.transform.position, transform.position, 1);
-    //     Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
-    //     Debug.Log(tan);
-    // }
+	public Transform Light;
+	void Update(){
+		// tan = GetAngleClockwise(light.transform.position, transform.position, 1);
+		// Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
+		// Debug.Log(tan);
+
+		Vector2 localPos = transform.position - Light.transform.position;
+		Debug.Log(GetVectorAngle(localPos.x, localPos.y));
+	}
+	private float GetVectorAngle(float x, float y)
+	{
+		// High performance for calculate angle on a vector (only for sort)
+		// APPROXIMATE VALUES -- NOT EXACT!! //
+		float angle = y / (Mathf.Abs(x) + Mathf.Abs(y));
+		//if (x < 0) angle = 2 - angle;
+		return angle;
+	}
 
 	[EasyButtons.Button]
 	public void TestBitshift(){
