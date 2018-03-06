@@ -5,16 +5,16 @@ using UnityEngine;
 public class LightManager : MonoBehaviour {
 
 	public class SinCosTable{
-		public static float[] sSinArray;
-		public static float[] sCosArray;
+		public static float[] SinArray;
+		public static float[] CosArray;
 
 		public static void Init(){
-			sSinArray = new float[360];
-			sCosArray = new float[360];
+			SinArray = new float[360];
+			CosArray = new float[360];
 			
 			for(int i = 0; i < 360; i++){
-				sSinArray[i] = Mathf.Sin(i * Mathf.Deg2Rad);
-				sCosArray[i] = Mathf.Cos(i * Mathf.Deg2Rad);
+				SinArray[i] = Mathf.Sin(i * Mathf.Deg2Rad);
+				CosArray[i] = Mathf.Cos(i * Mathf.Deg2Rad);
 			}
 		}
 	}

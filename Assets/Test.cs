@@ -76,8 +76,8 @@ public class Test : MonoBehaviour
 		// Debug.DrawLine((Vector2)light.transform.position, (Vector2)transform.position, Color.red, Mathf.Infinity);
 		// Debug.Log(tan);
 
-		Vector2 localPos = transform.position - Light.transform.position;
-		Debug.Log(GetVectorAngle(localPos.x, localPos.y));
+		// Vector2 localPos = transform.position - Light.transform.position;
+		// Debug.Log(GetVectorAngle(localPos.x, localPos.y));
 	}
 	private float GetVectorAngle(float x, float y)
 	{
