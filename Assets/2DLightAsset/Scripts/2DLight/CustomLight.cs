@@ -291,6 +291,8 @@ public partial class CustomLight : MonoBehaviour {
 			Vector2 _doubleDot_2 = _dominantLightIndices.z >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.z]) : Vector2.zero;
 			Vector2 _doubleDot_3 = _dominantLightIndices.w >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.w]) : Vector2.zero;
 
+			//SuperDebug.Log(_vWorldPos, Color.red, _illuminated.ToString(), LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y].ToString(), LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y].ToString());
+
 			VertexSiblings.SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
 			VertexSiblings.SetValueInVertexGridMap<Color>(LightManager.VertMap_TotalColorNoBlur, _vertexColor);
 		}
@@ -406,34 +408,16 @@ public partial class CustomLight : MonoBehaviour {
 		);
 	}
 
-	static float GetAngle01(Vector2 _pos1, Vector2 _pos2, Vector2 _referenceAngle, int maxAngle) { // TODO: replace with GetAngleClockwise!
-        return maxAngle * (0.5f * (1 + Vector2.Dot(
-                                            _referenceAngle, 
-                                            Vector3.Normalize(_pos1 - _pos2))));
-    }
-	// find the horizontal and vertical dot-products between two vectors
 	static Vector2 GetDotXY(Vector2 _vWorldPos, CustomLight _light){
         // get an angle between 0->1. The angle goes all the way around, but counter-clockwise, so sorta like a clock and unlike a dot
 		float _vertical 	= (Vector2.Dot(Vector2.down, (_vWorldPos - _light.myWorldPos).normalized) + 1) * 0.5f;
-		float _horizontal 	=  Vector2.Dot(Vector2.left, (_vWorldPos - _light.myWorldPos).normalized);
-
-		_vertical *= 0.5f;
-		if (_horizontal < 0)
-			_vertical = Mathf.Abs(_vertical - 1);
-
-		_horizontal = _vertical + 0.25f;
-		_horizontal -= Mathf.Floor(_horizontal);
+		float _horizontal 	=  (Vector2.Dot(Vector2.left, (_vWorldPos - _light.myWorldPos).normalized) + 1) * 0.5f;
 
 		return new Vector2(
-			Mathf.Max(0.001f, GetDotifiedAngle(_horizontal)), 
-			Mathf.Max(0.001f, GetDotifiedAngle(_vertical))
+			Mathf.Max(0.001f, _horizontal), 
+			Mathf.Max(0.001f, _vertical)
 		);
 	}
-    static float GetDotifiedAngle(float _angle){ // Take an angle (between 0, 1) and convert to something like 0->1->0
-        _angle *= 2;
-        float _floored = Mathf.Floor(_angle);
-        return Mathf.Abs(_floored - (_angle - _floored));
-    }
 
 	private Color GetColorForVertex(Vector2i _vTilePos, Vector2i _vLightPos, Vector2i _gLightPos, Vector2i _vGridPos, Vector2i _gGridPos, Vector2 _vWorldPos,  int _vIndex, bool _excludeMe, out bool _illuminated, out float _lightFromThis){
 		// take all previously hit light and recompile into one color
@@ -491,7 +475,7 @@ public partial class CustomLight : MonoBehaviour {
 			_intensities[2] = _currentIntensities.z;
 			_intensities[3] = _currentIntensities.w;
 
-			if(!_illuminated) _lightFromThis = 0;
+			//if(!_illuminated) _lightFromThis = 0;
 			for (int i = LightManager.MAX_LIGHTS_CASTING_SHADOWS - 1; i >= 0; i--){
 				if (_lightFromThis >= _intensities[i] && (i == 0 || _lightFromThis <= _intensities[i - 1])) {
 					_indices.Insert(i, LightIndex);
