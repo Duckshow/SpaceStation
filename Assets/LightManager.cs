@@ -286,8 +286,8 @@ public class LightManager : MonoBehaviour {
 		float _timeStarted = Time.realtimeSinceStartup;
 
         for (int i = 0; i < AllLights.Count; i++) {
-            if (AllLights[i].MyMesh != null)
-                AllLights[i].MyMesh.Clear();
+            if (AllLights[i].LightMesh != null)
+                AllLights[i].LightMesh.Clear();
 
 			 if (!AllLights[i].isTurnedOn)
                 continue;

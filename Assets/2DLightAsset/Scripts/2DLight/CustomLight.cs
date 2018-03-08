@@ -69,10 +69,10 @@ public partial class CustomLight : MonoBehaviour {
         renderer = MeshTransform.GetComponent<MeshRenderer>();
         renderer.sharedMaterial = lightMaterial;
         
-		MyMesh = new Mesh();
-        meshFilter.mesh = MyMesh;
-        MyMesh.name = MESH_NAME;
-        MyMesh.MarkDynamic();
+		LightMesh = new Mesh();
+        meshFilter.mesh = LightMesh;
+        LightMesh.name = MESH_NAME;
+        LightMesh.MarkDynamic();
 	}
 	void OnDestroy(){
 		LightManager.AllLights.Remove(this);
@@ -126,7 +126,6 @@ public partial class CustomLight : MonoBehaviour {
 		SetVertices();
 		DiscardPooledColliders();
 		RenderLightMesh();
-        ResetBounds();
 		UpdatePointCollisionArray();
 		CalculateLightingForTilesInRange(_excludeMe: false);
 	}
@@ -521,8 +520,8 @@ public partial class CustomLight : MonoBehaviour {
 	public Vector2[] PointCollisionArray;
 	void UpdatePointCollisionArray(){
 		// cache vertices relative to world - but skip zero as it messes with the IsInsideLightMesh-algorithm
-		PointCollisionArray = new Vector2[MyMesh.vertexCount - 1];
-		Vector3[] _vertices = MyMesh.vertices;
+		PointCollisionArray = new Vector2[LightMesh.vertexCount - 1];
+		Vector3[] _vertices = LightMesh.vertices;
 		for (int i = 0; i < PointCollisionArray.Length; i++){
 			Vector3 _vertex = _vertices[i + 1]; 
 			Vector3 _dir = (_vertex - transform.position).normalized;

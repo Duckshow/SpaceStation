@@ -24,7 +24,7 @@ public partial class CustomLight : MonoBehaviour {
     [HideInInspector]
     public List<Verts> allVertices = new List<Verts>(); // Array for all of the vertices in our meshes
 
-	[NonSerialized] public Mesh MyMesh; // Mesh for our light mesh
+	[NonSerialized] public Mesh LightMesh; // Mesh for our light mesh
     private new MeshRenderer renderer;
 
 
@@ -194,49 +194,31 @@ public partial class CustomLight : MonoBehaviour {
         }
     }
 
-    void RenderLightMesh() { adpmw // continue here. Let's finish this.
-        //-- Step 5: fill the mesh with vertices--//
+    void RenderLightMesh() {
+        int _newVerticesLength = allVertices.Count + 1;
+        Vector3[] _newVertices    = new Vector3[_newVerticesLength];
+        Vector2[] _newUVs         = new Vector2[_newVerticesLength];
+        int[]     _newTris        = new int[allVertices.Count * 3];
+        
+        _newVertices[0] = Vector3.zero;
+        _newUVs     [0] = Vector2.zero;
+        for (int _vertIndex = 0, _triIndex = 0; _vertIndex < allVertices.Count; _vertIndex++, _triIndex += 3){
+            Vector2 _localPos = allVertices[_vertIndex].LocalPos; 
+            _newVertices[_vertIndex + 1] = _localPos;
+            _newUVs     [_vertIndex + 1] = _localPos;
 
-        Vector3[] initVerticesMeshLight = new Vector3[allVertices.Count + 1];
-        initVerticesMeshLight[0] = Vector3.zero;
-
-        for (int i = 0; i < allVertices.Count; i++)
-            initVerticesMeshLight[i + 1] = allVertices[i].LocalPos;
-
-        MyMesh.Clear();
-        MyMesh.vertices = initVerticesMeshLight;
-
-        Vector2[] uvs = new Vector2[initVerticesMeshLight.Length];
-        for (int i = 0; i < initVerticesMeshLight.Length; i++)
-            uvs[i] = new Vector2(initVerticesMeshLight[i].x, initVerticesMeshLight[i].y);
-
-        MyMesh.uv = uvs;
-
-        // triangles
-        int index = 0;
-        int[] triangles = new int[(allVertices.Count * 3)];
-        for (int i = 0; i < (allVertices.Count * 3); i += 3) {
-            triangles[i] = 0;
-            triangles[i + 1] = index + 1;
-
-            if (i == (allVertices.Count * 3) - 3) //-- if is the last vertex (one loop)
-                triangles[i + 2] = 1;
-            else // next next vertex	
-                triangles[i + 2] = index + 2;
-
-            index++;
+            bool _lastTri = _vertIndex == allVertices.Count - 1;
+            _newTris[_triIndex]      = 0;
+            _newTris[_triIndex + 1]  = _vertIndex + 1;
+            _newTris[_triIndex + 2]  = _lastTri ? 1 : _vertIndex + 2;
         }
 
-        MyMesh.triangles = triangles;
+        LightMesh.Clear();
+        LightMesh.vertices  = _newVertices;
+        LightMesh.uv        = _newUVs;
+        LightMesh.triangles = _newTris;
         renderer.sharedMaterial = lightMaterial;
-        renderer.material.SetFloat("_UVScale", 1 / Radius);
 	}
-
-    void ResetBounds() {
-        Bounds _bounds = MyMesh.bounds;
-        _bounds.center = Vector3.zero;
-        MyMesh.bounds = _bounds;
-    }
 
 	private bool IsInsideLightMesh(Vector2 _worldPos){
 		bool _inside = false;
@@ -244,7 +226,7 @@ public partial class CustomLight : MonoBehaviour {
 			Vector2 _vert1 = PointCollisionArray[i];
 			Vector2 _vert2 = PointCollisionArray[i2];
 
-			bool _isBetweenVertices = _vert1.y <= _worldPos.y && _worldPos.y < _vert2.y || _vert2.y <= _worldPos.y && _worldPos.y < _vert1.y;
+			bool _isBetweenVertices = Mathf.Min(_vert1.y, _vert2.y) <= _worldPos.y && _worldPos.y < Mathf.Max(_vert1.y, _vert2.y);
 			float _progressY = (_worldPos.y - _vert1.y) / (_vert2.y - _vert1.y);
 			float _progressX = (_vert2.x - _vert1.x) * _progressY;
 			bool _isLeftOfEdge = _worldPos.x < _vert1.x + _progressX;
