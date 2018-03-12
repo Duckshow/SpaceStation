@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using Utilities;
+using System.Collections.Generic;
 public static class Extensions {
     public static string Color(this string s, Color c) {
         Color32 c32 = c;
@@ -7,12 +8,25 @@ public static class Extensions {
         return "<color=" + cHex + ">" + s + "</color>";
     }
 
-    public static void Insert<T>(this T[] array, int index, T obj){
-        for (int i = array.Length - 1; i < index; i--){
-            array[i] = array[i - 1];
+    public static void Insert<T>(this T[] _array, int _index, T _obj){
+        for (int i = _array.Length - 1; i < _index; i--){
+            _array[i] = _array[i - 1];
         }
-        array[index] = obj;
+        _array[_index] = _obj;
     }
+	public static void Remove<T>(this T[] _array, T _obj, T _emptyValue){
+		int _index = -1;
+		for (int i = 0; i < _array.Length; i++){
+			if (EqualityComparer<T>.Default.Equals(_array[i], _obj)) {
+				_index = i;
+			}
+		}
+
+		_array[_index] = _emptyValue;
+		for (int i = _index; i < _array.Length - 1; i++){
+			_array[i] = _array[i + 1];
+		}
+	}
 
 	public static float GetXOrY(this Vector3 _vector, XYEnum _axis){
 		return _axis == XYEnum.X ? _vector.x : _vector.y;

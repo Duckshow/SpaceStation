@@ -22,6 +22,16 @@ public class SuperDebug : MonoBehaviour {
     public static void Log(Vector3 _pos, Color _color, params string[] _text) {
         sThingsToDebug.Add(new DebugObject(_pos, _color, _text));
     }
+	public static void MarkPoint(Vector3 _pos, Color _color, float _markRadius = 0.1f){
+		Vector3 _above 	= _pos + new Vector3(0, _markRadius);
+		Vector3 _right 	= _pos + new Vector3(_markRadius, 0);
+		Vector3 _below 	= _pos + new Vector3(0, -_markRadius);
+		Vector3 _left 	= _pos + new Vector3(-_markRadius, 0);
+		Debug.DrawLine(_above, _right, _color, Mathf.Infinity);
+		Debug.DrawLine(_right, _below, _color, Mathf.Infinity);
+		Debug.DrawLine(_below, _left, _color, Mathf.Infinity);
+		Debug.DrawLine(_left, _above, _color, Mathf.Infinity);
+	}
     public static void LogArray(Vector3 _pos, bool[,] _array) {
         for (int x = 0; x < _array.GetLength(0); x++){
             for (int y = 0; y < _array.GetLength(1); y++){
