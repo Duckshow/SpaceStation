@@ -305,10 +305,6 @@ public partial class CustomLight : MonoBehaviour {
 		Vector2 _doubleDot_3 = _dominantLightIndices.w >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.w]) : Vector2.zero;
 
 		VertexSiblings.SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
-		if (_vWorldPos.x == 16 && _vWorldPos.y == 14){
-			SuperDebug.MarkPoint(_vWorldPos, Color.red);
-			Debug.Log(_dominantLightIndices.ToString().Color(Color.cyan));
-		}
 
 		int _failAmount = 0;
 		int _diffToRightX = _vTilePos.x == 0 ? 1 : 2; // TODO: this can't be right. It should be == 1, right?

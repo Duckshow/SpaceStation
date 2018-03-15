@@ -124,16 +124,21 @@ Shader "Custom/Grid" {
 			}
 
 			//-- FRAG --//
-			fixed4 CalculateLighting(fixed4 _normals, fixed _dotX, fixed _dotY){
-				fixed _xFacingAmount = abs(_normals.r - _dotX);
-				fixed _yFacingAmount = abs(_normals.g - _dotY);
+			fixed CalculateLighting(fixed4 _normals, fixed _dotX, fixed _dotY){
+				fixed _hasLight		= saturate(ceil(abs(_dotX + _dotY)));		// 0 for both dots == not lit
+				
+				fixed _mostlyY 		= round(abs(_normals.g * 2 - 1));			// 0 == x, 1 == y
+				fixed _normal 		= lerp(_normals.r, _normals.g, _mostlyY);	// 0 == B/L, 1 == T/R
+				fixed _dot 			= lerp(_dotX, _dotY, _mostlyY);				// 0 == heading B/L, 1 == heading T/R
+				fixed _hitAmount 	= 1 - round(abs(_dot - _normal));			// 0 == not hit, 1 == hit
 
-				fixed _isUnlit 			= floor(_normals.a);					// <1 == unlit, 1 == lit
-				fixed _isFlatSurface 	= ceil(_normals.r + _normals.g);		// 0 == fully lit, >0 use regular lighting
-				fixed _lightIntensity 	= max(_xFacingAmount, _yFacingAmount);	// 0 if facing light head-on, 1 if opposite
-				fixed _pickedAlternative = min(_isUnlit, min(_isFlatSurface, _lightIntensity));
-
-				return (1 - _pickedAlternative) * saturate(ceil(abs(_dotX + _dotY)));	// unless dotX and dotY forced to zero (otherwise impossible), this equals 1
+				return min(_hitAmount, _hasLight);
+			}
+			fixed IsLit(fixed4 _normals){
+				return floor(_normals.a); // 0 == unlit, 1 == lit
+			}
+			fixed IsFlatSurface(fixed4 _normals){
+				return 1 - ceil(_normals.r + _normals.g);	// 0 == unlit, 1 == lit
 			}
 			fixed4 AddOrOverwriteColors(fixed4 _oldColor, fixed3 _newColor, fixed _newAlpha){
 				return fixed4(
@@ -143,10 +148,12 @@ Shader "Custom/Grid" {
 			}
 			void TryApplyTextures(fixed2 _uv, inout fixed4 _tex, inout fixed4 _nrm, inout fixed4 _emi, inout fixed4 _pal){
 				fixed4 _sampleMainTex = tex2D(_MainTex, _uv);
+				fixed4 _samplePallette = tex2D(_PalletteMap, _uv);
+				fixed4 _sampleNormal = tex2D(_NrmMap, _uv);
 				fixed4 _sampleEmissive = tex2D(_EmissiveMap, _uv);
 				_tex = AddOrOverwriteColors(_tex, _sampleMainTex, 				_sampleMainTex.a);
-				_nrm = AddOrOverwriteColors(_nrm, tex2D(_NrmMap, 		_uv), 	_sampleMainTex.a);
-				_pal = AddOrOverwriteColors(_pal, tex2D(_PalletteMap, 	_uv), 	_sampleMainTex.a);
+				_pal = AddOrOverwriteColors(_pal, _samplePallette, 				_sampleMainTex.a);
+				_nrm = AddOrOverwriteColors(_nrm, _sampleNormal, 				_sampleNormal.a);
 				_emi = AddOrOverwriteColors(_emi, _sampleEmissive, 				_sampleEmissive.a);
 			}
 			fixed4 frag(v2f i) : COLOR {
@@ -168,8 +175,8 @@ Shader "Custom/Grid" {
 				colorIndices[9] = floor(i.ColorIndices8to9.y);
 
 				fixed _indexToUse = 10 - ceil(palTex.r * 10);
-				fixed4 colorToUse = allColors[colorIndices[_indexToUse]];
-				fixed4 mod = saturate(
+				fixed4 _colorToUse = allColors[colorIndices[_indexToUse]];
+				fixed4 _hitMod = saturate(
 					CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r) + 
 					CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g) + 
 					CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b) + 
@@ -177,12 +184,15 @@ Shader "Custom/Grid" {
 				);
 
 				// final apply
-				fixed3 litRGB = i.VColor * tex.rgb * colorToUse.rgb * mod;
-				//litRGB = fixed4(i.DotXs.r, 0, i.DotYs.r, 1);
+				//fixed3 litRGB = tex.rgb * colorToUse.rgb * mod;
+				//return nrmTex;
+				fixed3 _litRGB = tex.rgb * _colorToUse.rgb * min(IsFlatSurface(nrmTex), min(_hitMod, i.VColor * IsLit(nrmTex)));
+				//_litRGB = _hitMod;
 				//litRGB = tex.rgb;
 				//litRGB = i.VColor;
+				//_litRGB = IsUnlit(nrmTex);
 				return fixed4(
-					lerp(litRGB, emTex, emTex.a),
+					lerp(_litRGB, emTex, emTex.a),
 					tex.a
 				);
 			}
