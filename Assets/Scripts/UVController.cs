@@ -5,6 +5,8 @@ public class UVController : UVControllerBasic {
 
 	public Color[] VColors = new Color[9];
 
+	public Vector4 DominantLights;
+
 	private UVControllerBasic MyTopUVC;
 
 	private byte colorIndex_0;

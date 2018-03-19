@@ -125,21 +125,25 @@ Shader "Custom/Grid" {
 
 			//-- FRAG --//
 			fixed CalculateLighting(fixed4 _normals, fixed _dotX, fixed _dotY){
-				fixed _hasLight		= saturate(ceil(abs(_dotX + _dotY)));		// 0 for both dots == not lit
-				
 				fixed _mostlyY 		= round(abs(_normals.g * 2 - 1));			// 0 == x, 1 == y
 				fixed _normal 		= lerp(_normals.r, _normals.g, _mostlyY);	// 0 == B/L, 1 == T/R
 				fixed _dot 			= lerp(_dotX, _dotY, _mostlyY);				// 0 == heading B/L, 1 == heading T/R
-				fixed _hitAmount 	= 1 - round(abs(_dot - _normal));			// 0 == not hit, 1 == hit
+				fixed _hitStrength 	= 1 - round(abs(_dot - _normal));			// 0 == not hit, 1 == hit
+				
+				fixed _lightExists 		= saturate(ceil(abs(_dotX + _dotY))); 			// 0 for both dots == not lit
+				fixed _surfaceIsFlat 	= 1 - saturate(ceil(_normals.r + _normals.g));	// 0 == bumpy & lit, 1 == flat & unlit
 
-				return min(_hitAmount, _hasLight);
+				return max(_hitStrength, _surfaceIsFlat) * _lightExists;
 			}
-			fixed IsLit(fixed4 _normals){
-				return floor(_normals.a); // 0 == unlit, 1 == lit
+			// fixed LightExists(fixed _dotX, fixed _dotY){
+			// 	return saturate(ceil(abs(_dotX + _dotY))); // 0 for both dots == not lit
+			// }
+			fixed IsUnlit(fixed4 _normals){
+				return 1 - floor(_normals.a); // 0 == lit, 1 == unlit
 			}
-			fixed IsFlatSurface(fixed4 _normals){
-				return 1 - ceil(_normals.r + _normals.g);	// 0 == unlit, 1 == lit
-			}
+			// fixed IsFlatSurface(fixed4 _normals){
+			// 	return 1 - saturate(ceil(_normals.r + _normals.g));	// 0 == bumpy & lit, 1 == flat & unlit
+			// }
 			fixed4 AddOrOverwriteColors(fixed4 _oldColor, fixed3 _newColor, fixed _newAlpha){
 				return fixed4(
 					_oldColor.rgb * (1 - _newAlpha) + _newColor.rgb * _newAlpha, 
@@ -177,20 +181,28 @@ Shader "Custom/Grid" {
 				fixed _indexToUse = 10 - ceil(palTex.r * 10);
 				fixed4 _colorToUse = allColors[colorIndices[_indexToUse]];
 				fixed4 _hitMod = saturate(
-					CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r) + 
-					CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g) + 
-					CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b) + 
-					CalculateLighting(nrmTex, i.DotXs.a, i.DotYs.a)
+					CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r) 
+					//+ 
+					//CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g) 
+					// + 
+					// CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b) + 
+					// CalculateLighting(nrmTex, i.DotXs.a, i.DotYs.a)
 				);
 
+				_hitMod.r = CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r);
+				_hitMod.g = CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g);
+				_hitMod.b = CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b);
+
+
 				// final apply
-				//fixed3 litRGB = tex.rgb * colorToUse.rgb * mod;
-				//return nrmTex;
-				fixed3 _litRGB = tex.rgb * _colorToUse.rgb * min(IsFlatSurface(nrmTex), min(_hitMod, i.VColor * IsLit(nrmTex)));
-				//_litRGB = _hitMod;
-				//litRGB = tex.rgb;
-				//litRGB = i.VColor;
-				//_litRGB = IsUnlit(nrmTex);
+				// fixed3 _light = max(_hitMod, IsFlatSurface(nrmTex));
+				// _light *= i.VColor;
+				fixed3 _light = min(_hitMod, i.VColor);
+				_light = max(_light, IsUnlit(nrmTex));
+
+				fixed3 _litRGB = tex.rgb * _colorToUse.rgb * _light;
+				_litRGB = _hitMod;
+				//_litRGB = i.VColor;
 				return fixed4(
 					lerp(_litRGB, emTex, emTex.a),
 					tex.a

@@ -19,7 +19,7 @@ public class SuperDebug : MonoBehaviour {
 
     private static List<DebugObject> sThingsToDebug = new List<DebugObject>();
 
-    public static void Log(Vector3 _pos, Color _color, params string[] _text) {
+    public static void Mark(Vector3 _pos, Color _color, params string[] _text) {
         sThingsToDebug.Add(new DebugObject(_pos, _color, _text));
     }
 	public static void MarkPoint(Vector3 _pos, Color _color, float _markRadius = 0.1f){
@@ -32,20 +32,27 @@ public class SuperDebug : MonoBehaviour {
 		Debug.DrawLine(_below, _left, _color, Mathf.Infinity);
 		Debug.DrawLine(_left, _above, _color, Mathf.Infinity);
 	}
-    public static void LogArray(Vector3 _pos, bool[,] _array) {
-        for (int x = 0; x < _array.GetLength(0); x++){
-            for (int y = 0; y < _array.GetLength(1); y++){
-                Color32 _color = _array[x, y] ? Color.green : Color.red;
-                Debug.DrawLine(_pos + new Vector3(x, y, 0), _pos + new Vector3(x + 1, y + 1, 0), _color, Mathf.Infinity);
-                Debug.DrawLine(_pos + new Vector3(x, y + 1, 0), _pos + new Vector3(x + 1, y, 0), _color, Mathf.Infinity);
+	
+	public static void Log(Color color = new Color(), params object[] _stuff) {
+		string _debugText = "";
+		for (int i = 0; i < _stuff.Length; i++){
+			_debugText += _stuff[i].ToString();
+			if(i < _stuff.Length - 1) _debugText += "\n";
+		}
+		if(color == Color.clear) color = Color.white;
+		Debug.Log(_debugText.Color(color));
+	}
+	public static void LogArray<T>(T[] _array, string _arrayName = "", Color color = new Color()) {
+		string _debugText = _arrayName + ":\n";
+		for (int i = 0; i < _array.Length; i++){
+			_debugText += _array[i].ToString();
+			if(i < _array.Length - 1) _debugText += "\n";
+		}
+		if(color == Color.clear) color = Color.white;
+		Debug.Log(_debugText.Color(color));
+	}
 
-                Debug.DrawLine(_pos + new Vector3(x, y + 0.5f, 0), _pos + new Vector3(x + 1, y + 0.5f, 0), _color, Mathf.Infinity);
-                Debug.DrawLine(_pos + new Vector3(x + 0.5f, y, 0), _pos + new Vector3(x + 0.5f, y + 1, 0), _color, Mathf.Infinity); 
-            }
-        }
-    }
-
-    int fontSize = 0;
+	int fontSize = 0;
     void Update() {
         if (Camera.current != null) 
             fontSize = Mathf.Max(1, Mathf.RoundToInt(15 * (1 - (Mathf.Abs(Camera.current.transform.position.z) / 35))));

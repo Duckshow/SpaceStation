@@ -8,13 +8,19 @@ public static class Extensions {
         return "<color=" + cHex + ">" + s + "</color>";
     }
 
+	 public static T GetLast<T>(this T[] _array){
+		return _array[_array.Length - 1];
+	}
+	public static T GetLast<T>(this T[,] _array){
+		return _array[_array.GetLength(0) - 1, _array.GetLength(1) - 1];
+	}
     public static void Insert<T>(this T[] _array, int _index, T _obj){
-        for (int i = _array.Length - 1; i < _index; i--){
+        for (int i = _array.Length - 1; i > _index; i--){
             _array[i] = _array[i - 1];
         }
         _array[_index] = _obj;
     }
-	public static void Remove<T>(this T[] _array, T _obj, T _emptyValue){
+	public static void PseudoRemove<T>(this T[] _array, T _obj, T _emptyValue){ // replace value with _emptyValue (eg -1) and move following items forward a step
 		int _index = -1;
 		for (int i = 0; i < _array.Length; i++){
 			if (EqualityComparer<T>.Default.Equals(_array[i], _obj)) {
@@ -22,9 +28,19 @@ public static class Extensions {
 			}
 		}
 
+		PseudoRemoveAt(_array, _index, _emptyValue);
+	}
+	public static void PseudoRemoveAt<T>(this T[] _array, int _index, T _emptyValue){ // replace value with _emptyValue (eg -1) and move following items forward a step
 		_array[_index] = _emptyValue;
 		for (int i = _index; i < _array.Length - 1; i++){
-			_array[i] = _array[i + 1];
+			T _nextIndexContent = _array[i + 1];
+			if (EqualityComparer<T>.Default.Equals(_nextIndexContent, _emptyValue)) {
+				break;
+			}
+
+			T _thisIndexContent = _array[i];
+			_array[i] = _nextIndexContent;
+			_array[i + 1] = _thisIndexContent;
 		}
 	}
 

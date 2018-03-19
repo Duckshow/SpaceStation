@@ -50,7 +50,7 @@ public partial class CustomLight : MonoBehaviour {
 		allVertices.Clear();
 
 		int x = 0, y = 0;
-		Vector2i _gGridPos = tilesInRangeWithCollider[0, 0];
+		TileReference _tile = tilesInRangeWithCollider[0, 0];
 		mIterateVariables IterateExtraVariables = delegate (){
 			x++;
 			if (x >= tilesInRangeWithCollider.GetLength(0)){
@@ -61,15 +61,15 @@ public partial class CustomLight : MonoBehaviour {
 				}
 			}
 
-			_gGridPos = tilesInRangeWithCollider[x, y];
+			_tile = tilesInRangeWithCollider[x, y];
 		};
 		int _totalIterations = tilesInRangeWithCollider.GetLength(0) * tilesInRangeWithCollider.GetLength(1);
 		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()) {
-			if(_gGridPos.x < 0 || _gGridPos.y < 0) continue;
+			if(!_tile.Usable) continue;
 			tempVerts.Clear();
 
 			// get collider
-			Tile _colliderTile = Grid.Instance.grid[_gGridPos.x, _gGridPos.y];
+			Tile _colliderTile = Grid.Instance.grid[_tile.GridPos.x, _tile.GridPos.y];
             PolygonCollider2D _collider = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(_colliderTile.ExactType);
             _collider.transform.position = _colliderTile.WorldPosition;
 

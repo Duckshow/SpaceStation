@@ -63,6 +63,21 @@ public class LightManager : MonoBehaviour {
 
 		VertMap_TotalColorNoBlur = new Color [vertMapSize.x, vertMapSize.y];
 	}
+	public static void OnLightInit(CustomLight _light) {
+		int _newIndex = -1;
+		while (true){
+			_newIndex++;
+			if (!AllLights.Find(x => x.LightIndex == _newIndex)) {
+				break;
+			}
+		}
+
+		AllLights.Add(_light);
+		_light.SetLightIndex(_newIndex);
+	}
+	public static void OnLightDestroyed(CustomLight _light) {
+		AllLights.Remove(_light);
+	}
 
 	private static Queue<Vector2i> tilesNeedingUpdate = new Queue<Vector2i>();
 	public static void ScheduleUpdateLights(Vector2i _gGridPos){
@@ -124,7 +139,7 @@ public class LightManager : MonoBehaviour {
 	}
 
 	public static void AddToLightsInRangeMap(CustomLight _light, bool _b){
-		Vector2i[,] _tiles = _light.GetTilesInRange(_onlyWithColliders: false);
+		CustomLight.TileReference[,] _tiles = _light.GetTilesInRange(_onlyWithColliders: false);
 
 		int _xMin = _light.MyGridCoord.x - _light.Radius;
 		int _xMax = _xMin + _tiles.GetLength(0);
@@ -145,14 +160,20 @@ public class LightManager : MonoBehaviour {
 				continue;
 
 			for (int i2 = 0; i2 < GridMap_LightsInRange[_xGrid, _yGrid].Length; i2++){
-				int _index = GridMap_LightsInRange[_xGrid, _yGrid][i2];
-				if(_b && _index == -1){
+				int _lightIndex = GridMap_LightsInRange[_xGrid, _yGrid][i2];
+				if (_b && _lightIndex == _light.LightIndex){
+					break; // already exists for this tile
+				}
+				else if(_b && _lightIndex == -1){
 					Vector2 _pos = Grid.Instance.GetWorldPointFromTileCoord(new Vector2i(_xGrid, _yGrid));
 					GridMap_LightsInRange[_xGrid, _yGrid][i2] = _light.LightIndex;
+					if (_light.LightIndex == 1){
+						SuperDebug.MarkPoint(_pos, Color.red, 0.2f);
+					}
 					break;
 				}
-				else if(!_b && _index == _light.LightIndex){
-					GridMap_LightsInRange[_xGrid, _yGrid][i2] = -1;
+				else if(!_b && _lightIndex == _light.LightIndex){
+					GridMap_LightsInRange[_xGrid, _yGrid].PseudoRemoveAt<int>(i2, _emptyValue: -1);
 					break;
 				}
 			}
