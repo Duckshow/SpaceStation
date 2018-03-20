@@ -167,9 +167,6 @@ public class LightManager : MonoBehaviour {
 				else if(_b && _lightIndex == -1){
 					Vector2 _pos = Grid.Instance.GetWorldPointFromTileCoord(new Vector2i(_xGrid, _yGrid));
 					GridMap_LightsInRange[_xGrid, _yGrid][i2] = _light.LightIndex;
-					if (_light.LightIndex == 1){
-						SuperDebug.MarkPoint(_pos, Color.red, 0.2f);
-					}
 					break;
 				}
 				else if(!_b && _lightIndex == _light.LightIndex){

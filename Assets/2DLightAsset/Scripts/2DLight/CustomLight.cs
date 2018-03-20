@@ -265,10 +265,9 @@ public partial class CustomLight : MonoBehaviour {
 		// _vGridPosEnd.y = Mathf.Clamp(_vGridPosEnd.y, 0, Grid.GridSize.y * UVControllerBasic.MESH_VERTICES_PER_EDGE);
 		//Vector2i _vGridPos = _vGridPosStart;
 
-		qpdpad // continue here. I obviously broke something :rolling_eyes:
-		Vector2i _vGridPos 		= ConvertToVertexGridSpace(new Vector2i(0, 0), this);
+		Vector2i _vGridPos 		= ConvertToVertexGridSpace(tilesInRange[0, 0].GridPos, Vector2i.zero);
 		Vector2i _vGridPosFirst = _vGridPos;
-		Vector2i _vGridPosLast 	= ConvertToVertexGridSpace(tilesInRange.GetLast().GridPos, this);
+		Vector2i _vGridPosLast 	= ConvertToVertexGridSpace(tilesInRange.GetLast().GridPos, UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR);
 		// Vector2 _vWorldStart = ConvertToWorldSpace(_vGridPosStart);
 		// Vector2 _vWorldEnd = ConvertToWorldSpace(_vGridPosEnd);
 		// Debug.Log(_vWorldStart + ", " + _vWorldEnd);
@@ -293,10 +292,16 @@ public partial class CustomLight : MonoBehaviour {
 		// 	_tileMethod(_vGridPos);
 		// }
 
-		int _totalIterations = tilesInRange.Length * UVControllerBasic.MESH_VERTICES_PER_EDGE;
+		int _totalIterations = (int)(tilesInRange.Length * Mathf.Pow(UVControllerBasic.MESH_VERTICES_PER_EDGE, 2));
 		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
 			Vector2i _gLightPos = ConvertToLightSpace(_vGridPos, this);
 			Vector2i _vTilePos = ConvertToVertexTileSpace(_vGridPos);
+
+			if(LightIndex == 0)
+				SuperDebug.MarkPoint(ConvertToWorldSpace(_vGridPos), Color.magenta);
+			if (LightIndex == 1)
+				SuperDebug.MarkPoint(ConvertToWorldSpace(_vGridPos), Color.cyan);
+
 			if (_gLightPos.x > 0 && _vTilePos.x == 0) continue;
 			if (_gLightPos.y > 0 && _vTilePos.y == 0) continue;
 			if (!tilesInRange[_gLightPos.x, _gLightPos.y].Usable) continue;
@@ -325,12 +330,12 @@ public partial class CustomLight : MonoBehaviour {
 			_illuminated: 	out _illuminated, 
 			_lightFromThis: out _lightFromThis
 		);
-		if (LightIndex == 1){
-			if(IsBeingRemoved)
-				SuperDebug.MarkPoint(_vWorldPos, Color.red);
-			else
-				SuperDebug.MarkPoint(_vWorldPos, Color.cyan);
-		}
+		//if (LightIndex == 1){
+			// if(IsBeingRemoved)
+			// 	SuperDebug.MarkPoint(_vWorldPos, Color.red);
+			// else
+			// 	SuperDebug.MarkPoint(_vWorldPos, Color.cyan);
+		//}
 
 		VertexSiblings.SetValueInVertexLightMap<bool>(VXLightMap_Hit, _illuminated, this);
 		VertexSiblings.SetValueInVertexLightMap<float>(VXLightMap_Intensity, _lightFromThis, this);
@@ -373,9 +378,8 @@ public partial class CustomLight : MonoBehaviour {
 		VertexSiblings.SetVertexColor(_vertexColor, this);
 	}
 
-	static Vector2i edgeVertexCount = UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR;
 	static Vector2i ConvertToVertexGridSpace(Vector2i _vLightPos, CustomLight _light){
-		return _vLightPos + Vector2i.Scale(edgeVertexCount, _light.MyGridCoord - _light.GetRadiusAsVector());
+		return _vLightPos + Vector2i.Scale(_light.MyGridCoord - _light.GetRadiusAsVector(), UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR);
 	}
 	static Vector2i ConvertToVertexGridSpace(Vector2i _gGridPos, Vector2i _vTilePos){
 		return _gGridPos * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vTilePos;
@@ -387,7 +391,7 @@ public partial class CustomLight : MonoBehaviour {
 		return ConvertToGridSpace(_vGridPos) - (_light.MyGridCoord - _light.GetRadiusAsVector());
 	}
 	static Vector2i ConvertToVertexLightSpace(Vector2i _vGridPos, CustomLight _light){
-		return _vGridPos - Vector2i.Scale(edgeVertexCount, _light.MyGridCoord - _light.GetRadiusAsVector());
+		return _vGridPos - Vector2i.Scale(_light.MyGridCoord - _light.GetRadiusAsVector(), UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR);
 	}
 	static Vector2i ConvertToVertexTileSpace(Vector2i _vGridPos){ // WARNING: does not support top-half vertices! Confusing? Yes!
 		return _vGridPos - ConvertToGridSpace(_vGridPos) * UVControllerBasic.MESH_VERTICES_PER_EDGE;

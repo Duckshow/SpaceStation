@@ -147,7 +147,7 @@ public class UVController : UVControllerBasic {
     }
 
     private List<Vector4> doubleDots = new List<Vector4>();
-	public void SetUVDots(Vector2i _specificUV, Vector2 _dot0, Vector2 _dot1, Vector2 _dot2, Vector2 _dot3){
+	public void SetUVDots(Vector2i _specificUV, Vector2 _dot0, Vector2 _dot1, Vector2 _dot2, Vector2 _dot3){ apdnandi // continue here. I guess following this could net us the culprit for setting weird dot? 
 		int _uvIndex = _specificUV.y * MESH_VERTICES_PER_EDGE + _specificUV.x;
 		
 		// setup list for caching UVs
