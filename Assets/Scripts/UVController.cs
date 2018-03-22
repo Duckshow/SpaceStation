@@ -3,8 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 public class UVController : UVControllerBasic {
 
-	public Color[] VColors = new Color[9];
-
 	public Vector4 DominantLights;
 
 	private UVControllerBasic MyTopUVC;
@@ -147,7 +145,7 @@ public class UVController : UVControllerBasic {
     }
 
     private List<Vector4> doubleDots = new List<Vector4>();
-	public void SetUVDots(Vector2i _specificUV, Vector2 _dot0, Vector2 _dot1, Vector2 _dot2, Vector2 _dot3){ apdnandi // continue here. I guess following this could net us the culprit for setting weird dot? 
+	public void SetUVDots(Vector2i _specificUV, Vector2 _dot0, Vector2 _dot1, Vector2 _dot2, Vector2 _dot3){
 		int _uvIndex = _specificUV.y * MESH_VERTICES_PER_EDGE + _specificUV.x;
 		
 		// setup list for caching UVs
@@ -178,7 +176,6 @@ public class UVController : UVControllerBasic {
 				vertexColors.Add(new Color32());
 		}
 
-		VColors[_vertexIndex] = _color;
 		vertexColors[_vertexIndex] = _color;
 		shouldApplyChanges = true;
 	}

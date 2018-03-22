@@ -125,13 +125,14 @@ Shader "Custom/Grid" {
 
 			//-- FRAG --//
 			fixed CalculateLighting(fixed4 _normals, fixed _dotX, fixed _dotY){
-				fixed _mostlyY 		= round(abs(_normals.g * 2 - 1));			// 0 == x, 1 == y
-				fixed _normal 		= lerp(_normals.r, _normals.g, _mostlyY);	// 0 == B/L, 1 == T/R
-				fixed _dot 			= lerp(_dotX, _dotY, _mostlyY);				// 0 == heading B/L, 1 == heading T/R
-				fixed _hitStrength 	= 1 - round(abs(_dot - _normal));			// 0 == not hit, 1 == hit
+				fixed _mostlyY 		= round(abs(_normals.g * 2 - 1));						// 0 == x, 1 == y
 				
-				fixed _lightExists 		= saturate(ceil(abs(_dotX + _dotY))); 			// 0 for both dots == not lit
-				fixed _surfaceIsFlat 	= 1 - saturate(ceil(_normals.r + _normals.g));	// 0 == bumpy & lit, 1 == flat & unlit
+				fixed _normal 		= lerp(_normals.r, _normals.g, _mostlyY);				// 0 == B/L, 1 == T/R
+				fixed _dot 			= lerp(_dotX, _dotY, _mostlyY);							// 0 == heading B/L, 1 == heading T/R
+				fixed _hitStrength 	= 1 - round(abs(_dot - _normal));						// 0 == not hit, 1 == hit
+				
+				fixed _lightExists 		= saturate(ceil(abs(_dotX + _dotY))); 				// 0 for both dots == not lit
+				fixed _surfaceIsFlat 	= 1 - saturate(ceil(_normals.r + _normals.g));		// 0 == bumpy & lit, 1 == flat & unlit
 
 				return max(_hitStrength, _surfaceIsFlat) * _lightExists;
 			}
@@ -180,18 +181,22 @@ Shader "Custom/Grid" {
 
 				fixed _indexToUse = 10 - ceil(palTex.r * 10);
 				fixed4 _colorToUse = allColors[colorIndices[_indexToUse]];
+				// fixed4 _hitMod = fixed4(//) saturate(
+				// 	CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r),// + 
+				// 	CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g),// + 
+				// 	CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b),// + 
+				// 	CalculateLighting(nrmTex, i.DotXs.a, i.DotYs.a)
+				// );
 				fixed4 _hitMod = saturate(
-					CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r) 
-					//+ 
-					//CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g) 
-					// + 
-					// CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b) + 
-					// CalculateLighting(nrmTex, i.DotXs.a, i.DotYs.a)
+					CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r) + 
+					CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g) + 
+					CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b) + 
+					CalculateLighting(nrmTex, i.DotXs.a, i.DotYs.a)
 				);
 
-				_hitMod.r = CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r);
-				_hitMod.g = CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g);
-				_hitMod.b = CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b);
+				// _hitMod.r = CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r);
+				// _hitMod.g = CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g);
+				// _hitMod.b = CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b);
 
 
 				// final apply
@@ -201,7 +206,7 @@ Shader "Custom/Grid" {
 				_light = max(_light, IsUnlit(nrmTex));
 
 				fixed3 _litRGB = tex.rgb * _colorToUse.rgb * _light;
-				_litRGB = _hitMod;
+				//_litRGB = _hitMod;
 				//_litRGB = i.VColor;
 				return fixed4(
 					lerp(_litRGB, emTex, emTex.a),

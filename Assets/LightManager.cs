@@ -26,6 +26,8 @@ public class LightManager : MonoBehaviour {
 	public static bool[,] 		GridMap_TilesUpdated;          	// bool for each tile, to track if they need updating or not
 	public static int[,][] 		GridMap_LightsInRange;          // indices for each light that can reach each vertex
 	public static Color[,] 		VertMap_TotalColorNoBlur; 		// the current color of each vertex (without blur!)
+	public static Vector4[,]	VertMap_DomLightIndices;
+	public static Vector4[,]	VertMap_DomLightIntensities;
 
 	private delegate void mIterateVariables();
 
@@ -61,7 +63,24 @@ public class LightManager : MonoBehaviour {
 			GridMap_LightsInRange[_xGrid, _yGrid] = _lightIndices;
 		}
 
-		VertMap_TotalColorNoBlur = new Color [vertMapSize.x, vertMapSize.y];
+		VertMap_TotalColorNoBlur 	= new Color 	[vertMapSize.x, vertMapSize.y];
+		VertMap_DomLightIndices 	= new Vector4	[vertMapSize.x, vertMapSize.y];
+		VertMap_DomLightIntensities = new Vector4 	[vertMapSize.x, vertMapSize.y];
+
+		Vector4 _minusOne = new Vector4(-1, -1, -1, -1);
+		int _vxGrid = 0, _vyGrid = 0;
+		IterateGridVariables = delegate (){
+			_vxGrid++;
+			if (_vxGrid == Grid.GridSize.x * UVControllerBasic.MESH_VERTICES_PER_EDGE){
+				_vxGrid = 0;
+				_vyGrid++;
+			}
+		};
+		_totalIterations = Grid.GridSize.x * UVControllerBasic.MESH_VERTICES_PER_EDGE * Grid.GridSize.y * UVControllerBasic.MESH_VERTICES_PER_EDGE;
+		for (int i = 0; i < _totalIterations; i++, IterateGridVariables()){
+			VertMap_DomLightIndices		[_vxGrid, _vyGrid] = _minusOne;
+			VertMap_DomLightIntensities	[_vxGrid, _vyGrid] = _minusOne;
+		}
 	}
 	public static void OnLightInit(CustomLight _light) {
 		int _newIndex = -1;
