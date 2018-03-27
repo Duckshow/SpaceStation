@@ -211,8 +211,8 @@ public partial class CustomLight : MonoBehaviour {
 				vGridPos = ConvertToVertexGridSpace(gGridPos, vTilePos);
 			}
 
-			public void SetUVDots(Vector2 _doubleDot_0, Vector2 _doubleDot_1, Vector2 _doubleDot_2, Vector2 _doubleDot_3) {
-				Grid.Instance.grid[gGridPos.x, gGridPos.y].MyUVController.SetUVDots(vTilePos, _doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+			public void SetLightDirections(Vector4 _lightDirs) {
+				Grid.Instance.grid[gGridPos.x, gGridPos.y].MyUVController.SetLightDirections(vTilePos, _lightDirs);
 			}
 			public void SetVertexColor(Color _color){
 				Grid.Instance.grid[gGridPos.x, gGridPos.y].MyUVController.SetVertexColor(vTilePos, _color);
@@ -288,16 +288,16 @@ public partial class CustomLight : MonoBehaviour {
 				0, 0
 			);
 		}
-		public static void SetUVDots(Vector2 _doubleDot_0, Vector2 _doubleDot_1, Vector2 _doubleDot_2, Vector2 _doubleDot_3) {
-			if (Current.Affected) 			Current.			SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
-			if (OwnTopHalf.Affected) 		OwnTopHalf.			SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
-			if (OwnTopHalfLeft.Affected) 	OwnTopHalfLeft.		SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
-			if (OwnTopHalfRight.Affected) 	OwnTopHalfRight.	SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
-			if (Top.Affected) 				Top.				SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
-			if (Right.Affected) 			Right.				SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
-			if (RightTopHalf.Affected) 		RightTopHalf.		SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
-			if (RightTopHalfLeft.Affected) 	RightTopHalfLeft.	SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
-			if (TopRight.Affected) 			TopRight.			SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+		public static void SetLightDirections(Vector4 _lightDirs) {
+			if (Current.Affected) 			Current.			SetLightDirections(_lightDirs);
+			if (OwnTopHalf.Affected) 		OwnTopHalf.			SetLightDirections(_lightDirs);
+			if (OwnTopHalfLeft.Affected) 	OwnTopHalfLeft.		SetLightDirections(_lightDirs);
+			if (OwnTopHalfRight.Affected) 	OwnTopHalfRight.	SetLightDirections(_lightDirs);
+			if (Top.Affected) 				Top.				SetLightDirections(_lightDirs);
+			if (Right.Affected) 			Right.				SetLightDirections(_lightDirs);
+			if (RightTopHalf.Affected) 		RightTopHalf.		SetLightDirections(_lightDirs);
+			if (RightTopHalfLeft.Affected) 	RightTopHalfLeft.	SetLightDirections(_lightDirs);
+			if (TopRight.Affected) 			TopRight.			SetLightDirections(_lightDirs);
 		}
 		public static void SetVertexColor(Color _color, CustomLight _light){
 			if (Current.Affected) 			Current.			SetVertexColor(_color);
@@ -418,14 +418,9 @@ public partial class CustomLight : MonoBehaviour {
 		Vector2i _gGridPos = ConvertToGridSpace(_vGridPos);
 		Vector2 _vWorldPos = ConvertToWorldSpace(_vGridPos);
 
-		Vector4 _dominantLightIndices = GetShadowCastingLightsIndices(_vGridPos, _gGridPos);
-		Vector2 _doubleDot_0 = _dominantLightIndices.x >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.x]) : Vector2.zero;
-		Vector2 _doubleDot_1 = _dominantLightIndices.y >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.y]) : Vector2.zero;
-		Vector2 _doubleDot_2 = _dominantLightIndices.z >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.z]) : Vector2.zero;
-		Vector2 _doubleDot_3 = _dominantLightIndices.w >= 0 ? GetDotXY(_vWorldPos, LightManager.AllLights[(int)_dominantLightIndices.w]) : Vector2.zero;
-
-		Grid.Instance.grid[_gGridPos.x, _gGridPos.y].MyUVController.DominantLights = _dominantLightIndices;
-		VertexSiblings.SetUVDots(_doubleDot_0, _doubleDot_1, _doubleDot_2, _doubleDot_3);
+		Vector4 _lightDirs = GetLightDirections(_vGridPos, _gGridPos);
+		Grid.Instance.grid[_gGridPos.x, _gGridPos.y].MyUVController.LightDirections = _lightDirs; // debug
+		VertexSiblings.SetLightDirections(_lightDirs);
 
 		int _failAmount = 0;
 		int _diffToRightX = _vTilePos.x == 0 ? 1 : 2; // TODO: this can't be right. It should be == 1, right?
@@ -473,16 +468,17 @@ public partial class CustomLight : MonoBehaviour {
 		return _gridWorldPos - Grid.GridSizeHalf + _localPos - _correction;
     }
 
-	static Vector2 GetDotXY(Vector2 _vWorldPos, CustomLight _light){
-        // get an angle between 0->1. The angle goes all the way around, but counter-clockwise, so sorta like a clock and unlike a dot
-		float _vertical 	= (Vector2.Dot(Vector2.down, (_vWorldPos - _light.myWorldPos).normalized) + 1) * 0.5f;
-		float _horizontal 	=  (Vector2.Dot(Vector2.left, (_vWorldPos - _light.myWorldPos).normalized) + 1) * 0.5f;
+	// static float GetDotY(Vector2 _vWorldPos, CustomLight _light){
+	// 	// dot is by default between -1 to 1, so let's even it out to 0 to 1
+	// 	// float _vertical 	= (Vector2.Dot(Vector2.down, (_vWorldPos - _light.myWorldPos).normalized) + 1) * 0.5f;
+	// 	// float _horizontal 	= (Vector2.Dot(Vector2.left, (_vWorldPos - _light.myWorldPos).normalized) + 1) * 0.5f;
 
-		return new Vector2(
-			Mathf.Max(0.001f, _horizontal), 
-			Mathf.Max(0.001f, _vertical)
-		);
-	}
+	// 	// return new Vector2(
+	// 	// 	Mathf.Max(0.001f, _horizontal), 
+	// 	// 	Mathf.Max(0.001f, _vertical)
+	// 	// );
+	// 	return Vector2.Dot(Vector2.left, (_vWorldPos - _light.myWorldPos).normalized)
+	// }
 
 	private Color GetColorForVertex(Vector2i _vTilePos, Vector2i _vLightPos, Vector2i _gLightPos, Vector2i _vGridPos, Vector2i _gGridPos, Vector2 _vWorldPos,  int _vIndex, out bool _illuminated, out float _lightFromThis){
 		// take all previously hit light and recompile into one color
@@ -525,69 +521,27 @@ public partial class CustomLight : MonoBehaviour {
 			_total.b += _newColor.b;
 	}
 
-	private Vector4 GetShadowCastingLightsIndices(Vector2i _vGridPos, Vector2i _gGridPos){
-		Vector4 _dominantIndices 	= LightManager.VertMap_DomLightIndices		[_vGridPos.x, _vGridPos.y];
-		Vector4 _dominantIntensities = LightManager.VertMap_DomLightIntensities	[_vGridPos.x, _vGridPos.y];
-
+	private Vector4 GetLightDirections(Vector2i _vGridPos, Vector2i _gGridPos){
+		Vector4 _lightDir = new Vector4();
 		for (int i = 0; i < LightManager.GridMap_LightsInRange[_gGridPos.x, _gGridPos.y].Length; i++){
 			int _lightIndex = LightManager.GridMap_LightsInRange[_gGridPos.x, _gGridPos.y][i];
 			if (_lightIndex == -1) break;
 
 			CustomLight _otherLight = LightManager.AllLights[_lightIndex];
-			if(IsLightAlreadyApplied(_otherLight, ref _dominantIndices.x, ref _dominantIntensities.x)) continue;
-			if(IsLightAlreadyApplied(_otherLight, ref _dominantIndices.y, ref _dominantIntensities.y)) continue;
-			if(IsLightAlreadyApplied(_otherLight, ref _dominantIndices.z, ref _dominantIntensities.z)) continue;
-			if(IsLightAlreadyApplied(_otherLight, ref _dominantIndices.w, ref _dominantIntensities.w)) continue;
-
-
 			Vector2i _vLightPos = ConvertToVertexLightSpace(_vGridPos, _otherLight);
-			bool _hit = _otherLight.VXLightMap_Hit[_vLightPos.x, _vLightPos.y];
-			float _intensity = _hit ? _otherLight.VXLightMap_Intensity[_vLightPos.x, _vLightPos.y] : 0;
+			//if (!_otherLight.VXLightMap_Hit[_vLightPos.x, _vLightPos.y]) continue;
 
-			float _lowestDominance = 10000;
-			int _lowestDominanceIndex = -1;
-			IsChannelValueLowerThanPreviousLow(0, _dominantIntensities.x, ref _lowestDominanceIndex, ref _lowestDominance);
-			IsChannelValueLowerThanPreviousLow(1, _dominantIntensities.y, ref _lowestDominanceIndex, ref _lowestDominance);
-			IsChannelValueLowerThanPreviousLow(2, _dominantIntensities.z, ref _lowestDominanceIndex, ref _lowestDominance);
-			IsChannelValueLowerThanPreviousLow(3, _dominantIntensities.w, ref _lowestDominanceIndex, ref _lowestDominance);
-
-			if (_lowestDominanceIndex == 0){
-				_dominantIndices.x = _lightIndex;
-				_dominantIntensities.x = _intensity;
-			}
-			if (_lowestDominanceIndex == 1){
-				_dominantIndices.y = _lightIndex;
-				_dominantIntensities.y = _intensity;
-			}
-			if (_lowestDominanceIndex == 2){
-				_dominantIndices.z = _lightIndex;
-				_dominantIntensities.z = _intensity;
-			}
-			if (_lowestDominanceIndex == 3){
-				_dominantIndices.w = _lightIndex;
-				_dominantIntensities.w = _intensity;
-			}
+			Vector2 _vWorldPos = ConvertToWorldSpace(_vGridPos);
+			Vector2 _dir = (_otherLight.myWorldPos - _vWorldPos).normalized;
+			float _dotX = Vector2.Dot(Vector2.right, _dir);
+			float _dotY = Vector2.Dot(Vector2.up, _dir);
+			if (_dotY > 0) _lightDir.x = 1;
+			if (_dotX > 0) _lightDir.y = 1;
+			if (_dotY < 0) _lightDir.z = 1;
+			if (_dotX < 0) _lightDir.w = 1;
 		}
 
-		LightManager.VertMap_DomLightIndices[_vGridPos.x, _vGridPos.y] = _dominantIndices;
-		LightManager.VertMap_DomLightIntensities[_vGridPos.x, _vGridPos.y] = _dominantIntensities;
-		return _dominantIndices;
-	}
-	bool IsLightAlreadyApplied(CustomLight _light, ref float _index, ref float _intensity){
-		if(_index == _light.LightIndex){
-			if (_light.IsBeingRemoved){
-				_index = -1;
-				_intensity = -1;
-			}
-			return true;
-		}
-		return false;
-	}
-	void IsChannelValueLowerThanPreviousLow(int _index, float _value, ref int _lowestIndex, ref float _lowest){
-		if (_value < _lowest){
-			_lowest = _value;
-			_lowestIndex = _index;
-		}
+		return _lightDir;
 	}
 
 	private const float VERTEX_ON_EDGE_TOLERANCE = 0.01f;

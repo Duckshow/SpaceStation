@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 public class UVController : UVControllerBasic {
 
-	public Vector4 DominantLights;
+	public Vector4 LightDirections;
 
 	private UVControllerBasic MyTopUVC;
 
@@ -144,24 +144,19 @@ public class UVController : UVControllerBasic {
 		shouldApplyChanges = true;
     }
 
-    private List<Vector4> doubleDots = new List<Vector4>();
-	public void SetUVDots(Vector2i _specificUV, Vector2 _dot0, Vector2 _dot1, Vector2 _dot2, Vector2 _dot3){
+    private List<Vector4> lightDirections = new List<Vector4>();
+	public void SetLightDirections(Vector2i _specificUV, Vector4 _lightDirs){
 		int _uvIndex = _specificUV.y * MESH_VERTICES_PER_EDGE + _specificUV.x;
 		
 		// setup list for caching UVs
-		if (doubleDots.Count != MyMeshFilter.mesh.vertexCount) {
-			doubleDots.Clear();
+		if (lightDirections.Count != MyMeshFilter.mesh.vertexCount) {
+			lightDirections.Clear();
 			for (int i = 0; i < MyMeshFilter.mesh.vertexCount; i++)
-				doubleDots.Add(new Vector4());
+				lightDirections.Add(new Vector4());
 		}
 
 		// apply UVs
-		Vector4 _doubleDot = doubleDots[_uvIndex];
-        _doubleDot.x = BitCompressor.Int2ToInt((int)(_dot0.x * DOT_PRECISION), (int)(_dot0.y * DOT_PRECISION));
-        _doubleDot.y = BitCompressor.Int2ToInt((int)(_dot1.x * DOT_PRECISION), (int)(_dot1.y * DOT_PRECISION));
-        _doubleDot.z = BitCompressor.Int2ToInt((int)(_dot2.x * DOT_PRECISION), (int)(_dot2.y * DOT_PRECISION));
-        _doubleDot.w = BitCompressor.Int2ToInt((int)(_dot3.x * DOT_PRECISION), (int)(_dot3.y * DOT_PRECISION));
-		doubleDots[_uvIndex] = _doubleDot;
+		lightDirections[_uvIndex] = _lightDirs;
 		shouldApplyChanges = true;
     }
 
@@ -183,12 +178,12 @@ public class UVController : UVControllerBasic {
 	protected override void ApplyAssetChanges(){
 		//Debug.Log(sAllColorIndices.Count + ", " + sUVDoubleDots.Count + ", " + sVertexColors.Count);
 		MyMeshFilter.mesh.SetUVs(UVCHANNEL_COLOR, allColorIndices.ToList());
-		MyMeshFilter.mesh.SetUVs(UVCHANNEL_DOUBLEDOT, doubleDots);
+		MyMeshFilter.mesh.SetUVs(UVCHANNEL_DOUBLEDOT, lightDirections);
 		MyMeshFilter.mesh.SetColors(vertexColors);
 
 		if (MyTopUVC != null){
 			MyTopUVC.MyMeshFilter.mesh.SetUVs(UVCHANNEL_COLOR, allColorIndices.ToList());
-			MyTopUVC.MyMeshFilter.mesh.SetUVs(UVCHANNEL_DOUBLEDOT, doubleDots);
+			MyTopUVC.MyMeshFilter.mesh.SetUVs(UVCHANNEL_DOUBLEDOT, lightDirections);
 			MyTopUVC.MyMeshFilter.mesh.SetColors(vertexColors);
 		}
 

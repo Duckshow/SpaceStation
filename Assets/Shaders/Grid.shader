@@ -51,7 +51,7 @@ Shader "Custom/Grid" {
 				float4 AssetCoord_0123 : TEXCOORD0;
 				float4 AssetCoord_4 : TEXCOORD1;
 				float4 ColorIndices : TEXCOORD2;
-				float4 DoubleDots : TEXCOORD3;
+				float4 LightDirections : TEXCOORD3;
 			};
 			struct v2f {
 				float4 Pos : POSITION;
@@ -63,8 +63,7 @@ Shader "Custom/Grid" {
 				float4 ColorIndices0to3 : TEXCOORD3;
 				float4 ColorIndices4to7 : TEXCOORD4;
 				float4 ColorIndices8to9 : TEXCOORD5;
-				float4 DotXs : TEXCOORD6;
-				float4 DotYs : TEXCOORD7;
+				float4 LightDirections : TEXCOORD6;
 			};
 			
 			//-- VERT --//
@@ -84,26 +83,6 @@ Shader "Custom/Grid" {
 					_channel >> 24 	& 0xFF
 				);
 			}
-			float4 DecompressDoubleDotsToDotXs(int4 _doubleDots){
-				float _precision = 1 / DotPrecision;
-				return float4(
-					// 0xFFFF == 65535 == 1111111111111111 (16 bits)
-					(_doubleDots.x & 0xFFFF) * _precision,
-					(_doubleDots.y & 0xFFFF) * _precision, 
-					(_doubleDots.z & 0xFFFF) * _precision, 
-					(_doubleDots.w & 0xFFFF) * _precision
-				);
-			}
-			float4 DecompressDoubleDotsToDotYs(int4 _doubleDots){
-				float _precision = 1 / DotPrecision;
-				return float4(
-					// 0xFFFF == 65535 == 1111111111111111 (16 bits)
-					(_doubleDots.x >> 16 & 0xFFFF) * _precision, 
-					(_doubleDots.y >> 16 & 0xFFFF) * _precision, 
-					(_doubleDots.z >> 16 & 0xFFFF) * _precision, 
-					(_doubleDots.w >> 16 & 0xFFFF) * _precision
-				);
-			}
 			v2f vert(appData v) {
 				v2f o;
 				o.Pos = UnityObjectToClipPos(v.Vertex);
@@ -118,23 +97,21 @@ Shader "Custom/Grid" {
 				o.ColorIndices0to3 = DecompressColorIndices(v.ColorIndices.x);
 				o.ColorIndices4to7 = DecompressColorIndices(v.ColorIndices.y);
 				o.ColorIndices8to9 = DecompressColorIndices(v.ColorIndices.z);
-				o.DotXs = DecompressDoubleDotsToDotXs(v.DoubleDots);
-				o.DotYs = DecompressDoubleDotsToDotYs(v.DoubleDots);
+				o.LightDirections = v.LightDirections;
 				return o;
 			}
 
 			//-- FRAG --//
-			fixed CalculateLighting(fixed4 _normals, fixed _dotX, fixed _dotY){
-				fixed _mostlyY 		= round(abs(_normals.g * 2 - 1));						// 0 == x, 1 == y
-				
-				fixed _normal 		= lerp(_normals.r, _normals.g, _mostlyY);				// 0 == B/L, 1 == T/R
-				fixed _dot 			= lerp(_dotX, _dotY, _mostlyY);							// 0 == heading B/L, 1 == heading T/R
-				fixed _hitStrength 	= 1 - round(abs(_dot - _normal));						// 0 == not hit, 1 == hit
-				
-				fixed _lightExists 		= saturate(ceil(abs(_dotX + _dotY))); 				// 0 for both dots == not lit
+			fixed CalculateLighting(fixed4 _normals, fixed4 _lightDirs){
+				fixed _lightExists 		= saturate(_lightDirs.x + _lightDirs.y + _lightDirs.z + _lightDirs.w); 				
 				fixed _surfaceIsFlat 	= 1 - saturate(ceil(_normals.r + _normals.g));		// 0 == bumpy & lit, 1 == flat & unlit
 
-				return max(_hitStrength, _surfaceIsFlat) * _lightExists;
+				fixed _litFromAbove = 1 - saturate(_lightDirs.x - _normals.g);
+				fixed _litFromRight = 1 - saturate(_lightDirs.y - _normals.r);
+				fixed _litFromBelow = 1 - saturate(_lightDirs.z - (1 - _normals.g));
+				fixed _litFromLeft	= 1 - saturate(_lightDirs.w - (1 - _normals.r));
+
+				return 0;// max(_lit, _surfaceIsFlat) * _lightExists;
 			}
 			// fixed LightExists(fixed _dotX, fixed _dotY){
 			// 	return saturate(ceil(abs(_dotX + _dotY))); // 0 for both dots == not lit
@@ -187,12 +164,7 @@ Shader "Custom/Grid" {
 				// 	CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b),// + 
 				// 	CalculateLighting(nrmTex, i.DotXs.a, i.DotYs.a)
 				// );
-				fixed4 _hitMod = saturate(
-					CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r) + 
-					CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g) + 
-					CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b) + 
-					CalculateLighting(nrmTex, i.DotXs.a, i.DotYs.a)
-				);
+				fixed4 _hitMod = CalculateLighting(nrmTex, i.LightDirections);
 
 				// _hitMod.r = CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r);
 				// _hitMod.g = CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g);
@@ -202,11 +174,10 @@ Shader "Custom/Grid" {
 				// final apply
 				// fixed3 _light = max(_hitMod, IsFlatSurface(nrmTex));
 				// _light *= i.VColor;
-				fixed3 _light = min(_hitMod, i.VColor);
+				fixed3 _light = _hitMod;// min(_hitMod, i.VColor);
 				_light = max(_light, IsUnlit(nrmTex));
 
 				fixed3 _litRGB = tex.rgb * _colorToUse.rgb * _light;
-				//_litRGB = _hitMod;
 				//_litRGB = i.VColor;
 				return fixed4(
 					lerp(_litRGB, emTex, emTex.a),
