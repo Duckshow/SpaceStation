@@ -79,7 +79,7 @@ public partial class CustomLight : MonoBehaviour {
                     Vector2 _targetPosWorld = (Vector2)_collider.transform.position + _collider.GetPath(pIndex)[vIndex];
                     Verts _newVertex = new Verts();
 
-                    if (Gridcast(myWorldPos, _targetPosWorld, out rayHit)) {
+                    if (Gridcast(MyWorldPos, _targetPosWorld, out rayHit)) {
                         _newVertex.LocalPos = rayHit.point;
 						_newVertex.HasHitTarget = false;
                     }
@@ -132,7 +132,7 @@ public partial class CustomLight : MonoBehaviour {
             _newVertex.LocalPos = Radius * new Vector3((LightManager.SinCosTable.SinArray[currentAngle]), (LightManager.SinCosTable.CosArray[currentAngle]), 0); // in degrees (previous calculate)
             _newVertex.QuadrantAngle = GetQuadrantAngle(_newVertex.LocalPos.x, _newVertex.LocalPos.y);
 
-            if(Gridcast(myWorldPos, myWorldPos + _newVertex.LocalPos, out rayHit)){
+            if(Gridcast(MyWorldPos, MyWorldPos + _newVertex.LocalPos, out rayHit)){
                 _newVertex.LocalPos = transform.InverseTransformPoint(rayHit.point);
             }
 
@@ -146,14 +146,14 @@ public partial class CustomLight : MonoBehaviour {
 		_list.Sort((item1, item2) => (item2.QuadrantAngle.CompareTo(item1.QuadrantAngle)));
 	}
 	void ContinueGridcast(Vector2 vertexWorldPos) {
-		Vector2 diff = vertexWorldPos - myWorldPos;
+		Vector2 diff = vertexWorldPos - MyWorldPos;
 		Vector2 rayOrigin = vertexWorldPos + (diff * CHECK_POINT_LAST_RAY_OFFSET);
 		Vector2 rayEnd = rayOrigin + diff.normalized * (Radius - diff.magnitude);
 		Vector2 hitPos; 
 
         bool _hit = Gridcast(rayOrigin, rayEnd, out rayHit);
 		if (_hit)   hitPos = rayHit.point;
-		else        hitPos = myWorldPos + (diff.normalized * Radius);
+		else        hitPos = MyWorldPos + (diff.normalized * Radius);
 
 		Verts _newVertex = new Verts();
 		_newVertex.LocalPos = transform.InverseTransformPoint(hitPos);	// to local
@@ -220,18 +220,25 @@ public partial class CustomLight : MonoBehaviour {
         renderer.sharedMaterial = lightMaterial;
 	}
 
-	private bool IsInsideLightMesh(Vector2 _worldPos){
+	private bool IsInsideLightMesh(Vector2 _vWorldPos){
 		bool _inside = false;
 		for (int i = 0, i2 = PointCollisionArray.Length - 1; i < PointCollisionArray.Length; i2 = i, i++){
-			Vector2 _vert1 = PointCollisionArray[i];
-			Vector2 _vert2 = PointCollisionArray[i2];
+			Vector2 _nextVertex = PointCollisionArray[i];
+			Vector2 _prevVertex = PointCollisionArray[i2];
 
-			bool _isBetweenVertices = Mathf.Min(_vert1.y, _vert2.y) <= _worldPos.y && _worldPos.y < Mathf.Max(_vert1.y, _vert2.y);
-			float _progressY = (_worldPos.y - _vert1.y) / (_vert2.y - _vert1.y);
-			float _progressX = (_vert2.x - _vert1.x) * _progressY;
-			bool _isLeftOfEdge = _worldPos.x < _vert1.x + _progressX;
+			bool _prevIsLowestY = _prevVertex.y < _nextVertex.y;
+			Vector2 _lowestYVertex = _prevIsLowestY ? _prevVertex : _nextVertex;
+			Vector2 _highestYVertex = _prevIsLowestY ? _nextVertex : _prevVertex;
 
-			if (_isBetweenVertices && _isLeftOfEdge)
+			bool _isBetweenVertices = _lowestYVertex.y <= _vWorldPos.y && _vWorldPos.y < _highestYVertex.y;
+			if(!_isBetweenVertices) continue;
+
+			Vector2 _dirToVertex = (_highestYVertex - _lowestYVertex);
+			Vector2 _dirToPos = (_vWorldPos - _lowestYVertex);
+			float _dirToNextAngle = Mathf.Atan2(_dirToVertex.x, _dirToVertex.y);
+			float _dirToPosAngle = Mathf.Atan2(_dirToPos.x, _dirToPos.y);
+
+			if (_dirToPosAngle < _dirToNextAngle)
 				_inside = !_inside;
 		}
 
