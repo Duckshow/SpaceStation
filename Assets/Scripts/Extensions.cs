@@ -8,7 +8,14 @@ public static class Extensions {
         return "<color=" + cHex + ">" + s + "</color>";
     }
 
-	 public static T GetLast<T>(this T[] _array){
+	public static bool Any(this Color c) {
+		return c.r > 0 || c.g > 0 || c.b > 0 || c.a > 0;
+	}
+	public static bool Any(this Color32 c) {
+		return c.r > 0 || c.g > 0 || c.b > 0 || c.a > 0;
+	}
+
+	public static T GetLast<T>(this T[] _array){
 		return _array[_array.Length - 1];
 	}
 	public static T GetLast<T>(this T[,] _array){
