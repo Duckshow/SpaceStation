@@ -103,15 +103,16 @@ Shader "Custom/Grid" {
 
 			//-- FRAG --//
 			fixed CalculateLighting(fixed4 _normals, fixed4 _lightDirs){
-				fixed _lightExists 		= saturate(_lightDirs.x + _lightDirs.y + _lightDirs.z + _lightDirs.w); 				
+				fixed _lightExists 		= saturate(_lightDirs.x + _lightDirs.y + _lightDirs.z + _lightDirs.w);
 				fixed _surfaceIsFlat 	= 1 - saturate(ceil(_normals.r + _normals.g));		// 0 == bumpy & lit, 1 == flat & unlit
 
-				fixed _litFromAbove = 1 - saturate(_lightDirs.x - _normals.g);
-				fixed _litFromRight = 1 - saturate(_lightDirs.y - _normals.r);
-				fixed _litFromBelow = 1 - saturate(_lightDirs.z - (1 - _normals.g));
-				fixed _litFromLeft	= 1 - saturate(_lightDirs.w - (1 - _normals.r));
+				fixed _litFromAbove = _lightDirs.x * (1 - saturate(_lightDirs.x - _normals.g));
+				fixed _litFromRight = _lightDirs.y * (1 - saturate(_lightDirs.y - _normals.r));
+				fixed _litFromBelow = _lightDirs.z * (1 - saturate(_lightDirs.z - (1 - _normals.g)));
+				fixed _litFromLeft	= _lightDirs.w * (1 - saturate(_lightDirs.w - (1 - _normals.r)));
+				fixed _lit = floor(max(_litFromAbove, max(_litFromBelow, max(_litFromLeft, _litFromRight))));
 
-				return 0;// max(_lit, _surfaceIsFlat) * _lightExists;
+				return max(_lit, _surfaceIsFlat) * _lightExists;
 			}
 			// fixed LightExists(fixed _dotX, fixed _dotY){
 			// 	return saturate(ceil(abs(_dotX + _dotY))); // 0 for both dots == not lit
@@ -174,7 +175,7 @@ Shader "Custom/Grid" {
 				// final apply
 				// fixed3 _light = max(_hitMod, IsFlatSurface(nrmTex));
 				// _light *= i.VColor;
-				fixed3 _light = _hitMod;// min(_hitMod, i.VColor);
+				fixed3 _light = min(_hitMod, i.VColor);
 				_light = max(_light, IsUnlit(nrmTex));
 
 				fixed3 _litRGB = tex.rgb * _colorToUse.rgb * _light;
