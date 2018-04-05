@@ -20,7 +20,7 @@ public class Grid : MonoBehaviour {
     public bool DisplayGridGizmos;
     public bool DisplayPaths;
     public bool DisplayWaypoints;
-    public Vector2 GridWorldSize;
+    public Vector2i GridWorldSize;
 
     [HideInInspector]
     public Tile[,] grid; // todo: should make 1D
