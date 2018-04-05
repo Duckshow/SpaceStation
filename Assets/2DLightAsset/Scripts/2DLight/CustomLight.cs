@@ -34,20 +34,15 @@ public partial class CustomLight : MonoBehaviour {
 
 	private delegate void mIterateVariables();
 
-	private Vector2 myWorldPos;
+	[NonSerialized]
+	public Vector2 MyWorldPos;
 
 	private bool hasRunStart = false;
 
-	public bool[,] VXLightMap_Hit; // TODO: a huge chunk of all my maps represent vertices on the same worldpos, so... superfluous info. Maybe make a map-class?
-	public float[,] VXLightMap_Intensity;
+	public LightManager.VertMap<bool> VLightMap_Hit;
+	public LightManager.VertMap<float> VLightMap_Intensity;
 
-	T TryGetAdjacentValueInVertexGridMap<T>(T[,] _vertexGridMap, int _x, int _y, ref int _failIncrement){
-		if (_x < 0 || _y < 0 || _x >= _vertexGridMap.GetLength(0) || _y >= _vertexGridMap.GetLength(1)){
-			_failIncrement++;
-			return default(T);
-		}
-		return _vertexGridMap[_x, _y]; ;
-	}
+	private Vector2i vertexLightSize;
 
 	[EasyButtons.Button]
 	public void TestGridCoord(){
@@ -67,8 +62,11 @@ public partial class CustomLight : MonoBehaviour {
 
 		myInspector = GetComponent<CanInspect>();
 
-		VXLightMap_Hit 			= new bool	[Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE];
-		VXLightMap_Intensity 	= new float	[Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE];
+		// VLightMap_Hit 			= new bool	[Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE];
+		// VLightMap_Intensity 	= new float	[Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE];
+		vertexLightSize = new Vector2i(Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE);
+		VLightMap_Hit = new LightManager.VertMap<bool>(vertexLightSize);
+		VLightMap_Intensity = new LightManager.VertMap<float>(vertexLightSize);
 
 		MeshFilter meshFilter = MeshTransform.GetComponent<MeshFilter>();
         renderer = MeshTransform.GetComponent<MeshRenderer>();
@@ -102,9 +100,9 @@ public partial class CustomLight : MonoBehaviour {
 	}
 
 	void LateUpdate(){
-		if (isTurnedOn && (transform.position.x != myWorldPos.x || transform.position.y != myWorldPos.y)){
+		if (isTurnedOn && (transform.position.x != MyWorldPos.x || transform.position.y != MyWorldPos.y)){
 			Debug.LogWarning(transform.name + "'s position changed while turned on! Resetting!");
-			transform.position = myWorldPos;
+			transform.position = MyWorldPos;
 		}
 	}
 
@@ -137,24 +135,20 @@ public partial class CustomLight : MonoBehaviour {
 	}
 
 	public void UpdateLight() {
-		myWorldPos = (Vector2)transform.position;
+		MyWorldPos = (Vector2)transform.position;
 		GetAllTilesInRange();
 		PreparePooledColliders();
 		SetVertices();
 		DiscardPooledColliders();
 		RenderLightMesh();
 		UpdatePointCollisionArray();
-		IterateOverTilesInRange(SetBasicLightInfo);
+		ClearCachedVertexColors();
+		SetBasicLightInfo();
 	}
 	public void RemoveLightsEffectOnGrid(){
 		GetAllTilesInRange();
-		IterateOverTilesInRange(SetBasicLightInfo);
-	}
-	public void PostProcessLight() {
-		GetAllTilesInRange();
-		IterateOverTilesInRange(SetPostProcessEffects);
-		if(IsBeingRemoved)
-			LightManager.AddToLightsInRangeMap(this, false);
+		ClearCachedVertexColors();
+		SetBasicLightInfo();
 	}
 
     private Tile t;
@@ -176,372 +170,122 @@ public partial class CustomLight : MonoBehaviour {
 	public TileReference[,] GetTilesInRange(bool _onlyWithColliders){
 		TileReference[,] _tiles = new TileReference[Diameter, Diameter];
 
-		for 	(int y = 0, _yGrid = MyGridCoord.y - Radius; y < Diameter; y++, _yGrid++){
-			for (int x = 0, _xGrid = MyGridCoord.x - Radius; x < Diameter; x++, _xGrid++){
-				bool _usable = true;
-				if (_xGrid < 0 || _xGrid >= Grid.GridSize.x || _yGrid < 0 || _yGrid >= Grid.GridSize.y){
-					_usable = false;
-				}
-				else if(_onlyWithColliders && !ObjectPooler.Instance.HasPoolForID(Grid.Instance.grid[_xGrid, _yGrid].ExactType)){
-					_usable = false;
-				}
+		// for 	(int y = 0, _yGrid = MyGridCoord.y - Radius; y < Diameter; y++, _yGrid++){
+		// 	for (int x = 0, _xGrid = MyGridCoord.x - Radius; x < Diameter; x++, _xGrid++){
+		// 		bool _usable = true;
+		// 		if (_xGrid < 0 || _xGrid >= Grid.GridSize.x || _yGrid < 0 || _yGrid >= Grid.GridSize.y){
+		// 			_usable = false;
+		// 		}
+		// 		else if(_onlyWithColliders && !ObjectPooler.Instance.HasPoolForID(Grid.Instance.grid[_xGrid, _yGrid].ExactType)){
+		// 			_usable = false;
+		// 		}
 
-				_tiles[x, y] = new TileReference(_xGrid, _yGrid, _usable);
+		// 		_tiles[x, y] = new TileReference(_xGrid, _yGrid, _usable);
+		// 	}
+		// }
+
+		SpaceNavigator.IterateOverLightsTilesOnGrid(this, (SpaceNavigator _spaces) => {
+			bool _usable = true;
+			Vector2i _gridAxisLengths = _spaces.GetGridAxisLengths();
+			Vector2i _gridPos = _spaces.GetGridPos();
+			if (_gridPos.x < 0 || _gridPos.x >= _gridAxisLengths.x || _gridPos.y < 0 || _gridPos.y >= _gridAxisLengths.y){
+				_usable = false;
 			}
-		}
+			else if(_onlyWithColliders && !ObjectPooler.Instance.HasPoolForID(Grid.Instance.grid[_gridPos.x, _gridPos.y].ExactType)){
+				_usable = false;
+			}
+
+			Vector2i _lightPos = _spaces.GetLightPos();
+			_tiles[_lightPos.x, _lightPos.y] = new TileReference(_gridPos.x, _gridPos.y, _usable);
+		});
 
 		return _tiles;
 	}
 
-	static class VertexSiblings { // vertices sharing the same world pos
-		public class Sibling {
-			public bool Affected = false;
-			public Vector2i vGridPos;
-			public Vector2i gGridPos;
-			public Vector2i vTilePos;
+	private void ClearCachedVertexColors() {
+		// Vector2i _vLightSize = new Vector2i(Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE - 1, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE - 1);
+		// Vector2i _vGridPos 		= LightManager.ConvertToVertexGridSpace(Vector2i.zero, this);
+		// Vector2i _vGridPosFirst = _vGridPos;
+		// Vector2i _vGridPosLast 	= LightManager.ConvertToVertexGridSpace(_vLightSize, this);
 
-			public void SetNewValues(bool _affected, int _gGridPosX, int _gGridPosY, int _vTilePosX, int _vTilePosY) {
-				Affected = _affected;
-				if(!_affected) return;
+		// mIterateVariables IterateExtraVariables = delegate (){
+		// 	_vGridPos.x++;
+		// 	if (_vGridPos.x > _vGridPosLast.x){
+		// 		_vGridPos.x = _vGridPosFirst.x;
+		// 		_vGridPos.y++;
+		// 	}
+		// };
 
-				gGridPos.x = _gGridPosX;
-				gGridPos.y = _gGridPosY;
-				vTilePos.x = _vTilePosX;
-				vTilePos.y = _vTilePosY;
-				vGridPos = ConvertToVertexGridSpace(gGridPos, vTilePos);
-			}
-
-			public void SetLightDirections(Vector4 _lightDirs) {
-				Grid.Instance.grid[gGridPos.x, gGridPos.y].MyUVController.SetLightDirections(vTilePos, _lightDirs);
-			}
-			public void SetVertexColor(Color _color){
-				Grid.Instance.grid[gGridPos.x, gGridPos.y].MyUVController.SetVertexColor(vTilePos, _color);
-			}
-			public void SetValueInVertexLightMap<T>(T[,] _vertexLightMap, T _value, CustomLight _light){
-				Vector2i _vLightPos = ConvertToVertexLightSpace(vGridPos, _light);
-				if (_vLightPos.x < _vertexLightMap.GetLength(0) && _vLightPos.y < _vertexLightMap.GetLength(1)) { 
-					_vertexLightMap[_vLightPos.x, _vLightPos.y] = _value;
-				}
-			}
-		}
-		public static Sibling Current 			= new Sibling();
-		public static Sibling OwnTopHalf 		= new Sibling();
-		public static Sibling OwnTopHalfLeft 	= new Sibling();
-		public static Sibling OwnTopHalfRight 	= new Sibling();
-		public static Sibling Top 				= new Sibling();
-		public static Sibling Right 			= new Sibling();
-		public static Sibling RightTopHalf 		= new Sibling();
-		public static Sibling RightTopHalfLeft 	= new Sibling();
-		public static Sibling TopRight 			= new Sibling();
-		public static void Setup(Vector2i _vGridPos) {
-			Vector2i _vTilePos = ConvertToVertexTileSpace(_vGridPos);
-			Vector2i _gGridPos = ConvertToGridSpace(_vGridPos);
-			bool _isOnLeftEdge = _vTilePos.x == 0;
-			bool _isOnRightEdge = _vTilePos.x == UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
-			bool _affectsTopHalf = _vTilePos.y == UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
-			bool _canGoRight 	= _gGridPos.x + 1 < Grid.GridSize.x;
-			bool _canGoUp 		= _gGridPos.y + 1 < Grid.GridSize.y;
-
-			Current.SetNewValues(
-				true,
-				_gGridPos.x, _gGridPos.y,
-				_vTilePos.x, _vTilePos.y
-			);
-			OwnTopHalf.SetNewValues(
-				_affectsTopHalf,
-				_gGridPos.x, _gGridPos.y,
-				_vTilePos.x, _vTilePos.y + 1
-			);
-			OwnTopHalfLeft.SetNewValues(
-				_affectsTopHalf && _isOnLeftEdge,
-				_gGridPos.x, _gGridPos.y,
-				0, _vTilePos.y + 2
-			);
-			OwnTopHalfRight.SetNewValues(
-				_affectsTopHalf && _isOnRightEdge,
-				_gGridPos.x, _gGridPos.y,
-				1, _vTilePos.y + 2
-			);
-			Right.SetNewValues(
-				_isOnRightEdge && _canGoRight,
-				_gGridPos.x + 1, _gGridPos.y,
-				0, _vTilePos.y
-			);
-			RightTopHalf.SetNewValues(
-				_canGoRight && _isOnRightEdge && _affectsTopHalf,
-				_gGridPos.x + 1, _gGridPos.y,
-				0, _vTilePos.y + 1
-			);
-			RightTopHalfLeft.SetNewValues(
-				_canGoRight && _isOnRightEdge && _affectsTopHalf,
-				_gGridPos.x + 1, _gGridPos.y,
-				0, _vTilePos.y + 2
-			);
-			Top.SetNewValues(
-				_canGoUp && _affectsTopHalf,
-				_gGridPos.x, _gGridPos.y + 1,
-				_vTilePos.x, 0
-			);
-			TopRight.SetNewValues(
-				_canGoUp && Top.Affected && Right.Affected,
-				_gGridPos.x + 1, _gGridPos.y + 1,
-				0, 0
-			);
-		}
-		public static void SetLightDirections(Vector4 _lightDirs) {
-			if (Current.Affected) 			Current.			SetLightDirections(_lightDirs);
-			if (OwnTopHalf.Affected) 		OwnTopHalf.			SetLightDirections(_lightDirs);
-			if (OwnTopHalfLeft.Affected) 	OwnTopHalfLeft.		SetLightDirections(_lightDirs);
-			if (OwnTopHalfRight.Affected) 	OwnTopHalfRight.	SetLightDirections(_lightDirs);
-			if (Top.Affected) 				Top.				SetLightDirections(_lightDirs);
-			if (Right.Affected) 			Right.				SetLightDirections(_lightDirs);
-			if (RightTopHalf.Affected) 		RightTopHalf.		SetLightDirections(_lightDirs);
-			if (RightTopHalfLeft.Affected) 	RightTopHalfLeft.	SetLightDirections(_lightDirs);
-			if (TopRight.Affected) 			TopRight.			SetLightDirections(_lightDirs);
-		}
-		public static void SetVertexColor(Color _color, CustomLight _light){
-			if (Current.Affected) 			Current.			SetVertexColor(_color);
-			if (OwnTopHalf.Affected) 		OwnTopHalf.			SetVertexColor(_color);
-			if (OwnTopHalfLeft.Affected) 	OwnTopHalfLeft.		SetVertexColor(_color);
-			if (OwnTopHalfRight.Affected) 	OwnTopHalfRight.	SetVertexColor(_color);
-			if (Top.Affected) 				Top.				SetVertexColor(_color);
-			if (Right.Affected) 			Right.				SetVertexColor(_color);
-			if (RightTopHalf.Affected) 		RightTopHalf.		SetVertexColor(_color);
-			if (RightTopHalfLeft.Affected) 	RightTopHalfLeft.	SetVertexColor(_color);
-			if (TopRight.Affected) 			TopRight.			SetVertexColor(_color);
-		}
-
-		public static void SetValueInVertexGridMap<T>(T[,] _vertexGridMap, T _value) {
-			if (Current.Affected) 	_vertexGridMap[Current.vGridPos.x, 	Current.vGridPos.y] 	= _value;
-			if (Top.Affected) 		_vertexGridMap[Top.vGridPos.x, 		Top.vGridPos.y] 		= _value;
-			if (Right.Affected)		_vertexGridMap[Right.vGridPos.x, 	Right.vGridPos.y] 		= _value;
-			if (TopRight.Affected)	_vertexGridMap[TopRight.vGridPos.x, TopRight.vGridPos.y] 	= _value;
-		}
-		public static void SetValueInVertexLightMap<T>(T[,] _vertexLightMap, T _value, CustomLight _light){
-			if (Current.Affected) 	Current.	SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
-			if (Top.Affected)		Top.		SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
-			if (Right.Affected)		Right.		SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
-			if (TopRight.Affected)	TopRight.	SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
-		}
-	}
-
-	void IterateOverTilesInRange(Action<Vector2i> _tileMethod){
-		//Vector2i _vGridPosStart = ConvertToVertexGridSpace(new Vector2i(0, 0), this);
-		//Vector2i _vGridPosEnd = ConvertToVertexGridSpace(new Vector2i(Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE), this);
-		// _vGridPosStart.x = Mathf.Clamp(_vGridPosStart.x, 0, Grid.GridSize.x * UVControllerBasic.MESH_VERTICES_PER_EDGE);
-		// _vGridPosStart.y = Mathf.Clamp(_vGridPosStart.y, 0, Grid.GridSize.y * UVControllerBasic.MESH_VERTICES_PER_EDGE);
-		// _vGridPosEnd.x = Mathf.Clamp(_vGridPosEnd.x, 0, Grid.GridSize.x * UVControllerBasic.MESH_VERTICES_PER_EDGE);
-		// _vGridPosEnd.y = Mathf.Clamp(_vGridPosEnd.y, 0, Grid.GridSize.y * UVControllerBasic.MESH_VERTICES_PER_EDGE);
-		//Vector2i _vGridPos = _vGridPosStart;
-
-		Vector2i _vGridPos 		= ConvertToVertexGridSpace(tilesInRange[0, 0].GridPos, Vector2i.zero);
-		Vector2i _vGridPosFirst = _vGridPos;
-		Vector2i _vGridPosLast 	= ConvertToVertexGridSpace(tilesInRange.GetLast().GridPos, UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR);
-		// Vector2 _vWorldStart = ConvertToWorldSpace(_vGridPosStart);
-		// Vector2 _vWorldEnd = ConvertToWorldSpace(_vGridPosEnd);
-		// Debug.Log(_vWorldStart + ", " + _vWorldEnd);
-		// SuperDebug.MarkPoint(_vWorldStart, Color.red);
-		// SuperDebug.MarkPoint(_vWorldEnd, Color.red);
-
-		mIterateVariables IterateExtraVariables = delegate (){
-			_vGridPos.x++;
-			if (_vGridPos.x >= _vGridPosLast.x){
-				_vGridPos.x = _vGridPosFirst.x;
-				_vGridPos.y++;
-			}
-		};
-		// int _totalIterations = (_vGridPosEnd.x - _vGridPosStart.x) * (_vGridPosEnd.y - _vGridPosStart.y);
+		// int _totalIterations = (int)(_vLightSize.x * _vLightSize.y);
 		// for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
-		// 	Vector2i _gLightPos = ConvertToLightSpace(_vGridPos, this);
-		// 	Vector2i _vTilePos = ConvertToVertexTileSpace(_vGridPos);
-		// 	if (_gLightPos.x > 0 && _vTilePos.x == 0) continue;
-		// 	if (_gLightPos.y > 0 && _vTilePos.y == 0) continue;
-		// 	if (tilesInRange[_gLightPos.x, _gLightPos.y].x == -1) continue;
+		// 	Vector2i _vTilePos = LightManager.ConvertToVertexTileSpace(_vGridPos);
+		// 	if (_vGridPos.x > 0 && _vTilePos.x == 0) continue;
+		// 	if (_vGridPos.y > 0 && _vTilePos.y == 0) continue;
+		// 	if (_vGridPos.x >= LightManager.VGridMap_TotalColorNoBlur.GetLength(0)) continue;
+		// 	if (_vGridPos.y >= LightManager.VGridMap_TotalColorNoBlur.GetLength(1)) continue;
 
-		// 	_tileMethod(_vGridPos);
+		// 	LightManager.VertexSiblings.Setup(_vGridPos);
+		// 	LightManager.VertexSiblings.SetValueInVertexGridMap<Color>(LightManager.VGridMap_TotalColorNoBlur, Color.clear, _vGridPos);
 		// }
 
-		int _totalIterations = (int)(tilesInRange.Length * Mathf.Pow(UVControllerBasic.MESH_VERTICES_PER_EDGE, 2));
-		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
-			Vector2i _gLightPos = ConvertToLightSpace(_vGridPos, this);
-			Vector2i _vTilePos = ConvertToVertexTileSpace(_vGridPos);
-
-			// if(LightIndex == 0)
-			// 	SuperDebug.MarkPoint(ConvertToWorldSpace(_vGridPos), Color.magenta);
-			// if (LightIndex == 1)
-			// 	SuperDebug.MarkPoint(ConvertToWorldSpace(_vGridPos), Color.cyan);
-
-			if (_gLightPos.x > 0 && _vTilePos.x == 0) continue;
-			if (_gLightPos.y > 0 && _vTilePos.y == 0) continue;
-			if (!tilesInRange[_gLightPos.x, _gLightPos.y].Usable) continue;
-
-			_tileMethod(_vGridPos);
-		}
-	}
-	private void SetBasicLightInfo(Vector2i _vGridPos){
-		VertexSiblings.Setup(_vGridPos);
-
-		Vector2i _vTilePos = ConvertToVertexTileSpace(_vGridPos);
-		Vector2i _gLightPos = ConvertToLightSpace(_vGridPos, this);
-		Vector2i _gGridPos = ConvertToGridSpace(_vGridPos);
-		Vector2 _vWorldPos = ConvertToWorldSpace(_vGridPos);
-		int _vTileIndex = _vTilePos.y * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vTilePos.x;
-		bool _illuminated;
-		float _lightFromThis;
-		Color _vertexColor = GetColorForVertex(
-			_vTilePos: 		_vTilePos, 
-			_vLightPos: 	ConvertToVertexLightSpace(_vGridPos, this), 
-			_gLightPos: 	_gLightPos, 
-			_vGridPos: 		_vGridPos, 
-			_gGridPos:		_gGridPos, 
-			_vWorldPos: 	_vWorldPos, 
-			_vIndex: 		_vTileIndex, 
-			_illuminated: 	out _illuminated, 
-			_lightFromThis: out _lightFromThis
-		);
-		//if (LightIndex == 1){
-			// if(IsBeingRemoved)
-			// 	SuperDebug.MarkPoint(_vWorldPos, Color.red);
-			// else
-			// 	SuperDebug.MarkPoint(_vWorldPos, Color.cyan);
-		//}
-
-		VertexSiblings.SetValueInVertexLightMap<bool>(VXLightMap_Hit, _illuminated, this);
-		VertexSiblings.SetValueInVertexLightMap<float>(VXLightMap_Intensity, _lightFromThis, this);
-		VertexSiblings.SetValueInVertexGridMap<Color>(LightManager.VertMap_TotalColorNoBlur, _vertexColor);
-	}
-	
-	private void SetPostProcessEffects(Vector2i _vGridPos) {
-		VertexSiblings.Setup(_vGridPos);
-		
-		Vector2i _vTilePos = ConvertToVertexTileSpace(_vGridPos);
-		Vector2i _gGridPos = ConvertToGridSpace(_vGridPos);
-		Vector2 _vWorldPos = ConvertToWorldSpace(_vGridPos);
-
-		Vector4 _lightDirs = GetLightDirections(_vGridPos, _gGridPos);
-		Grid.Instance.grid[_gGridPos.x, _gGridPos.y].MyUVController.LightDirections = _lightDirs; // debug
-		VertexSiblings.SetLightDirections(_lightDirs);
-
-		int _failAmount = 0;
-		int _diffToRightX = _vTilePos.x == 0 ? 1 : 2; // TODO: this can't be right. It should be == 1, right?
-		int _diffToAboveY = _vTilePos.y == 0 ? 1 : 2;
-
-		Color _vertexColor = Color.clear;
-		_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x - 1, _vGridPos.y - 1, ref _failAmount);
-		_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x, _vGridPos.y - 1, ref _failAmount);
-		_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x + _diffToRightX, _vGridPos.y - 1, ref _failAmount);
-		_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x - 1, _vGridPos.y, ref _failAmount);
-		_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x, _vGridPos.y, ref _failAmount); // this vertex
-		_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x + _diffToRightX, _vGridPos.y, ref _failAmount);
-		_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x - 1, _vGridPos.y + _diffToAboveY, ref _failAmount);
-		_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x, _vGridPos.y + _diffToAboveY, ref _failAmount);
-		_vertexColor += TryGetAdjacentValueInVertexGridMap(LightManager.VertMap_TotalColorNoBlur, _vGridPos.x + _diffToRightX, _vGridPos.y + _diffToAboveY, ref _failAmount);
-		_vertexColor /= Mathf.Max(Mathf.Pow(UVControllerBasic.MESH_VERTICES_PER_EDGE, 2) - _failAmount, 1);
-		_vertexColor.a = 1;
-
-		VertexSiblings.SetVertexColor(_vertexColor, this);
+		// SpaceNavigator.IterateOverLightsVerticesOnVGrid(this, (SpaceNavigator _spaces) =>{
+		// 	Vector2i _vGridPos = _spaces.GetVertexGridPos();
+		// 	LightManager.VertexSiblings.Setup(_vGridPos);
+		// 	LightManager.VertexSiblings.SetValueInVertexGridMap<Color>(LightManager.VGridMap_TotalColorNoBlur, Color.clear, _vGridPos);
+		// });
+		LightManager.VertMap<Color>.IterateOverVertMap(LightManager.VGridMap_TotalColorNoBlur, (Vector2i _mapPos) =>{
+			LightManager.VGridMap_TotalColorNoBlur.SetValue(_mapPos, Color.clear);
+		});
 	}
 
-	static Vector2i ConvertToVertexGridSpace(Vector2i _vLightPos, CustomLight _light){
-		return _vLightPos + Vector2i.Scale(_light.MyGridCoord - _light.GetRadiusAsVector(), UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR);
-	}
-	static Vector2i ConvertToVertexGridSpace(Vector2i _gGridPos, Vector2i _vTilePos){
-		return _gGridPos * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vTilePos;
-	}
-	static Vector2i ConvertToGridSpace(Vector2i _vGridPos){
-		return _vGridPos / UVControllerBasic.MESH_VERTICES_PER_EDGE;
-	}
-	static Vector2i ConvertToLightSpace(Vector2i _vGridPos, CustomLight _light){
-		return ConvertToGridSpace(_vGridPos) - (_light.MyGridCoord - _light.GetRadiusAsVector());
-	}
-	static Vector2i ConvertToVertexLightSpace(Vector2i _vGridPos, CustomLight _light){
-		return _vGridPos - Vector2i.Scale(_light.MyGridCoord - _light.GetRadiusAsVector(), UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR);
-	}
-	static Vector2i ConvertToVertexTileSpace(Vector2i _vGridPos){ // WARNING: does not support top-half vertices! Confusing? Yes!
-		return _vGridPos - ConvertToGridSpace(_vGridPos) * UVControllerBasic.MESH_VERTICES_PER_EDGE;
-	}
-    Vector2 ConvertToWorldSpace(Vector2i _vGridPos){
-		Vector2i _gGridPos 	= ConvertToGridSpace(_vGridPos);
-		Vector2 _localPos 	= new Vector2(_vGridPos.x * UVControllerBasic.MESH_VERTEX_SEPARATION, _vGridPos.y * UVControllerBasic.MESH_VERTEX_SEPARATION);
-		Vector2 _correction = new Vector2(_gGridPos.x * UVControllerBasic.MESH_VERTEX_SEPARATION, _gGridPos.y * UVControllerBasic.MESH_VERTEX_SEPARATION); // discount every third vertex (except first) since they overlap
-		Vector2 _gridWorldPos = Grid.Instance.transform.position;
-		return _gridWorldPos - Grid.GridSizeHalf + _localPos - _correction;
-    }
+	private void SetBasicLightInfo(){
+		// Vector2i _vGridPos 		= LightManager.ConvertToVertexGridSpace(tilesInRange[0, 0].GridPos, Vector2i.zero);
+		// Vector2i _vGridPosFirst = _vGridPos;
+		// Vector2i _vGridPosLast 	= LightManager.ConvertToVertexGridSpace(tilesInRange.GetLast().GridPos, UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR);
 
-	// static float GetDotY(Vector2 _vWorldPos, CustomLight _light){
-	// 	// dot is by default between -1 to 1, so let's even it out to 0 to 1
-	// 	// float _vertical 	= (Vector2.Dot(Vector2.down, (_vWorldPos - _light.myWorldPos).normalized) + 1) * 0.5f;
-	// 	// float _horizontal 	= (Vector2.Dot(Vector2.left, (_vWorldPos - _light.myWorldPos).normalized) + 1) * 0.5f;
+		// mIterateVariables IterateExtraVariables = delegate (){
+		// 	_vGridPos.x++;
+		// 	if (_vGridPos.x >= _vGridPosLast.x){
+		// 		_vGridPos.x = _vGridPosFirst.x;
+		// 		_vGridPos.y++;
+		// 	}
+		// };
 
-	// 	// return new Vector2(
-	// 	// 	Mathf.Max(0.001f, _horizontal), 
-	// 	// 	Mathf.Max(0.001f, _vertical)
-	// 	// );
-	// 	return Vector2.Dot(Vector2.left, (_vWorldPos - _light.myWorldPos).normalized)
-	// }
+		// int _totalIterations = (int)(tilesInRange.Length * Mathf.Pow(UVControllerBasic.MESH_VERTICES_PER_EDGE, 2));
+		// for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
+		// 	Vector2i _gLightPos = LightManager.ConvertToLightSpace(_vGridPos, this);
+		// 	Vector2i _vTilePos = LightManager.ConvertToVertexTileSpace(_vGridPos);
 
-	private Color GetColorForVertex(Vector2i _vTilePos, Vector2i _vLightPos, Vector2i _gLightPos, Vector2i _vGridPos, Vector2i _gGridPos, Vector2 _vWorldPos,  int _vIndex, out bool _illuminated, out float _lightFromThis){
-		// take all previously hit light and recompile into one color
-		Color _totalColor = Color.clear;
-		int[] _lightsInRange = LightManager.GridMap_LightsInRange[_gGridPos.x, _gGridPos.y];
-		int actualCount = 0;
-		for (int i = 0; i < _lightsInRange.Length; i++){ // TODO: it's a bit weird that every light will get light from every other light, when we could just have the vertices do this after all lights have sent their individual stuff
-			if (_lightsInRange[i] == -1) break;
+		// 	if (_gLightPos.x > 0 && _vTilePos.x == 0) continue;
+		// 	if (_gLightPos.y > 0 && _vTilePos.y == 0) continue;
+		// 	if (!tilesInRange[_gLightPos.x, _gLightPos.y].Usable) continue;
 
-			CustomLight _otherLight = LightManager.AllLights[_lightsInRange[i]];
-			if (_otherLight == this) continue;
-			if (_otherLight.IsBeingRemoved) continue;
+		// 	LightManager.VertexSiblings.Setup(_vGridPos);
 
-			Vector2i _vLightPosOtherLight = ConvertToVertexLightSpace(_vGridPos, _otherLight);
-			bool _hit = _otherLight.VXLightMap_Hit[_vLightPosOtherLight.x, _vLightPosOtherLight.y];
-			if (!_hit) continue;
+		// 	Vector2 _vWorldPos = LightManager.ConvertToWorldSpace(_vGridPos);
+		// 	float _distance = (_vWorldPos - MyWorldPos).magnitude;
+		// 	bool _illuminated = !IsBeingRemoved && IsInsideLightMesh(_vWorldPos);
+		// 	float _lightFromThis = Intensity * Mathf.Pow(1 - (_distance / Radius), 2);
 
-			actualCount++;
-			CombineLightWithOthersLight(_otherLight.VXLightMap_Intensity[_vLightPosOtherLight.x, _vLightPosOtherLight.y], _otherLight.GetLightColor(), ref _totalColor);
-		}
+		// 	LightManager.VertexSiblings.SetValueInVertexLightMap<bool>(VLightMap_Hit, _illuminated, this, _vGridPos);
+		// 	LightManager.VertexSiblings.SetValueInVertexLightMap<float>(VLightMap_Intensity, _lightFromThis, this, _vGridPos);
+		// }
 
-		float _distance = (_vWorldPos - myInspector.MyTileObject.MyTile.WorldPosition).magnitude;
-		_lightFromThis = Intensity * Mathf.Pow(1 - (_distance / Radius), 2);
-		_illuminated = !IsBeingRemoved && IsInsideLightMesh(_vWorldPos);
+		SpaceNavigator.IterateOverLightsVerticesOnVGridAndSkipOverlaps(this, (SpaceNavigator _spaces) => {
+			Vector2i _lightPos = _spaces.GetLightPos();
+			if (!tilesInRange[_lightPos.x, _lightPos.y].Usable) return;
 
-		if(_illuminated){
-			CombineLightWithOthersLight(_lightFromThis, GetLightColor(), ref _totalColor);
-		}
+			Vector2i _vGridPos = _spaces.GetVertexGridPos();
+			LightManager.VertexSiblings.Setup(_vGridPos);
 
-		_totalColor.a = 1;
-		return _totalColor;
-    }
-	private void CombineLightWithOthersLight(float _newIntensity, Color _newColor, ref Color _total) {
-		_newColor *= _newIntensity;
-		if (_total.r < _newColor.r)
-			_total.r += _newColor.r;
-		if (_total.g < _newColor.g)
-			_total.g += _newColor.g;
-		if (_total.b < _newColor.b)
-			_total.b += _newColor.b;
-	}
+			Vector2 _vWorldPos = _spaces.GetWorldPos();
+			float _distance = (_vWorldPos - MyWorldPos).magnitude;
+			bool _illuminated = !IsBeingRemoved && IsInsideLightMesh(_vWorldPos);
+			float _lightFromThis = Intensity * Mathf.Pow(1 - (_distance / Radius), 2);
 
-	private Vector4 GetLightDirections(Vector2i _vGridPos, Vector2i _gGridPos){
-		Vector4 _lightDir = new Vector4();
-		for (int i = 0; i < LightManager.GridMap_LightsInRange[_gGridPos.x, _gGridPos.y].Length; i++){
-			int _lightIndex = LightManager.GridMap_LightsInRange[_gGridPos.x, _gGridPos.y][i];
-			if (_lightIndex == -1) break;
-
-			CustomLight _otherLight = LightManager.AllLights[_lightIndex];
-			Vector2i _vLightPos = ConvertToVertexLightSpace(_vGridPos, _otherLight);
-			//if (!_otherLight.VXLightMap_Hit[_vLightPos.x, _vLightPos.y]) continue;
-
-			Vector2 _vWorldPos = ConvertToWorldSpace(_vGridPos);
-			Vector2 _dir = (_otherLight.myWorldPos - _vWorldPos).normalized;
-			float _dotX = Vector2.Dot(Vector2.right, _dir);
-			float _dotY = Vector2.Dot(Vector2.up, _dir);
-			if (_dotY > 0) _lightDir.x = 1;
-			if (_dotX > 0) _lightDir.y = 1;
-			if (_dotY < 0) _lightDir.z = 1;
-			if (_dotX < 0) _lightDir.w = 1;
-		}
-
-		return _lightDir;
+			LightManager.VertexSiblings.SetValueInVertexLightMap<bool>(VLightMap_Hit, _illuminated, this, _vGridPos);
+			LightManager.VertexSiblings.SetValueInVertexLightMap<float>(VLightMap_Intensity, _lightFromThis, this, _vGridPos);
+		});
 	}
 
 	private const float VERTEX_ON_EDGE_TOLERANCE = 0.01f;
@@ -559,27 +303,39 @@ public partial class CustomLight : MonoBehaviour {
 
 	Queue<PolygonCollider2D> pooledColliders = new Queue<PolygonCollider2D>();
 	void PreparePooledColliders() {
-		int x = 0, y = 0;
-		mIterateVariables IterateExtraVariables = delegate (){
-			x++;
-			if (x == tilesInRangeWithCollider.GetLength(0)){
-				x = 0;
-				y++;
-			}
-		};
-		int _totalIterations = tilesInRangeWithCollider.GetLength(0) * tilesInRangeWithCollider.GetLength(1);
-		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
-			TileReference _tile = tilesInRangeWithCollider[x, y];
-			if(!_tile.Usable) continue;
+		// int x = 0, y = 0;
+		// mIterateVariables IterateExtraVariables = delegate (){
+		// 	x++;
+		// 	if (x == tilesInRangeWithCollider.GetLength(0)){
+		// 		x = 0;
+		// 		y++;
+		// 	}
+		// };
+		// int _totalIterations = tilesInRangeWithCollider.GetLength(0) * tilesInRangeWithCollider.GetLength(1);
+		// for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()){
+		// 	TileReference _tile = tilesInRangeWithCollider[x, y];
+		// 	if(!_tile.Usable) continue;
 
-			Tile _t = Grid.Instance.grid[_tile.GridPos.x, _tile.GridPos.y];
-			PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(_t.ExactType);
-            if (_coll == null)
-                continue;
+		// 	Tile _t = Grid.Instance.grid[_tile.GridPos.x, _tile.GridPos.y];
+		// 	PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(_t.ExactType);
+        //     if (_coll == null)
+        //         continue;
 
-            _coll.transform.position = _t.WorldPosition;
-            pooledColliders.Enqueue(_coll);
-        }
+        //     _coll.transform.position = _t.WorldPosition;
+        //     pooledColliders.Enqueue(_coll);
+        // }
+		SpaceNavigator.IterateOverGrid((SpaceNavigator _spaces) => {
+			Vector2i _gridPos = _spaces.GetGridPos();
+			TileReference _tileRef = tilesInRangeWithCollider[_gridPos.x, _gridPos.y];
+			if (!_tileRef.Usable) return;
+
+			Tile _tile = Grid.Instance.grid[_tileRef.GridPos.x, _tileRef.GridPos.y];
+			PolygonCollider2D _coll = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(_tile.ExactType);
+			if (_coll == null) return;
+
+			_coll.transform.position = _tile.WorldPosition;
+			pooledColliders.Enqueue(_coll);
+		});
 	}
 	void DiscardPooledColliders(){
         int _count = pooledColliders.Count;
