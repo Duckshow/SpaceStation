@@ -324,9 +324,9 @@ public partial class CustomLight : MonoBehaviour {
         //     _coll.transform.position = _t.WorldPosition;
         //     pooledColliders.Enqueue(_coll);
         // }
-		SpaceNavigator.IterateOverGrid((SpaceNavigator _spaces) => {
-			Vector2i _gridPos = _spaces.GetGridPos();
-			TileReference _tileRef = tilesInRangeWithCollider[_gridPos.x, _gridPos.y];
+		SpaceNavigator.IterateOverLightsTilesOnGrid(this, (SpaceNavigator _spaces) => {
+			Vector2i _lightPos = _spaces.GetLightPos();
+			TileReference _tileRef = tilesInRangeWithCollider[_lightPos.x, _lightPos.y];
 			if (!_tileRef.Usable) return;
 
 			Tile _tile = Grid.Instance.grid[_tileRef.GridPos.x, _tileRef.GridPos.y];

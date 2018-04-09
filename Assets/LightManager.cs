@@ -221,6 +221,7 @@ public class LightManager : MonoBehaviour {
 
 	private Vector4 GetLightDirections(SpaceNavigator _spaces){
 		Vector2i _gridPos = _spaces.GetGridPos();
+		Vector2 _worldPos = _spaces.GetWorldPos();
 		Vector4 _lightDir = new Vector4();
 		
 		for (int i = 0; i < LightManager.GridMap_LightsInRange[_gridPos.x, _gridPos.y].Length; i++){
@@ -230,7 +231,7 @@ public class LightManager : MonoBehaviour {
 			CustomLight _otherLight = LightManager.AllLights[_lightIndex];
 			if(_otherLight.IsBeingRemoved) continue;
 
-			Vector2 _dir = (_otherLight.MyWorldPos - _spaces.GetWorldPos()).normalized;
+			Vector2 _dir = (_otherLight.MyWorldPos - _worldPos).normalized;
 			float _dotX = Vector2.Dot(Vector2.right, _dir);
 			float _dotY = Vector2.Dot(Vector2.up, _dir);
 			if (_dotX == 0 && _dotY == 0) { // light and vertex are at same position
@@ -382,18 +383,16 @@ public class LightManager : MonoBehaviour {
 
 		SpaceNavigator.IterateOverLightsTilesOnGrid(_light, (SpaceNavigator _spaces) => {
 			Vector2i _gridPos = _spaces.GetGridPos();
-			for (int i2 = 0; i2 < GridMap_LightsInRange[_gridPos.x, _gridPos.y].Length; i2++){
-				int _lightIndex = GridMap_LightsInRange[_gridPos.x, _gridPos.y][i2];
-				if (_add && _lightIndex == _light.LightIndex){
-					continue;
+			int[] _lightIndices = GridMap_LightsInRange[_gridPos.x, _gridPos.y];
+			for (int i2 = 0; i2 < _lightIndices.Length; i2++){
+				int _lightIndex = _lightIndices[i2];
+				if (_lightIndex == _light.LightIndex){
+					if (_add) break; // already exists for this tile
+					else GridMap_LightsInRange[_gridPos.x, _gridPos.y].PseudoRemoveAt<int>(i2, _emptyValue: -1);
 				}
-				else if(_add && _lightIndex == -1){
+				else if(_lightIndex == -1 && _add){
 					Vector2 _pos = Grid.Instance.GetWorldPointFromTileCoord(_gridPos);
 					GridMap_LightsInRange[_gridPos.x, _gridPos.y][i2] = _light.LightIndex;
-					break;
-				}
-				else if(!_add && _lightIndex == _light.LightIndex){
-					GridMap_LightsInRange[_gridPos.x, _gridPos.y].PseudoRemoveAt<int>(i2, _emptyValue: -1);
 					break;
 				}
 			}

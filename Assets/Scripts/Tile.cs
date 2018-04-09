@@ -163,7 +163,7 @@ public class Tile : IHeapItem<Tile> {
 
 
     public Tile(Vector3 _worldPos, int _gridX, int _gridY) {
-        WorldPosition = _worldPos;
+		WorldPosition = _worldPos;
         GridCoord = new Vector2i(_gridX, _gridY);
 
 		MyUVController = ((GameObject)Grid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(WorldPosition.x, WorldPosition.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();

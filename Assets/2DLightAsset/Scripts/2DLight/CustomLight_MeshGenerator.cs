@@ -49,23 +49,82 @@ public partial class CustomLight : MonoBehaviour {
 	void SetVertices() {
 		allVertices.Clear();
 
-		int x = 0, y = 0;
-		TileReference _tile = tilesInRangeWithCollider[0, 0];
-		mIterateVariables IterateExtraVariables = delegate (){
-			x++;
-			if (x >= tilesInRangeWithCollider.GetLength(0)){
-				x = 0;
-				y++;
-				if (y >= tilesInRangeWithCollider.GetLength(1)){
-					return;
-				}
-			}
+		// int x = 0, y = 0;
+		// TileReference _tile = tilesInRangeWithCollider[0, 0];
+		// mIterateVariables IterateExtraVariables = delegate (){
+		// 	x++;
+		// 	if (x >= tilesInRangeWithCollider.GetLength(0)){
+		// 		x = 0;
+		// 		y++;
+		// 		if (y >= tilesInRangeWithCollider.GetLength(1)){
+		// 			return;
+		// 		}
+		// 	}
 
-			_tile = tilesInRangeWithCollider[x, y];
-		};
-		int _totalIterations = tilesInRangeWithCollider.GetLength(0) * tilesInRangeWithCollider.GetLength(1);
-		for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()) {
-			if(!_tile.Usable) continue;
+		// 	_tile = tilesInRangeWithCollider[x, y];
+		// };
+		// int _totalIterations = tilesInRangeWithCollider.GetLength(0) * tilesInRangeWithCollider.GetLength(1);
+		// for (int i = 0; i < _totalIterations; i++, IterateExtraVariables()) {
+		// 	if(!_tile.Usable) continue;
+		// 	tempVerts.Clear();
+
+		// 	// get collider
+		// 	Tile _colliderTile = Grid.Instance.grid[_tile.GridPos.x, _tile.GridPos.y];
+		//     PolygonCollider2D _collider = ObjectPooler.Instance.GetPooledObject<PolygonCollider2D>(_colliderTile.ExactType);
+		//     _collider.transform.position = _colliderTile.WorldPosition;
+
+
+		//     for (int pIndex = 0; pIndex < _collider.pathCount; pIndex++){ 					// iterate over collider-paths
+		//         for (int vIndex = 0; vIndex < _collider.GetPath(pIndex).Length; vIndex++){ 	// iterate over path-vertices
+		//             Vector2 _targetPosWorld = (Vector2)_collider.transform.position + _collider.GetPath(pIndex)[vIndex];
+		//             Verts _newVertex = new Verts();
+
+		//             if (Gridcast(MyWorldPos, _targetPosWorld, out rayHit)) {
+		//                 _newVertex.LocalPos = rayHit.point;
+		// 				_newVertex.HasHitTarget = false;
+		//             }
+		//             else {
+		//                 _newVertex.LocalPos = _targetPosWorld;
+		//                 _newVertex.HasHitTarget = true;
+		//             }
+
+		//             _newVertex.LocalPos = transform.InverseTransformPoint(_newVertex.LocalPos);	// to local
+		//             _newVertex.QuadrantAngle = GetQuadrantAngle(_newVertex.LocalPos.x, _newVertex.LocalPos.y);
+
+		//             //--Add verts to the main list
+		//             if (_newVertex.LocalPos.magnitude <= Radius)
+		//                 tempVerts.Add(_newVertex);
+		//         }
+		//     }
+
+		// 	// return collider
+		//     _collider.GetComponent<PoolerObject>().ReturnToPool();
+
+		//     // get the two edge-most vertices and continue gridcasting (bc they're corners and don't stop light)
+		//     if (tempVerts.Count > 0) {
+		// 		SortVerticesByAngle(tempVerts);
+
+		// 		int _minIndex = 0;
+		// 		int _maxIndex = tempVerts.Count - 1;
+		//         Verts _firstVertex = tempVerts[_minIndex];
+		// 		Verts _lastVertex = tempVerts[_maxIndex];
+
+		// 		_firstVertex.Location = 1;
+		//         _lastVertex.Location = -1;
+		//         allVertices.AddRange(tempVerts);
+
+		// 		if(_firstVertex.HasHitTarget)	ContinueGridcast(transform.TransformPoint(_firstVertex.LocalPos));
+		// 		if(_lastVertex.HasHitTarget) 	ContinueGridcast(transform.TransformPoint(_lastVertex.LocalPos));
+
+		// 		tempVerts[_minIndex] = _firstVertex;
+		// 		tempVerts[_maxIndex] = _lastVertex;
+		// 	}
+		// }
+
+		SpaceNavigator.IterateOverLightsTilesOnGrid(this, (SpaceNavigator _spaces) => {
+			Vector2i _lightPos = _spaces.GetLightPos();
+			TileReference _tile = tilesInRangeWithCollider[_lightPos.x, _lightPos.y];
+			if(!_tile.Usable) return;
 			tempVerts.Clear();
 
 			// get collider
@@ -119,7 +178,8 @@ public partial class CustomLight : MonoBehaviour {
 				tempVerts[_minIndex] = _firstVertex;
 				tempVerts[_maxIndex] = _lastVertex;
 			}
-        }
+
+		});
 
         currentAngle = 0;
         degreesPerSegment = 360 / lightSegments;

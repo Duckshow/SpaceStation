@@ -3,7 +3,7 @@
 public class TileObject : MonoBehaviour {
 
     public Tile MyTile;
-    //public UVController[] MyUVControllers;
+	//public UVController[] MyUVControllers;
 	public UVController MyUVController;
 	public TileObject Parent { get; private set; }
 	private CanInspect myInspector;
@@ -57,7 +57,7 @@ public class TileObject : MonoBehaviour {
         }
 
         Sort();
-    }
+	}
 
     public void SetParent(TileObject _parent) {
         Parent = _parent;
