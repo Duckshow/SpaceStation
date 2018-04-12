@@ -125,6 +125,24 @@ public class SpaceNavigator {
 		Vector2 _gridWorldPos = Grid.Instance.transform.position;
 		return _gridWorldPos - Grid.GridSizeHalf + _localPos - _correction;
 	}
+	public static Vector2i[] GetVertexGridPosForTileVertices(Vector2i _gridPos){
+		Vector2i[] _vertices = new Vector2i[UVControllerBasic.MESH_VERTICES_PER_EDGE * UVControllerBasic.MESH_VERTICES_PER_EDGE];
+
+		int x = 0, y = 0;
+		for (int i = 0; i < _vertices.Length; i++){
+			if (i > 0){
+				x++;
+				if (x > UVControllerBasic.MESH_VERTICES_PER_EDGE){
+					x = 0;
+					y++;
+				}
+			}
+			
+			_vertices[i] = ConvertToVertexGridSpace(_gridPos, new Vector2i(x, y));
+		} 
+
+		return _vertices;
+	}
 
 	public static void IterateOverGrid(Action<SpaceNavigator> _method) {
 		SpaceNavigator _spaces = new SpaceNavigator(Vector2i.zero, null);
