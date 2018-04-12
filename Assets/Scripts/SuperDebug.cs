@@ -8,19 +8,19 @@ public class SuperDebug : MonoBehaviour {
 	class DebugObject{
 		public Vector3 Position { get; private set; }
         public Color TextColor { get; private set; }
-		public string[] Text { get; private set; }
+		public object[] Things { get; private set; }
 
-        public DebugObject (Vector3 _pos, Color _color, params string[] _text) {
+        public DebugObject (Vector3 _pos, Color _color, params object[] _things) {
 			Position = _pos;
             TextColor = _color;
-            Text = _text;
+            Things = _things;
         }
 	}
 
     private static List<DebugObject> sThingsToDebug = new List<DebugObject>();
 
-    public static void Mark(Vector3 _pos, Color _color, params string[] _text) {
-        sThingsToDebug.Add(new DebugObject(_pos, _color, _text));
+    public static void Mark(Vector3 _pos, Color _color, params object[] _things) {
+        sThingsToDebug.Add(new DebugObject(_pos, _color, _things));
     }
 	public static void MarkPoint(Vector3 _pos, Color _color, float _markRadius = 0.1f){
 		Vector3 _above 	= _pos + new Vector3(0, _markRadius);
@@ -65,8 +65,8 @@ public class SuperDebug : MonoBehaviour {
             _style.fontSize = fontSize;
 
             string _text = "";
-            for (int j = 0; j < sThingsToDebug[i].Text.Length; j++)
-                _text += sThingsToDebug[i].Text[j] + "\n";
+            for (int j = 0; j < sThingsToDebug[i].Things.Length; j++)
+                _text += sThingsToDebug[i].Things[j].ToString() + "\n";
 
             Handles.Label(sThingsToDebug[i].Position, _text, _style);
         }

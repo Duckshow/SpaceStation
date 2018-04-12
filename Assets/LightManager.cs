@@ -24,15 +24,15 @@ public class LightManager : MonoBehaviour {
 	public const int MAX_LIGHTS_AFFECTING_VERTEX = 32;
 	public const int MAX_LIGHTS_CASTING_SHADOWS = 4;
 	public static Material 		GridMaterial;
-	public static bool[,] 		GridMap_TilesUpdated;				// bool for each tile, to track if they need updating or not
-	public static int[,][] 		GridMap_LightsInRange;				// indices for each light that can reach each vertex
+	
+	// vertmaps
 	public static VertMap<Color>	VGridMap_TotalColorNoBlur; 		// the current color of each vertex (without blur!)
 	public static VertMap<Vector4>	VGridMap_DomLightIndices;
 	public static VertMap<Vector4>	VGridMap_DomLightIntensities;
-
-	private delegate void mIterateVariables();
-
-	private static Vector2i vertexGridSize;
+	
+	// gridmaps (used to be [,] but was changed due to mysterious bug!)
+	public static bool[][] 		GridMap_TilesUpdated;	// bool for each tile, to track if they need updating or not
+	public static int[][][] 	GridMap_LightsInRange;	// indices for each light that can reach each vertex
 
 
 	void Awake(){
@@ -44,36 +44,41 @@ public class LightManager : MonoBehaviour {
 		SpaceNavigator.SetupSizes();
 
 		// Grid stuff
-		GridMap_TilesUpdated = new bool[Grid.GridSize.x, Grid.GridSize.y];
-		GridMap_LightsInRange = new int[Grid.GridSize.x, Grid.GridSize.y][];
-
-		int[] _lightIndices = new int[MAX_LIGHTS_AFFECTING_VERTEX];
-		for (int i2 = 0; i2 < _lightIndices.Length; i2++){
-			_lightIndices[i2] = -1;
+		GridMap_TilesUpdated = new bool[Grid.GridSize.x][];
+		for (int x = 0; x < Grid.GridSize.x; x++){
+			GridMap_TilesUpdated[x] = new bool[Grid.GridSize.y];
 		}
-		SpaceNavigator.IterateOverGrid((SpaceNavigator _spaces) => {
-			Vector2i _gridPos = _spaces.GetGridPos();
-			GridMap_LightsInRange[_gridPos.x, _gridPos.y] = _lightIndices;
-		 });
+
+		GridMap_LightsInRange = new int[Grid.GridSize.x][][];
+		for (int x = 0; x < Grid.GridSize.x; x++){
+			GridMap_LightsInRange[x] = new int[Grid.GridSize.y][];
+			for (int y = 0; y < Grid.GridSize.y; y++){
+				GridMap_LightsInRange[x][y] = new int[MAX_LIGHTS_AFFECTING_VERTEX];
+				for (int z = 0; z < MAX_LIGHTS_AFFECTING_VERTEX; z++){
+					GridMap_LightsInRange[x][y][z] = -1;
+				}
+			}
+		}
 
 		//VertMap_TotalColorNoBlur 	= new Color 	[vertMapSize.x, vertMapSize.y];
 		// VertMap_DomLightIndices 	= new Vector4	[vertMapSize.x, vertMapSize.y];
 		// VertMap_DomLightIntensities = new Vector4 	[vertMapSize.x, vertMapSize.y];
 
-		VGridMap_TotalColorNoBlur 		= new VertMap<Color>(vertexGridSize);
-		VGridMap_DomLightIndices 		= new VertMap<Vector4>(vertexGridSize);
-		VGridMap_DomLightIntensities 	= new VertMap<Vector4>(vertexGridSize);
+		VGridMap_TotalColorNoBlur = new VertMap<Color>(Grid.GridSize * UVControllerBasic.MESH_VERTICES_PER_EDGE);
+		// VGridMap_DomLightIndices 		= new VertMap<Vector4>(vertexGridSize);
+		// VGridMap_DomLightIntensities 	= new VertMap<Vector4>(vertexGridSize);
 
-		Vector4 _minusOne = new Vector4(-1, -1, -1, -1);
+//		Vector4 _minusOne = new Vector4(-1, -1, -1, -1);
 		// SpaceNavigator.IterateOverVertexGridAndSkipOverlaps((SpaceNavigator _spaces) => {
 		// 	Vector2i _vGridPos = _spaces.GetVertexGridPos();
 		// 	VGridMap_DomLightIndices.TrySetValue(_vGridPos, _minusOne);
 		// 	VGridMap_DomLightIntensities.TrySetValue(_vGridPos, _minusOne);
 		// });
-		VertMap<Vector4>.IterateOverVertMap(VGridMap_DomLightIndices, (Vector2i _mapPos) =>{
-			VGridMap_DomLightIndices.SetValue(_mapPos, _minusOne);
-			VGridMap_DomLightIntensities.TrySetValue(_mapPos, _minusOne);
-		});
+		// VertMap<Vector4>.IterateOverVertMap(VGridMap_DomLightIndices, (Vector2i _mapPos) =>{
+		// 	Debug.Log("Hmmmmmm");
+		// 	VGridMap_DomLightIndices.SetValue(_mapPos, _minusOne);
+		// 	VGridMap_DomLightIntensities.TrySetValue(_mapPos, _minusOne);
+		// });
 	}
 	public static void OnLightInit(CustomLight _light) {
 		int _newIndex = -1;
@@ -93,9 +98,9 @@ public class LightManager : MonoBehaviour {
 
 	private static Queue<Vector2i> tilesNeedingUpdate = new Queue<Vector2i>();
 	public static void ScheduleUpdateLights(Vector2i _gGridPos){
-		if (GridMap_TilesUpdated[_gGridPos.x, _gGridPos.y]) 
+		if (GridMap_TilesUpdated[_gGridPos.x][_gGridPos.y]) 
 			return;
-		GridMap_TilesUpdated[_gGridPos.x, _gGridPos.y] = true;
+		GridMap_TilesUpdated[_gGridPos.x][_gGridPos.y] = true;
 		tilesNeedingUpdate.Enqueue(_gGridPos);
 	}
 	public static void ScheduleRemoveLight(int _lightIndex){
@@ -109,7 +114,7 @@ public class LightManager : MonoBehaviour {
 	void LateUpdate(){
 		while (tilesNeedingUpdate.Count > 0){
 			Vector2i _posGrid = tilesNeedingUpdate.Dequeue();
-			int[] _lightsInRange = GridMap_LightsInRange[_posGrid.x, _posGrid.y];
+			int[] _lightsInRange = GridMap_LightsInRange[_posGrid.x][_posGrid.y];
 			for (int i = 0; i < _lightsInRange.Length; i++){
 				int _index = _lightsInRange[i];
 				if (_index == -1) break;
@@ -119,7 +124,7 @@ public class LightManager : MonoBehaviour {
 					lightsToUpdate.Add(_index);
 			}
 
-			GridMap_TilesUpdated[_posGrid.x, _posGrid.y] = false;
+			GridMap_TilesUpdated[_posGrid.x][_posGrid.y] = false;
 		}
 
 		for (int i = 0; i < lightsToUpdate.Count; i++){
@@ -187,7 +192,7 @@ public class LightManager : MonoBehaviour {
 
 		SpaceNavigator.IterateOverVertexGridAndSkipOverlaps((SpaceNavigator _spaces) => {
 			Vector2i _gridPos = _spaces.GetGridPos();
-			if (GridMap_LightsInRange[_gridPos.x, _gridPos.y].Length == 0) return;
+			if (GridMap_LightsInRange[_gridPos.x][_gridPos.y][0] == -1) return;
 
 			Vector2i _vGridPos = _spaces.GetVertexGridPos();
 			Vector2i _vTilePos = _spaces.GetVertexTilePos();
@@ -224,8 +229,10 @@ public class LightManager : MonoBehaviour {
 		Vector2 _worldPos = _spaces.GetWorldPos();
 		Vector4 _lightDir = new Vector4();
 		
-		for (int i = 0; i < LightManager.GridMap_LightsInRange[_gridPos.x, _gridPos.y].Length; i++){
-			int _lightIndex = LightManager.GridMap_LightsInRange[_gridPos.x, _gridPos.y][i];
+		int[] _lightsInRange = LightManager.GridMap_LightsInRange[_gridPos.x][_gridPos.y];
+		//if(Time.timeSinceLevelLoad > 1) SuperDebug.Mark(_worldPos, Color.red, _lightsInRange[0], _lightsInRange[1], _lightsInRange[2], _lightsInRange[3]);
+		for (int i = 0; i < _lightsInRange.Length; i++){
+			int _lightIndex = _lightsInRange[i];
 			if (_lightIndex == -1) break;
 
 			CustomLight _otherLight = LightManager.AllLights[_lightIndex];
@@ -315,9 +322,9 @@ public class LightManager : MonoBehaviour {
 
 		// no cached color, so create and cache
 		if (!_totalColor.Any()) {
-			Vector2i _gGridPos = _spaces.GetGridPos();
+			Vector2i _gridPos = _spaces.GetGridPos();
 
-			int[] _lightsInRangeIndices = GridMap_LightsInRange[_gGridPos.x, _gGridPos.y];
+			int[] _lightsInRangeIndices = GridMap_LightsInRange[_gridPos.x][_gridPos.y];
 			for (int i = 0; i < _lightsInRangeIndices.Length; i++){
 				int _index = _lightsInRangeIndices[i];
 				if (_index == -1) break;
@@ -383,16 +390,22 @@ public class LightManager : MonoBehaviour {
 
 		SpaceNavigator.IterateOverLightsTilesOnGrid(_light, (SpaceNavigator _spaces) => {
 			Vector2i _gridPos = _spaces.GetGridPos();
-			int[] _lightIndices = GridMap_LightsInRange[_gridPos.x, _gridPos.y];
-			for (int i2 = 0; i2 < _lightIndices.Length; i2++){
-				int _lightIndex = _lightIndices[i2];
+			int[] _lightIndices = GridMap_LightsInRange[_gridPos.x][_gridPos.y];
+			bool _added = false;
+			for (int i = 0; i < _lightIndices.Length; i++){
+				int _lightIndex = _lightIndices[i];
 				if (_lightIndex == _light.LightIndex){
-					if (_add) break; // already exists for this tile
-					else GridMap_LightsInRange[_gridPos.x, _gridPos.y].PseudoRemoveAt<int>(i2, _emptyValue: -1);
+					if (_add) {
+						break; // already exists for this tile
+					}
+					else {
+						GridMap_LightsInRange[_gridPos.x][_gridPos.y].PseudoRemoveAt<int>(i, _emptyValue: -1);
+						break;
+					}
 				}
 				else if(_lightIndex == -1 && _add){
-					Vector2 _pos = Grid.Instance.GetWorldPointFromTileCoord(_gridPos);
-					GridMap_LightsInRange[_gridPos.x, _gridPos.y][i2] = _light.LightIndex;
+					GridMap_LightsInRange[_gridPos.x][_gridPos.y][i] = _light.LightIndex;
+					_added = true;
 					break;
 				}
 			}
