@@ -39,8 +39,8 @@ public partial class CustomLight : MonoBehaviour {
 
 	private bool hasRunStart = false;
 
-	public LightManager.VertMap<bool> VLightMap_Hit;
-	public LightManager.VertMap<float> VLightMap_Intensity;
+	// public LightManager.VertMap<bool> VLightMap_Hit;
+	// public LightManager.VertMap<float> VLightMap_Intensity;
 
 	private Vector2i vertexLightSize;
 
@@ -64,9 +64,9 @@ public partial class CustomLight : MonoBehaviour {
 
 		// VLightMap_Hit 			= new bool	[Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE];
 		// VLightMap_Intensity 	= new float	[Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE];
-		vertexLightSize = new Vector2i(Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE);
-		VLightMap_Hit = new LightManager.VertMap<bool>(vertexLightSize);
-		VLightMap_Intensity = new LightManager.VertMap<float>(vertexLightSize);
+		// vertexLightSize = new Vector2i(Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE, Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE);
+		// VLightMap_Hit = new LightManager.VertMap<bool>(vertexLightSize);
+		// VLightMap_Intensity = new LightManager.VertMap<float>(vertexLightSize);
 
 		MeshFilter meshFilter = MeshTransform.GetComponent<MeshFilter>();
         renderer = MeshTransform.GetComponent<MeshRenderer>();
@@ -186,7 +186,7 @@ public partial class CustomLight : MonoBehaviour {
 
 		SpaceNavigator.IterateOverLightsTilesOnGrid(this, (SpaceNavigator _spaces) => {
 			bool _usable = true;
-			Vector2i _gridAxisLengths = _spaces.GetGridAxisLengths();
+			Vector2i _gridAxisLengths = SpaceNavigator.GetGridSize();
 			Vector2i _gridPos = _spaces.GetGridPos();
 			if (_gridPos.x < 0 || _gridPos.x >= _gridAxisLengths.x || _gridPos.y < 0 || _gridPos.y >= _gridAxisLengths.y){
 				_usable = false;
@@ -233,9 +233,9 @@ public partial class CustomLight : MonoBehaviour {
 		// 	LightManager.VertexSiblings.Setup(_vGridPos);
 		// 	LightManager.VertexSiblings.SetValueInVertexGridMap<Color>(LightManager.VGridMap_TotalColorNoBlur, Color.clear, _vGridPos);
 		// });
-		LightManager.VertMap<Color>.IterateOverVertMap(LightManager.VGridMap_TotalColorNoBlur, (Vector2i _mapPos) =>{
-			LightManager.VGridMap_TotalColorNoBlur.SetValue(_mapPos, Color.clear);
-		});
+		// LightManager.VertMap<Color>.IterateOverVertMap(LightManager.VGridMap_TotalColorNoBlur, (Vector2i _mapPos) =>{
+		// 	LightManager.VGridMap_TotalColorNoBlur.SetValue(_mapPos, Color.clear);
+		// });
 	}
 
 	private void SetBasicLightInfo(){
@@ -271,7 +271,22 @@ public partial class CustomLight : MonoBehaviour {
 		// 	LightManager.VertexSiblings.SetValueInVertexLightMap<float>(VLightMap_Intensity, _lightFromThis, this, _vGridPos);
 		// }
 
-		SpaceNavigator.IterateOverLightsVerticesOnVGridAndSkipOverlaps(this, (SpaceNavigator _spaces) => {
+		// SpaceNavigator.IterateOverLightsVerticesOnVGridAndSkipOverlaps(this, (SpaceNavigator _spaces) => {
+		// 	Vector2i _lightPos = _spaces.GetLightPos();
+		// 	if (!tilesInRange[_lightPos.x, _lightPos.y].Usable) return;
+
+		// 	Vector2i _vGridPos = _spaces.GetVertexGridPos();
+		// 	LightManager.VertexSiblings.Setup(_vGridPos);
+
+		// 	Vector2 _vWorldPos = _spaces.GetWorldPos();
+		// 	float _distance = (_vWorldPos - MyWorldPos).magnitude;
+		// 	bool _illuminated = !IsBeingRemoved && IsInsideLightMesh(_vWorldPos);
+		// 	float _lightFromThis = Intensity * Mathf.Pow(1 - (_distance / Radius), 2);
+
+		// 	LightManager.VertexSiblings.SetValueInVertexLightMap<bool>(VLightMap_Hit, _illuminated, this, _vGridPos);
+		// 	LightManager.VertexSiblings.SetValueInVertexLightMap<float>(VLightMap_Intensity, _lightFromThis, this, _vGridPos);
+		// });
+		SpaceNavigator.IterateOverLightsVerticesOnVertexMap(LightManager.VertexInfoMap, this, (SpaceNavigator _spaces) => {
 			Vector2i _lightPos = _spaces.GetLightPos();
 			if (!tilesInRange[_lightPos.x, _lightPos.y].Usable) return;
 
@@ -283,8 +298,20 @@ public partial class CustomLight : MonoBehaviour {
 			bool _illuminated = !IsBeingRemoved && IsInsideLightMesh(_vWorldPos);
 			float _lightFromThis = Intensity * Mathf.Pow(1 - (_distance / Radius), 2);
 
-			LightManager.VertexSiblings.SetValueInVertexLightMap<bool>(VLightMap_Hit, _illuminated, this, _vGridPos);
-			LightManager.VertexSiblings.SetValueInVertexLightMap<float>(VLightMap_Intensity, _lightFromThis, this, _vGridPos);
+			LightManager.VertexMap.VertexInfo _vertex = LightManager.VertexInfoMap.TryGetVertex(_vGridPos);
+			for (int i = 0; i < _vertex.LightsInRange.Length; i++){
+				LightManager.VertexMap.VertexInfo.LightInfo _lightInfo = _vertex.LightsInRange[i];
+				if (_lightInfo.Index == -1) { 
+					break;
+				}
+				if (_lightInfo.Index == LightIndex){
+					_lightInfo.Hit = _illuminated;
+					_lightInfo.Intensity = _lightFromThis;
+					break;
+				}
+			}
+
+			LightManager.VertexInfoMap.TrySetVertex(_vGridPos, _vertex);
 		});
 	}
 

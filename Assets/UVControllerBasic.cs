@@ -34,6 +34,8 @@ public class UVControllerBasic : MeshSorter{
 	protected static bool sHasSetShaderProperties = false;
 	protected bool isHidden = false;
 
+	public int[] LightIndices;
+
 	[EasyButtons.Button]
 	public void UpdateCurrentGraphics(){
 		for (int i = 0; i < GridLayers.Length; i++)
