@@ -286,19 +286,18 @@ public partial class CustomLight : MonoBehaviour {
 		// 	LightManager.VertexSiblings.SetValueInVertexLightMap<bool>(VLightMap_Hit, _illuminated, this, _vGridPos);
 		// 	LightManager.VertexSiblings.SetValueInVertexLightMap<float>(VLightMap_Intensity, _lightFromThis, this, _vGridPos);
 		// });
-		SpaceNavigator.IterateOverLightsVerticesOnVertexMap(LightManager.VertexInfoMap, this, (SpaceNavigator _spaces) => {
+		SpaceNavigator.IterateOverLightsVerticesOnVertexMap(this, (SpaceNavigator _spaces) => {
 			Vector2i _lightPos = _spaces.GetLightPos();
 			if (!tilesInRange[_lightPos.x, _lightPos.y].Usable) return;
 
 			Vector2i _vGridPos = _spaces.GetVertexGridPos();
-			LightManager.VertexSiblings.Setup(_vGridPos);
-
 			Vector2 _vWorldPos = _spaces.GetWorldPos();
+
 			float _distance = (_vWorldPos - MyWorldPos).magnitude;
 			bool _illuminated = !IsBeingRemoved && IsInsideLightMesh(_vWorldPos);
 			float _lightFromThis = Intensity * Mathf.Pow(1 - (_distance / Radius), 2);
 
-			LightManager.VertexMap.VertexInfo _vertex = LightManager.VertexInfoMap.TryGetVertex(_vGridPos);
+			LightManager.VertexMap.VertexInfo _vertex = LightManager.VertexMap.TryGetVertex(_vGridPos);
 			for (int i = 0; i < _vertex.LightsInRange.Length; i++){
 				LightManager.VertexMap.VertexInfo.LightInfo _lightInfo = _vertex.LightsInRange[i];
 				if (_lightInfo.Index == -1) { 
@@ -310,8 +309,6 @@ public partial class CustomLight : MonoBehaviour {
 					break;
 				}
 			}
-
-			LightManager.VertexInfoMap.TrySetVertex(_vGridPos, _vertex);
 		});
 	}
 

@@ -145,8 +145,8 @@ public class UVController : UVControllerBasic {
     }
 
     private List<Vector4> lightDirections = new List<Vector4>();
-	public void SetLightDirections(Vector2i _specificUV, Vector4 _lightDirs){
-		int _uvIndex = _specificUV.y * MESH_VERTICES_PER_EDGE + _specificUV.x;
+	public void SetLightDirections(int _vTilePosX, int _vTilePosY, Vector4 _lightDirs){
+		int _uvIndex = _vTilePosY * MESH_VERTICES_PER_EDGE + _vTilePosX;
 		
 		// setup list for caching UVs
 		if (lightDirections.Count != MyMeshFilter.mesh.vertexCount) {
@@ -161,8 +161,8 @@ public class UVController : UVControllerBasic {
     }
 
 	private List<Color32> vertexColors = new List<Color32>();
-	public void SetVertexColor(Vector2i _specificVertex, Color32 _color){
-		int _vertexIndex = _specificVertex.y * MESH_VERTICES_PER_EDGE + _specificVertex.x;
+	public void SetVertexColor(int _vTilePosX, int _vTilePosY, Color32 _color){
+		int _vertexIndex = _vTilePosY * MESH_VERTICES_PER_EDGE + _vTilePosX;
 
 		// setup list for caching colors
 		if (vertexColors.Count != MyMeshFilter.mesh.vertexCount){

@@ -23,17 +23,16 @@ public class LightManager : MonoBehaviour {
     public static List<CustomLight> AllLights = new List<CustomLight>();
 	public const int MAX_LIGHTS_AFFECTING_VERTEX = 32;
 	public const int MAX_LIGHTS_CASTING_SHADOWS = 4;
-	public static Material 		GridMaterial;
+	public static Material GridMaterial;
 	
 	// vertmaps
 	// public static VertMap<Color>	VGridMap_TotalColorNoBlur; 		// the current color of each vertex (without blur!)
 	// // public static VertMap<Vector4>	VGridMap_DomLightIndices;
 	// // public static VertMap<Vector4>	VGridMap_DomLightIntensities;
 	// public static VertMap<int[]> 	VGridMap_LightsInRange;         // indices for each light that can reach each vertex
-	public static VertexMap VertexInfoMap;
 
 	// gridmaps (used to be [,] but was changed due to mysterious bug!)
-	public static bool[][] 		GridMap_TilesAwaitingUpdate;	// bool for each tile, to track if they need updating or not
+	public static bool[,] GridMap_TilesAwaitingUpdate;	// bool for each tile, to track if they need updating or not
 
 
 	void Awake(){
@@ -43,12 +42,12 @@ public class LightManager : MonoBehaviour {
 	private static void Init(){
 		GridMaterial = CachedAssets.Instance.MaterialGrid;
 		SpaceNavigator.SetupSizes();
+		SpaceNavigator.SetupConversionTables();
+
+		VertexMap.Init();
 
 		// Grid stuff
-		GridMap_TilesAwaitingUpdate = new bool[Grid.GridSize.x][];
-		for (int x = 0; x < Grid.GridSize.x; x++){
-			GridMap_TilesAwaitingUpdate[x] = new bool[Grid.GridSize.y];
-		}
+		GridMap_TilesAwaitingUpdate = new bool[Grid.GridSize.x, Grid.GridSize.y];
 
 		// VGridMap_LightsInRange = new int[Grid.GridSize.x][][];
 		// for (int x = 0; x < Grid.GridSize.x; x++){
@@ -105,9 +104,9 @@ public class LightManager : MonoBehaviour {
 
 	private static Queue<Vector2i> tilesNeedingUpdate = new Queue<Vector2i>();
 	public static void ScheduleUpdateLights(Vector2i _gGridPos){
-		if (GridMap_TilesAwaitingUpdate[_gGridPos.x][_gGridPos.y]) 
+		if (GridMap_TilesAwaitingUpdate[_gGridPos.x, _gGridPos.y]) 
 			return;
-		GridMap_TilesAwaitingUpdate[_gGridPos.x][_gGridPos.y] = true;
+		GridMap_TilesAwaitingUpdate[_gGridPos.x, _gGridPos.y] = true;
 		tilesNeedingUpdate.Enqueue(_gGridPos);
 	}
 	public static void ScheduleRemoveLight(int _lightIndex){
@@ -144,9 +143,9 @@ public class LightManager : MonoBehaviour {
 				// 		lightsToUpdate.Add(_index);
 				// }
 
-				VertexMap.VertexInfo _vInfo = VertexInfoMap.TryGetVertex(_vGridPosVertex);
-				for (int i2 = 0; i2 < _vInfo.LightsInRange.Length; i2++){
-					VertexMap.VertexInfo.LightInfo _lightInfo = _vInfo.LightsInRange[i2];
+				VertexMap.VertexInfo _vertex = VertexMap.TryGetVertex(_vGridPosVertex);
+				for (int i2 = 0; i2 < _vertex.LightsInRange.Length; i2++){
+					VertexMap.VertexInfo.LightInfo _lightInfo = _vertex.LightsInRange[i2];
 					if (_lightInfo.Index == -1) { 
 						break;
 					}
@@ -158,7 +157,7 @@ public class LightManager : MonoBehaviour {
 					}
 				}
 
-				GridMap_TilesAwaitingUpdate[_gridPos.x][_gridPos.y] = false;
+				GridMap_TilesAwaitingUpdate[_gridPos.x, _gridPos.y] = false;
 			}
 
 			// int[] _lightsInRange = VGridMap_LightsInRange[_gridPos.x][_gridPos.y];
@@ -237,9 +236,37 @@ public class LightManager : MonoBehaviour {
 		// 	VertexSiblings.SetVertexColor(_blurredColor, _vGridPos);
 		// }
 
-		SpaceNavigator.IterateOverVertexGridAndSkipOverlaps((SpaceNavigator _spaces) => {
+		// SpaceNavigator.IterateOverVertexGridAndSkipOverlaps((SpaceNavigator _spaces) => {
+		// 	Vector2i _vGridPos = _spaces.GetVertexGridPos();
+		// 	if (VGridMap_LightsInRange.TryGetValue(_vGridPos)[0] == -1) return;
+
+		// 	Vector2i _gridPos = _spaces.GetGridPos();
+		// 	Vector2i _vTilePos = _spaces.GetVertexTilePos();
+
+		// 	// setup light dirs
+		// 	Vector4 _lightDirs = GetLightDirections(_spaces);
+		// 	Grid.Instance.grid[_gridPos.x, _gridPos.y].MyUVController.LightDirections = _lightDirs; // debug
+		// 	VertexSiblings.Setup(_vGridPos);
+		// 	VertexSiblings.SetLightDirections(_lightDirs, _vGridPos);
+
+		// 	// get blurred color
+		// 	Color _blurredColor = Color.clear;
+		// 	Vector2i[] _neighbors = GetSafeVertexNeighbors(_vGridPos, _vTilePos, _spaces.GetVertexGridSize());
+		// 	for (int i2 = 0; i2 < _neighbors.Length; i2++){
+		// 		Vector2i _neighborVGridPos = _neighbors[i2];
+		// 		VertexSiblings.Setup(_neighborVGridPos);
+		// 		_blurredColor += GetTotalColorForVertex(new SpaceNavigator(_neighborVGridPos, null));
+		// 	}
+		// 	_blurredColor /= _neighbors.Length;
+		// 	_blurredColor.a = 1;
+		// 	VertexSiblings.Setup(_vGridPos);
+		// 	VertexSiblings.SetVertexColor(_blurredColor, _vGridPos);
+		// });
+
+		SpaceNavigator.IterateOverVertexMap((SpaceNavigator _spaces) => {
 			Vector2i _vGridPos = _spaces.GetVertexGridPos();
-			if (VGridMap_LightsInRange.TryGetValue(_vGridPos)[0] == -1) return; awndawnd // continue here. Keep implementing the new vertexinfo-stuff and making the vertexmap better and stuff
+			VertexMap.VertexInfo _vertex = VertexMap.TryGetVertex(_vGridPos);
+			if (_vertex.LightsInRange[0].Index == -1) return;
 
 			Vector2i _gridPos = _spaces.GetGridPos();
 			Vector2i _vTilePos = _spaces.GetVertexTilePos();
@@ -247,21 +274,19 @@ public class LightManager : MonoBehaviour {
 			// setup light dirs
 			Vector4 _lightDirs = GetLightDirections(_spaces);
 			Grid.Instance.grid[_gridPos.x, _gridPos.y].MyUVController.LightDirections = _lightDirs; // debug
-			VertexSiblings.Setup(_vGridPos);
-			VertexSiblings.SetLightDirections(_lightDirs, _vGridPos);
+			VertexMap.ApplyLightDirectionsToGrid(_spaces, _lightDirs);
 
 			// get blurred color
 			Color _blurredColor = Color.clear;
-			Vector2i[] _neighbors = GetSafeVertexNeighbors(_vGridPos, _vTilePos, _spaces.GetVertexGridSize());
+			Vector2i[] _neighbors = VertexMap.GetNeighbors(_spaces);
 			for (int i2 = 0; i2 < _neighbors.Length; i2++){
-				Vector2i _neighborVGridPos = _neighbors[i2];
-				VertexSiblings.Setup(_neighborVGridPos);
-				_blurredColor += GetTotalColorForVertex(new SpaceNavigator(_neighborVGridPos, null));
+				_blurredColor += GetTotalColorForVertex(new SpaceNavigator(_neighbors[i2], null));
 			}
 			_blurredColor /= _neighbors.Length;
 			_blurredColor.a = 1;
-			VertexSiblings.Setup(_vGridPos);
-			VertexSiblings.SetVertexColor(_blurredColor, _vGridPos);
+
+			VertexMap.TrySetVertex(_vGridPos, _vertex);
+			VertexMap.ApplyVertexColorToGrid(_spaces, _blurredColor);
 		});
 
 		for (int i = 0; i < AllLights.Count; i++){
@@ -276,10 +301,10 @@ public class LightManager : MonoBehaviour {
 		Vector2 _worldPos = _spaces.GetWorldPos();
 		Vector4 _lightDir = new Vector4();
 		
-		int[] _lightsInRange = LightManager.VGridMap_LightsInRange.TryGetValue(_vGridPos);
+		VertexMap.VertexInfo.LightInfo[] _lightsInRange = VertexMap.TryGetVertex(_vGridPos).LightsInRange;
 		//if(Time.timeSinceLevelLoad > 1) SuperDebug.Mark(_worldPos, Color.red, _lightsInRange[0], _lightsInRange[1], _lightsInRange[2], _lightsInRange[3]);
 		for (int i = 0; i < _lightsInRange.Length; i++){
-			int _lightIndex = _lightsInRange[i];
+			int _lightIndex = _lightsInRange[i].Index;
 			if (_lightIndex == -1) break;
 
 			CustomLight _otherLight = LightManager.AllLights[_lightIndex];
@@ -364,32 +389,60 @@ public class LightManager : MonoBehaviour {
 	}
 
 	Color GetTotalColorForVertex(SpaceNavigator _spaces){
+		// Vector2i _vGridPos = _spaces.GetVertexGridPos();
+		// Color _totalColor = VGridMap_TotalColorNoBlur.TryGetValue(_vGridPos);
+
+		// // no cached color, so create and cache
+		// if (!_totalColor.Any()) {
+		// 	int[] _lightsInRangeIndices = VGridMap_LightsInRange.TryGetValue(_vGridPos);
+		// 	for (int i = 0; i < _lightsInRangeIndices.Length; i++){
+		// 		int _index = _lightsInRangeIndices[i];
+		// 		if (_index == -1) break;
+
+		// 		CustomLight _light = AllLights[_index];
+		// 		if (_light.IsBeingRemoved) continue;
+
+		// 		_spaces.SetLightSpace(_light);
+		// 		Vector2i _vLightPos = _spaces.GetVertexLightPos();
+		// 		bool _hit = _light.VLightMap_Hit.TryGetValue(_vLightPos);
+		// 		if (!_hit) continue;
+
+		// 		float _intensity = _light.VLightMap_Intensity.TryGetValue(_vLightPos);
+		// 		Color _lightColor = _light.GetLightColor() * _intensity;
+		// 		if (_totalColor.r < _lightColor.r) _totalColor.r += _lightColor.r;
+		// 		if (_totalColor.g < _lightColor.g) _totalColor.g += _lightColor.g;
+		// 		if (_totalColor.b < _lightColor.b) _totalColor.b += _lightColor.b;
+		// 	}
+
+		// 	VertexSiblings.SetValueInVertexGridMap<Color>(VGridMap_TotalColorNoBlur, _totalColor, _vGridPos);
+		// }
+	
+		// return _totalColor;
+		
+		
 		Vector2i _vGridPos = _spaces.GetVertexGridPos();
-		Color _totalColor = VGridMap_TotalColorNoBlur.TryGetValue(_vGridPos);
+		VertexMap.VertexInfo _vertex = VertexMap.TryGetVertex(_vGridPos);
+		if (_vertex == null) return Color.clear;
+
+		Color _totalColor = _totalColor = _vertex.ColorWithoutBlur;
 
 		// no cached color, so create and cache
 		if (!_totalColor.Any()) {
-			int[] _lightsInRangeIndices = VGridMap_LightsInRange.TryGetValue(_vGridPos);
-			for (int i = 0; i < _lightsInRangeIndices.Length; i++){
-				int _index = _lightsInRangeIndices[i];
-				if (_index == -1) break;
+			for (int i = 0; i < _vertex.LightsInRange.Length; i++){
+				VertexMap.VertexInfo.LightInfo _lightInfo = _vertex.LightsInRange[i];
+				if (_lightInfo.Index == -1) break;
+				if (!_lightInfo.Hit) continue;
 
-				CustomLight _light = AllLights[_index];
+				CustomLight _light = AllLights[_lightInfo.Index];
 				if (_light.IsBeingRemoved) continue;
 
-				_spaces.SetLightSpace(_light);
-				Vector2i _vLightPos = _spaces.GetVertexLightPos();
-				bool _hit = _light.VLightMap_Hit.TryGetValue(_vLightPos);
-				if (!_hit) continue;
-
-				float _intensity = _light.VLightMap_Intensity.TryGetValue(_vLightPos);
-				Color _lightColor = _light.GetLightColor() * _intensity;
+				Color _lightColor = _light.GetLightColor() * _lightInfo.Intensity;
 				if (_totalColor.r < _lightColor.r) _totalColor.r += _lightColor.r;
 				if (_totalColor.g < _lightColor.g) _totalColor.g += _lightColor.g;
 				if (_totalColor.b < _lightColor.b) _totalColor.b += _lightColor.b;
 			}
 
-			VertexSiblings.SetValueInVertexGridMap<Color>(VGridMap_TotalColorNoBlur, _totalColor, _vGridPos);
+			_vertex.ColorWithoutBlur = _totalColor;
 		}
 	
 		return _totalColor;
@@ -433,179 +486,87 @@ public class LightManager : MonoBehaviour {
 		// 	}
 		// }
 
-		SpaceNavigator.IterateOverLightsVerticesOnVGridAndSkipOverlaps(_light, (SpaceNavigator _spaces) => {
+		// SpaceNavigator.IterateOverLightsVerticesOnVGridAndSkipOverlaps(_light, (SpaceNavigator _spaces) => {
+		// 	Vector2i _vGridPos = _spaces.GetVertexGridPos();
+		// 	int[] _lightIndices = VGridMap_LightsInRange.TryGetValue(_vGridPos);
+		// 	for (int i = 0; i < _lightIndices.Length; i++){
+		// 		int _lightIndex = _lightIndices[i];
+		// 		if (_lightIndex == _light.LightIndex){
+		// 			if (_add) {
+		// 				break; // already exists for this tile
+		// 			}
+		// 			else {
+		// 				_lightIndices.PseudoRemoveAt<int>(i, _emptyValue: -1);
+		// 				break;
+		// 			}
+		// 		}
+		// 		else if(_lightIndex == -1 && _add){
+		// 			if (_light.LightIndex == 3){
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x, _vGridPos.y))[i].ToString().Color(Color.red));
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 1, _vGridPos.y))[i].ToString().Color(Color.red));
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 2, _vGridPos.y))[i].ToString().Color(Color.red));
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 3, _vGridPos.y))[i].ToString().Color(Color.red));
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 4, _vGridPos.y))[i].ToString().Color(Color.red));
+		// 			}
+		// 			_lightIndices[i] = _light.LightIndex;
+		// 			if (_light.LightIndex == 3){
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x, _vGridPos.y))[i].ToString().Color(Color.cyan));
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 1, _vGridPos.y))[i].ToString().Color(Color.cyan));
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 2, _vGridPos.y))[i].ToString().Color(Color.cyan));
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 3, _vGridPos.y))[i].ToString().Color(Color.cyan));
+		// 				Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 4, _vGridPos.y))[i].ToString().Color(Color.cyan));
+		// 			}
+		// 			break;
+		// 		}
+		// 	}
+
+		// 	Grid.Instance.grid[_spaces.GetGridPos().x, _spaces.GetGridPos().y].MyUVController.LightIndices = _lightIndices;
+		// 	VGridMap_LightsInRange.TrySetValue(_vGridPos, _lightIndices);
+		// });
+
+		SpaceNavigator.IterateOverLightsVerticesOnVertexMap(_light, (SpaceNavigator _spaces) => {
 			Vector2i _vGridPos = _spaces.GetVertexGridPos();
-			int[] _lightIndices = VGridMap_LightsInRange.TryGetValue(_vGridPos);
-			for (int i = 0; i < _lightIndices.Length; i++){
-				int _lightIndex = _lightIndices[i];
-				if (_lightIndex == _light.LightIndex){
+			Vector2i _gridPos = _spaces.GetGridPos();
+
+			VertexMap.VertexInfo _vertex = VertexMap.TryGetVertex(_vGridPos);
+			for (int i = 0; i < _vertex.LightsInRange.Length; i++){
+				VertexMap.VertexInfo.LightInfo _otherLight = _vertex.LightsInRange[i];
+				if (_otherLight.Index == _light.LightIndex){
 					if (_add) {
 						break; // already exists for this tile
 					}
 					else {
-						_lightIndices.PseudoRemoveAt<int>(i, _emptyValue: -1);
+						_vertex.RemoveLight(i);
 						break;
 					}
 				}
-				else if(_lightIndex == -1 && _add){
+				else if(_otherLight.Index == -1 && _add){
 					if (_light.LightIndex == 3){
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x, _vGridPos.y))[i].ToString().Color(Color.red));
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 1, _vGridPos.y))[i].ToString().Color(Color.red));
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 2, _vGridPos.y))[i].ToString().Color(Color.red));
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 3, _vGridPos.y))[i].ToString().Color(Color.red));
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 4, _vGridPos.y))[i].ToString().Color(Color.red));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.red));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x + 1, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.red));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x + 2, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.red));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x + 3, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.red));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x + 4, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.red));
 					}
-					_lightIndices[i] = _light.LightIndex;
+					_otherLight.Index = _light.LightIndex;
 					if (_light.LightIndex == 3){
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x, _vGridPos.y))[i].ToString().Color(Color.cyan));
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 1, _vGridPos.y))[i].ToString().Color(Color.cyan));
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 2, _vGridPos.y))[i].ToString().Color(Color.cyan));
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 3, _vGridPos.y))[i].ToString().Color(Color.cyan));
-						Debug.Log(VGridMap_LightsInRange.TryGetValue(new Vector2i(_vGridPos.x + 4, _vGridPos.y))[i].ToString().Color(Color.cyan));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.cyan));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x + 1, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.cyan));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x + 2, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.cyan));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x + 3, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.cyan));
+						Debug.Log(VertexMap.TryGetVertex(new Vector2i(_vGridPos.x + 4, _vGridPos.y)).LightsInRange[i].ToString().Color(Color.cyan));
 					}
 					break;
 				}
 			}
 
-			Grid.Instance.grid[_spaces.GetGridPos().x, _spaces.GetGridPos().y].MyUVController.LightIndices = _lightIndices;
-			VGridMap_LightsInRange.TrySetValue(_vGridPos, _lightIndices);
+			// debug
+			int[] _indices = new int[_vertex.LightsInRange.Length];
+			for (int i = 0; i < _vertex.LightsInRange.Length; i++){
+				_indices[i] = _vertex.LightsInRange[i].Index;
+			}
+			Grid.Instance.grid[_gridPos.x, _gridPos.y].MyUVController.LightIndices = _indices;
 		});
-	}
-
-	public static class VertexSiblings { // vertices sharing the same world pos
-		public class Sibling {
-			public bool Affected = false;
-
-			// hard to replace these with SpaceNavigator, since VertexSiblings is also used for top-half vertices. Skipping for now.
-			public Vector2i vGridPos;
-			public Vector2i gGridPos;
-			public Vector2i vTilePos;
-
-			public void SetNewValues(bool _affected, int _gGridPosX, int _gGridPosY, int _vTilePosX, int _vTilePosY) {
-				Affected = _affected;
-				if(!_affected) return;
-
-				gGridPos.x = _gGridPosX;
-				gGridPos.y = _gGridPosY;
-				vTilePos.x = _vTilePosX;
-				vTilePos.y = _vTilePosY;
-				vGridPos = SpaceNavigator.ConvertToVertexGridSpace(gGridPos, vTilePos);
-			}
-
-			public void SetLightDirections(Vector4 _lightDirs) {
-				Grid.Instance.grid[gGridPos.x, gGridPos.y].MyUVController.SetLightDirections(vTilePos, _lightDirs);
-			}
-			public void SetVertexColor(Color _color){
-				Grid.Instance.grid[gGridPos.x, gGridPos.y].MyUVController.SetVertexColor(vTilePos, _color);
-			}
-			public void SetValueInVertexLightMap<T>(VertMap<T> _vertexLightMap, T _value, CustomLight _light){
-				Vector2i _vLightPos = SpaceNavigator.ConvertToVertexLightSpace(vGridPos, _light);
-				_vertexLightMap.TrySetValue(_vLightPos, _value);
-			}
-		}
-		public static Sibling Current 			= new Sibling();
-		public static Sibling OwnTopHalf 		= new Sibling();
-		public static Sibling OwnTopHalfLeft 	= new Sibling();
-		public static Sibling OwnTopHalfRight 	= new Sibling();
-		public static Sibling Top 				= new Sibling();
-		public static Sibling Right 			= new Sibling();
-		public static Sibling RightTopHalf 		= new Sibling();
-		public static Sibling RightTopHalfLeft 	= new Sibling();
-		public static Sibling TopRight 			= new Sibling();
-		public static void Setup(Vector2i _vGridPos) {
-			Vector2i _vTilePos = SpaceNavigator.ConvertToVertexTileSpace(_vGridPos);
-			Vector2i _gGridPos = SpaceNavigator.ConvertToGridSpace(_vGridPos);
-			bool _isOnLeftEdge = _vTilePos.x == 0;
-			bool _isOnRightEdge = _vTilePos.x == UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
-			bool _affectsTopHalf = _vTilePos.y == UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
-			bool _canGoRight 	= _gGridPos.x + 1 < Grid.GridSize.x;
-			bool _canGoUp 		= _gGridPos.y + 1 < Grid.GridSize.y;
-
-			Current.SetNewValues(
-				true,
-				_gGridPos.x, _gGridPos.y,
-				_vTilePos.x, _vTilePos.y
-			);
-			OwnTopHalf.SetNewValues(
-				_affectsTopHalf,
-				_gGridPos.x, _gGridPos.y,
-				_vTilePos.x, _vTilePos.y + 1
-			);
-			OwnTopHalfLeft.SetNewValues(
-				_affectsTopHalf && _isOnLeftEdge,
-				_gGridPos.x, _gGridPos.y,
-				0, _vTilePos.y + 2
-			);
-			OwnTopHalfRight.SetNewValues(
-				_affectsTopHalf && _isOnRightEdge,
-				_gGridPos.x, _gGridPos.y,
-				1, _vTilePos.y + 2
-			);
-			Right.SetNewValues(
-				_isOnRightEdge && _canGoRight,
-				_gGridPos.x + 1, _gGridPos.y,
-				0, _vTilePos.y
-			);
-			RightTopHalf.SetNewValues(
-				_canGoRight && _isOnRightEdge && _affectsTopHalf,
-				_gGridPos.x + 1, _gGridPos.y,
-				0, _vTilePos.y + 1
-			);
-			RightTopHalfLeft.SetNewValues(
-				_canGoRight && _isOnRightEdge && _affectsTopHalf,
-				_gGridPos.x + 1, _gGridPos.y,
-				0, _vTilePos.y + 2
-			);
-			Top.SetNewValues(
-				_canGoUp && _affectsTopHalf,
-				_gGridPos.x, _gGridPos.y + 1,
-				_vTilePos.x, 0
-			);
-			TopRight.SetNewValues(
-				_canGoUp && Top.Affected && Right.Affected,
-				_gGridPos.x + 1, _gGridPos.y + 1,
-				0, 0
-			);
-		}
-		public static void SetLightDirections(Vector4 _lightDirs, Vector2i _currentVGridPos) {
-			if(_currentVGridPos != Current.vGridPos) Debug.LogError("VertexSiblings appears to be outdated!");
-			if (Current.Affected) 			Current.			SetLightDirections(_lightDirs);
-			if (OwnTopHalf.Affected) 		OwnTopHalf.			SetLightDirections(_lightDirs);
-			if (OwnTopHalfLeft.Affected) 	OwnTopHalfLeft.		SetLightDirections(_lightDirs);
-			if (OwnTopHalfRight.Affected) 	OwnTopHalfRight.	SetLightDirections(_lightDirs);
-			if (Top.Affected) 				Top.				SetLightDirections(_lightDirs);
-			if (Right.Affected) 			Right.				SetLightDirections(_lightDirs);
-			if (RightTopHalf.Affected) 		RightTopHalf.		SetLightDirections(_lightDirs);
-			if (RightTopHalfLeft.Affected) 	RightTopHalfLeft.	SetLightDirections(_lightDirs);
-			if (TopRight.Affected) 			TopRight.			SetLightDirections(_lightDirs);
-		}
-		public static void SetVertexColor(Color _color, Vector2i _currentVGridPos){
-			if (_currentVGridPos != Current.vGridPos) Debug.LogError("VertexSiblings appears to be outdated!");
-			if (Current.Affected) 			Current.			SetVertexColor(_color);
-			if (OwnTopHalf.Affected) 		OwnTopHalf.			SetVertexColor(_color);
-			if (OwnTopHalfLeft.Affected) 	OwnTopHalfLeft.		SetVertexColor(_color);
-			if (OwnTopHalfRight.Affected) 	OwnTopHalfRight.	SetVertexColor(_color);
-			if (Top.Affected) 				Top.				SetVertexColor(_color);
-			if (Right.Affected) 			Right.				SetVertexColor(_color);
-			if (RightTopHalf.Affected) 		RightTopHalf.		SetVertexColor(_color);
-			if (RightTopHalfLeft.Affected) 	RightTopHalfLeft.	SetVertexColor(_color);
-			if (TopRight.Affected) 			TopRight.			SetVertexColor(_color);
-		}
-
-		public static void SetValueInVertexGridMap<T>(VertMap<T> _vertexGridMap, T _value, Vector2i _currentVGridPos) {
-			if (_currentVGridPos != Current.vGridPos) Debug.LogError("VertexSiblings appears to be outdated!");
-			if (Current.Affected) 	_vertexGridMap.TrySetValue(Current.vGridPos, _value);
-			if (Top.Affected) 		_vertexGridMap.TrySetValue(Top.vGridPos, _value);
-			if (Right.Affected)		_vertexGridMap.TrySetValue(Right.vGridPos, _value);
-			if (TopRight.Affected)	_vertexGridMap.TrySetValue(TopRight.vGridPos, _value);
-		}
-		public static void SetValueInVertexLightMap<T>(VertMap<T> _vertexLightMap, T _value, CustomLight _light, Vector2i _currentVGridPos){
-			if (_currentVGridPos != Current.vGridPos) Debug.LogError("VertexSiblings appears to be outdated!");
-			if (Current.Affected) 	Current.	SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
-			if (Top.Affected)		Top.		SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
-			if (Right.Affected)		Right.		SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
-			if (TopRight.Affected)	TopRight.	SetValueInVertexLightMap<T>(_vertexLightMap, _value, _light);
-		}
 	}
 
 	// public static Vector2i ConvertToVertexGridSpace(Vector2i _vLightPos, CustomLight _light){
@@ -634,13 +595,16 @@ public class LightManager : MonoBehaviour {
 	// 	return _gridWorldPos - Grid.GridSizeHalf + _localPos - _correction;
     // }
 
-	public class VertexMap {
+	public static class VertexMap {
 		public class VertexInfo {
 			public class LightInfo {
 				public int Index;
 				public bool Hit;
 				public float Intensity;
 				public LightInfo() {
+					Reset();
+				}
+				public void Reset(){
 					Index = -1;
 					Hit = false;
 					Intensity = 0;
@@ -652,55 +616,255 @@ public class LightManager : MonoBehaviour {
 			public VertexInfo() {
 				ColorWithoutBlur = Color.clear;
 				LightsInRange = new LightInfo[MAX_LIGHTS_AFFECTING_VERTEX];
+				for (int i = 0; i < LightsInRange.Length; i++){
+					LightsInRange[i] = new LightInfo();
+				}
+			}
+			public void RemoveLight(int _index){
+				LightInfo _light = LightsInRange[_index];
+				_light.Reset();
+
+				for (int i = _index; i < LightsInRange.Length - 1; i++){
+					LightInfo _nextLight = LightsInRange[i + 1];
+					if (_light.Index == _nextLight.Index) {
+						break;
+					}
+
+					LightsInRange[i] = _nextLight;
+					LightsInRange[i + 1] = _light;
+				}
 			}
 		}
-		private VertexInfo[,] map;
-		private Vector2i lastIndex;
-		private bool hasSetupConversionTables = false;
+		private static VertexInfo[,] map;
+		private static Vector2i currentVertexGridPos 	= new Vector2i();
+		private static Sibling siblingCurrent 			= new Sibling();
+		private static Sibling siblingOwnTopHalf 		= new Sibling();
+		private static Sibling siblingOwnTopHalfLeft 	= new Sibling();
+		private static Sibling siblingOwnTopHalfRight 	= new Sibling();
+		private static Sibling siblingTop 				= new Sibling();
+		private static Sibling siblingRight 			= new Sibling();
+		private static Sibling siblingRightTopHalf 		= new Sibling();
+		private static Sibling siblingRightTopHalfLeft 	= new Sibling();
+		private static Sibling siblingTopRight 			= new Sibling();
 		
 
-		public VertexMap(Vector2i _vertexCount) {
-			Vector2i _mapVertexCount = ConvertVGridPosToVMapPos(_vertexCount);
-			map = new VertexInfo[_mapVertexCount.x, _mapVertexCount.y];
-			lastIndex = new Vector2i(_mapVertexCount.x - 1, _mapVertexCount.y - 1);
-
-			if (!hasSetupConversionTables){
-				// grid -> map
-				VGridToVMapConversionTable = new Vector2i[_vertexCount.x, _vertexCount.y];
-				for (int y = 0; y < _vertexCount.y; y++){
-					for (int x = 0; x < _vertexCount.x; x++){
-						VGridToVMapConversionTable[x, y] = ConvertVGridPosToVMapPos(new Vector2i(x, y), _useConversionTable: false);
-					}
+		public static void Init(){
+			Vector2i _size = SpaceNavigator.GetVertexGridSize();
+			map = new VertexInfo[_size.x, _size.y];
+			for (int y = 0; y < _size.y; y++){
+				for (int x = 0; x < _size.x; x++){
+					map[x, y] = new VertexInfo();
 				}
-				
-				// map -> grid
-				VMapToVGridConversionTable = new Vector2i[_mapVertexCount.x, _mapVertexCount.y];
-				for (int y = 0; y < _mapVertexCount.y; y++){
-					for (int x = 0; x < _mapVertexCount.x; x++){
-						VMapToVGridConversionTable[x, y] = ConvertVMapPosToVGridPos(new Vector2i(x, y), _useConversionTable: false);
-					}
-				}
-
-				hasSetupConversionTables = true;
 			}
 		}
-		public VertexInfo TryGetVertex(Vector2i _vGridPos) {
-			Vector2i _mapIndices = ConvertVGridPosToVMapPos(_vGridPos);
-			if (_mapIndices.x < 0 || _mapIndices.x > lastIndex.x) return null;
-			if (_mapIndices.y < 0 || _mapIndices.y > lastIndex.y) return null;
+		public static VertexInfo TryGetVertex(Vector2i _vGridPos) {
+			Vector2i _mapIndices = SpaceNavigator.ConvertToVertexMapSpace(_vGridPos);
+			if (!VertexIsWithinGrid(_mapIndices.x, _mapIndices.y, SpaceNavigator.GetVertexGridSize())){
+				return null;
+			}
 			return map[_mapIndices.x, _mapIndices.y];
 		}
-		public void TrySetVertex(Vector2i _vGridPos, VertexInfo _vertexInfo) {
-			Vector2i _mapIndices = ConvertVGridPosToVMapPos(_vGridPos);
-			if (_mapIndices.x < 0 || _mapIndices.x > lastIndex.x) return;
-			if (_mapIndices.y < 0 || _mapIndices.y > lastIndex.y) return;
+		public static void TrySetVertex(Vector2i _vGridPos, VertexInfo _vertexInfo) {
+			Vector2i _mapIndices = SpaceNavigator.ConvertToVertexMapSpace(_vGridPos);
+			if (!VertexIsWithinGrid(_mapIndices.x, _mapIndices.y, SpaceNavigator.GetVertexGridSize())){
+				return;
+			}
+			
 			map[_mapIndices.x, _mapIndices.y] = _vertexInfo;
 		}
-		public void SetVertex(Vector2i _mapPos, VertexInfo _vertexInfo) {
+		public static void ForceSetVertex(Vector2i _mapPos, VertexInfo _vertexInfo) {
 			map[_mapPos.x, _mapPos.y] = _vertexInfo;
 		}
-		public Vector2i GetLastIndex() {
-			return lastIndex;
+		public static bool VertexIsWithinGrid(int _x, int _y, Vector2i _vertexGridSize) {
+			return _x >= 0 && _y >= 0 && _x < _vertexGridSize.x && _y < _vertexGridSize.y;
+		}
+
+		public static Vector2i[] GetNeighbors(SpaceNavigator _spaces) {
+			Vector2i _vGridPos = _spaces.GetVertexGridPos();
+			Vector2i _vTilePos = _spaces.GetVertexTilePos();
+			int _left = _vGridPos.x - 1;
+			int _down = _vGridPos.y - 1;
+			int _right = _vGridPos.x + (_vTilePos.x == 0 ? 1 : 2); // TODO: this can't be right. It should be == 1, right?
+			int _up = _vGridPos.y + (_vTilePos.y == 0 ? 1 : 2);
+
+			Vector2i vertexBottomLeft 	= new Vector2i(_left, _down);
+			Vector2i vertexBottom 		= new Vector2i(_vGridPos.x, _down);
+			Vector2i vertexBottomRight 	= new Vector2i(_right, _down);
+			Vector2i vertexLeft 		= new Vector2i(_left, _vGridPos.y);
+			Vector2i vertexRight 		= new Vector2i(_right, _vGridPos.y);
+			Vector2i vertexTopLeft 		= new Vector2i(_left, _up);
+			Vector2i vertexTop 			= new Vector2i(_vGridPos.x, _up);
+			Vector2i vertexTopRight 	= new Vector2i(_right, _up);
+
+			Vector2i _vertexGridSize = SpaceNavigator.GetVertexGridSize();
+			bool _canGoBottom 	= VertexIsWithinGrid(_vGridPos.x, _down, _vertexGridSize);
+			bool _canGoLeft 	= VertexIsWithinGrid(_left, _vGridPos.y, _vertexGridSize);
+			bool _canGoRight 	= VertexIsWithinGrid(_right, _vGridPos.y, _vertexGridSize);
+			bool _canGoTop 		= VertexIsWithinGrid(_vGridPos.x, _up, _vertexGridSize);
+
+			int _neighborCount = 1; // 1 because you can always go to _this_ vertex
+			if (_canGoBottom) 					_neighborCount++;
+			if (_canGoLeft) 					_neighborCount++;
+			if (_canGoRight) 					_neighborCount++;
+			if (_canGoTop) 						_neighborCount++;
+			if (_canGoBottom && _canGoLeft) 	_neighborCount++;
+			if (_canGoBottom && _canGoRight) 	_neighborCount++;
+			if (_canGoTop && _canGoLeft) 		_neighborCount++;
+			if (_canGoTop && _canGoRight) 		_neighborCount++;
+
+			Vector2i[] _neighbors = new Vector2i[_neighborCount];
+
+			_neighbors[0] = _vGridPos;
+			int _currentIndex = 1;
+			if (_canGoBottom){ 
+				_neighbors[_currentIndex] = vertexBottom;
+				_currentIndex++; 
+			}
+			if (_canGoLeft){ 
+				_neighbors[_currentIndex] = vertexLeft;
+				_currentIndex++;
+			}
+			if (_canGoRight){ 
+				_neighbors[_currentIndex] = vertexRight;
+				_currentIndex++;
+			}
+			if (_canGoTop){ 
+				_neighbors[_currentIndex] = vertexTop;
+				_currentIndex++;
+			}
+			if (_canGoBottom && _canGoLeft){
+				_neighbors[_currentIndex] = vertexBottomLeft;
+				_currentIndex++;
+			}
+			if (_canGoBottom && _canGoRight){
+				_neighbors[_currentIndex] = vertexBottomRight;
+				_currentIndex++;
+			}
+			if (_canGoTop && _canGoLeft){
+				_neighbors[_currentIndex] = vertexTopLeft;
+				_currentIndex++;
+			}
+			if (_canGoTop && _canGoRight){
+				_neighbors[_currentIndex] = vertexTopRight;
+				_currentIndex++;
+			}
+
+			return _neighbors;
+		}
+
+		private class Sibling {
+			public bool Affected = false;
+
+			// hard to replace these with SpaceNavigator, since these are also used for top-half vertices. Skipping for now.
+			public Vector2i gridPos;
+			public Vector2i vTilePos;
+
+			public void SetNewValues(bool _affected, int _gGridPosX, int _gGridPosY, int _vTilePosX, int _vTilePosY) {
+				Affected = _affected;
+				if(!_affected) return;
+
+				gridPos.x = _gGridPosX;
+				gridPos.y = _gGridPosY;
+				vTilePos.x = _vTilePosX;
+				vTilePos.y = _vTilePosY;
+			}
+
+			public void ApplyLightDirectionsToGrid(Vector4 _lightDirs) {
+				Grid.Instance.grid[gridPos.x, gridPos.y].MyUVController.SetLightDirections(vTilePos.x, vTilePos.y, _lightDirs);
+			}
+			public void ApplyVertexColorToGrid(Color _color){
+				Grid.Instance.grid[gridPos.x, gridPos.y].MyUVController.SetVertexColor(vTilePos.x, vTilePos.y, _color);
+			}
+		}
+
+		private static void SetSiblingsForVertex(Vector2i _vGridPos) {
+			Vector2i _vTilePos = SpaceNavigator.ConvertToVertexTileSpace(_vGridPos);
+			Vector2i _gGridPos = SpaceNavigator.ConvertToGridSpace(_vGridPos);
+			bool _isOnLeftEdge = _vTilePos.x == 0;
+			bool _isOnRightEdge = _vTilePos.x == UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
+			bool _affectsTopHalf = _vTilePos.y == UVControllerBasic.MESH_VERTICES_PER_EDGE - 1;
+			bool _canGoRight 	= _gGridPos.x + 1 < Grid.GridSize.x;
+			bool _canGoUp 		= _gGridPos.y + 1 < Grid.GridSize.y;
+
+			siblingCurrent.SetNewValues(
+				true,
+				_gGridPos.x, _gGridPos.y,
+				_vTilePos.x, _vTilePos.y
+			);
+			siblingOwnTopHalf.SetNewValues(
+				_affectsTopHalf,
+				_gGridPos.x, _gGridPos.y,
+				_vTilePos.x, _vTilePos.y + 1
+			);
+			siblingOwnTopHalfLeft.SetNewValues(
+				_affectsTopHalf && _isOnLeftEdge,
+				_gGridPos.x, _gGridPos.y,
+				0, _vTilePos.y + 2
+			);
+			siblingOwnTopHalfRight.SetNewValues(
+				_affectsTopHalf && _isOnRightEdge,
+				_gGridPos.x, _gGridPos.y,
+				1, _vTilePos.y + 2
+			);
+			siblingRight.SetNewValues(
+				_isOnRightEdge && _canGoRight,
+				_gGridPos.x + 1, _gGridPos.y,
+				0, _vTilePos.y
+			);
+			siblingRightTopHalf.SetNewValues(
+				_canGoRight && _isOnRightEdge && _affectsTopHalf,
+				_gGridPos.x + 1, _gGridPos.y,
+				0, _vTilePos.y + 1
+			);
+			siblingRightTopHalfLeft.SetNewValues(
+				_canGoRight && _isOnRightEdge && _affectsTopHalf,
+				_gGridPos.x + 1, _gGridPos.y,
+				0, _vTilePos.y + 2
+			);
+			siblingTop.SetNewValues(
+				_canGoUp && _affectsTopHalf,
+				_gGridPos.x, _gGridPos.y + 1,
+				_vTilePos.x, 0
+			);
+			siblingTopRight.SetNewValues(
+				_canGoUp && siblingTop.Affected && siblingRight.Affected,
+				_gGridPos.x + 1, _gGridPos.y + 1,
+				0, 0
+			);
+
+			currentVertexGridPos = _vGridPos;
+		}
+		public static void ApplyLightDirectionsToGrid(SpaceNavigator _spaces, Vector4 _lightDirs) {
+			Vector2i _vGridPos = _spaces.GetVertexGridPos();
+			if(_vGridPos != currentVertexGridPos){
+				SetSiblingsForVertex(_vGridPos);
+			}
+
+			if (siblingCurrent.Affected) 			siblingCurrent.				ApplyLightDirectionsToGrid(_lightDirs);
+			if (siblingOwnTopHalf.Affected) 		siblingOwnTopHalf.			ApplyLightDirectionsToGrid(_lightDirs);
+			if (siblingOwnTopHalfLeft.Affected) 	siblingOwnTopHalfLeft.		ApplyLightDirectionsToGrid(_lightDirs);
+			if (siblingOwnTopHalfRight.Affected) 	siblingOwnTopHalfRight.		ApplyLightDirectionsToGrid(_lightDirs);
+			if (siblingTop.Affected) 				siblingTop.					ApplyLightDirectionsToGrid(_lightDirs);
+			if (siblingRight.Affected) 				siblingRight.				ApplyLightDirectionsToGrid(_lightDirs);
+			if (siblingRightTopHalf.Affected) 		siblingRightTopHalf.		ApplyLightDirectionsToGrid(_lightDirs);
+			if (siblingRightTopHalfLeft.Affected) 	siblingRightTopHalfLeft.	ApplyLightDirectionsToGrid(_lightDirs);
+			if (siblingTopRight.Affected) 			siblingTopRight.			ApplyLightDirectionsToGrid(_lightDirs);
+		}
+		public static void ApplyVertexColorToGrid(SpaceNavigator _spaces, Color _color){
+			Vector2i _vGridPos = _spaces.GetVertexGridPos();
+			if(_vGridPos != currentVertexGridPos){
+				SetSiblingsForVertex(_vGridPos);
+			}
+			
+			if (siblingCurrent.Affected) 			siblingCurrent.				ApplyVertexColorToGrid(_color);
+			if (siblingOwnTopHalf.Affected) 		siblingOwnTopHalf.			ApplyVertexColorToGrid(_color);
+			if (siblingOwnTopHalfLeft.Affected) 	siblingOwnTopHalfLeft.		ApplyVertexColorToGrid(_color);
+			if (siblingOwnTopHalfRight.Affected) 	siblingOwnTopHalfRight.		ApplyVertexColorToGrid(_color);
+			if (siblingTop.Affected) 				siblingTop.					ApplyVertexColorToGrid(_color);
+			if (siblingRight.Affected) 				siblingRight.				ApplyVertexColorToGrid(_color);
+			if (siblingRightTopHalf.Affected) 		siblingRightTopHalf.		ApplyVertexColorToGrid(_color);
+			if (siblingRightTopHalfLeft.Affected) 	siblingRightTopHalfLeft.	ApplyVertexColorToGrid(_color);
+			if (siblingTopRight.Affected) 			siblingTopRight.			ApplyVertexColorToGrid(_color);
 		}
 	}
 }

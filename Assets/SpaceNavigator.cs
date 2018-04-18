@@ -42,9 +42,27 @@ public class SpaceNavigator {
 	public static void SetupSizes() { 
 		vertexGridSize = Grid.GridSize * UVControllerBasic.MESH_VERTICES_PER_EDGE;
 		vertexTileSize = UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR;
-		vertexMapSize = ConvertVGridPosToVMapPos(vertexGridSize, _useConversionTable: false);
+		vertexMapSize = ConvertToVertexMapSpace(vertexGridSize, _useConversionTable: false);
 		gridSize = Grid.GridSize;
 	}
+	public static void SetupConversionTables(){
+		// grid -> map
+		VGridToVMapConversionTable = new Vector2i[vertexGridSize.x, vertexGridSize.y];
+		for (int y = 0; y < vertexGridSize.y; y++){
+			for (int x = 0; x < vertexGridSize.x; x++){
+				VGridToVMapConversionTable[x, y] = ConvertToVertexMapSpace(new Vector2i(x, y), _useConversionTable: false);
+			}
+		}
+		
+		// map -> grid
+		VMapToVGridConversionTable = new Vector2i[vertexMapSize.x, vertexMapSize.y];
+		for (int y = 0; y < vertexMapSize.y; y++){
+			for (int x = 0; x < vertexMapSize.x; x++){
+				VMapToVGridConversionTable[x, y] = ConvertToVertexGridSpace(new Vector2i(x, y), _useConversionTable: false);
+			}
+		}
+	}
+
 	public SpaceNavigator(Vector2i _vGridPos, CustomLight _light){
 		SetVertexGridPos(_vGridPos);
 		if(_light != null) SetLightSpace(_light);
@@ -94,7 +112,7 @@ public class SpaceNavigator {
 		return vertexTile.Pos;
 	}
 	public Vector2i GetVertexMapPos(){
-		if (!vertexMap.IsUpToDate) UpdateSpace(vertexMap, ConvertVGridPosToVMapPos(vertexGrid.Pos));
+		if (!vertexMap.IsUpToDate) UpdateSpace(vertexMap, ConvertToVertexMapSpace(vertexGrid.Pos));
 		return vertexMap.Pos;
 	}
 	public Vector2 GetWorldPos(){
@@ -103,12 +121,12 @@ public class SpaceNavigator {
 
 	public static void GetVertexLightPosFirstAndLast(CustomLight _light, out Vector2i _first, out Vector2i _last) {
 		_first = SpaceNavigator.ConvertToVertexGridSpace(Vector2i.zero, _light);
-		_first.x = Mathf.Clamp(_first.x, 0, vertexGridSize.x);
-		_first.y = Mathf.Clamp(_first.y, 0, vertexGridSize.y);
+		_first.x = Mathf.Clamp(_first.x, 0, vertexGridSize.x - 1);
+		_first.y = Mathf.Clamp(_first.y, 0, vertexGridSize.y - 1);
 
-		_last = _first + GetVertexLightSize(_light);
-		_last.x = Mathf.Clamp(_last.x, 0, vertexGridSize.x);
-		_last.y = Mathf.Clamp(_last.y, 0, vertexGridSize.y);
+		_last = _first + GetVertexLightSize(_light) - Vector2i.one;
+		_last.x = Mathf.Clamp(_last.x, 0, vertexGridSize.x - 1);
+		_last.y = Mathf.Clamp(_last.y, 0, vertexGridSize.y - 1);
 	}
 
 	public static Vector2i GetVertexLightSize(CustomLight _light) { return _light.Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE_AS_VECTOR; }
@@ -251,7 +269,7 @@ public class SpaceNavigator {
 			_vGridPos = _spaces.GetVertexGridPos();
 		}
 	}
-	public static void IterateOverVertexMap(LightManager.VertexMap _vertexMap, Action<SpaceNavigator> _method) {
+	public static void IterateOverVertexMap(Action<SpaceNavigator> _method) {
 		Vector2i _vMapPos = Vector2i.zero;
 		SpaceNavigator _spaces = new SpaceNavigator(Vector2i.zero, null);
 		_spaces.PrepareIncrementVertexMapPos(_vMapPos);
@@ -262,7 +280,7 @@ public class SpaceNavigator {
 			_vMapPos = _spaces.GetVertexMapPos();
 		}
 	}
-	public static void IterateOverLightsVerticesOnVertexMap(LightManager.VertexMap _vertexMap, CustomLight _light, Action<SpaceNavigator> _method) {
+	public static void IterateOverLightsVerticesOnVertexMap(CustomLight _light, Action<SpaceNavigator> _method) {
 		Vector2i _vMapPosFirst;
 		Vector2i _vMapPosLast;
 		Vector2i _vMapPos;
@@ -333,7 +351,9 @@ public class SpaceNavigator {
 			vertexMap.Pos.y++;
 		}
 
-		vertexGrid.Pos = ConvertToVertexGridSpace(vertexMap.Pos, _useConversionTable: true);
+		if (vertexMap.Pos.y <= vertexMapSize.x - 1){
+			vertexGrid.Pos = ConvertToVertexGridSpace(vertexMap.Pos, _useConversionTable: true);
+		}
 
 		vertexMap.IsUpToDate 	= true;
 		vertexGrid.IsUpToDate 	= true;

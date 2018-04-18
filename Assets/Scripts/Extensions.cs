@@ -27,29 +27,32 @@ public static class Extensions {
         }
         _array[_index] = _obj;
     }
-	public static void PseudoRemove<T>(this T[] _array, T _obj, T _emptyValue){ // replace value with _emptyValue (eg -1) and move following items forward a step
-		int _index = -1;
-		for (int i = 0; i < _array.Length; i++){
-			if (EqualityComparer<T>.Default.Equals(_array[i], _obj)) {
-				_index = i;
-			}
-		}
+	// public static int PseudoRemove<T>(this T[] _array, T _obj, T _emptyValue){ // replace value with _emptyValue (eg -1) and move following items forward a step
+	// 	int _index = -1;
+	// 	for (int i = 0; i < _array.Length; i++){
+	// 		if (EqualityComparer<T>.Default.Equals(_array[i], _obj)) {
+	// 			_index = i;
+	// 		}
+	// 	}
 
-		PseudoRemoveAt(_array, _index, _emptyValue);
-	}
-	public static void PseudoRemoveAt<T>(this T[] _array, int _index, T _emptyValue){ // replace value with _emptyValue (eg -1) and move following items forward a step
-		_array[_index] = _emptyValue;
-		for (int i = _index; i < _array.Length - 1; i++){
-			T _nextIndexContent = _array[i + 1];
-			if (EqualityComparer<T>.Default.Equals(_nextIndexContent, _emptyValue)) {
-				break;
-			}
+	// 	return PseudoRemoveAt(_array, _index, _emptyValue);
+	// }
+	// public static int PseudoRemoveAt<T>(this T[] _array, int _index, T _emptyValue){ // replace value with _emptyValue (eg -1) and move following items forward a step
+	// 	int _newIndex = -1;
+	// 	_array[_index] = _emptyValue;
+	// 	for (int i = _index; i < _array.Length - 1; i++){
+	// 		T _nextIndexContent = _array[i + 1];
+	// 		if (EqualityComparer<T>.Default.Equals(_nextIndexContent, _emptyValue)) {
+	// 			_newIndex = i;
+	// 			break;
+	// 		}
 
-			T _thisIndexContent = _array[i];
-			_array[i] = _nextIndexContent;
-			_array[i + 1] = _thisIndexContent;
-		}
-	}
+	// 		T _thisIndexContent = _array[i];
+	// 		_array[i] = _nextIndexContent;
+	// 		_array[i + 1] = _thisIndexContent;
+	// 	}
+	// 	return _newIndex;
+	// }
 
 	public static float GetXOrY(this Vector3 _vector, XYEnum _axis){
 		return _axis == XYEnum.X ? _vector.x : _vector.y;
