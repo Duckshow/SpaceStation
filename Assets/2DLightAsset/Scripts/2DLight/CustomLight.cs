@@ -286,8 +286,10 @@ public partial class CustomLight : MonoBehaviour {
 		// 	LightManager.VertexSiblings.SetValueInVertexLightMap<bool>(VLightMap_Hit, _illuminated, this, _vGridPos);
 		// 	LightManager.VertexSiblings.SetValueInVertexLightMap<float>(VLightMap_Intensity, _lightFromThis, this, _vGridPos);
 		// });
+
 		SpaceNavigator.IterateOverLightsVerticesOnVertexMap(this, (SpaceNavigator _spaces) => {
 			Vector2i _lightPos = _spaces.GetLightPos();
+			_spaces.PrintDebugLog();
 			if (!tilesInRange[_lightPos.x, _lightPos.y].Usable) return;
 
 			Vector2i _vGridPos = _spaces.GetVertexGridPos();

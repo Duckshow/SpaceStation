@@ -150,12 +150,13 @@ public class SpaceNavigator {
 		return _gGridPos * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vTilePos;
 	}
 	public static Vector2i ConvertToVertexGridSpace(Vector2i _mGridPos, bool _useConversionTable = true) {
+		Vector2i _mGridPosOld = _mGridPos;
 		if (_useConversionTable){
 			return VMapToVGridConversionTable[_mGridPos.x, _mGridPos.y];
 		}
 		else{
-			_mGridPos.x = Mathf.FloorToInt(_mGridPos.x + (float)_mGridPos.x / (float)(UVControllerBasic.MESH_VERTICES_PER_EDGE - 1));
-			_mGridPos.y = Mathf.FloorToInt(_mGridPos.y + (float)_mGridPos.y / (float)(UVControllerBasic.MESH_VERTICES_PER_EDGE - 1));
+			_mGridPos.x += Mathf.FloorToInt((_mGridPos.x - 1) / (UVControllerBasic.MESH_VERTICES_PER_EDGE - 1));
+			_mGridPos.y += Mathf.FloorToInt((_mGridPos.y - 1) / (UVControllerBasic.MESH_VERTICES_PER_EDGE - 1));
 			return _mGridPos;
 		}
 	}
@@ -176,8 +177,8 @@ public class SpaceNavigator {
 			return VGridToVMapConversionTable[_vGridPos.x, _vGridPos.y];
 		}
 		else{
-			_vGridPos.x = Mathf.FloorToInt(_vGridPos.x - (float)_vGridPos.x / (float)UVControllerBasic.MESH_VERTICES_PER_EDGE);
-			_vGridPos.y = Mathf.FloorToInt(_vGridPos.y - (float)_vGridPos.y / (float)UVControllerBasic.MESH_VERTICES_PER_EDGE);
+			_vGridPos.x -= Mathf.FloorToInt(_vGridPos.x / UVControllerBasic.MESH_VERTICES_PER_EDGE);
+			_vGridPos.y -= Mathf.FloorToInt(_vGridPos.y / UVControllerBasic.MESH_VERTICES_PER_EDGE);
 			return _vGridPos;
 		}
 	}
@@ -281,14 +282,18 @@ public class SpaceNavigator {
 		}
 	}
 	public static void IterateOverLightsVerticesOnVertexMap(CustomLight _light, Action<SpaceNavigator> _method) {
-		Vector2i _vMapPosFirst;
-		Vector2i _vMapPosLast;
-		Vector2i _vMapPos;
+		Vector2i _vGridPosFirst;
+		Vector2i _vGridPosLast;
+		GetVertexLightPosFirstAndLast(_light, out _vGridPosFirst, out _vGridPosLast);
+		Vector2i _vMapPosFirst = ConvertToVertexMapSpace(_vGridPosFirst);
+		Vector2i _vMapPosLast = ConvertToVertexMapSpace(_vGridPosLast);
+		Vector2i _vMapPos = _vMapPosFirst;
 
-		GetVertexLightPosFirstAndLast(_light, out _vMapPosFirst, out _vMapPosLast);
-		_vMapPosFirst = ConvertToVertexMapSpace(_vMapPosFirst);
-		_vMapPosLast = ConvertToVertexMapSpace(_vMapPosLast);
-		_vMapPos = _vMapPosFirst;
+		SuperDebug.Log(Color.red, _vGridPosFirst, _vMapPosFirst, SpaceNavigator.ConvertToGridSpace(_vGridPosFirst), "", _vGridPosLast, _vMapPosLast, SpaceNavigator.ConvertToGridSpace(_vGridPosLast));
+
+
+		dåamda // it would seem the first vGridPos is (1, 1) lower than _vGridPosFirst... That sounds like a bug right there.
+
 
 		SpaceNavigator _spaces = new SpaceNavigator(Vector2i.zero, _light);
 		_spaces.PrepareIncrementVertexMapPos(_vMapPosFirst);
@@ -351,7 +356,7 @@ public class SpaceNavigator {
 			vertexMap.Pos.y++;
 		}
 
-		if (vertexMap.Pos.y <= vertexMapSize.x - 1){
+		if (vertexMap.Pos.y < vertexMapSize.y){
 			vertexGrid.Pos = ConvertToVertexGridSpace(vertexMap.Pos, _useConversionTable: true);
 		}
 

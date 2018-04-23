@@ -266,12 +266,13 @@ public class LightManager : MonoBehaviour {
 		SpaceNavigator.IterateOverVertexMap((SpaceNavigator _spaces) => {
 			Vector2i _vGridPos = _spaces.GetVertexGridPos();
 			VertexMap.VertexInfo _vertex = VertexMap.TryGetVertex(_vGridPos);
+			Debug.Log(_spaces.GetVertexTilePos() + ", " + _spaces.GetGridPos() + ": " + _vGridPos);
 			if (_vertex.LightsInRange[0].Index == -1) return;
 
 			Vector2i _gridPos = _spaces.GetGridPos();
 			Vector2i _vTilePos = _spaces.GetVertexTilePos();
 
-			// setup light dirs
+			// get and apply light dirs
 			Vector4 _lightDirs = GetLightDirections(_spaces);
 			Grid.Instance.grid[_gridPos.x, _gridPos.y].MyUVController.LightDirections = _lightDirs; // debug
 			VertexMap.ApplyLightDirectionsToGrid(_spaces, _lightDirs);
@@ -285,6 +286,7 @@ public class LightManager : MonoBehaviour {
 			_blurredColor /= _neighbors.Length;
 			_blurredColor.a = 1;
 
+			// apply blurred color
 			VertexMap.TrySetVertex(_vGridPos, _vertex);
 			VertexMap.ApplyVertexColorToGrid(_spaces, _blurredColor);
 		});
