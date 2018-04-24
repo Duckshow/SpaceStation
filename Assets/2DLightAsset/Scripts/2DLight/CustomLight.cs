@@ -289,7 +289,7 @@ public partial class CustomLight : MonoBehaviour {
 
 		SpaceNavigator.IterateOverLightsVerticesOnVertexMap(this, (SpaceNavigator _spaces) => {
 			Vector2i _lightPos = _spaces.GetLightPos();
-			_spaces.PrintDebugLog();
+			//_spaces.PrintDebugLog();
 			if (!tilesInRange[_lightPos.x, _lightPos.y].Usable) return;
 
 			Vector2i _vGridPos = _spaces.GetVertexGridPos();

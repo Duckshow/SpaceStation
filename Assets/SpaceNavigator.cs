@@ -4,7 +4,7 @@ public class SpaceNavigator {
 	public enum SpaceEnum { VertexGrid, Grid, VertexLight, Light, VertexTile, World }
 	public class Position {
 		public Vector2i Pos;
-		public bool IsUpToDate = false;
+		public Vector2i TranslationKey;
 	}
 	private Position vertexGrid 	= new Position();
 	private Position vertexTile 	= new Position();
@@ -29,14 +29,14 @@ public class SpaceNavigator {
 	public void PrintDebugLog() {
 		// NOTE: this looks like shit because for some reason Unity can no longer handle newlines combined with vectors or something. I BARELY got this working -.-
 		string _debugString = "";
-		if (vertexGrid.IsUpToDate) _debugString += "vertexGrid: " + vertexGrid.Pos.x + ", " + vertexGrid.Pos.y;
-		if (grid.IsUpToDate) _debugString += "\ngrid: " + grid.Pos.x + ", " + grid.Pos.y;
-		if (vertexTile.IsUpToDate) _debugString += "\nvertexTile: " + vertexTile.Pos.x + ", " + vertexTile.Pos.y;
-		if (vertexMap.IsUpToDate) _debugString += "\nvertexMap: " + vertexMap.Pos.x + ", " + vertexMap.Pos.y;
-		if (vertexLight.IsUpToDate || light.IsUpToDate) _debugString += "\n \nCurrent light: " + currentLight.name;
-		if (vertexLight.IsUpToDate) _debugString += "\nvertexLight: " + vertexLight.Pos.x + ", " + vertexLight.Pos.y;
-		if (light.IsUpToDate) _debugString += "\nlight: " + light.Pos.x + ", " + light.Pos.y;
-		SuperDebug.Log(Color.cyan, _debugString);
+		if (vertexGrid.TranslationKey == vertexGrid.Pos) _debugString += "vertexGrid: " + vertexGrid.Pos.x + ", " + vertexGrid.Pos.y;
+		if (grid.TranslationKey == vertexGrid.Pos) _debugString += "\ngrid: " + grid.Pos.x + ", " + grid.Pos.y;
+		if (vertexTile.TranslationKey == vertexGrid.Pos) _debugString += "\nvertexTile: " + vertexTile.Pos.x + ", " + vertexTile.Pos.y;
+		if (vertexMap.TranslationKey == vertexGrid.Pos) _debugString += "\nvertexMap: " + vertexMap.Pos.x + ", " + vertexMap.Pos.y;
+		if (vertexLight.TranslationKey == vertexGrid.Pos || light.TranslationKey == vertexGrid.Pos) _debugString += "\n \nCurrent light: " + currentLight.name;
+		if (vertexLight.TranslationKey == vertexGrid.Pos) _debugString += "\nvertexLight: " + vertexLight.Pos.x + ", " + vertexLight.Pos.y;
+		if (light.TranslationKey == vertexGrid.Pos) _debugString += "\nlight: " + light.Pos.x + ", " + light.Pos.y;
+		SuperDebug.Log(Color.red, _debugString);
 	}
 
 	public static void SetupSizes() { 
@@ -58,7 +58,7 @@ public class SpaceNavigator {
 		VMapToVGridConversionTable = new Vector2i[vertexMapSize.x, vertexMapSize.y];
 		for (int y = 0; y < vertexMapSize.y; y++){
 			for (int x = 0; x < vertexMapSize.x; x++){
-				VMapToVGridConversionTable[x, y] = ConvertToVertexGridSpace(new Vector2i(x, y), _useConversionTable: false);
+				VMapToVGridConversionTable[x, y] = ConvertToVertexGridSpace(new Vector2i(x, y), _isSettingUpConversionTable: true);
 			}
 		}
 	}
@@ -71,48 +71,42 @@ public class SpaceNavigator {
 		currentLight 		= _light;
 		lightSize.x 		= _light.Diameter;
 		lightSize.y 		= _light.Diameter;
-		light.IsUpToDate = false;
+		light.TranslationKey = -Vector2i.one;
 
 		vertexLightSize.x 	= _light.Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE;
 		vertexLightSize.y 	= _light.Diameter * UVControllerBasic.MESH_VERTICES_PER_EDGE;
-		vertexLight.IsUpToDate = false;
+		vertexLight.TranslationKey = -Vector2i.one;
 	}
 
 	public void SetVertexGridPos(Vector2i _newPos) {
 		vertexGrid.Pos = _newPos;
-		vertexGrid.IsUpToDate = true;
-		vertexTile.IsUpToDate 	= false;
-		vertexMap.IsUpToDate 	= false;
-		grid.IsUpToDate 		= false;
-		light.IsUpToDate 		= false;
-		vertexLight.IsUpToDate 	= false;
 	}
-	private void UpdateSpace(Position _space, Vector2i _newPos) {
+	private void UpdateSpace(Position _space, Vector2i _translationKey, Vector2i _newPos) {
 		_space.Pos = _newPos;
-		_space.IsUpToDate = true;
+		_space.TranslationKey = _translationKey;
 	}
 
 	public Vector2i GetVertexGridPos(){
 		return vertexGrid.Pos;
 	}
 	public Vector2i GetGridPos(){
-		if(!grid.IsUpToDate) UpdateSpace(grid, ConvertToGridSpace(vertexGrid.Pos));
+		if(grid.TranslationKey != vertexGrid.Pos) UpdateSpace(grid, vertexGrid.Pos, ConvertToGridSpace(vertexGrid.Pos));
 		return grid.Pos;
 	}
 	public Vector2i GetVertexLightPos(){
-		if (!vertexLight.IsUpToDate) UpdateSpace(vertexLight, ConvertToVertexLightSpace(vertexGrid.Pos, currentLight));
+		if (vertexLight.TranslationKey != vertexGrid.Pos) UpdateSpace(vertexLight, vertexGrid.Pos, ConvertToVertexLightSpace(vertexGrid.Pos, currentLight));
 		return vertexLight.Pos;
 	}
 	public Vector2i GetLightPos(){
-		if (!light.IsUpToDate) UpdateSpace(light, ConvertToLightSpace(vertexGrid.Pos, currentLight));
+		if (light.TranslationKey != vertexGrid.Pos) UpdateSpace(light, vertexGrid.Pos, ConvertToLightSpace(vertexGrid.Pos, currentLight));
 		return light.Pos;
 	}
 	public Vector2i GetVertexTilePos(){
-		if (!vertexTile.IsUpToDate) UpdateSpace(vertexTile, ConvertToVertexTileSpace(vertexGrid.Pos));
+		if (vertexTile.TranslationKey != vertexGrid.Pos) UpdateSpace(vertexTile, vertexGrid.Pos, ConvertToVertexTileSpace(vertexGrid.Pos));
 		return vertexTile.Pos;
 	}
 	public Vector2i GetVertexMapPos(){
-		if (!vertexMap.IsUpToDate) UpdateSpace(vertexMap, ConvertToVertexMapSpace(vertexGrid.Pos));
+		if (vertexMap.TranslationKey != vertexGrid.Pos) UpdateSpace(vertexMap, vertexGrid.Pos, ConvertToVertexMapSpace(vertexGrid.Pos));
 		return vertexMap.Pos;
 	}
 	public Vector2 GetWorldPos(){
@@ -149,16 +143,16 @@ public class SpaceNavigator {
 	public static Vector2i ConvertToVertexGridSpace(Vector2i _gGridPos, Vector2i _vTilePos){
 		return _gGridPos * UVControllerBasic.MESH_VERTICES_PER_EDGE + _vTilePos;
 	}
-	public static Vector2i ConvertToVertexGridSpace(Vector2i _mGridPos, bool _useConversionTable = true) {
-		Vector2i _mGridPosOld = _mGridPos;
-		if (_useConversionTable){
-			return VMapToVGridConversionTable[_mGridPos.x, _mGridPos.y];
-		}
-		else{
+	public static Vector2i ConvertToVertexGridSpace(Vector2i _mGridPos, bool _isSettingUpConversionTable = false) {
+		if (_isSettingUpConversionTable){
 			_mGridPos.x += Mathf.FloorToInt((_mGridPos.x - 1) / (UVControllerBasic.MESH_VERTICES_PER_EDGE - 1));
 			_mGridPos.y += Mathf.FloorToInt((_mGridPos.y - 1) / (UVControllerBasic.MESH_VERTICES_PER_EDGE - 1));
-			return _mGridPos;
 		}
+		else{
+			_mGridPos = VMapToVGridConversionTable[_mGridPos.x, _mGridPos.y];
+		}
+
+		return _mGridPos;
 	}
 	public static Vector2i ConvertToGridSpace(Vector2i _vGridPos){
 		return _vGridPos / UVControllerBasic.MESH_VERTICES_PER_EDGE;
@@ -289,20 +283,17 @@ public class SpaceNavigator {
 		Vector2i _vMapPosLast = ConvertToVertexMapSpace(_vGridPosLast);
 		Vector2i _vMapPos = _vMapPosFirst;
 
-		SuperDebug.Log(Color.red, _vGridPosFirst, _vMapPosFirst, SpaceNavigator.ConvertToGridSpace(_vGridPosFirst), "", _vGridPosLast, _vMapPosLast, SpaceNavigator.ConvertToGridSpace(_vGridPosLast));
-
-
-		dåamda // it would seem the first vGridPos is (1, 1) lower than _vGridPosFirst... That sounds like a bug right there.
-
-
 		SpaceNavigator _spaces = new SpaceNavigator(Vector2i.zero, _light);
 		_spaces.PrepareIncrementVertexMapPos(_vMapPosFirst);
 
-		while (_vMapPos.y <= _vMapPosLast.y){
+		while(true){
+			Debug.Log(_vMapPos + ", " + _vMapPosFirst + ", " + _vMapPosLast);
 			if (_vMapPos.x <= _vMapPosLast.x) _method(_spaces);
+			if (_vMapPos == _vMapPosLast) break; AnimatorUpdateMode // never happens, so infinite loop *sigh*
+
 			_spaces.IncrementVertexMapPos(_minX: _vMapPosFirst.x, _maxX: _vMapPosLast.x);
 			_vMapPos = _spaces.GetVertexMapPos();
-		}
+		} 
 	}
 
 	public void PrepareIncrementVertexGridPos(int _minX, int _minY) {
@@ -315,18 +306,14 @@ public class SpaceNavigator {
 			vertexGrid.Pos.x = _minX;
 			vertexGrid.Pos.y += _vTilePos.y == UVControllerBasic.MESH_VERTICES_PER_EDGE - 1 ? 2 : 1;
 		}
-
-		vertexGrid.IsUpToDate 	= true;
-
-		grid.IsUpToDate 		= false;
-		vertexLight.IsUpToDate 	= false;
-		light.IsUpToDate 		= false;
-		vertexTile.IsUpToDate 	= false;
 	}
 	public void PrepareIncrementGridPos(int _minX, int _minY) {
-		UpdateSpace(grid, new Vector2i(_minX, _minY));
-		UpdateSpace(vertexTile, UVControllerBasic.MESH_EDGE_MIDDLE_INDEX_AS_VECTOR);
-		UpdateSpace(vertexGrid, ConvertToVertexGridSpace(grid.Pos, vertexTile.Pos));
+		Vector2i _grid = new Vector2i(_minX, _minY);
+		Vector2i _vTile = UVControllerBasic.MESH_EDGE_MIDDLE_INDEX_AS_VECTOR;
+		Vector2i _vGrid = ConvertToVertexGridSpace(_grid, _vTile);
+		UpdateSpace(vertexGrid, _vGrid, _vGrid);
+		UpdateSpace(grid, _vGrid, _grid);
+		UpdateSpace(vertexTile, _vGrid, _vTile);
 	}
 	public void IncrementGridPos(int _minX, int _maxX) {
 		grid.Pos.x++;
@@ -337,17 +324,12 @@ public class SpaceNavigator {
 
 		vertexTile.Pos = UVControllerBasic.MESH_EDGE_MIDDLE_INDEX_AS_VECTOR;
 		vertexGrid.Pos = ConvertToVertexGridSpace(grid.Pos, vertexTile.Pos);
-
-		grid.IsUpToDate 		= true;
-		vertexTile.IsUpToDate 	= true;
-		vertexGrid.IsUpToDate 	= true;
-
-		vertexLight.IsUpToDate 	= false;
-		light.IsUpToDate 		= false;
 	}
 	public void PrepareIncrementVertexMapPos(Vector2i _min) {
-		UpdateSpace(vertexMap, _min);
-		UpdateSpace(vertexGrid, ConvertToVertexGridSpace(vertexMap.Pos, _useConversionTable: true));
+		Vector2i _vGridPos = ConvertToVertexGridSpace(_min, _isSettingUpConversionTable: false);
+		_vGridPos += Vector2i.one; // WARNING: this assumes _min corresponds to a _vTilePos of 0, 0. I can't figure out a better solution.
+		UpdateSpace(vertexGrid, _vGridPos, _vGridPos);
+		UpdateSpace(vertexMap, _vGridPos, _min);
 	}
 	public void IncrementVertexMapPos(int _minX, int _maxX) {
 		vertexMap.Pos.x++;
@@ -357,15 +339,7 @@ public class SpaceNavigator {
 		}
 
 		if (vertexMap.Pos.y < vertexMapSize.y){
-			vertexGrid.Pos = ConvertToVertexGridSpace(vertexMap.Pos, _useConversionTable: true);
+			vertexGrid.Pos = ConvertToVertexGridSpace(vertexMap.Pos, _isSettingUpConversionTable: false);
 		}
-
-		vertexMap.IsUpToDate 	= true;
-		vertexGrid.IsUpToDate 	= true;
-
-		grid.IsUpToDate 		= false;
-		vertexTile.IsUpToDate 	= false;
-		vertexLight.IsUpToDate 	= false;
-		light.IsUpToDate 		= false;
 	}
 }
