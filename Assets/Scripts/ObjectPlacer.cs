@@ -9,24 +9,27 @@ public class ObjectPlacer {
 	public Toggle[] ObjectButtons;
     public CanInspect PickedUpObject;
     private CanInspect UISelectedObject;
-    public CanInspect _ObjectToPlace_ {
-        get {
-            return (PickedUpObject != null ? PickedUpObject : UISelectedObject); }
-        set {
-            if (PickedUpObject != null)
-                PickedUpObject = value;
-            else
-                UISelectedObject = value;
-        }
-    }
-    private Vector2i AssetBottom;
-    private Vector2i AssetTop;
+
+	public void SetObjectToPlace(CanInspect newObjectToPlace) {
+		if (PickedUpObject != null) { 
+			PickedUpObject = newObjectToPlace;
+		}
+		else { 
+			UISelectedObject = newObjectToPlace;
+		}
+	}
+
+	public CanInspect GetObjectToPlace() {
+		return (PickedUpObject != null ? PickedUpObject : UISelectedObject);
+	}
+
+
+
+	private Int2 AssetBottom;
+    private Int2 AssetTop;
     private bool activeTemporarily = false;
     private int oldObjectButtonIndex = -1;
     private bool selectedObjectButtonHasChanged = false;
-
-
-
 
     [SerializeField] private byte ColorIndex_New = ColoringTool.COLOR_WHITE;
     [SerializeField] private byte ColorIndex_AlreadyExisting = ColoringTool.COLOR_GREY;
@@ -39,56 +42,44 @@ public class ObjectPlacer {
     private IEnumerator ghostRoutine;
     public class GhostInfo {
         public UVController MyUVController;
-        //public UVController TopQuad;
-        public Vector3 posGrid { get; private set; }
-        public Tile.Type Type;
-        public Tile.TileOrientation Orientation;
+        public Int2 posGrid { get; private set; }
 
-        public GhostInfo(UVController _uvc/*, UVController _topQuad*/) {
+        public GhostInfo(UVController _uvc) {
             MyUVController = _uvc;
-            //TopQuad = _topQuad;
-            SetPosition(Vector2.zero);
-            Type = Tile.Type.Empty;
-            Orientation = Tile.TileOrientation.None;
+            SetPosition(Int2.Zero);
         }
 
         private const float DEFAULT_OFFSET_Y = 0.5f;
-        public void SetPosition(Vector3 _posGrid) {
-			Vector3 _posWorld = Grid.Instance.GetWorldPointFromTileCoord(new Vector2i((int)_posGrid.x, (int)_posGrid.y));
+        public void SetPosition(Int2 _posGrid) {
+			Vector3 _posWorld = GameGrid.Instance.GetWorldPosFromGridPos(_posGrid);
 			_posWorld.y += DEFAULT_OFFSET_Y;
-			_posWorld.z = Grid.WORLD_TOP_HEIGHT;
 
 			MyUVController.transform.position = _posWorld;
             posGrid = _posGrid;
         }
-        public void ChangeAssets(Vector2i _bottomIndices, Vector2i _topIndices) {
-            MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Bottom, _bottomIndices, false);
-			MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Top, _topIndices, false);
-			//TopQuad.ChangeAsset(_topIndices, false);
+        public void ChangeAssets(Int2 _bottomIndices, Int2 _topIndices) {
+            // MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Bottom, _bottomIndices, false);
+			// MyUVController.ChangeAsset(MeshSorter.GridLayerEnum.Top, _topIndices, false);
 		}
         public void SetColor(byte _colorIndex) {
             MyUVController.ChangeColor(_colorIndex, _temporary: true);
-            //TopQuad.ChangeColor(_colorIndex);
         }
         public void SetActive(bool _b) {
             MyUVController.gameObject.SetActive(_b);
-            //TopQuad.gameObject.SetActive(_b);
         }
     }
     private GhostInfo Ghost;
 
-    private Vector2 oldMouseGridPos;
+    private Int2 oldMouseGridPos;
 
-    private Tile startTile;
-    private Tile mouseTile;
+    private Node startTile;
+    private Node mouseTile;
 
     private bool isDeleting = false;
     private bool mouseGhostHasNewTile = false;
     private bool mouseGhostIsDirty = true;
 
-    private List<Tile> selectedTiles = new List<Tile>();
-    private List<Tile.Type> selectedTilesNewType = new List<Tile.Type>();
-    private List<Tile.TileOrientation> selectedTilesNewOrientation = new List<Tile.TileOrientation>();
+    private List<Node> selectedTiles = new List<Node>();
 
 
     private float timeActivated;
@@ -149,11 +140,10 @@ public class ObjectPlacer {
         else if (activeTemporarily) // shouldn't reload UISelectedObject when we're not planning on staying in this tool
             return;
         else if (PickedUpObject == null) {
-            for (int i = 1; i < ObjectButtons.Length; i++) { // skipping 0 because it's currently the None-button
+            for (int i = 0; i < ObjectButtons.Length; i++) { // skipping 0 because it's currently the None-button
                 if (ObjectButtons[i].isOn) {
                     selectedObjectButtonHasChanged = oldObjectButtonIndex != i;
                     oldObjectButtonIndex = i;
-
                     break;
                 }
             }
@@ -168,12 +158,18 @@ public class ObjectPlacer {
                 UISelectedObject = null;
             }
 
-            UISelectedObject = Object.Instantiate(ObjectButtons[oldObjectButtonIndex].GetComponent<PrefabReference>().Prefab).GetComponent<CanInspect>();
-            UISelectedObject.Setup();
-            SetAssetBottomAndTop(UISelectedObject);
+			PrefabReference prefabRef = ObjectButtons[oldObjectButtonIndex].GetComponent<PrefabReference>();
+			if (prefabRef != null){
+				UISelectedObject = Object.Instantiate(prefabRef.Prefab).GetComponent<CanInspect>();
+				UISelectedObject.Setup();
+				SetAssetBottomAndTop(UISelectedObject);
+			}
         }
 
-        _ObjectToPlace_.PickUp();
+		CanInspect objectToPlace = GetObjectToPlace();
+		if (objectToPlace != null){
+			GetObjectToPlace().PickUp();
+		}
     }
 
 
@@ -210,82 +206,40 @@ public class ObjectPlacer {
         }
 
         // click released
-        if (Mouse.StateRight == Mouse.MouseStateEnum.Release || _ObjectToPlace_ == null)
+        if (Mouse.StateRight == Mouse.MouseStateEnum.Release || GetObjectToPlace() == null)
             FinishRound();
     }
     private void ControlMouseGhost() {
         // find current tile
-        oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridCoord.x, mouseTile.GridCoord.y);
-        mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        oldMouseGridPos = mouseTile == null ? Int2.Zero : mouseTile.GridPos;
+        mouseTile = GameGrid.Instance.GetNodeFromWorldPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
-        mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridCoord.x || oldMouseGridPos.y != mouseTile.GridCoord.y;
+        mouseGhostHasNewTile = oldMouseGridPos != mouseTile.GridPos;
         if (mouseGhostHasNewTile)
             mouseGhostIsDirty = true;
 
         // set ghost-transform
-        Ghost.SetPosition(new Vector3(mouseTile.GridCoord.x, mouseTile.GridCoord.y, Grid.WORLD_BOTTOM_HEIGHT));
-        Ghost.Orientation = TryRotateMouseGhost();
+        Ghost.SetPosition(mouseTile.GridPos);
 
         if (mouseGhostIsDirty) {
             mouseGhostIsDirty = false;
             DetermineGhostPositions(_hasClicked: false, _snapToNeighbours: mouseGhostHasNewTile);
         }
     }
-    private Tile.TileOrientation TryRotateMouseGhost() {
-        // rotate diagonals with Q&E
-        int _rotateDirection = 0;
-        _rotateDirection += Input.GetKeyUp(KeyCode.E) ? -1 : 0;
-        _rotateDirection += Input.GetKeyUp(KeyCode.Q) ? 1 : 0;
-        if (_rotateDirection != 0) {
-            mouseGhostIsDirty = true;
-
-            if (Ghost.Type == Tile.Type.Diagonal) {
-                switch (Ghost.Orientation) {
-                    case Tile.TileOrientation.None:
-                    case Tile.TileOrientation.BottomLeft:
-                        return _rotateDirection > 0 ? Tile.TileOrientation.BottomRight : Tile.TileOrientation.TopLeft;
-                    case Tile.TileOrientation.TopLeft:
-                        return _rotateDirection > 0 ? Tile.TileOrientation.BottomLeft : Tile.TileOrientation.TopRight;
-                    case Tile.TileOrientation.TopRight:
-                        return _rotateDirection > 0 ? Tile.TileOrientation.TopLeft : Tile.TileOrientation.BottomRight;
-                    case Tile.TileOrientation.BottomRight:
-                        return _rotateDirection > 0 ? Tile.TileOrientation.TopRight : Tile.TileOrientation.BottomLeft;
-                }
-            }
-            else {
-                switch (Ghost.Orientation) {
-                    case Tile.TileOrientation.None:
-                    case Tile.TileOrientation.Bottom:
-                        return _rotateDirection > 0 ? Tile.TileOrientation.Right : Tile.TileOrientation.Left;
-                    case Tile.TileOrientation.Left:
-                        return _rotateDirection > 0 ? Tile.TileOrientation.Bottom : Tile.TileOrientation.Top;
-                    case Tile.TileOrientation.Top:
-                        return _rotateDirection > 0 ? Tile.TileOrientation.Left : Tile.TileOrientation.Right;
-                    case Tile.TileOrientation.Right:
-                        return _rotateDirection > 0 ? Tile.TileOrientation.Top : Tile.TileOrientation.Bottom;
-                }
-            }
-        }
-
-        return Ghost.Orientation;
-    }
 
     private void DetermineGhostPositions(bool _hasClicked, bool _snapToNeighbours) {
 
         // find current tile
         if (!_hasClicked)
-            startTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            startTile = GameGrid.Instance.GetNodeFromWorldPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
         else
-            mouseTile = Grid.Instance.GetTileFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            mouseTile = GameGrid.Instance.GetNodeFromWorldPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
         // reset old stuff
         selectedTiles.Clear();
-        selectedTilesNewType.Clear();
-        selectedTilesNewOrientation.Clear();
 
         Ghost.SetActive(true);
-        Ghost.SetPosition(new Vector2(mouseTile.GridCoord.x, mouseTile.GridCoord.y));
-        SetGhostGraphics(mouseTile, _snapToNeighbours);
+        Ghost.SetPosition(mouseTile.GridPos);
         Evaluate();
     }
 
@@ -299,36 +253,13 @@ public class ObjectPlacer {
         mouseGhostIsDirty = true;
     }
 
-    private void SetGhostGraphics(Tile _tileUnderGhost, bool _snapToNeighbours) {
-		Ghost.Type = Tile.Type.Empty;
-        Ghost.Orientation = Tile.TileOrientation.None;
-        Ghost.ChangeAssets (AssetBottom, AssetTop);
-
-        //// if a diagonal is below, sort ghost so the diagonal covers it in a pretty way
-        //if (_tileUnderGhost.ConnectedDiagonal_B != null) {
-        //    Ghost.BottomQuad.SortCustom(_tileUnderGhost.BottomQuad.GetSortOrder() + 1);
-        //    Ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
-        //}
-        //// otherwise just go on top
-        //else {
-        //    Ghost.BottomQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 1);
-        //    Ghost.TopQuad.SortCustom(_tileUnderGhost.TopQuad.GetSortOrder() + 2);
-        //}
-	}
-
-    List<Tile> neighbours;
+    List<Node> neighbours;
     private void Evaluate(){
 
 		// deleting old tiles
 		if (isDeleting) {
 			// is building even allowed?
-			if (!mouseTile._BuildingAllowed_ && mouseTile._FloorType_ != Tile.Type.Empty) { // empty tiles allowed for deletion bc it looks better
-				ApplySettingsToGhost(false, ColorIndex_Blocked);
-				return;
-			}
-
-			// is the tile being used for something currently?
-			if (mouseTile.ThingsUsingThis > 0) {
+			if (!mouseTile.IsBuildingAllowed) {
 				ApplySettingsToGhost(false, ColorIndex_Blocked);
 				return;
 			}
@@ -341,22 +272,19 @@ public class ObjectPlacer {
 		// adding new tiles
 
 		// is building even allowed?
-		if (!mouseTile._BuildingAllowed_) {
+		if (!mouseTile.IsBuildingAllowed) {
 			ApplySettingsToGhost(false, ColorIndex_Blocked);
 			return;
 		}
+
 		// is the tile below covered by some kind of wall?
-		if (mouseTile._WallType_ != Tile.Type.Empty) {
+		if (mouseTile.IsWall) {
 			ApplySettingsToGhost(false, ColorIndex_Blocked);
 			return;
 		}
-		// is the tile below without floor?
-		if (mouseTile._FloorType_ == Tile.Type.Empty) {
-			ApplySettingsToGhost(false, ColorIndex_Blocked);
-			return;
-		}
+
         // is the tile below occupied by another object (or actor)?
-        TileObject _occupant = mouseTile.GetOccupyingTileObject();
+        NodeObject _occupant = mouseTile.GetOccupyingTileObject();
 		if (_occupant != null) {
             bool _isInspectable = _occupant.GetComponent<CanInspect>() != null;
             if (_isInspectable) {
@@ -367,57 +295,48 @@ public class ObjectPlacer {
             ApplySettingsToGhost(false, ColorIndex_Blocked);
 			return;
 		}
-//		// is the tile below without floor?
-//		if (_tileUnderGhost.IsOccupiedByObject) { // TODO: should check if the object is the same as the one being placed!
-//			ApplySettingsToGhost(_ghost, _tileUnderGhost, false, Color_AlreadyExisting);
-//			return;
-//		}
 
 		// all's good
 		ApplySettingsToGhost(true, ColorIndex_New);
 	}
     private void ApplySettingsToGhost(bool _applyToGrid, byte _newColorIndex, bool hide = false) {
         // apply color and position
-        Ghost.SetPosition(new Vector2(mouseTile.GridCoord.x, mouseTile.GridCoord.y));
+        Ghost.SetPosition(mouseTile.GridPos);
         Ghost.SetActive(!hide);
         Ghost.SetColor(_newColorIndex);
 
         // mark tile for changes
         if (_applyToGrid) {
             selectedTiles.Add(mouseTile);
-            selectedTilesNewType.Add(Ghost.Type);
-            selectedTilesNewOrientation.Add(Ghost.Orientation);
         }
     }
 
     private void ApplyCurrentTool() {
         if (selectedTiles.Count > 0) {
-            TileObject _occupant = selectedTiles[0].GetOccupyingTileObject();
+            NodeObject _occupant = selectedTiles[0].GetOccupyingTileObject();
             CanInspect _occupyingInspectable = _occupant != null ? _occupant.GetComponent<CanInspect>() : null;
             if (_occupyingInspectable != null) {
                 CanInspect _formerlyPickedUp;
 				TrySwitchComponents(_occupyingInspectable, _occupant.Parent, true, /*false, */out _formerlyPickedUp);
             }
             else
-                PutDownPickedUp(selectedTiles[0], selectedTilesNewOrientation[0]);
+                PutDownPickedUp(selectedTiles[0]);
         }
 	
         // reset stuff
         selectedTiles.Clear();
-        selectedTilesNewType.Clear();
-        selectedTilesNewOrientation.Clear();
         Ghost.SetActive(false);
 	}
 
-    private void PutDownPickedUp(Tile _tile, Tile.TileOrientation _orientation) {
-        if (_ObjectToPlace_ == null)
+    private void PutDownPickedUp(Node _node) {
+        if (GetObjectToPlace() == null)
             return;
 
-        _ObjectToPlace_.PutDown(_tile/**, _orientation*/);
+		GetObjectToPlace().PutDown(_node);
         Mouse.Instance.TryDeselectSelectedObject();
-        _ObjectToPlace_ = null;
-    }
-	public bool TrySwitchComponents(CanInspect _pickUpThis, TileObject _pickUpObjsParent, bool _hideOnPickup, out CanInspect _putThisDown) {
+		SetObjectToPlace(null);
+	}
+	public bool TrySwitchComponents(CanInspect _pickUpThis, NodeObject _pickUpObjsParent, bool _hideOnPickup, out CanInspect _putThisDown) {
         _putThisDown = null;
 
         // can this thing even be picked up?
@@ -425,13 +344,13 @@ public class ObjectPlacer {
             return false;
 
         // cache the old object (need to pick up new one before putting old down)
-        _putThisDown = _ObjectToPlace_;
-        _ObjectToPlace_ = null;
+        _putThisDown = GetObjectToPlace();
+		SetObjectToPlace(null);
 
-        // pick up the new object
-        if (_pickUpThis != null) {
+		// pick up the new object
+		if (_pickUpThis != null) {
             TryGetNewObjectToPlace(_pickUpThis);
-            SetAssetBottomAndTop(_ObjectToPlace_);
+            SetAssetBottomAndTop(GetObjectToPlace());
 
             if (!IsActive)
                 ActivateTemporarily();
@@ -455,12 +374,12 @@ public class ObjectPlacer {
     }
 
     private void SetAssetBottomAndTop(CanInspect _obj) {
-        AssetBottom = CachedAssets.WallSet.Null;
-        AssetTop = CachedAssets.WallSet.Null;
+        AssetBottom = CachedAssets.Instance.AssetSets[0].Empty;
+        AssetTop = CachedAssets.Instance.AssetSets[0].Empty;
         if (_obj == null)
             return;
 
-        UVController uvc = _ObjectToPlace_.GetComponent<TileObject>().MyUVController;
+        UVController uvc = GetObjectToPlace().GetComponent<NodeObject>().MyUVController;
 		AssetBottom = uvc.GridLayers[(int)MeshSorter.GridLayerEnum.Bottom].Coordinates;
 		AssetTop 	= uvc.GridLayers[(int)MeshSorter.GridLayerEnum.Top].Coordinates;
     }

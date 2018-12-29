@@ -50,13 +50,11 @@ public class Actor : MonoBehaviour {
     //    }
     //}
 
-    private Tile currentTile;
+    private Node currentTile;
     void Update() {
 
         // if actor is in a special tile, don't think about going somewhere else
-        currentTile = Grid.Instance.GetTileFromWorldPoint(transform.position);
-        if (currentTile._WallType_ == Tile.Type.Door || currentTile._WallType_ == Tile.Type.Airlock)
-            return;
+        currentTile = GameGrid.Instance.GetNodeFromWorldPos(transform.position);
 
         // -- Find water --
         if ((HeldWater > 0 || Knowledge.WaterContainersFilledAmount > 0) && !taskHandler.ResourcesPendingFetch.Contains(ResourceManager.ResourceType.Water) && thirst._Current_ <= thirst.Max * 0.5f) {

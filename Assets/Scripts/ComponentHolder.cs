@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using System.Collections;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(CanInspect))] [RequireComponent(typeof(TileObject))]
+[RequireComponent(typeof(CanInspect))] [RequireComponent(typeof(NodeObject))]
 public class ComponentHolder : MonoBehaviour {
 
     [System.Serializable]
@@ -24,12 +24,12 @@ public class ComponentHolder : MonoBehaviour {
 
     [HideInInspector] public float CurrentEfficiency = 0;
     [HideInInspector] public CanInspect Inspectable;
-    [HideInInspector] public TileObject MyTileObject;
+    [HideInInspector] public NodeObject MyTileObject;
 
 
     void Awake() {
         Inspectable = GetComponent<CanInspect>();
-        MyTileObject = GetComponent<TileObject>();
+        MyTileObject = GetComponent<NodeObject>();
     }
 
     void Start() {

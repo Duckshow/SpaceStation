@@ -12,13 +12,7 @@ public class MeshSorter : MonoBehaviour {
 	}
 	//public GridLayerEnum GridSorting;
 	public bool SortAboveActors = false;
-	public enum GridLayerEnum { 
-		Floor = 0, 
-		FloorCorners = 1, 
-		Bottom = 2, 
-		Top = 3, 
-		TopCorners = 4 
-	}
+	public enum GridLayerEnum { None, Bottom, Top }
 
     protected bool hasStarted = false;
     protected MeshRenderer myRenderer;
@@ -49,7 +43,7 @@ public class MeshSorter : MonoBehaviour {
         }
 	}
 
-	public static int GetSortOrderFromGridY(int _gridY) { return (Grid.GridSize.y * GameManager.Instance.SortingTransformsPerPosY) - (_gridY * GameManager.Instance.SortingTransformsPerPosY); }
+	public static int GetSortOrderFromGridY(int _gridY) { return (GameGrid.Instance.GridSize.y * GameManager.Instance.SortingTransformsPerPosY) - (_gridY * GameManager.Instance.SortingTransformsPerPosY); }
     public int GetSortOrder() { return regularSortOrder; }
     //public int GetSortOrder() { return (customSortOrder.HasValue ? (int)customSortOrder : regularSortOrder); }
     private int regularSortOrder = 0;

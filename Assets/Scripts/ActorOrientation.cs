@@ -24,7 +24,6 @@ public class ActorOrientation : MonoBehaviour {
     }
 
     private const float TIME_BETWEEN_POS_UPDATES = 0.1f;
-    private float timeAtLastPosUpdate = 0;
     private int newSortOrder = 0;
     private int prevY = -1;
     private int currentY = 0;
@@ -43,7 +42,7 @@ public class ActorOrientation : MonoBehaviour {
         if (currentY != prevY) {
             prevY = currentY;
 
-            newSortOrder = UVController.GetSortOrderFromGridY(Grid.Instance.GetTileFromWorldPoint(transform.position).GridCoord.y);
+            newSortOrder = UVController.GetSortOrderFromGridY(GameGrid.Instance.GetNodeFromWorldPos(transform.position).GridPos.y);
             BodyRenderer.sortingOrder = newSortOrder + 2;
             HeadRenderer.sortingOrder = newSortOrder + 3;
             BeardRenderer.sortingOrder = newSortOrder + 4;

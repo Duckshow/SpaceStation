@@ -7,12 +7,12 @@ using System;
 public class Pathfinding : MonoBehaviour {
 
     PathRequestManager requestManager;
-    Grid grid;
+    GameGrid grid;
 
 
     void Awake() {
         requestManager = GetComponent<PathRequestManager>();
-        grid = GetComponent<Grid>();
+        grid = GetComponent<GameGrid>();
     }
 
     public void StartFindPath(Vector3 startPos, Vector3 targetPos) {
@@ -28,12 +28,12 @@ public class Pathfinding : MonoBehaviour {
         Waypoint[] waypointsFull = new Waypoint[0];
         bool pathSuccess = false;
         
-        Tile startNode = grid.GetTileFromWorldPoint(_startPos);
-        Tile targetNode = grid.GetTileFromWorldPoint(_targetPos);
+        Node startNode = grid.GetNodeFromWorldPos(_startPos);
+        Node targetNode = grid.GetNodeFromWorldPos(_targetPos);
 
         if (grid.DisplayWaypoints) {
-            DrawDebugMarker(startNode.WorldPosition, Color.blue);
-            DrawDebugMarker(targetNode.WorldPosition, Color.blue);
+            DrawDebugMarker(startNode.WorldPos, Color.blue);
+            DrawDebugMarker(targetNode.WorldPos, Color.blue);
         }
         
         if (startNode == targetNode) {
@@ -42,14 +42,14 @@ public class Pathfinding : MonoBehaviour {
             yield break;
         }
 
-        if (startNode.Walkable && targetNode.Walkable) {
-            Heap<Tile> openSet = new Heap<Tile>(Grid.MaxSize);
-            HashSet<Tile> closedSet = new HashSet<Tile>();
+        if (startNode.IsWalkable() && targetNode.IsWalkable()) {
+            Heap<Node> openSet = new Heap<Node>(GameGrid.Instance.GetArea());
+            HashSet<Node> closedSet = new HashSet<Node>();
 
             openSet.Add(startNode);
 
             while (openSet.Count > 0) {
-                Tile currentNode = openSet.RemoveFirst();
+                Node currentNode = openSet.RemoveFirst();
                 closedSet.Add(currentNode);
 
                 if (currentNode == targetNode) {
@@ -59,21 +59,22 @@ public class Pathfinding : MonoBehaviour {
                     break;
                 }
 
-                foreach (Tile neighbour in grid.GetNeighbours(currentNode.GridCoord.x, currentNode.GridCoord.y)) {
-                    if (!neighbour.Walkable)
-                        continue;
-                    if (neighbour.GetOccupyingTileObject() != null && neighbour != targetNode)
-                        continue;
-                    if (closedSet.Contains(neighbour))
-                        continue;
-                    if (Grid.Instance.IsNeighbourBlockedDiagonally(currentNode, neighbour))
-                        continue;
+                foreach (Node neighbour in grid.GetNeighbours(currentNode.GridPos.x, currentNode.GridPos.y)) {
+					if (!neighbour.IsWalkable()) { 
+						continue;
+					}
+					if (neighbour.GetOccupyingTileObject() != null && neighbour != targetNode) { 
+						continue;
+					}
+					if (closedSet.Contains(neighbour)) { 
+						continue;
+					}
 
                     int newMovementCostToNeighbour = currentNode.GCost + GetDistance(currentNode, neighbour) + neighbour.MovementPenalty;
                     if (newMovementCostToNeighbour < neighbour.GCost || !openSet.Contains(neighbour)) {
                         neighbour.GCost = newMovementCostToNeighbour;
                         neighbour.HCost = GetDistance(neighbour, targetNode);
-                        neighbour.ParentTile = currentNode;
+                        neighbour.ParentNode = currentNode;
 
                         if (!openSet.Contains(neighbour))
                             openSet.Add(neighbour);
@@ -91,13 +92,13 @@ public class Pathfinding : MonoBehaviour {
         requestManager.FinishedProcessingPath(waypoints, waypointsFull, pathSuccess);
     }
 
-    void RetracePath(Tile startNode, Tile endNode, out Waypoint[] newPath, out Waypoint[] fullPath) {
+    void RetracePath(Node startNode, Node endNode, out Waypoint[] newPath, out Waypoint[] fullPath) {
 
-        List<Tile> path = new List<Tile>();
-        Tile currentNode = endNode;
+        List<Node> path = new List<Node>();
+        Node currentNode = endNode;
         while (currentNode != startNode) {
             path.Add(currentNode);
-            currentNode = currentNode.ParentTile;
+            currentNode = currentNode.ParentNode;
         }
         path.Add(startNode); // added 11/18/2016 (not sure if dangerous, but might prevent problems e.g. if the path starts in front of a door?)
         
@@ -126,53 +127,39 @@ public class Pathfinding : MonoBehaviour {
         UnityEngine.Debug.DrawLine(_pos + new Vector3(-0.1f, 0, 0), _pos + new Vector3(0, 0.1f, 0), _color, 30);
     }
 
-    Waypoint[] MakeWaypointArray(List<Tile> path){
+    Waypoint[] MakeWaypointArray(List<Node> path){
         List<Waypoint> waypoints = new List<Waypoint>();
         for (int i = 0; i < path.Count; i++) {
-            waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
-            waypoints[i].CenterPosition = path[i].DefaultPositionWorld;
+            waypoints.Add(new Waypoint(path[i].GetWorldPosCharacter(), path[i].WorldPosDefault));
+            waypoints[i].CenterPosition = path[i].WorldPosDefault;
         }
         return waypoints.ToArray();
     }
-    Waypoint[] SimplifyPath(List<Tile> path) {
+    Waypoint[] SimplifyPath(List<Node> path) {
         List<Waypoint> waypoints = new List<Waypoint>();
         Vector2 directionFromLast = Vector2.zero;
         Vector2 directionToNext = Vector2.zero;
 
         for (int i = 0; i < path.Count; i++) {
-            DrawDebugMarker(path[i].WorldPosition, Color.green);
+            DrawDebugMarker(path[i].WorldPos, Color.green);
 
-            //if (path[i]._Type_ == Tile.TileType.Door)
-            //    continue;
+			Vector2 currentCharacterPos = path[i].GetWorldPosCharacter();
+			Vector2 nextCharacterPos = path[i + 1].GetWorldPosCharacter();
 
             if (i < path.Count - 1) {
-                directionFromLast = directionToNext;
-                directionToNext = new Vector2(path[i].CharacterPositionWorld.x - path[i + 1].CharacterPositionWorld.x, path[i].CharacterPositionWorld.y - path[i + 1].CharacterPositionWorld.y).normalized;
-
-                // stop behind previous tile
-                if (path[i + 1].StopAheadAndBehindMeWhenCrossing) {
-                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
-                    continue;
-                }
-            }
-
-            if (i > 0) {
-                // stop ahead of next tile
-                if (path[i - 1].StopAheadAndBehindMeWhenCrossing) {
-                    waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
-                    continue;
-                }
+				directionFromLast = directionToNext;
+                directionToNext = new Vector2(currentCharacterPos.x - nextCharacterPos.x, currentCharacterPos.y - nextCharacterPos.y).normalized;
             }
 
             // wait for X seconds on this tile
-            if (path[i].ForceActorStopWhenPassingThis) {
-                waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
+            if (path[i].WaitTime > 0) {
+                waypoints.Add(new Waypoint(currentCharacterPos, path[i].WorldPosDefault));
                 continue;
             }
 
             // if the direction is changing (or if at start/end), add waypoint
             if (directionToNext != directionFromLast || i == 0 || i == path.Count - 1) {
-                waypoints.Add(new Waypoint(path[i].CharacterPositionWorld, path[i].DefaultPositionWorld));
+                waypoints.Add(new Waypoint(currentCharacterPos, path[i].WorldPosDefault));
                 continue;
             }
         }
@@ -180,9 +167,9 @@ public class Pathfinding : MonoBehaviour {
         return waypoints.ToArray();
     }
 
-    int GetDistance(Tile nodeA, Tile nodeB) {
-        int distX = Mathf.Abs(nodeA.GridCoord.x - nodeB.GridCoord.x);
-        int distY = Mathf.Abs(nodeA.GridCoord.y - nodeB.GridCoord.y);
+    int GetDistance(Node nodeA, Node nodeB) {
+        int distX = Mathf.Abs(nodeA.GridPos.x - nodeB.GridPos.x);
+        int distY = Mathf.Abs(nodeA.GridPos.y - nodeB.GridPos.y);
 
         if (distX > distY)
             return 14 * distY + 10 * (distX - distY);

@@ -36,7 +36,6 @@ Shader "Custom/Grid" {
 
 			uniform fixed TextureSizeX;
 			uniform fixed TextureSizeY;
-			uniform fixed DotPrecision;
 			uniform fixed4 allColors[128];
 			uniform fixed colorIndices [10];
 
@@ -51,7 +50,6 @@ Shader "Custom/Grid" {
 				float4 AssetCoord_0123 : TEXCOORD0;
 				float4 AssetCoord_4 : TEXCOORD1;
 				float4 ColorIndices : TEXCOORD2;
-				float4 LightDirections : TEXCOORD3;
 			};
 			struct v2f {
 				float4 Pos : POSITION;
@@ -63,7 +61,6 @@ Shader "Custom/Grid" {
 				float4 ColorIndices0to3 : TEXCOORD3;
 				float4 ColorIndices4to7 : TEXCOORD4;
 				float4 ColorIndices8to9 : TEXCOORD5;
-				float4 LightDirections : TEXCOORD6;
 			};
 			
 			//-- VERT --//
@@ -97,32 +94,9 @@ Shader "Custom/Grid" {
 				o.ColorIndices0to3 = DecompressColorIndices(v.ColorIndices.x);
 				o.ColorIndices4to7 = DecompressColorIndices(v.ColorIndices.y);
 				o.ColorIndices8to9 = DecompressColorIndices(v.ColorIndices.z);
-				o.LightDirections = v.LightDirections;
 				return o;
 			}
 
-			//-- FRAG --//
-			fixed CalculateLighting(fixed4 _normals, fixed4 _lightDirs){
-				fixed _lightExists 		= saturate(_lightDirs.x + _lightDirs.y + _lightDirs.z + _lightDirs.w);
-				fixed _surfaceIsFlat 	= 1 - saturate(ceil(_normals.r + _normals.g));		// 0 == bumpy & lit, 1 == flat & unlit
-
-				fixed _litFromAbove = _lightDirs.x * (1 - saturate(_lightDirs.x - _normals.g));
-				fixed _litFromRight = _lightDirs.y * (1 - saturate(_lightDirs.y - _normals.r));
-				fixed _litFromBelow = _lightDirs.z * (1 - saturate(_lightDirs.z - (1 - _normals.g)));
-				fixed _litFromLeft	= _lightDirs.w * (1 - saturate(_lightDirs.w - (1 - _normals.r)));
-				fixed _lit = floor(max(_litFromAbove, max(_litFromBelow, max(_litFromLeft, _litFromRight))));
-
-				return max(_lit, _surfaceIsFlat) * _lightExists;
-			}
-			// fixed LightExists(fixed _dotX, fixed _dotY){
-			// 	return saturate(ceil(abs(_dotX + _dotY))); // 0 for both dots == not lit
-			// }
-			fixed IsUnlit(fixed4 _normals){
-				return 1 - floor(_normals.a); // 0 == lit, 1 == unlit
-			}
-			// fixed IsFlatSurface(fixed4 _normals){
-			// 	return 1 - saturate(ceil(_normals.r + _normals.g));	// 0 == bumpy & lit, 1 == flat & unlit
-			// }
 			fixed4 AddOrOverwriteColors(fixed4 _oldColor, fixed3 _newColor, fixed _newAlpha){
 				return fixed4(
 					_oldColor.rgb * (1 - _newAlpha) + _newColor.rgb * _newAlpha, 
@@ -159,29 +133,10 @@ Shader "Custom/Grid" {
 
 				fixed _indexToUse = 10 - ceil(palTex.r * 10);
 				fixed4 _colorToUse = allColors[colorIndices[_indexToUse]];
-				// fixed4 _hitMod = fixed4(//) saturate(
-				// 	CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r),// + 
-				// 	CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g),// + 
-				// 	CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b),// + 
-				// 	CalculateLighting(nrmTex, i.DotXs.a, i.DotYs.a)
-				// );
-				fixed4 _hitMod = CalculateLighting(nrmTex, i.LightDirections);
 
-				// _hitMod.r = CalculateLighting(nrmTex, i.DotXs.r, i.DotYs.r);
-				// _hitMod.g = CalculateLighting(nrmTex, i.DotXs.g, i.DotYs.g);
-				// _hitMod.b = CalculateLighting(nrmTex, i.DotXs.b, i.DotYs.b);
-
-
-				// final apply
-				// fixed3 _light = max(_hitMod, IsFlatSurface(nrmTex));
-				// _light *= i.VColor;
-				fixed3 _light = min(_hitMod, i.VColor);
-				_light = max(_light, IsUnlit(nrmTex));
-
-				fixed3 _litRGB = tex.rgb * _colorToUse.rgb * _light;
-				//_litRGB = i.VColor;
+				fixed3 _finalRGB = tex.rgb * _colorToUse.rgb;
 				return fixed4(
-					lerp(_litRGB, emTex, emTex.a),
+					lerp(_finalRGB, emTex, emTex.a),
 					tex.a
 				);
 			}

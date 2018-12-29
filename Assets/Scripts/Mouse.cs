@@ -12,7 +12,6 @@ public class Mouse : MonoBehaviour {
 	public static bool IsOverGUI { get; private set; }
 
     [SerializeField] private WallBuilder WallBuilding;
-	[SerializeField] private FloorBuilder FloorBuilding;
 	[SerializeField] public ColoringTool Coloring;
 	[SerializeField] private ObjectPlacer ObjectPlacing;
 
@@ -20,7 +19,7 @@ public class Mouse : MonoBehaviour {
    	[SerializeField] private Toggle[] AllButtons;
 
     [System.Serializable]
-    public enum BuildModeEnum { None, BuildWalls, BuildFloor, Coloring, PlaceObject }
+    public enum BuildModeEnum { None, Build, Coloring, PlaceObject }
     public BuildModeEnum BuildMode = BuildModeEnum.None;
 
 	public CanInspect SelectedObject;
@@ -151,7 +150,8 @@ public class Mouse : MonoBehaviour {
         SelectedObject = _object.GetComponent<CanInspect>();
 
 		// if something is picked up and a component was clicked, open the secondary info window
-		if (ObjectPlacing._ObjectToPlace_ != null && ((ObjectPlacing._ObjectToPlace_.GetComponent<ComponentObject>() && SelectedObject.GetComponent<ComponentObject>()) || ObjectPlacing._ObjectToPlace_.GetComponent<ComponentHolder>())){
+		CanInspect objectToPlace = ObjectPlacing.GetObjectToPlace();
+		if (objectToPlace != null && ((ObjectPlacing.GetObjectToPlace().GetComponent<ComponentObject>() && SelectedObject.GetComponent<ComponentObject>()) || ObjectPlacing.GetObjectToPlace().GetComponent<ComponentHolder>())){
 			GUIManager.Instance.OpenNewWindow(SelectedObject, CanInspect.State.Default, GUIManager.WindowType.Basic_SecondWindow);
 		}
         else // else just open default window
@@ -192,8 +192,8 @@ public class Mouse : MonoBehaviour {
 	public void OnClickComponentSlot(ComponentHolder.ComponentSlot _slot){
 		float _efficiency = 0;
 		ComponentObject _pickedUpComponent = null;
-		if (ObjectPlacing._ObjectToPlace_ != null) {
-			_pickedUpComponent = ObjectPlacing._ObjectToPlace_.GetComponent<ComponentObject> ();
+		if (ObjectPlacing.GetObjectToPlace() != null) {
+			_pickedUpComponent = ObjectPlacing.GetObjectToPlace().GetComponent<ComponentObject> ();
 			if (_pickedUpComponent == null)
 				return;
 			if (!ComponentHolder.DoesComponentFitInSlot (_slot, _pickedUpComponent, out _efficiency))
@@ -220,17 +220,15 @@ public class Mouse : MonoBehaviour {
 	}
 
     void LateUpdate() {
-        //mouseScreenPos = Input.mousePosition;
-        //mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
-
-		if (WallBuilding.IsActive)
+		if (WallBuilding.IsActive) { 
 			WallBuilding.Update ();
-		if (FloorBuilding.IsActive)
-			FloorBuilding.Update ();
-		if (Coloring.IsActive)
+		}
+		if (Coloring.IsActive) { 
 			Coloring.Update ();
-		if (ObjectPlacing.IsActive)
+		}
+		if (ObjectPlacing.IsActive) { 
 			ObjectPlacing.Update ();
+		}
 
         // disable UI-stuff
         for (int i = 0; i < AllButtons.Length; i++)
@@ -239,40 +237,6 @@ public class Mouse : MonoBehaviour {
         if (ObjectPlacing.PickedUpObject != null)
             return;
     }
-
-	//void OnModeButton0ValueChanged(bool b){
-	//	if(b) OnModeButtonsNewActive (0);
-	//}
-	//void OnModeButton1ValueChanged(bool b){
-	//	if(b) OnModeButtonsNewActive (1);
-	//}
-	//void OnModeButton2ValueChanged(bool b){
-	//	if(b) OnModeButtonsNewActive (2);
-	//}
-	//void OnModeButton3ValueChanged(bool b){
-	//	if(b) OnModeButtonsNewActive (3);
-	//}
-	//void OnModeButtonsNewActive(int selectedModeIndex){
-	//	TryDeselectSelectedObject();
-
-	//	currentSelectedModeIndex = selectedModeIndex;
-	//	switch (currentSelectedModeIndex) {
-	//		case 0:
-	//			SetMode (BuildModeEnum.None);
-	//			break;
-	//		case 1:
-	//			SetMode (BuildModeEnum.BuildWalls);
-	//			break;
-	//		case 2:
-	//			SetMode (BuildModeEnum.BuildFloor);
-	//			break;
-	//		case 3:
-	//			SetMode (BuildModeEnum.Coloring);
-	//			break;
-	//		default:
-	//			throw new System.IndexOutOfRangeException ("selectedModeIndex was out of range!");
-	//	}
-	//}
 
 	int currentSelectedModeIndex = 0;
     public void OnBuildModeChange(int _toolIndex, BuildModeEnum _mode) {
@@ -290,31 +254,21 @@ public class Mouse : MonoBehaviour {
         switch (_mode) {
 			case BuildModeEnum.None:
 				WallBuilding.DeActivate ();
-				FloorBuilding.DeActivate ();
 				Coloring.DeActivate ();
 				ObjectPlacing.DeActivate ();
 				break;
-			case BuildModeEnum.BuildWalls:
-				FloorBuilding.DeActivate ();
+			case BuildModeEnum.Build:
 				Coloring.DeActivate ();
 				ObjectPlacing.DeActivate ();
 				WallBuilding.Activate();
                 break;
-			case BuildModeEnum.BuildFloor:
-				WallBuilding.DeActivate ();
-				Coloring.DeActivate ();
-				ObjectPlacing.DeActivate ();
-				FloorBuilding.Activate ();
-				break;
 			case BuildModeEnum.Coloring:
 				WallBuilding.DeActivate ();
-				FloorBuilding.DeActivate ();
 				ObjectPlacing.DeActivate ();
 				Coloring.Activate ();
 				break;
 			case BuildModeEnum.PlaceObject:
 				WallBuilding.DeActivate ();
-				FloorBuilding.DeActivate ();
 				Coloring.DeActivate ();
 				ObjectPlacing.Activate ();
 				break;

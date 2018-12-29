@@ -3,21 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class ObjectPooler : MonoBehaviour {
+	public enum PoolableID { None, UVController }
+
     [Serializable]
 	public class Pool {
-
-        private const int MAX_POOLED = 500;
-        public List<CachedAssets.WallSet.Purpose> IDs = new List<CachedAssets.WallSet.Purpose>();
+		private const int MAX_POOLED = 500;
+        public List<PoolableID> IDs = new List<PoolableID>();
         public PoolerObject Prefab;
         public ObjectPooler Owner;
         private Queue<PoolerObject> available;
         private int pooledCount = 0;
 
-		public Pool(ObjectPooler _owner, CachedAssets.WallSet.Purpose _id, PoolerObject _prefab, CachedAssets.WallSet.Purpose[] _additionalIDs){
+		public Pool(ObjectPooler _owner, PoolableID _ID, PoolerObject _prefab){
 			Owner = _owner;
 			Prefab = _prefab;
-			IDs.Add(_id);
-			IDs.AddRange(_additionalIDs);
+			IDs.Add(_ID);
 		}
 
 		// return an available object or spawn a new one
@@ -60,7 +60,7 @@ public class ObjectPooler : MonoBehaviour {
 		SetupPoolIDsArray();
 
 		// check for duplicate ID usage (not sure how else to prevent double usage...)
-		List<CachedAssets.WallSet.Purpose> usedIDs = new List<CachedAssets.WallSet.Purpose>();
+		List<PoolableID> usedIDs = new List<PoolableID>();
 		for (int i = 0; i < MyPools.Count; i++){
 			for (int j = 0; j < MyPools[i].IDs.Count; j++){
 				if (usedIDs.Contains(MyPools[i].IDs[j]))
@@ -72,11 +72,11 @@ public class ObjectPooler : MonoBehaviour {
 	}
 	
 
-	public void AddPool(CachedAssets.WallSet.Purpose _id, PoolerObject _prefab, params CachedAssets.WallSet.Purpose[] _additionalIDs){
-		MyPools.Add(new Pool(this, _id, _prefab, _additionalIDs));
+	public void AddPool(PoolableID _id, PoolerObject _prefab){
+		MyPools.Add(new Pool(this, _id, _prefab));
 	}
 
-	private CachedAssets.WallSet.Purpose[] allPoolIDs;
+	private PoolableID[] allPoolIDs;
 	private int[] idsPerPool;
 	void SetupPoolIDsArray(){
 		idsPerPool = new int[MyPools.Count];
@@ -85,7 +85,7 @@ public class ObjectPooler : MonoBehaviour {
 			idsPerPool[i] = MyPools[i].IDs.Count;
 			_total += idsPerPool[i];
 		}
-		allPoolIDs = new CachedAssets.WallSet.Purpose[_total];
+		allPoolIDs = new PoolableID[_total];
 
 		_total = 0;
 		for (int i = 0; i < idsPerPool.Length; i++){
@@ -95,22 +95,22 @@ public class ObjectPooler : MonoBehaviour {
 			}
 		}
 	}
-    public T GetPooledObject<T>(CachedAssets.WallSet.Purpose _id) where T : Component {
+    public T GetPooledObject<T>(PoolableID _id) where T : Component {
 		Pool _pool = GetPoolForID(_id);
 		if(_pool == null)
 	        return null;
 		return _pool.GetObject().GetComponent<T>();
 	}
-	public bool HasPoolForID(CachedAssets.WallSet.Purpose _id){
+	public bool HasPoolForID(PoolableID _id){
 		return GetPoolForID(_id) != null;
 	}
-	public Pool GetPoolForID(CachedAssets.WallSet.Purpose _id){
+	public Pool GetPoolForID(PoolableID _id){
 		Pool _pool = null;
 		int _idIndex = 0;
 		int _poolIndex = 0;
 
 		for (int i = 0; i < allPoolIDs.Length; i++){
-			CachedAssets.WallSet.Purpose _poolID = allPoolIDs[i];
+			PoolableID _poolID = allPoolIDs[i];
 			if (_poolID == _id)
 				_pool = MyPools[_poolIndex];
 
@@ -125,7 +125,7 @@ public class ObjectPooler : MonoBehaviour {
 	}
 
 	// should only be used in editor since it's not optimized, and optimizing it could be a bit annoying.
-	public bool HasPoolForID_EDITOR(CachedAssets.WallSet.Purpose _id){
+	public bool HasPoolForID_EDITOR(PoolableID _id){
 		for (int i = 0; i < MyPools.Count; i++){
 			for (int j = 0; j < MyPools[i].IDs.Count; j++){
 				if(MyPools[i].IDs[j] == _id)

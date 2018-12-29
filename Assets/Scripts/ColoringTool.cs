@@ -57,56 +57,44 @@ public class ColoringTool : BuilderBase {
 	protected override void TryChangeMode(){
 		base.TryChangeMode ();
 
-		if (Input.GetKey(KeyCode.Alpha1))
-			Mode = ModeEnum.Fill;
-		if (Input.GetKey(KeyCode.Alpha2))
+		if (Input.GetKey(KeyCode.Alpha1)) { 
 			Mode = ModeEnum.Room;
+		}
 	}
 
 	protected override void ResetModifiedTiles(bool _includingMouse = false) {
-		for (int i = 0; i < highlightedTiles.Count; i++)
+		for (int i = 0; i < highlightedTiles.Count; i++) { 
 			ResetColor (highlightedTiles[i]);
+		}
 
 		base.ResetModifiedTiles (_includingMouse);
 	}
 	protected override void ResetSelectedTiles() {
-		for (int i = 0; i < tilesToModify.Count; i++)
+		for (int i = 0; i < tilesToModify.Count; i++) { 
 			ResetColor (tilesToModify[i]);
+		}
 
 		base.ResetSelectedTiles ();
 	}
 
-    protected override Tile.Type DetermineGhostType(Tile _tile) {
-		if (_tile._WallType_ != Tile.Type.Empty)
-			return _tile._WallType_;
-		else
-			return _tile._FloorType_;
-    }
-    protected override Tile.TileOrientation DetermineGhostOrientation(Tile _tile, bool _snapToNeighbours) {
-		if (_tile._WallType_ != Tile.Type.Empty)
-			return _tile._Orientation_;
-		else
-			return _tile._FloorOrientation_;
-	}
-
-	protected override bool Evaluate(Tile _tile){
-		SetColor (_tile, _temporarily: true);
-		tilesToModify.Add (_tile);
+	protected override bool Evaluate(Node _node){
+		SetColor (_node, _temporarily: true);
+		tilesToModify.Add (_node);
         return true;
 	}
 
-    protected override void ApplySettingsToGhost(Tile _tile, bool _applyToGrid, byte _newColorIndex) {
-        // _tile.SetFloorColor(_newColorIndex, !_applyToGrid);
-        // _tile.SetWallColor(_newColorIndex, !_applyToGrid);
-        base.ApplySettingsToGhost(_tile, _applyToGrid, _newColorIndex);
+    protected override void ApplySettingsToGhost(Node _node, bool _applyToGrid, byte _newColorIndex) {
+        base.ApplySettingsToGhost(_node, _applyToGrid, _newColorIndex);
     }
 
     protected override void ApplyCurrentTool() {
 		for (int i = 0; i < tilesToModify.Count; i++) {
-			if (isDeleting)
-				ResetColor (tilesToModify [i]);
-			else
+			if (isDeleting) { 
+				ResetColor (tilesToModify[i]);
+			}
+			else { 
 				SetColor (tilesToModify[i], false);
+			}
 		}
 		highlightedTiles.Clear ();
 		tilesToModify.Clear ();
@@ -114,20 +102,10 @@ public class ColoringTool : BuilderBase {
 		base.ApplyCurrentTool ();
 	}
 
-	public void SetColor(Tile _tile, bool _temporarily){
-		_tile.MyUVController.ChangeColor(sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
-		// _tile.FloorQuad.		SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
-		// _tile.FloorCornerHider.	SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
-		// _tile.BottomQuad.		SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
-		// _tile.TopQuad.			SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
-		// _tile.WallCornerHider.	SetUVColor (sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
+	public void SetColor(Node _node, bool _temporarily){
+		// _node.MyUVController.ChangeColor(sColorIndex_0, sColorIndex_1, sColorIndex_2, sColorIndex_3, sColorIndex_4, sColorIndex_5, sColorIndex_6, sColorIndex_7, sColorIndex_8, sColorIndex_9, _temporarily);
 	}
-	public void ResetColor(Tile _tile){
-		_tile.MyUVController.ResetColor();
-		// _tile.FloorQuad.ResetUVColor ();
-		// _tile.FloorCornerHider.ResetUVColor ();
-		// _tile.BottomQuad.ResetUVColor ();
-		// _tile.TopQuad.ResetUVColor ();
-		// _tile.WallCornerHider.ResetUVColor ();
+	public void ResetColor(Node _node){
+		// _node.MyUVController.ResetColor();
 	}
 }

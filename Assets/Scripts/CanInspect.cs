@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using System.Collections;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(CanClick))] [RequireComponent(typeof(TileObject))]
+[RequireComponent(typeof(CanClick))] [RequireComponent(typeof(NodeObject))]
 public class CanInspect : MonoBehaviour {
 
 	private const byte OUTLINE_ALPHA_SELECTED = 128;
@@ -32,7 +32,7 @@ public class CanInspect : MonoBehaviour {
 
 	private bool mouseIsWithinRange = false;
 	private CanClick Clickable;
-    [HideInInspector] public TileObject MyTileObject;
+    [HideInInspector] public NodeObject MyTileObject;
 
     public delegate void InspectEvent();
     public InspectEvent PostPickUp;
@@ -54,7 +54,7 @@ public class CanInspect : MonoBehaviour {
         hasSetup = true;
         MyUVC = GetComponentInChildren<UVController>(); // TODO: this may have to support multiple meshes (because bottom+top and such)
 		Clickable = GetComponent<CanClick> ();
-        MyTileObject = GetComponent<TileObject>();
+        MyTileObject = GetComponent<NodeObject>();
     }
 
     void OnEnable() {
@@ -98,18 +98,18 @@ public class CanInspect : MonoBehaviour {
         if(PostPickUp != null)
             PostPickUp();
     }
-	public void PutDown(Tile _tile/*, Tile.TileOrientation _orientation*/){
+	public void PutDown(Node _node){
 		GUIManager.Instance.CloseInfoWindow(this);
 
         MyTileObject.SetParent(null);
-        MyTileObject.SetGridPosition(_tile);
+        MyTileObject.SetGridPosition(_node);
         //transform.eulerAngles = Tile.GetEulerFromOrientation(_orientation);
 		Hide (false);
 
         if(PostPutDown != null)
             PostPutDown();
     }
-	public void PutOffGrid(TileObject _parent, Vector3 _localPos, bool _hide){
+	public void PutOffGrid(NodeObject _parent, Vector3 _localPos, bool _hide){
 		GUIManager.Instance.CloseInfoWindow(this);
 
         MyTileObject.SetParent(_parent);
@@ -119,7 +119,6 @@ public class CanInspect : MonoBehaviour {
 	}
 
     public void ShowOutline(bool _true) {
-        byte alpha = _true ? OUTLINE_ALPHA_SELECTED : (byte)0;
         MyUVC.ChangeColor(_true ? ColoringTool.COLOR_GREY : ColoringTool.COLOR_WHITE, _temporary: true);
     }
 

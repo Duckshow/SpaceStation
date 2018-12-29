@@ -1,11 +1,40 @@
 ﻿using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
-public class UVController : UVControllerBasic {
+public class UVController : MeshSorter {
 
-	public Vector4 LightDirections;
+	public const float MESH_VERTEX_SEPARATION = 0.5f;
+	public const int MESH_VERTEXCOUNT = 4;
+	public const int MESH_VERTICES_PER_EDGE = 2;
+	public static readonly int GRID_LAYER_COUNT = System.Enum.GetNames(typeof(GridLayerEnum)).Length;
 
-	private UVControllerBasic MyTopUVC;
+	protected const int UVCHANNEL_UV0 = 0;
+	protected const int UVCHANNEL_UV1 = 1;
+	protected const int UVCHANNEL_COLOR = 2;
+
+	[System.Serializable]
+	public class GridLayerClass{
+		public Int2 Coordinates = new Int2();
+		public Int2 TemporaryCoordinates = new Int2();
+		public Int2[] UVs = new Int2[MESH_VERTEXCOUNT];
+	}
+	public GridLayerClass[] GridLayers = new GridLayerClass[GRID_LAYER_COUNT];
+	public List<Vector4> CompressedUVs_0 = new List<Vector4>(MESH_VERTEXCOUNT);
+	public List<Vector4> CompressedUVs_1 = new List<Vector4>(MESH_VERTEXCOUNT);
+	protected bool shouldUpdateGraphics = false;
+
+	[System.NonSerialized] public MeshFilter MyMeshFilter;
+
+	protected static bool sHasSetShaderProperties = false;
+	protected bool isHidden = false;
+
+	private Int2 tileGridPos;
+
+	public void SetTileGridPos(Int2 _tileGridPos) {
+		tileGridPos = _tileGridPos;
+	}
+
+	private UVController MyTopUVC;
 
 	private byte colorIndex_0;
     private byte colorIndex_1;
@@ -28,68 +57,138 @@ public class UVController : UVControllerBasic {
     private byte setColorIndex_8;
     private byte setColorIndex_9;
 
+	public bool HasWallTL;
+	public bool HasWallTR;
+	public bool HasWallBR;
+	public bool HasWallBL;
 
 
-	public override void Setup() {
-        base.Setup();
-		ChangeColor (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-    }
-
-	// [System.Serializable]
-	// public class DebugData{
-	// 	public GridLayerEnum Layer;
-	// 	public Vector2i AssetCoordinates;
-	// 	public bool Temporary;
-	// 	public DebugData(GridLayerEnum _layer, Vector2i _coord, bool _temporary){
-	// 		Layer = _layer;
-	// 		AssetCoordinates = _coord;
-	// 		Temporary = _temporary;
-	// 	}
-	// }
-	// public List<DebugData> StackTrace = new List<DebugData>();
-
-	public override void StopTempMode(){
-		base.StopTempMode();
-		if (MyTopUVC != null)
-			MyTopUVC.StopTempMode();
+	void Awake(){
+		SortingLayer = MeshSorter.SortingLayerEnum.Grid;
 	}
-	public override void ChangeAsset(GridLayerEnum _layer, Vector2i _assetCoordinates, bool _temporary){
-		
-		//StackTrace.Add(new DebugData(_layer, _assetCoordinates, _temporary));
 
-		if (_layer == GridLayerEnum.Top){
-			if (_assetCoordinates != CachedAssets.WallSet.Null){
-				if (MyTopUVC == null){
-					MyTopUVC = ObjectPooler.Instance.GetPooledObject<UVControllerBasic>(CachedAssets.WallSet.Purpose.UVControllerBasic);
-					MyTopUVC.transform.parent = transform;
-					MyTopUVC.transform.position = transform.position;
-					MyTopUVC.SortAboveActors = true;
-					MyTopUVC.Sort(Grid.Instance.GetTileFromWorldPoint(transform.position).GridCoord.y);
-				}
+	public override void Setup(){
+		base.Setup();
 
-				MyTopUVC.ChangeAsset(_layer, _assetCoordinates, _temporary);
-				GridLayerClass _topCornerLayer = GridLayers[(int)GridLayerEnum.TopCorners];
-				if (_temporary && _topCornerLayer.TemporaryCoordinates.y > 0) { 
-					MyTopUVC.ChangeAsset(GridLayerEnum.TopCorners, _topCornerLayer.TemporaryCoordinates, _temporary);
-				}
-				else if (!_temporary && _topCornerLayer.Coordinates.y > 0) { 
-					MyTopUVC.ChangeAsset(GridLayerEnum.TopCorners, _topCornerLayer.Coordinates, _temporary);
-				}
-			}
-			else if (MyTopUVC != null){
-				MyTopUVC.ChangeAsset(_layer, _assetCoordinates, _temporary);
-				MyTopUVC.ChangeAsset(GridLayerEnum.TopCorners, _assetCoordinates, _temporary);
+		MyMeshFilter = GetComponent<MeshFilter>();
 
-				MyTopUVC.GetComponent<PoolerObject>().ReturnToPool();
-				MyTopUVC = null;
-			}
-		}
-		
-		if (_layer == GridLayerEnum.TopCorners && MyTopUVC != null){
-			MyTopUVC.ChangeAsset(_layer, _assetCoordinates, _temporary);
+		myRenderer.sharedMaterial = CachedAssets.Instance.MaterialGrid;
+
+		if (!sHasSetShaderProperties){
+			myRenderer.sharedMaterial.SetVectorArray("allColors", ColoringTool.sAllColorsForShaders);
+			myRenderer.sharedMaterial.SetInt("TextureSizeX", CachedAssets.Instance.AssetSets[0].SpriteSheet.width);
+			myRenderer.sharedMaterial.SetInt("TextureSizeY", CachedAssets.Instance.AssetSets[0].SpriteSheet.height);
+			sHasSetShaderProperties = true;
 		}
 
-		base.ChangeAsset(_layer, _assetCoordinates, _temporary);
+		ChangeColor(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+	}
+
+	public void ScheduleUpdate() {
+		shouldUpdateGraphics = true;
+	}
+
+	void LateUpdate(){
+		Node _nodeTL, _nodeTR, _nodeBR, _nodeBL;
+		GameGrid.NeighborFinder.GetSurroundingNodes(tileGridPos, out _nodeTL, out _nodeTR, out _nodeBR, out _nodeBL);
+		HasWallTL = _nodeTL != null && _nodeTL.IsWall;
+		HasWallTR = _nodeTR != null && _nodeTR.IsWall;
+		HasWallBR = _nodeBR != null && _nodeBR.IsWall;
+		HasWallBL = _nodeBL != null && _nodeBL.IsWall;
+
+		if (shouldUpdateGraphics){
+			shouldUpdateGraphics = false;
+			UpdateGraphics();
+			ApplyAssetChanges();
+		}
+	}
+
+	void SetUV(int _layerIndex, int _uvIndex, int _x, int _y){
+		GridLayers[_layerIndex].UVs[_uvIndex].x = _x;
+		GridLayers[_layerIndex].UVs[_uvIndex].y = _y;
+	}
+
+	public void StopTempMode(){
+		for (int i = 0; i < GridLayers.Length; i++){
+			GridLayers[i].TemporaryCoordinates.x = 0;
+			GridLayers[i].TemporaryCoordinates.y = 0;
+			ChangeAsset((GridLayerEnum)i, GridLayers[i].Coordinates, false);
+		}
+
+		if (MyTopUVC != null) { 
+			MyTopUVC.StopTempMode();
+		}
+	}
+
+	void UpdateGraphics(){
+		Node _nodeTL, _nodeTR, _nodeBR, _nodeBL;
+		GameGrid.NeighborFinder.GetSurroundingNodes(tileGridPos, out _nodeTL, out _nodeTR, out _nodeBR, out _nodeBL);
+
+		bool _isWallTL = _nodeTL != null && _nodeTL.IsWall;
+		bool _isWallTR = _nodeTR != null && _nodeTR.IsWall;
+		bool _isWallBR = _nodeBR != null && _nodeBR.IsWall;
+		bool _isWallBL = _nodeBL != null && _nodeBL.IsWall;
+		bool _isWallTempTL = _nodeTL != null && _nodeTL.IsWallTemporary;
+		bool _isWallTempTR = _nodeTR != null && _nodeTR.IsWallTemporary;
+		bool _isWallTempBR = _nodeBR != null && _nodeBR.IsWallTemporary;
+		bool _isWallTempBL = _nodeBL != null && _nodeBL.IsWallTemporary;
+		bool _isAnyTemporary = _isWallTempTL || _isWallTempTR || _isWallTempBR || _isWallTempBL;
+
+		Int2 _asset = CachedAssets.Instance.GetWallAsset(_isWallTL || _isWallTempTL, _isWallTR || _isWallTempTR, _isWallBR || _isWallTempBR, _isWallBL || _isWallTempBL);
+		ChangeAsset(UVController.GridLayerEnum.Bottom, _asset, _isAnyTemporary);
+		ChangeAsset(UVController.GridLayerEnum.Top, _asset, _isAnyTemporary);
+	}
+
+	void ChangeAsset(GridLayerEnum _layer, Int2 _assetPos, bool _temporary){
+		if (!Application.isPlaying) { 
+			return;
+		}
+
+		int _layerIndex = (int)_layer;
+
+		if (_temporary) { 
+			GridLayers[_layerIndex].TemporaryCoordinates = _assetPos;
+		}
+		else{
+			GridLayers[_layerIndex].Coordinates = _assetPos;
+		}
+
+		int _uvT = Node.RESOLUTION * (_assetPos.y + 1);
+		int _uvR = Node.RESOLUTION * (_assetPos.x + 1);
+		int _uvB = Node.RESOLUTION * _assetPos.y;
+		int _uvL = Node.RESOLUTION * _assetPos.x;
+
+		SetUV(_layerIndex, 0, _uvL, _uvB);
+		SetUV(_layerIndex, 1, _uvR, _uvT);
+		SetUV(_layerIndex, 2, _uvR, _uvB);
+		SetUV(_layerIndex, 3, _uvL, _uvT);
+
+		if (GridLayers.Length != 5) { 
+			Debug.LogError("The amount of grid layers doesn't match the loop below! Not sure how to softcode this sadly!");
+		}
+	
+		CompressedUVs_0.Clear();
+		CompressedUVs_1.Clear();
+		for (int i = 0; i < MESH_VERTEXCOUNT; i++){
+			Int2 _uv0 = GridLayers[0].UVs[i];
+			Int2 _uv1 = GridLayers[1].UVs[i];
+			Int2 _uv2 = GridLayers[2].UVs[i];
+			Int2 _uv3 = GridLayers[3].UVs[i];
+			Int2 _uv4 = GridLayers[4].UVs[i];
+
+			Vector4 _compressed = new Vector4();
+			_compressed.x = BitCompressor.Int2ToInt(_uv0.x, _uv0.y);
+			_compressed.y = BitCompressor.Int2ToInt(_uv1.x, _uv1.y);
+			_compressed.z = BitCompressor.Int2ToInt(_uv2.x, _uv2.y);
+			_compressed.w = BitCompressor.Int2ToInt(_uv3.x, _uv3.y);
+			CompressedUVs_0.Add(_compressed);
+
+			_compressed.x = BitCompressor.Int2ToInt(_uv4.x, _uv4.y);
+			_compressed.y = BitCompressor.Int2ToInt(0, 0);
+			_compressed.z = BitCompressor.Int2ToInt(0, 0);
+			_compressed.w = BitCompressor.Int2ToInt(0, 0);
+			CompressedUVs_1.Add(_compressed);
+		}
 	}
 
 	public void ChangeColor(byte _colorIndex, bool _temporary) {
@@ -98,10 +197,11 @@ public class UVController : UVControllerBasic {
 
         ChangeColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _temporary);
     }
+	
 	public void ResetColor() {
         ChangeColor(setColorIndex_0, setColorIndex_1, setColorIndex_2, setColorIndex_3, setColorIndex_4, setColorIndex_5, setColorIndex_6, setColorIndex_7, setColorIndex_8, setColorIndex_9, false);
     }
-    private Vector4 UV01234 = new Vector4();
+
 	private Vector4[] allColorIndices;
 	public void ChangeColor(byte _color0, byte _color1, byte _color2, byte _color3, byte _color4, byte _color5, byte _color6, byte _color7, byte _color8, byte _color9, bool _temporarily) {
         if (!_temporarily) {
@@ -141,23 +241,7 @@ public class UVController : UVControllerBasic {
 			allColorIndices[i] = _indices;
 		}
 
-		shouldApplyChanges = true;
-    }
-
-    private List<Vector4> lightDirections = new List<Vector4>();
-	public void SetLightDirections(int _vTilePosX, int _vTilePosY, Vector4 _lightDirs){
-		int _uvIndex = _vTilePosY * MESH_VERTICES_PER_EDGE + _vTilePosX;
-		
-		// setup list for caching UVs
-		if (lightDirections.Count != MyMeshFilter.mesh.vertexCount) {
-			lightDirections.Clear();
-			for (int i = 0; i < MyMeshFilter.mesh.vertexCount; i++)
-				lightDirections.Add(new Vector4());
-		}
-
-		// apply UVs
-		lightDirections[_uvIndex] = _lightDirs;
-		shouldApplyChanges = true;
+		shouldUpdateGraphics = true;
     }
 
 	private List<Color32> vertexColors = new List<Color32>();
@@ -172,21 +256,33 @@ public class UVController : UVControllerBasic {
 		}
 
 		vertexColors[_vertexIndex] = _color;
-		shouldApplyChanges = true;
+		shouldUpdateGraphics = true;
 	}
 
-	protected override void ApplyAssetChanges(){
-		//Debug.Log(sAllColorIndices.Count + ", " + sUVDoubleDots.Count + ", " + sVertexColors.Count);
+	protected void ApplyAssetChanges(){
+		if (MyMeshFilter.mesh.vertexCount == 0){
+			return;
+		}
+
 		MyMeshFilter.mesh.SetUVs(UVCHANNEL_COLOR, allColorIndices.ToList());
-		MyMeshFilter.mesh.SetUVs(UVCHANNEL_DOUBLEDOT, lightDirections);
 		MyMeshFilter.mesh.SetColors(vertexColors);
 
 		if (MyTopUVC != null){
 			MyTopUVC.MyMeshFilter.mesh.SetUVs(UVCHANNEL_COLOR, allColorIndices.ToList());
-			MyTopUVC.MyMeshFilter.mesh.SetUVs(UVCHANNEL_DOUBLEDOT, lightDirections);
 			MyTopUVC.MyMeshFilter.mesh.SetColors(vertexColors);
 		}
 
-		base.ApplyAssetChanges();
+		MyMeshFilter.mesh.SetUVs(UVCHANNEL_UV0, CompressedUVs_0);
+		MyMeshFilter.mesh.SetUVs(UVCHANNEL_UV1, CompressedUVs_1);
+		myRenderer.enabled = !isHidden;
+	}
+
+	public void Hide(bool _b){
+		if (!hasStarted) { 
+			Setup();
+		}
+
+		myRenderer.enabled = !_b;
+		isHidden = _b;
 	}
 }
