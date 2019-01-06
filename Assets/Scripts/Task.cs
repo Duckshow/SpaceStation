@@ -74,9 +74,9 @@ public class Task {
 
             nextWaypoint = path[0];
             previousWaypoint = new Waypoint(meta.Handler.Owner.transform.position, meta.Handler.Owner.transform.position);
-            nextWaypointTile = GameGrid.Instance.GetNodeFromWorldPos(nextWaypoint.CharacterPosition);
+            nextWaypointTile = GameGrid.GetInstance().GetNodeFromWorldPos(nextWaypoint.CharacterPosition);
             nextWaypointInFullPath = 0;
-            prevWaypointTile = GameGrid.Instance.GetNodeFromWorldPos(meta.Handler.Owner.transform.position);
+            prevWaypointTile = GameGrid.GetInstance().GetNodeFromWorldPos(meta.Handler.Owner.transform.position);
             distance = Vector3.Distance(previousWaypoint.CharacterPosition, nextWaypoint.CharacterPosition);
             timeAtPrevWaypoint = Time.time;
             yieldTime = 0;
@@ -93,7 +93,7 @@ public class Task {
                     previousWaypoint = nextWaypoint;
                     prevWaypointTile = nextWaypointTile;
                     nextWaypoint = path[targetIndex];
-                    nextWaypointTile = GameGrid.Instance.GetNodeFromWorldPos(nextWaypoint.CharacterPosition);
+                    nextWaypointTile = GameGrid.GetInstance().GetNodeFromWorldPos(nextWaypoint.CharacterPosition);
                     distance = Vector3.Distance(previousWaypoint.CharacterPosition, nextWaypoint.CharacterPosition);
                     
                     for(int i = 0; i < pathFull.Length; i++){

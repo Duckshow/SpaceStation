@@ -25,13 +25,13 @@ public class GridSelectShaderController : MonoBehaviour {
 
     void Start() {
 		Int2 resolution = new Int2();
-		resolution.x = GameGrid.Instance.GridSize.x * Node.RESOLUTION;
-		resolution.y = GameGrid.Instance.GridSize.y * Node.RESOLUTION;
+		resolution.x = GameGrid.SIZE.x * Node.RESOLUTION;
+		resolution.y = GameGrid.SIZE.y * Node.RESOLUTION;
 
 		rend.material.mainTexture = new Texture2D(resolution.x, resolution.y, TextureFormat.RGBA32, false);
         rend.material.mainTexture.wrapMode = TextureWrapMode.Clamp;
         rend.material.mainTexture.filterMode = FilterMode.Point;
-        rend.transform.localScale = new Vector3(GameGrid.Instance.GridSize.x, GameGrid.Instance.GridSize.y, 1);
+        rend.transform.localScale = new Vector3(GameGrid.SIZE.x, GameGrid.SIZE.y, 1);
     }
 
     public void SetSelectSize(Node _tile1, Node _tile2) {

@@ -13,9 +13,17 @@ public class Node : IHeapItem<Node> {
 	public bool HasWallB;
 	public bool HasWallL;
 
+	public int RoomIndex { get; private set; }
+	public void SetRoomIndex(int _index) {
+		// Debug.Log("Set " + _index);
+		RoomIndex = _index;
+		UpdateGraphicsForSurroundingTiles(_isTemporary: false);
+	}
+
 	public bool IsWall { get; private set; }
 	public bool IsWallTemporary { get; private set; }
-    public bool IsBuildingAllowed { get; private set; }
+	public bool UseIsWallTemporary { get; private set; }
+	public bool IsBuildingAllowed { get; private set; }
 	public bool HasDoorOrAirlock { get; private set; }
 	public float WaitTime = 0.0f;
 
@@ -77,16 +85,22 @@ public class Node : IHeapItem<Node> {
         return -compare;
     }
 
-    public void SetIsWall(bool _isWall, bool _temporarily = false) {
-		
-		if (_temporarily){
-			IsWallTemporary = _isWall;
-		}
-		else{
-			IsWall = _isWall;
-		}
+    public void SetIsWall(bool _isWall) {
+		IsWall = _isWall;
+		RoomManager.GetInstance().ScheduleUpdateForRoomOfNode(GridPos);
+		UpdateGraphicsForSurroundingTiles(_isTemporary: false);
+	}
 
-		UpdateGraphicsForSurroundingTiles(_temporarily);
+	 public void SetIsWallTemporary(bool _isWallTemporary) {
+		IsWallTemporary = _isWallTemporary;
+		UseIsWallTemporary = true;
+		UpdateGraphicsForSurroundingTiles(_isTemporary: true);
+	}
+
+	 public void ClearIsWallTemporary() {
+		IsWallTemporary = false;
+		UseIsWallTemporary = false;
+		UpdateGraphicsForSurroundingTiles(_isTemporary: false);
 	}
 
     public void UpdateGraphicsForSurroundingTiles(bool _isTemporary) {
@@ -98,11 +112,7 @@ public class Node : IHeapItem<Node> {
 		if(_tileBL != null) _tileBL.ScheduleUpdate();
 	}
 
-    public void RemoveTemporarySettings() {
-		// MyUVController.StopTempMode();
-    }
-
-    public void SetColor(byte _colorIndex, bool _temporary) {
+    public void SetColor(byte _colorIndex, bool _isTemporary) {
 		// MyUVController.ChangeColor(_colorIndex, _temporary);
     }
     public void RemoveTemporaryColor(){

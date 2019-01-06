@@ -92,10 +92,55 @@ public class CachedAssets : MonoBehaviour {
         Instance = this;
     }
 
-	public Int2 GetWallAsset(bool _isWallTL, bool _isWallTR, bool _isWallBR, bool _isWallBL) {
+	public Int2 GetWallAsset(Int2 _tileGridPos, out bool _isAnyWallTemporary, out bool _isAnyUsingIsWallTemporary) {
 		int assetSetIndex = 0;
 
-		if (_isWallTL && _isWallTR && _isWallBR && _isWallBL){
+		Node _nodeTL, _nodeTR, _nodeBR, _nodeBL;
+		GameGrid.NeighborFinder.GetSurroundingNodes(_tileGridPos, out _nodeTL, out _nodeTR, out _nodeBR, out _nodeBL);
+
+		bool _hasNodeTL = _nodeTL != null;
+		bool _hasNodeTR = _nodeTR != null;
+		bool _hasNodeBR = _nodeBR != null;
+		bool _hasNodeBL = _nodeBL != null;
+
+		bool _isWallTL = _hasNodeTL && _nodeTL.IsWall;
+		bool _isWallTR = _hasNodeTR && _nodeTR.IsWall;
+		bool _isWallBR = _hasNodeBR && _nodeBR.IsWall;
+		bool _isWallBL = _hasNodeBL && _nodeBL.IsWall;
+
+		bool _isWallTemporaryTL = _hasNodeTL && _nodeTL.IsWallTemporary;
+		bool _isWallTemporaryTR = _hasNodeTR && _nodeTR.IsWallTemporary;
+		bool _isWallTemporaryBR = _hasNodeBR && _nodeBR.IsWallTemporary;
+		bool _isWallTemporaryBL = _hasNodeBL && _nodeBL.IsWallTemporary;
+		_isAnyWallTemporary = _isWallTemporaryTL || _isWallTemporaryTR || _isWallTemporaryBR || _isWallTemporaryBL;
+
+		bool _useIsWallTemporaryTL = _hasNodeTL && _nodeTL.UseIsWallTemporary;
+		bool _useIsWallTemporaryTR = _hasNodeTR && _nodeTR.UseIsWallTemporary;
+		bool _useIsWallTemporaryBR = _hasNodeBR && _nodeBR.UseIsWallTemporary;
+		bool _useIsWallTemporaryBL = _hasNodeBL && _nodeBL.UseIsWallTemporary;
+		_isAnyUsingIsWallTemporary = _useIsWallTemporaryTL || _useIsWallTemporaryTR || _useIsWallTemporaryBR || _useIsWallTemporaryBL;
+
+		bool _isEitherKindOfWallTL = _isWallTL || _isWallTemporaryTL;
+		bool _isEitherKindOfWallTR = _isWallTR || _isWallTemporaryTR;
+		bool _isEitherKindOfWallBR = _isWallBR || _isWallTemporaryBR;
+		bool _isEitherKindOfWallBL = _isWallBL || _isWallTemporaryBL;
+
+		bool _isInsideRoom = false;
+		_isInsideRoom = _isInsideRoom || _hasNodeTL && RoomManager.GetInstance().IsInsideShip(_nodeTL.RoomIndex);
+		_isInsideRoom = _isInsideRoom || _hasNodeTR && RoomManager.GetInstance().IsInsideShip(_nodeTR.RoomIndex);
+		_isInsideRoom = _isInsideRoom || _hasNodeBR && RoomManager.GetInstance().IsInsideShip(_nodeBR.RoomIndex);
+		_isInsideRoom = _isInsideRoom || _hasNodeBL && RoomManager.GetInstance().IsInsideShip(_nodeBL.RoomIndex);
+
+		// bool _isBuildingAllowedTL = _hasNodeTL && _nodeTL.IsBuildingAllowed;
+		// bool _isBuildingAllowedTR = _hasNodeTR && _nodeTR.IsBuildingAllowed;
+		// bool _isBuildingAllowedBR = _hasNodeBR && _nodeBR.IsBuildingAllowed;
+		// bool _isBuildingAllowedBL = _hasNodeBL && _nodeBL.IsBuildingAllowed;
+		// bool _isBuildingAllowed = _isBuildingAllowedTL && _isBuildingAllowedTR && _isBuildingAllowedBR && _isBuildingAllowedBL;
+
+		if (!_isInsideRoom){
+			return AssetSets[assetSetIndex].Empty;
+		}
+		else if (_isWallTL && _isWallTR && _isWallBR && _isWallBL){
 			return AssetSets[assetSetIndex].Wall_TL_TR_BR_BL;
 		}
 		else if (_isWallTL && _isWallTR && _isWallBR){
@@ -140,7 +185,7 @@ public class CachedAssets : MonoBehaviour {
 		else if (_isWallBL){
 			return AssetSets[assetSetIndex].Wall_BL;
 		}
-		else{
+		else {
 			return AssetSets[assetSetIndex].Wall_None;
 		}
 	}

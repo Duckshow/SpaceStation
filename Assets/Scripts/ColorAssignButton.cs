@@ -43,7 +43,7 @@ public class ColorAssignButton : MonoBehaviour {
 	public void AssignColor(byte _colorIndex){
 		AssignedColorIndex = _colorIndex;
 		ColoringTool.AssignColorIndex (ColorChannel, AssignedColorIndex);
-		myImage.color = Mouse.Instance.Coloring.AllColors [AssignedColorIndex];
+		myImage.color = ColorManager.GetColor(AssignedColorIndex);
 		MyToggle.isOn = false;
 
 		if (OnColorChange != null)

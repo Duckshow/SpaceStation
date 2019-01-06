@@ -42,7 +42,7 @@ public class ActorOrientation : MonoBehaviour {
         if (currentY != prevY) {
             prevY = currentY;
 
-            newSortOrder = UVController.GetSortOrderFromGridY(GameGrid.Instance.GetNodeFromWorldPos(transform.position).GridPos.y);
+            newSortOrder = UVController.GetSortOrderFromGridY(GameGrid.GetInstance().GetNodeFromWorldPos(transform.position).GridPos.y);
             BodyRenderer.sortingOrder = newSortOrder + 2;
             HeadRenderer.sortingOrder = newSortOrder + 3;
             BeardRenderer.sortingOrder = newSortOrder + 4;

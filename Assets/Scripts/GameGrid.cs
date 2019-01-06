@@ -1,7 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class GameGrid : MonoBehaviour {
+public class GameGrid : Singleton<GameGrid> {
+
+	public static readonly Int2 SIZE = new Int2(48, 48);
+	public static int GetArea(){
+		return SIZE.x * SIZE.y;
+	}
+	public static bool IsInsideGrid(int _x, int _y){
+		return _x >= 0 && _x < SIZE.x && _y >= 0 && _y < SIZE.y;
+	}
 
 	public static class NeighborFinder {
 		public static Dictionary<NeighborEnum, Node> CachedNeighbors = new Dictionary<NeighborEnum, Node>() { 
@@ -60,7 +68,7 @@ public class GameGrid : MonoBehaviour {
 					break;
 			}
 
-			Node node = GameGrid.Instance.TryGetNode(_nodeGridPos.x, _nodeGridPos.y);
+			Node node = GameGrid.GetInstance().TryGetNode(_nodeGridPos.x, _nodeGridPos.y);
 			CachedNeighbors[_neighbor] = node;
 			return node != null;
 		}
@@ -78,34 +86,36 @@ public class GameGrid : MonoBehaviour {
 		}
 
 		public static void GetSurroundingTiles(Int2 _nodeGridPos, out UVController tileTL, out UVController tileTR, out UVController tileBR, out UVController tileBL) {
-			Int2 _nodeGridPosTL = new Int2(_nodeGridPos.x - 1, _nodeGridPos.y + 1);
-			Int2 _nodeGridPosTR = new Int2(_nodeGridPos.x + 1, _nodeGridPos.y + 1);
-			Int2 _nodeGridPosBR = new Int2(_nodeGridPos.x + 1, _nodeGridPos.y - 1);
+			Int2 _nodeGridPosTL = new Int2(_nodeGridPos.x - 1, _nodeGridPos.y);
+			Int2 _nodeGridPosTR = new Int2(_nodeGridPos.x, _nodeGridPos.y);
+			Int2 _nodeGridPosBR = new Int2(_nodeGridPos.x, _nodeGridPos.y - 1);
 			Int2 _nodeGridPosBL = new Int2(_nodeGridPos.x - 1, _nodeGridPos.y - 1);
-			tileTL = GameGrid.Instance.TryGetTile(_nodeGridPosTL);
-			tileTR = GameGrid.Instance.TryGetTile(_nodeGridPosTR);
-			tileBR = GameGrid.Instance.TryGetTile(_nodeGridPosBR);
-			tileBL = GameGrid.Instance.TryGetTile(_nodeGridPosBL);
+			tileTL = GameGrid.GetInstance().TryGetTile(_nodeGridPosTL);
+			tileTR = GameGrid.GetInstance().TryGetTile(_nodeGridPosTR);
+			tileBR = GameGrid.GetInstance().TryGetTile(_nodeGridPosBR);
+			tileBL = GameGrid.GetInstance().TryGetTile(_nodeGridPosBL);
 		}
 
 		public static void GetSurroundingNodes(Int2 _tileGridPos, out Node _nodeTL, out Node _nodeTR, out Node _nodeBR, out Node _nodeBL) {
 			Int2 _nodeGridPos = _tileGridPos;
-			_nodeTL = GameGrid.Instance.TryGetNode(_nodeGridPos + Int2.Up);
-			_nodeTR = GameGrid.Instance.TryGetNode(_nodeGridPos + Int2.UpRight);
-			_nodeBR = GameGrid.Instance.TryGetNode(_nodeGridPos + Int2.Right);
-			_nodeBL = GameGrid.Instance.TryGetNode(_nodeGridPos);
+			_nodeTL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Up);
+			_nodeTR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpRight);
+			_nodeBR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Right);
+			_nodeBL = GameGrid.GetInstance().TryGetNode(_nodeGridPos);
+		}
+
+		public static void GetSurroundingNodes(Int2 _nodeGridPos, out Node _nodeTL, out Node _nodeT, out Node _nodeTR, out Node _nodeR, out Node _nodeBR, out Node _nodeB, out Node _nodeBL, out Node _nodeL) {
+			_nodeTL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpLeft);
+			_nodeT 	= GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Up);
+			_nodeTR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpRight);
+			_nodeR 	= GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Right);
+			_nodeBR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownRight);
+			_nodeB 	= GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Down);
+			_nodeBL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownLeft);
+			_nodeL 	= GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Left);
 		}
 	}
 
-	private static GameGrid instance;
-	public static GameGrid Instance {
-		get { 
-			if(instance == null)
-				instance = FindObjectOfType<GameGrid>();
-			return instance;
-		}
-	}
-	
 	public Material GridMaterial;
 	[SerializeField]
 	private GameObject tilePrefab;
@@ -114,33 +124,30 @@ public class GameGrid : MonoBehaviour {
     public bool DisplayGridGizmos;
     public bool DisplayPaths;
     public bool DisplayWaypoints;
-    public Int2 GridSize;
 
     private Node[,] nodeGrid;
 	private UVController[,] tileGrid;
 
-	public int GetArea() { 
-		return GridSize.x * GridSize.y; 
-	}
 
-
-	void Start() { 
-        CreateGrid();
+	public override bool IsUsingStartEarly() { return true; }
+	public override void StartEarly() {
+		base.StartEarly();
+		CreateGrid();
 	}
 
 	[SerializeField] private int Seed;
 	void CreateGrid() {
 		Random.InitState(Seed);
 		
-		nodeGrid = new Node[GridSize.x, GridSize.y];
-		tileGrid = new UVController[GridSize.x + 2, GridSize.y + 2];
+		nodeGrid = new Node[SIZE.x, SIZE.y];
+		tileGrid = new UVController[SIZE.x + 2, SIZE.y + 2];
 
 		Vector3 worldPosBottomLeft = transform.position;
-		worldPosBottomLeft.x -= GridSize.x * 0.5f;
-		worldPosBottomLeft.y -= GridSize.y * 0.5f;
+		worldPosBottomLeft.x -= SIZE.x * 0.5f;
+		worldPosBottomLeft.y -= SIZE.y * 0.5f;
 
-		for (int y = 0; y < GridSize.y; y++) {
-            for (int x = 0; x < GridSize.x; x++) {
+		for (int y = 0; y < SIZE.y; y++) {
+            for (int x = 0; x < SIZE.x; x++) {
 				Vector3 worldPos = worldPosBottomLeft;
 				worldPos.x += x * Node.DIAMETER + Node.RADIUS;
 				worldPos.y += y * Node.DIAMETER + Node.RADIUS;
@@ -149,8 +156,8 @@ public class GameGrid : MonoBehaviour {
 			}
         }
 
-		for (int y = 0; y < GridSize.y - 1; y++) {
-            for (int x = 0; x < GridSize.x - 1; x++) {
+		for (int y = 0; y < SIZE.y - 1; y++) {
+            for (int x = 0; x < SIZE.x - 1; x++) {
 				Vector3 worldPos = worldPosBottomLeft + new Vector3(Node.RADIUS, Node.RADIUS, 0.0f);
 				worldPos.x += x * Node.DIAMETER + Node.RADIUS;
 				worldPos.y += y * Node.DIAMETER + Node.RADIUS;
@@ -161,15 +168,15 @@ public class GameGrid : MonoBehaviour {
         }
 
 		Node _node;
-        for (int y = 0; y < GridSize.y; y++) {
-            for (int x = 0; x < GridSize.x; x++) {
+        for (int y = 0; y < SIZE.y; y++) {
+            for (int x = 0; x < SIZE.x; x++) {
 				_node = nodeGrid[x, y];
 				
-				if (Random.value < 0.1f){
-					_node.SetIsWall(true, _temporarily: false);
+				if (x == 1 || y == 1 || x == SIZE.x - 2 || y == SIZE.y - 2){
+					_node.SetIsWall(true);
 				}
 
-				_node.UpdateGraphicsForSurroundingTiles(false);
+				_node.UpdateGraphicsForSurroundingTiles(_isTemporary: false);
 			}
         }
     }
@@ -184,7 +191,7 @@ public class GameGrid : MonoBehaviour {
                 int checkX = _gridX + x;
                 int checkY = _gridY + y;
 
-                if (checkX >= 0 && checkX < GridSize.x && checkY >= 0 && checkY < GridSize.y) {
+                if (checkX >= 0 && checkX < SIZE.x && checkY >= 0 && checkY < SIZE.y) {
                     neighbours.Add(nodeGrid[checkX, checkY]);
                 }
             }
@@ -193,27 +200,27 @@ public class GameGrid : MonoBehaviour {
         return neighbours;
     }
 
-	public Int2 GetGridPosFromWorldPos(Vector3 _worldPos) { 
-        float percentX = (_worldPos.x - Node.RADIUS + GridSize.x * 0.5f) / (float)GridSize.x;
-        float percentY = (_worldPos.y - Node.RADIUS + GridSize.y * 0.5f) / (float)GridSize.y;
+	public Int2 GetNodeGridPosFromWorldPos(Vector3 _worldPos) { 
+        float percentX = (_worldPos.x - Node.RADIUS + SIZE.x * 0.5f) / (float)SIZE.x;
+        float percentY = (_worldPos.y - Node.RADIUS + SIZE.y * 0.5f) / (float)SIZE.y;
 		percentX = Mathf.Clamp01(percentX);
         percentY = Mathf.Clamp01(percentY);
 
-        int _x = Mathf.RoundToInt(GridSize.x * percentX);
-        int _y = Mathf.RoundToInt(GridSize.y * percentY);
-        _x = (int)Mathf.Clamp(_x, 0, GridSize.x - 1);
-        _y = (int)Mathf.Clamp(_y, 0, GridSize.y - 1);
+        int _x = Mathf.RoundToInt(SIZE.x * percentX);
+        int _y = Mathf.RoundToInt(SIZE.y * percentY);
+        _x = (int)Mathf.Clamp(_x, 0, SIZE.x - 1);
+        _y = (int)Mathf.Clamp(_y, 0, SIZE.y - 1);
 
 		return new Int2(_x, _y);
 	}
 	public Node GetNodeFromWorldPos(Vector3 _worldPos) {
-		Int2 _gridPos = GetGridPosFromWorldPos(_worldPos);
+		Int2 _gridPos = GetNodeGridPosFromWorldPos(_worldPos);
 		return nodeGrid[_gridPos.x, _gridPos.y];
     }
-    public Vector3 GetWorldPosFromGridPos(Int2 _gridPos){
-        Vector3 _worldPos = new Vector3(_gridPos.x, _gridPos.y, 0.0f);
-        _worldPos.x -= (GridSize.x - 0.5f);
-        _worldPos.y -= (GridSize.y - 0.5f);
+    public Vector3 GetWorldPosFromNodeGridPos(Int2 _nodeGridPos){
+        Vector3 _worldPos = new Vector3(_nodeGridPos.x + Node.RADIUS, _nodeGridPos.y + Node.RADIUS, 0.0f);
+        _worldPos.x -= (SIZE.x * 0.5f);
+        _worldPos.y -= (SIZE.y * 0.5f);
         return _worldPos;
     }
 
@@ -226,7 +233,7 @@ public class GameGrid : MonoBehaviour {
         List<Node> _neighbours = GetNeighbours(_node.GridPos.x, _node.GridPos.y);
         int _lastCount = 0;
 
-        while (_neighbours.Count < (GridSize.x * GridSize.y)) {
+        while (_neighbours.Count < (SIZE.x * SIZE.y)) {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
@@ -260,7 +267,7 @@ public class GameGrid : MonoBehaviour {
         List<Node> _neighbours = GetNeighbours(_tile.GridPos.x, _tile.GridPos.y);
         int _lastCount = 0;
 
-        while (_neighbours.Count < (GridSize.x * GridSize.y)) {
+        while (_neighbours.Count < (SIZE.x * SIZE.y)) {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
@@ -294,8 +301,8 @@ public class GameGrid : MonoBehaviour {
         int _y = 0;
 
         do {
-            _x = (int)Random.Range(0, GridSize.x);
-            _y = (int)Random.Range(0, GridSize.y);
+            _x = (int)Random.Range(0, SIZE.x);
+            _y = (int)Random.Range(0, SIZE.y);
 
             _node = nodeGrid[_x, _y];
         } while (!_node.IsWalkable());
@@ -304,7 +311,7 @@ public class GameGrid : MonoBehaviour {
     }
     
     void OnDrawGizmos() {
-        Gizmos.DrawWireCube(transform.position, new Vector3(GridSize.x,GridSize.y, 1));
+        Gizmos.DrawWireCube(transform.position, new Vector3(SIZE.x, SIZE.y, 1));
 
         if (nodeGrid != null && DisplayGridGizmos) {
             foreach (Node _node in nodeGrid) {
@@ -336,9 +343,5 @@ public class GameGrid : MonoBehaviour {
 		}
 
 		return tileGrid[_posGridX, _posGridY];
-	}
-
-	public bool IsInsideGrid(int _x, int _y) {
-		return _x > 0 && _x < GridSize.x && _y > 0 && _y < GridSize.y;
 	}
 }

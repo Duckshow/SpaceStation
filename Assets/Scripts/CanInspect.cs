@@ -65,7 +65,7 @@ public class CanInspect : MonoBehaviour {
     }
 
     void Start() {
-        MyUVC.ChangeColor(ColoringTool.COLOR_WHITE, _temporary: true);
+        MyUVC.ChangeColor(ColorManager.GetColorIndex(ColorManager.ColorUsage.Default), _temporary: true);
     }
 
 	void LateUpdate(){
@@ -119,7 +119,9 @@ public class CanInspect : MonoBehaviour {
 	}
 
     public void ShowOutline(bool _true) {
-        MyUVC.ChangeColor(_true ? ColoringTool.COLOR_GREY : ColoringTool.COLOR_WHITE, _temporary: true);
+		byte colorDefault = ColorManager.GetColorIndex(ColorManager.ColorUsage.Default);
+		byte colorSelected = ColorManager.GetColorIndex(ColorManager.ColorUsage.Selected);
+		MyUVC.ChangeColor(_true ? colorSelected : colorDefault, _temporary: true);
     }
 
     public void Hide(bool _b) {

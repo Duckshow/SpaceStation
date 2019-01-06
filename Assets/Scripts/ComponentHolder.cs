@@ -87,7 +87,7 @@ public class ComponentHolder : MonoBehaviour {
     }
 
     public void OnClickComponentSlot(int _index) {
-		Mouse.Instance.OnClickComponentSlot (ComponentSlots[_index]);
+		Mouse.GetInstance().OnClickComponentSlot (ComponentSlots[_index]);
 
         // tell everyone the great news
         OnComponentsModified();

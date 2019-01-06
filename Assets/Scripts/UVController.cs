@@ -12,13 +12,6 @@ public class UVController : MeshSorter {
 	protected const int UVCHANNEL_UV1 = 1;
 	protected const int UVCHANNEL_COLOR = 2;
 
-	[System.Serializable]
-	public class GridLayerClass{
-		public Int2 Coordinates = new Int2();
-		public Int2 TemporaryCoordinates = new Int2();
-		public Int2[] UVs = new Int2[MESH_VERTEXCOUNT];
-	}
-	public GridLayerClass[] GridLayers = new GridLayerClass[GRID_LAYER_COUNT];
 	public List<Vector4> CompressedUVs_0 = new List<Vector4>(MESH_VERTEXCOUNT);
 	public List<Vector4> CompressedUVs_1 = new List<Vector4>(MESH_VERTEXCOUNT);
 	protected bool shouldUpdateGraphics = false;
@@ -57,13 +50,13 @@ public class UVController : MeshSorter {
     private byte setColorIndex_8;
     private byte setColorIndex_9;
 
-	public bool HasWallTL;
-	public bool HasWallTR;
-	public bool HasWallBR;
-	public bool HasWallBL;
+	private Int2[] uvsBottom = new Int2[MESH_VERTEXCOUNT];
+	private Int2[] uvsTop = new Int2[MESH_VERTEXCOUNT];
 
 
-	void Awake(){
+	public override bool IsUsingAwakeDefault() { return true; }
+	public override void AwakeDefault(){
+		base.AwakeDefault();
 		SortingLayer = MeshSorter.SortingLayerEnum.Grid;
 	}
 
@@ -71,11 +64,9 @@ public class UVController : MeshSorter {
 		base.Setup();
 
 		MyMeshFilter = GetComponent<MeshFilter>();
-
 		myRenderer.sharedMaterial = CachedAssets.Instance.MaterialGrid;
 
 		if (!sHasSetShaderProperties){
-			myRenderer.sharedMaterial.SetVectorArray("allColors", ColoringTool.sAllColorsForShaders);
 			myRenderer.sharedMaterial.SetInt("TextureSizeX", CachedAssets.Instance.AssetSets[0].SpriteSheet.width);
 			myRenderer.sharedMaterial.SetInt("TextureSizeY", CachedAssets.Instance.AssetSets[0].SpriteSheet.height);
 			sHasSetShaderProperties = true;
@@ -88,55 +79,32 @@ public class UVController : MeshSorter {
 		shouldUpdateGraphics = true;
 	}
 
-	void LateUpdate(){
-		Node _nodeTL, _nodeTR, _nodeBR, _nodeBL;
-		GameGrid.NeighborFinder.GetSurroundingNodes(tileGridPos, out _nodeTL, out _nodeTR, out _nodeBR, out _nodeBL);
-		HasWallTL = _nodeTL != null && _nodeTL.IsWall;
-		HasWallTR = _nodeTR != null && _nodeTR.IsWall;
-		HasWallBR = _nodeBR != null && _nodeBR.IsWall;
-		HasWallBL = _nodeBL != null && _nodeBL.IsWall;
+	public override bool IsUsingUpdateLate() { return true; }
+	public override void UpdateLate(){
+		base.UpdateLate();
 
 		if (shouldUpdateGraphics){
-			shouldUpdateGraphics = false;
 			UpdateGraphics();
 			ApplyAssetChanges();
-		}
-	}
 
-	void SetUV(int _layerIndex, int _uvIndex, int _x, int _y){
-		GridLayers[_layerIndex].UVs[_uvIndex].x = _x;
-		GridLayers[_layerIndex].UVs[_uvIndex].y = _y;
-	}
-
-	public void StopTempMode(){
-		for (int i = 0; i < GridLayers.Length; i++){
-			GridLayers[i].TemporaryCoordinates.x = 0;
-			GridLayers[i].TemporaryCoordinates.y = 0;
-			ChangeAsset((GridLayerEnum)i, GridLayers[i].Coordinates, false);
-		}
-
-		if (MyTopUVC != null) { 
-			MyTopUVC.StopTempMode();
+			shouldUpdateGraphics = false;
 		}
 	}
 
 	void UpdateGraphics(){
-		Node _nodeTL, _nodeTR, _nodeBR, _nodeBL;
-		GameGrid.NeighborFinder.GetSurroundingNodes(tileGridPos, out _nodeTL, out _nodeTR, out _nodeBR, out _nodeBL);
+		bool _isAnyWallTemporary, _isAnyUsingIsWallTemporary;
+		Int2 _asset = CachedAssets.Instance.GetWallAsset(tileGridPos, out _isAnyWallTemporary, out _isAnyUsingIsWallTemporary);
 
-		bool _isWallTL = _nodeTL != null && _nodeTL.IsWall;
-		bool _isWallTR = _nodeTR != null && _nodeTR.IsWall;
-		bool _isWallBR = _nodeBR != null && _nodeBR.IsWall;
-		bool _isWallBL = _nodeBL != null && _nodeBL.IsWall;
-		bool _isWallTempTL = _nodeTL != null && _nodeTL.IsWallTemporary;
-		bool _isWallTempTR = _nodeTR != null && _nodeTR.IsWallTemporary;
-		bool _isWallTempBR = _nodeBR != null && _nodeBR.IsWallTemporary;
-		bool _isWallTempBL = _nodeBL != null && _nodeBL.IsWallTemporary;
-		bool _isAnyTemporary = _isWallTempTL || _isWallTempTR || _isWallTempBR || _isWallTempBL;
+		ChangeAsset(UVController.GridLayerEnum.Bottom, _asset, _isAnyWallTemporary);
+		ChangeAsset(UVController.GridLayerEnum.Top, _asset, _isAnyWallTemporary);
 
-		Int2 _asset = CachedAssets.Instance.GetWallAsset(_isWallTL || _isWallTempTL, _isWallTR || _isWallTempTR, _isWallBR || _isWallTempBR, _isWallBL || _isWallTempBL);
-		ChangeAsset(UVController.GridLayerEnum.Bottom, _asset, _isAnyTemporary);
-		ChangeAsset(UVController.GridLayerEnum.Top, _asset, _isAnyTemporary);
+		ColorManager.ColorUsage context = ColorManager.ColorUsage.Default;
+		if (_isAnyUsingIsWallTemporary && _isAnyWallTemporary)	context = ColorManager.ColorUsage.New;
+		if (_isAnyUsingIsWallTemporary && !_isAnyWallTemporary) context = ColorManager.ColorUsage.Delete;
+		// if (!_isBuildingAllowed)	context = ColorManager.ColorUsage.Blocked;
+		byte colorIndex = ColorManager.GetColorIndex(context);
+
+		ChangeColor(colorIndex, _temporary: true);
 	}
 
 	void ChangeAsset(GridLayerEnum _layer, Int2 _assetPos, bool _temporary){
@@ -146,44 +114,45 @@ public class UVController : MeshSorter {
 
 		int _layerIndex = (int)_layer;
 
-		if (_temporary) { 
-			GridLayers[_layerIndex].TemporaryCoordinates = _assetPos;
-		}
-		else{
-			GridLayers[_layerIndex].Coordinates = _assetPos;
-		}
-
 		int _uvT = Node.RESOLUTION * (_assetPos.y + 1);
 		int _uvR = Node.RESOLUTION * (_assetPos.x + 1);
 		int _uvB = Node.RESOLUTION * _assetPos.y;
 		int _uvL = Node.RESOLUTION * _assetPos.x;
 
-		SetUV(_layerIndex, 0, _uvL, _uvB);
-		SetUV(_layerIndex, 1, _uvR, _uvT);
-		SetUV(_layerIndex, 2, _uvR, _uvB);
-		SetUV(_layerIndex, 3, _uvL, _uvT);
-
-		if (GridLayers.Length != 5) { 
-			Debug.LogError("The amount of grid layers doesn't match the loop below! Not sure how to softcode this sadly!");
+		switch (_layer){
+			case GridLayerEnum.None:
+				break;
+			case GridLayerEnum.Bottom:
+				uvsBottom[0] = new Int2(_uvL, _uvB);
+				uvsBottom[1] = new Int2(_uvR, _uvT);
+				uvsBottom[2] = new Int2(_uvR, _uvB);
+				uvsBottom[3] = new Int2(_uvL, _uvT);
+				break;
+			case GridLayerEnum.Top:
+				uvsTop[0] = new Int2(_uvL, _uvB);
+				uvsTop[1] = new Int2(_uvR, _uvT);
+				uvsTop[2] = new Int2(_uvR, _uvB);
+				uvsTop[3] = new Int2(_uvL, _uvT);
+				break;
+			default:
+				Debug.LogError(_layer + " hasn't been properly implemented yet!");
+				break;
 		}
-	
+
 		CompressedUVs_0.Clear();
 		CompressedUVs_1.Clear();
 		for (int i = 0; i < MESH_VERTEXCOUNT; i++){
-			Int2 _uv0 = GridLayers[0].UVs[i];
-			Int2 _uv1 = GridLayers[1].UVs[i];
-			Int2 _uv2 = GridLayers[2].UVs[i];
-			Int2 _uv3 = GridLayers[3].UVs[i];
-			Int2 _uv4 = GridLayers[4].UVs[i];
+			Int2 _uv0 = uvsBottom[i];
+			Int2 _uv1 = uvsTop[i];
 
 			Vector4 _compressed = new Vector4();
 			_compressed.x = BitCompressor.Int2ToInt(_uv0.x, _uv0.y);
 			_compressed.y = BitCompressor.Int2ToInt(_uv1.x, _uv1.y);
-			_compressed.z = BitCompressor.Int2ToInt(_uv2.x, _uv2.y);
-			_compressed.w = BitCompressor.Int2ToInt(_uv3.x, _uv3.y);
+			_compressed.z = BitCompressor.Int2ToInt(0, 0);
+			_compressed.w = BitCompressor.Int2ToInt(0, 0);
 			CompressedUVs_0.Add(_compressed);
 
-			_compressed.x = BitCompressor.Int2ToInt(_uv4.x, _uv4.y);
+			_compressed.x = BitCompressor.Int2ToInt(0, 0);
 			_compressed.y = BitCompressor.Int2ToInt(0, 0);
 			_compressed.z = BitCompressor.Int2ToInt(0, 0);
 			_compressed.w = BitCompressor.Int2ToInt(0, 0);
@@ -260,7 +229,7 @@ public class UVController : MeshSorter {
 	}
 
 	protected void ApplyAssetChanges(){
-		if (MyMeshFilter.mesh.vertexCount == 0){
+		if (MyMeshFilter.mesh == null || MyMeshFilter.mesh.vertexCount == 0){
 			return;
 		}
 

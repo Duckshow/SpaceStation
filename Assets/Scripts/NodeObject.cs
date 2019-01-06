@@ -21,10 +21,10 @@ public class NodeObject : MonoBehaviour {
 			myInspector.OnHide -= OnHide;
 	}
 	void Start () {
-        if (GameGrid.Instance == null)
+        if (GameGrid.GetInstance() == null)
             return;
 
-        SetGridPosition(GameGrid.Instance.GetClosestFreeNode(transform.position));
+        SetGridPosition(GameGrid.GetInstance().GetClosestFreeNode(transform.position));
 	}
 
 	void OnHide(bool _b) { 
@@ -72,7 +72,7 @@ public class NodeObject : MonoBehaviour {
             return;
 
         isActive = true;
-        MyTile = GameGrid.Instance.GetClosestFreeNode(MyTile);
+        MyTile = GameGrid.GetInstance().GetClosestFreeNode(MyTile);
         if (MyTile == null)
             throw new System.Exception(name + " couldn't find a free tile!");
 
@@ -93,7 +93,7 @@ public class NodeObject : MonoBehaviour {
 
     public void Sort() {
 		if (MyUVController == null)
-			transform.position = new Vector3(transform.position.x, transform.position.y, -(GameGrid.Instance.GridSize.y - MyTile.GridPos.y) * 0.5f);
+			transform.position = new Vector3(transform.position.x, transform.position.y, -(GameGrid.SIZE.y - MyTile.GridPos.y) * 0.5f);
 		else
 			MyUVController.Sort(MyTile.GridPos.y);
     }

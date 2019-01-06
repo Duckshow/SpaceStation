@@ -54,7 +54,7 @@ public class Actor : MonoBehaviour {
     void Update() {
 
         // if actor is in a special tile, don't think about going somewhere else
-        currentTile = GameGrid.Instance.GetNodeFromWorldPos(transform.position);
+        currentTile = GameGrid.GetInstance().GetNodeFromWorldPos(transform.position);
 
         // -- Find water --
         if ((HeldWater > 0 || Knowledge.WaterContainersFilledAmount > 0) && !taskHandler.ResourcesPendingFetch.Contains(ResourceManager.ResourceType.Water) && thirst._Current_ <= thirst.Max * 0.5f) {

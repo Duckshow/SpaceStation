@@ -5,14 +5,8 @@ using System.Collections.Generic;
 [System.Serializable]
 public class BuilderBase {
 
-
 	protected enum ModeEnum { None, Room, Wall, ObjectPlacing }
 	protected ModeEnum Mode = ModeEnum.None;
-
-	[SerializeField] protected byte ColorIndex_New = ColoringTool.COLOR_WHITE;
-	[SerializeField] protected byte ColorIndex_AlreadyExisting = ColoringTool.COLOR_GREY;
-	[SerializeField] protected byte ColorIndex_Remove = ColoringTool.COLOR_RED;
-	[SerializeField] protected byte ColorIndex_Blocked = ColoringTool.COLOR_ORANGE;
 
 	[System.NonSerialized] public bool IsActive = false;
 
@@ -84,10 +78,13 @@ public class BuilderBase {
 		if (Time.time == timeActivated)
 			return;
 
-        isDeleting = Mouse.StateRight != Mouse.MouseStateEnum.None;
+		Mouse.StateEnum mouseStateLeft = Mouse.GetInstance().GetStateLMB();
+		Mouse.StateEnum mouseStateRight = Mouse.GetInstance().GetStateRMB();
+
+		isDeleting = mouseStateRight != Mouse.StateEnum.Idle;
 		InheritedUpdate ();
 
-        if ((Mouse.StateLeft == Mouse.MouseStateEnum.None || Mouse.StateLeft == Mouse.MouseStateEnum.Click) && (Mouse.StateRight == Mouse.MouseStateEnum.None || Mouse.StateRight == Mouse.MouseStateEnum.Click)) {
+        if ((mouseStateLeft == Mouse.StateEnum.Idle || mouseStateLeft == Mouse.StateEnum.Click) && (mouseStateRight == Mouse.StateEnum.Idle || mouseStateRight == Mouse.StateEnum.Click)) {
 			// determine Mode
 			ModeEnum _oldMode = Mode;
 			Mode = ModeEnum.Wall;
@@ -99,17 +96,17 @@ public class BuilderBase {
 			}
 			
 			// no click
-			if ((Mouse.StateLeft == Mouse.MouseStateEnum.None && Mouse.StateRight == Mouse.MouseStateEnum.None) || mouseGhostIsDirty)
+			if ((mouseStateLeft == Mouse.StateEnum.Idle && mouseStateRight == Mouse.StateEnum.Idle) || mouseGhostIsDirty)
 				ControlMouseGhost();
 		}
 
         if (Mouse.IsOverGUI)
             return;
 
-        bool skip = (!isDeleting && Mouse.StateLeft == Mouse.MouseStateEnum.Release) || (isDeleting && Mouse.StateRight == Mouse.MouseStateEnum.Release);
+        bool skip = (!isDeleting && mouseStateLeft == Mouse.StateEnum.Release) || (isDeleting && mouseStateRight == Mouse.StateEnum.Release);
         if (!skip && Time.time - timeLastGhostUpdate < 0.01f)
             return;
-        if (CanDrag() && (Mouse.StateLeft == Mouse.MouseStateEnum.Hold || Mouse.StateRight == Mouse.MouseStateEnum.Hold)) {
+        if (CanDrag() && (mouseStateLeft == Mouse.StateEnum.Hold || mouseStateRight == Mouse.StateEnum.Hold)) {
 			DetermineGhostPositions(_hasClicked: true, _snapToNeighbours: false);
 			timeLastGhostUpdate = Time.time;
 		}
@@ -138,7 +135,9 @@ public class BuilderBase {
         }
     }
     protected virtual bool ShouldFinish() {
-        return (Mouse.StateLeft == Mouse.MouseStateEnum.Release && !isDeleting) || (Mouse.StateRight == Mouse.MouseStateEnum.Release && isDeleting);
+		Mouse.StateEnum mouseStateLeft = Mouse.GetInstance().GetStateLMB();
+		Mouse.StateEnum mouseStateRight = Mouse.GetInstance().GetStateRMB();
+		return (mouseStateLeft == Mouse.StateEnum.Release && !isDeleting) || (mouseStateRight == Mouse.StateEnum.Release && isDeleting);
     }
     protected virtual void FinishRound() {
         ApplyCurrentTool();
@@ -161,7 +160,7 @@ public class BuilderBase {
 	private void ControlMouseGhost() {
 		// find current tile
 		oldMouseGridPos = mouseTile == null ? Vector2.zero : new Vector2(mouseTile.GridPos.x, mouseTile.GridPos.y);
-		mouseTile = GameGrid.Instance.GetNodeFromWorldPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+		mouseTile = GameGrid.GetInstance().GetNodeFromWorldPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
 		mouseGhostHasNewTile = oldMouseGridPos.x != mouseTile.GridPos.x || oldMouseGridPos.y != mouseTile.GridPos.y;
 		if (modeWasChanged)
@@ -184,9 +183,9 @@ public class BuilderBase {
 
 		// find current tile
 		if(!_hasClicked || startTile == null)
-			startTile = GameGrid.Instance.GetNodeFromWorldPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+			startTile = GameGrid.GetInstance().GetNodeFromWorldPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 	    if(_hasClicked || startTile == null)
-			mouseTile = GameGrid.Instance.GetNodeFromWorldPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+			mouseTile = GameGrid.GetInstance().GetNodeFromWorldPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
 		if (Mode == ModeEnum.Wall || Mode == ModeEnum.Room) {
 			// get tile distance
@@ -242,7 +241,7 @@ public class BuilderBase {
 							ghostTile_GridY = startTile.GridPos.y + (distY < 0 ? -i : i);
 						}
 
-						if (!GameGrid.Instance.IsInsideGrid(ghostTile_GridX, ghostTile_GridY)){
+						if (!GameGrid.IsInsideGrid(ghostTile_GridX, ghostTile_GridY)){
 							break;
 						}
 
@@ -277,7 +276,7 @@ public class BuilderBase {
 							ghostTile_GridX = startTile.GridPos.x + (distX < 0 ? -x : x);
 							ghostTile_GridY = startTile.GridPos.y + (distY < 0 ? -y : y);
 
-							if (!GameGrid.Instance.IsInsideGrid(ghostTile_GridX, ghostTile_GridY)){
+							if (!GameGrid.IsInsideGrid(ghostTile_GridX, ghostTile_GridY)){
 								continue;
 							}
 
@@ -296,12 +295,12 @@ public class BuilderBase {
 	}
 
 	protected void AddNextGhost(int _gridX, int _gridY) {
-		Node _node = GameGrid.Instance.TryGetNode(_gridX, _gridY);
+		Node _node = GameGrid.GetInstance().TryGetNode(_gridX, _gridY);
 		highlightedTiles.Add(_node);
 		if (this is ColoringTool)
 			return;
 
-		_node.SetIsWall(true, _temporarily: true);
+		_node.SetIsWallTemporary(true);
 	}
 
 	protected void EvaluateUsedGhostConditions() {

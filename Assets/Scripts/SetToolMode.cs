@@ -16,8 +16,9 @@ public class SetToolMode : MonoBehaviour {
         MyToggle = GetComponent<Toggle>();
     }
     void Start() {
-		if(Mouse.Instance.BuildMode != ToggleMode && ExtraStuff != null)
+		if (Mouse.GetInstance().BuildMode != ToggleMode && ExtraStuff != null) { 
 			ExtraStuff.SetActive (false);
+		}
     }
     void OnEnable() {
 		if(MyToggle != null)
@@ -44,13 +45,16 @@ public class SetToolMode : MonoBehaviour {
         }
 
 		if (_b) {
-			if(IsOverriden)
-				Mouse.Instance.OnBuildModeChange(OverrideToolIndex, OverrideToggleMode);
-			else
-				Mouse.Instance.OnBuildModeChange(ToolIndex, ToggleMode);
-		} 
+			if (IsOverriden) { 
+				Mouse.GetInstance().OnBuildModeChange(OverrideToolIndex, OverrideToggleMode);
+			}
+			else { 
+				Mouse.GetInstance().OnBuildModeChange(ToolIndex, ToggleMode);
+			}
+		}
 
-		if(ExtraStuff != null)
+		if (ExtraStuff != null) { 
 			ExtraStuff.SetActive (_b);
+		}
     }
 }

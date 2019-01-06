@@ -5,15 +5,6 @@ using System.Collections.Generic;
 [System.Serializable]
 public class ColoringTool : BuilderBase {
 
-	public const byte COLOR_WHITE = 1; // actual white is 0, but soo bright
-    public const byte COLOR_GREY = 8;
-    public const byte COLOR_RED = 124;
-    public const byte COLOR_ORANGE = 36;
-
-    public Texture2D Palette;
-	public Color[] AllColors = new Color[128];
-	public static List<Vector4> sAllColorsForShaders = new List<Vector4> ();
-
 	private static byte sColorIndex_0 = 5;
 	private static byte sColorIndex_1 = 5;
 	private static byte sColorIndex_2 = 5;
@@ -46,13 +37,6 @@ public class ColoringTool : BuilderBase {
         if (_channel == 9)
             sColorIndex_9 = _value;
     }
-
-	public override void Setup(Transform transform) {
-		base.Setup (transform);
-
-		for (int i = 0; i < AllColors.Length; i++)
-			sAllColorsForShaders.Add (new Vector4(AllColors[i].r, AllColors[i].g, AllColors[i].b, AllColors[i].a));
-	}
 
 	protected override void TryChangeMode(){
 		base.TryChangeMode ();

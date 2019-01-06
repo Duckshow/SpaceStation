@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MeshSorter : MonoBehaviour {
+public class MeshSorter : EventOwner {
 
     public SortingLayerEnum SortingLayer = SortingLayerEnum.Grid;
     public enum SortingLayerEnum { 
@@ -18,13 +18,15 @@ public class MeshSorter : MonoBehaviour {
     protected MeshRenderer myRenderer;
     public MeshRenderer Renderer { get { return myRenderer; } }
 
+	public override bool IsUsingStartDefault() { return true; }
+	public override void StartDefault() {
+		base.StartDefault();
+		if (!hasStarted) { 
+			Setup();
+		}
+	}
 
-    void Start(){
-        if (!hasStarted)
-            Setup();
-    }
-
-    public virtual void Setup(){
+	public virtual void Setup(){
         if (hasStarted && Application.isPlaying)
             return;
         hasStarted = true;
@@ -43,7 +45,7 @@ public class MeshSorter : MonoBehaviour {
         }
 	}
 
-	public static int GetSortOrderFromGridY(int _gridY) { return (GameGrid.Instance.GridSize.y * GameManager.Instance.SortingTransformsPerPosY) - (_gridY * GameManager.Instance.SortingTransformsPerPosY); }
+	public static int GetSortOrderFromGridY(int _gridY) { return (GameGrid.SIZE.y * GameManager.Instance.SortingTransformsPerPosY) - (_gridY * GameManager.Instance.SortingTransformsPerPosY); }
     public int GetSortOrder() { return regularSortOrder; }
     //public int GetSortOrder() { return (customSortOrder.HasValue ? (int)customSortOrder : regularSortOrder); }
     private int regularSortOrder = 0;

@@ -15,18 +15,18 @@ public class WallBuilder : BuilderBase {
 	}
 
     protected override void ResetModifiedTiles(bool _includingMouse = false) {
-		for (int i = 0; i < highlightedTiles.Count; i++) {
-            highlightedTiles[i].RemoveTemporarySettings();
-			highlightedTiles[i].RemoveTemporaryColor();
-		}
+		// for (int i = 0; i < highlightedTiles.Count; i++) {
+        //     highlightedTiles[i].RemoveTemporaryGraphicsForSurroundingTiles();
+		// 	highlightedTiles[i].RemoveTemporaryColor();
+		// }
 
 		base.ResetModifiedTiles (_includingMouse);
 	}
 	protected override void ResetSelectedTiles() {
-		for (int i = 0; i < tilesToModify.Count; i++) {
-            tilesToModify[i].RemoveTemporarySettings();
-			tilesToModify[i].RemoveTemporaryColor();
-		}
+		// for (int i = 0; i < tilesToModify.Count; i++) {
+        //     tilesToModify[i].RemoveTemporaryGraphicsForSurroundingTiles();
+		// 	tilesToModify[i].RemoveTemporaryColor();
+		// }
 
 		base.ResetSelectedTiles ();
 	}
@@ -39,28 +39,28 @@ public class WallBuilder : BuilderBase {
 	protected override bool Evaluate(Node _node){
 		// is building even allowed?
 		if (!_node.IsBuildingAllowed) {
-			ApplySettingsToGhost(_node, false, ColorIndex_Blocked);
+			ApplySettingsToGhost(_node, false, ColorManager.GetColorIndex(ColorManager.ColorUsage.Blocked));
 			return false;
 		}
         // is the tile occupied?
         if (_node.GetOccupyingTileObject() != null) {
-            ApplySettingsToGhost(_node, false, ColorIndex_Blocked);
+            ApplySettingsToGhost(_node, false, ColorManager.GetColorIndex(ColorManager.ColorUsage.Blocked));
             return false;
         }
 
 		// deleting old tiles
 		if (isDeleting) {
             if (!_node.IsWall) { // empty tiles can't be deleted
-                ApplySettingsToGhost(_node, false, ColorIndex_AlreadyExisting);
+                ApplySettingsToGhost(_node, false, ColorManager.GetColorIndex(ColorManager.ColorUsage.AlreadyExisting));
                 return false;
             }
 
-            ApplySettingsToGhost(_node, true, ColorIndex_Remove);
+            ApplySettingsToGhost(_node, true, ColorManager.GetColorIndex(ColorManager.ColorUsage.Blocked));
 			return true;
 		}
 
         // all's good
-        ApplySettingsToGhost(_node, true, ColorIndex_New);
+        ApplySettingsToGhost(_node, true, ColorManager.GetColorIndex(ColorManager.ColorUsage.New));
         return true;
 	}
 

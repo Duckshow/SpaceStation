@@ -43,7 +43,7 @@ public class Pathfinding : MonoBehaviour {
         }
 
         if (startNode.IsWalkable() && targetNode.IsWalkable()) {
-            Heap<Node> openSet = new Heap<Node>(GameGrid.Instance.GetArea());
+            Heap<Node> openSet = new Heap<Node>(GameGrid.GetArea());
             HashSet<Node> closedSet = new HashSet<Node>();
 
             openSet.Add(startNode);

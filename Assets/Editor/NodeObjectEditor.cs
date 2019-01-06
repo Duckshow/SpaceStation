@@ -16,7 +16,7 @@ public class TileObjectEditor : Editor {
 			return;
 
 		if (thisTO.transform.position.x != oldPosition.x || thisTO.transform.position.y != oldPosition.y)
-			thisTO.SetGridPosition(GameGrid.Instance.GetNodeFromWorldPos(thisTO.transform.position), _setPosition: false);
+			thisTO.SetGridPosition(GameGrid.GetInstance().GetNodeFromWorldPos(thisTO.transform.position), _setPosition: false);
 
 		oldPosition = thisTO.transform.position;
     }
