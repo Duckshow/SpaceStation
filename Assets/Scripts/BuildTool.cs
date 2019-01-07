@@ -4,7 +4,11 @@ using UnityEngine;
 
 public class BuildTool : Singleton<BuildTool> {
 
-	protected enum BuildMode { None, Room, Wall }
+	private class BuildToolMode { 
+
+	}
+
+	protected enum BuildMode { None, Room, Wall } // TODO: rename this!
 	protected BuildMode Mode = BuildMode.None;
 
 	public bool IsActive { get; private set; }
@@ -32,12 +36,15 @@ public class BuildTool : Singleton<BuildTool> {
 
 	public override bool IsUsingUpdateDefault(){ return true; }
 	public override void UpdateDefault() {
+
+		return;
+
+		if (!IsActive){
+			return;
+		}
+
 		bool _isDeleting = false;
 		bool _isTemporary = false;
-
-		// if (!IsActive){
-		// 	return;
-		// }
 
 		Mode = BuildMode.Room;
 
