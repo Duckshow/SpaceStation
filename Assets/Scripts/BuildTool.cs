@@ -4,17 +4,85 @@ using UnityEngine;
 
 public class BuildTool : Singleton<BuildTool> {
 
-	private class BuildToolMode { 
+	// public static class ToolSettings {
+	// 	public static virtual void UseOnNode(Node _node, bool _isDeleting, bool _isTemporary) { }
+	// }
 
+	interface IToolSettings{
+		void UseOnNode(Node _node, bool _isDeleting, bool _isTemporary);
 	}
 
-	protected enum BuildMode { None, Room, Wall } // TODO: rename this!
-	protected BuildMode Mode = BuildMode.None;
-
-	public bool IsActive { get; private set; }
-	public void SetIsActive(bool value) {
-		IsActive = value;
+	public class ToolSettingsBuild : IToolSettings {
+		public void UseOnNode(Node _node, bool _isDeleting, bool _isTemporary) {
+			if (_isTemporary) {
+				_node.SetIsWallTemporary(!_isDeleting);
+			}
+			else{
+				_node.SetIsWall(!_isDeleting);
+			}
+		}
 	}
+
+	public class ToolSettingsColor : IToolSettings {
+		public const int COLOR_CHANNEL_COUNT = 10;
+
+		private byte[] colorChannelIndices = new byte[COLOR_CHANNEL_COUNT]{
+			5,
+			5,
+			5,
+			5,
+			5,
+			5,
+			5,
+			5,
+			5,
+			5 
+		};
+
+		public void SetColorIndex(int _channel, byte _value){
+			colorChannelIndices[_channel] = _value;
+		}
+
+		public void UseOnNode(Node _node, bool _isDeleting, bool _isTemporary) {
+			UVController _tileTL, _tileTR, _tileBR, _tileBL;
+			GameGrid.NeighborFinder.GetSurroundingTiles(_node.GridPos, out _tileTL, out _tileTR, out _tileBR, out _tileBL);
+
+			if (_tileTR != null){
+				_tileTR.ChangeColor(colorChannelIndices, _isTemporary);
+			}
+		}
+	}
+
+	public ToolSettingsBuild Building = new ToolSettingsBuild();
+	public ToolSettingsColor Coloring = new ToolSettingsColor();
+
+	public enum ToolMode { None, Build, Color }
+	private ToolMode currentToolMode = ToolMode.Build;
+
+	public ToolMode GetCurrentToolMode() {
+		return currentToolMode;
+	}
+
+	public void SetCurrentToolMode(ToolMode _newMode){
+		currentToolMode = _newMode;
+	}
+
+	private IToolSettings GetCurrentToolSettings() { 
+		switch (currentToolMode){
+			case ToolMode.None:
+				return null;
+			case ToolMode.Build:
+				return Building;
+			case ToolMode.Color:
+				return Coloring;
+			default:
+				Debug.LogError(currentToolMode + " hasn't been properly implemented yet!");
+				return null;
+		}
+	}
+
+	private enum ShapeModeEnum { None, Room, Wall }
+	private ShapeModeEnum currentShapeMode = ShapeModeEnum.None;
 
 	private Int2 nodeGridPosStart;
 	private Int2 nodeGridPosEnd;
@@ -36,17 +104,14 @@ public class BuildTool : Singleton<BuildTool> {
 
 	public override bool IsUsingUpdateDefault(){ return true; }
 	public override void UpdateDefault() {
-
-		return;
-
-		if (!IsActive){
+		if (currentToolMode == ToolMode.None){
 			return;
 		}
 
 		bool _isDeleting = false;
 		bool _isTemporary = false;
 
-		Mode = BuildMode.Room;
+		currentShapeMode = ShapeModeEnum.Room;
 
 		Mouse.StateEnum mouseState = Mouse.GetInstance().GetStateLMB();
 		if (mouseState == Mouse.StateEnum.Idle){
@@ -77,17 +142,17 @@ public class BuildTool : Singleton<BuildTool> {
 				break;
 		}
 
-		switch (Mode){
-			case BuildMode.None:
+		switch (currentShapeMode){
+			case ShapeModeEnum.None:
 				break;
-			case BuildMode.Wall:
+			case ShapeModeEnum.Wall:
 				TryBuildWall(nodeGridPosStart, nodeGridPosEnd, _isTemporary, _isDeleting);
 				break;
-			case BuildMode.Room:
+			case ShapeModeEnum.Room:
 				TryBuildRoom(nodeGridPosStart, nodeGridPosEnd, _isTemporary, _isDeleting);
 				break;
 			default:
-				Debug.LogError(Mode + " hasn't been properly implemented yet!");
+				Debug.LogError(currentShapeMode + " hasn't been properly implemented yet!");
 				break;
 		}
 	}
@@ -120,13 +185,7 @@ public class BuildTool : Singleton<BuildTool> {
 				}
 
 				affectedNodeGridPositions.Add(_nodeGridPosCurrent);
-
-				if (_isTemporary) {
-					_node.SetIsWallTemporary(!_isDeleting);
-				}
-				else{
-					_node.SetIsWall(!_isDeleting);
-				}
+				GetCurrentToolSettings().UseOnNode(_node, _isDeleting, _isTemporary);
 			}
 		}
 	}
@@ -162,13 +221,7 @@ public class BuildTool : Singleton<BuildTool> {
 				}
 
 				affectedNodeGridPositions.Add(_nodeGridPosCurrent);
-
-				if (_isTemporary) {
-					_node.SetIsWallTemporary(!_isDeleting);
-				}
-				else{
-					_node.SetIsWall(!_isDeleting);
-				}
+				GetCurrentToolSettings().UseOnNode(_node, _isDeleting, _isTemporary);
 			}
 		}
 	}

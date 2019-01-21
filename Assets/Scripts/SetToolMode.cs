@@ -1,60 +1,63 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class SetToolMode : MonoBehaviour {
-    public Mouse.BuildModeEnum ToggleMode;
-    public int ToolIndex = -1;
-	[SerializeField] private GameObject ExtraStuff;
-	[SerializeField] private SetToolMode OverrideOtherButton;
-	[System.NonSerialized] public bool IsOverriden;
-    [System.NonSerialized] public Mouse.BuildModeEnum OverrideToggleMode;
-    [System.NonSerialized] public int OverrideToolIndex;
-    [System.NonSerialized] public Toggle MyToggle;
+
+	private static List<SetToolMode> allSetToolModeButtons = new List<SetToolMode>();
+
+	[SerializeField] private BuildTool.ToolMode mode;
+	[SerializeField] private GameObject expandableTab;
+    
+	private Toggle toggle;
 
 
     void Awake() {
-        MyToggle = GetComponent<Toggle>();
+        toggle = GetComponent<Toggle>();
     }
+
     void Start() {
-		if (Mouse.GetInstance().BuildMode != ToggleMode && ExtraStuff != null) { 
-			ExtraStuff.SetActive (false);
+		if (BuildTool.GetInstance().GetCurrentToolMode() != mode && expandableTab != null) {
+			expandableTab.SetActive (false);
 		}
     }
+
     void OnEnable() {
-		if(MyToggle != null)
-			MyToggle.onValueChanged.AddListener(OnToggleValueChanged);
-    }
-    void OnDisable() {
-		if(MyToggle != null)
-	        MyToggle.onValueChanged.RemoveListener(OnToggleValueChanged);
-    }
-    public void OnToggleValueChanged(bool _b) {
-        if (OverrideOtherButton != null) {
-            if (_b) {
-                OverrideOtherButton.IsOverriden = true;
-                OverrideOtherButton.OverrideToggleMode = ToggleMode;
-                OverrideOtherButton.OverrideToolIndex = ToolIndex;
-                OverrideOtherButton.OnToggleValueChanged(true);
-            }
-            else {
-                OverrideOtherButton.IsOverriden = false;
-                OverrideOtherButton.OverrideToggleMode = Mouse.BuildModeEnum.None;
-                OverrideOtherButton.OverrideToolIndex = -1;
-                OverrideOtherButton.OnToggleValueChanged(true);
-            }
-        }
+		allSetToolModeButtons.Add(this);
 
+		if (toggle != null) { 
+			toggle.onValueChanged.AddListener(OnToggleValueChanged);
+		}
+    }
+    
+	void OnDisable() {
+		allSetToolModeButtons.Remove(this);
+
+		if (toggle != null) { 
+			toggle.onValueChanged.RemoveListener(OnToggleValueChanged);
+		}
+    }
+    
+	public void OnToggleValueChanged(bool _b) {
 		if (_b) {
-			if (IsOverriden) { 
-				Mouse.GetInstance().OnBuildModeChange(OverrideToolIndex, OverrideToggleMode);
-			}
-			else { 
-				Mouse.GetInstance().OnBuildModeChange(ToolIndex, ToggleMode);
-			}
+			BuildTool.GetInstance().SetCurrentToolMode(mode);
 		}
 
-		if (ExtraStuff != null) { 
-			ExtraStuff.SetActive (_b);
+		if (expandableTab != null) { 
+			expandableTab.SetActive (_b);
 		}
     }
+
+	public static void SetMode(BuildTool.ToolMode _mode) {
+		for (int i = 0; i < allSetToolModeButtons.Count; i++){
+			SetToolMode setToolMode = allSetToolModeButtons[i];
+			if (setToolMode.mode != _mode){
+				continue;
+			}
+
+			// fake-press the actual button
+			setToolMode.toggle.group.SetAllTogglesOff();
+			setToolMode.toggle.isOn = true;
+		}
+	}
 }

@@ -29,26 +29,7 @@ public class UVController : MeshSorter {
 
 	private UVController MyTopUVC;
 
-	private byte colorIndex_0;
-    private byte colorIndex_1;
-    private byte colorIndex_2;
-    private byte colorIndex_3;
-    private byte colorIndex_4;
-    private byte colorIndex_5;
-    private byte colorIndex_6;
-    private byte colorIndex_7;
-    private byte colorIndex_8;
-    private byte colorIndex_9;
-    private byte setColorIndex_0;
-	private byte setColorIndex_1;
-	private byte setColorIndex_2;
-	private byte setColorIndex_3;
-	private byte setColorIndex_4;
-	private byte setColorIndex_5;
-    private byte setColorIndex_6;
-    private byte setColorIndex_7;
-    private byte setColorIndex_8;
-    private byte setColorIndex_9;
+	private byte[] appliedColorChannelIndices = new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT];
 
 	private Int2[] uvsBottom = new Int2[MESH_VERTEXCOUNT];
 	private Int2[] uvsTop = new Int2[MESH_VERTEXCOUNT];
@@ -72,7 +53,7 @@ public class UVController : MeshSorter {
 			sHasSetShaderProperties = true;
 		}
 
-		ChangeColor(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+		ChangeColor(new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, false);
 	}
 
 	public void ScheduleUpdate() {
@@ -161,49 +142,47 @@ public class UVController : MeshSorter {
 	}
 
 	public void ChangeColor(byte _colorIndex, bool _temporary) {
-        if (!hasStarted)
-            Setup();
+		if (!hasStarted) { 
+			Setup();
+		}
 
-        ChangeColor(_colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _colorIndex, _temporary);
+		byte[] _colorIndexAsArray = new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT]{
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+		};
+
+		ChangeColor(_colorIndexAsArray, _temporary);
     }
 	
 	public void ResetColor() {
-        ChangeColor(setColorIndex_0, setColorIndex_1, setColorIndex_2, setColorIndex_3, setColorIndex_4, setColorIndex_5, setColorIndex_6, setColorIndex_7, setColorIndex_8, setColorIndex_9, false);
+        ChangeColor(appliedColorChannelIndices, false);
     }
 
 	private Vector4[] allColorIndices;
-	public void ChangeColor(byte _color0, byte _color1, byte _color2, byte _color3, byte _color4, byte _color5, byte _color6, byte _color7, byte _color8, byte _color9, bool _temporarily) {
-        if (!_temporarily) {
-			setColorIndex_0 = _color0;
-			setColorIndex_1 = _color1;
-			setColorIndex_2 = _color2;
-			setColorIndex_3 = _color3;
-			setColorIndex_4 = _color4;
-			setColorIndex_5 = _color5;
-            setColorIndex_6 = _color6;
-            setColorIndex_7 = _color7;
-            setColorIndex_8 = _color8;
-            setColorIndex_9 = _color9;
-        }
+	public void ChangeColor(byte[] _colorChannelIndices, bool _temporarily) {
+		if (_colorChannelIndices.Length != BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT){
+			Debug.LogError("_colorChannelIndices has a different length than what is supported!");
+			return;
+		}
 
-		// NOTE: these do nothing??
-        colorIndex_0 = _color0;
-        colorIndex_1 = _color1;
-        colorIndex_2 = _color2;
-        colorIndex_3 = _color3;
-        colorIndex_4 = _color4;
-        colorIndex_5 = _color5;
-        colorIndex_6 = _color6;
-        colorIndex_7 = _color7;
-        colorIndex_8 = _color8;
-        colorIndex_9 = _color9;
+        if (!_temporarily) {
+			appliedColorChannelIndices = _colorChannelIndices;
+		}
 
 		Vector4 _indices = new Vector4();
-		_indices.x = BitCompressor.Byte4ToInt(colorIndex_0, colorIndex_1, colorIndex_2,colorIndex_3);
-		_indices.y = BitCompressor.Byte4ToInt(colorIndex_4, colorIndex_5, colorIndex_6, colorIndex_7);
-		_indices.z = BitCompressor.Byte4ToInt(colorIndex_8, colorIndex_9, 0, 0);
+		_indices.x = BitCompressor.Byte4ToInt(_colorChannelIndices[0], _colorChannelIndices[1], _colorChannelIndices[2], _colorChannelIndices[3]);
+		_indices.y = BitCompressor.Byte4ToInt(_colorChannelIndices[4], _colorChannelIndices[5], _colorChannelIndices[6], _colorChannelIndices[7]);
+		_indices.z = BitCompressor.Byte4ToInt(_colorChannelIndices[8], _colorChannelIndices[9], 0, 0);
 
-		if (allColorIndices == null) { 
+		if (allColorIndices == null) {
 			allColorIndices = new Vector4[MyMeshFilter.mesh.vertexCount];
 		}
 		for (int i = 0; i < MyMeshFilter.mesh.vertexCount; i++) {

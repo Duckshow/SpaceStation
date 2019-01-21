@@ -42,7 +42,7 @@ public class ColorAssignButton : MonoBehaviour {
 	public DefaultDelegate OnColorChange;
 	public void AssignColor(byte _colorIndex){
 		AssignedColorIndex = _colorIndex;
-		ColoringTool.AssignColorIndex (ColorChannel, AssignedColorIndex);
+		BuildTool.GetInstance().Coloring.SetColorIndex(ColorChannel, AssignedColorIndex);
 		myImage.color = ColorManager.GetColor(AssignedColorIndex);
 		MyToggle.isOn = false;
 

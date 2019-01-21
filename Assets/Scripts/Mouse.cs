@@ -23,10 +23,6 @@ public class Mouse : Singleton<Mouse>{
 
 	public static bool IsOverGUI { get; private set; }
 
-    [SerializeField] private WallBuilder WallBuilding;
-	[SerializeField] private ObjectPlacer ObjectPlacing;
-	public ColoringTool Coloring;
-
 	[SerializeField] private SetToolMode[] MainToolButtons;
    	[SerializeField] private Toggle[] AllButtons;
 
@@ -39,12 +35,7 @@ public class Mouse : Singleton<Mouse>{
 	public override bool IsUsingAwakeDefault() { return true; }
 	public override void AwakeDefault(){
 		base.AwakeDefault();
-
-		MainToolButtons[0].MyToggle.group.SetAllTogglesOff ();
-		MainToolButtons[0].MyToggle.isOn = true;
-
-		Coloring.Setup(transform);
-		ObjectPlacing.Setup (transform);
+		SetToolMode.SetMode(BuildTool.ToolMode.None);
 	}
 
 	public override bool IsUsingUpdateEarly(){ return true; }
@@ -68,18 +59,6 @@ public class Mouse : Singleton<Mouse>{
             Debug.Break();
         }
 
-		if (WallBuilding.IsActive) { 
-			WallBuilding.Update ();
-		}
-
-		if (Coloring.IsActive) { 
-			Coloring.Update ();
-		}
-		
-		// if (ObjectPlacing.IsActive) { 
-		// 	ObjectPlacing.Update ();
-		// }
-
 		// disable UI-stuff
 		// for (int i = 0; i < AllButtons.Length; i++) { 
 		// 	AllButtons[i].interactable = (ObjectPlacing.PickedUpObject == null);
@@ -91,15 +70,6 @@ public class Mouse : Singleton<Mouse>{
             for (int i = 0; i < _actor.Length; i++) {
                 _actor[i].enabled = !_actor[i].enabled;
             }
-        }
-
-        if (Input.GetKeyUp(KeyCode.Tab)) {
-            currentSelectedModeIndex++;
-            if (currentSelectedModeIndex > MainToolButtons.Length - 1)
-                currentSelectedModeIndex = 0;
-
-            MainToolButtons[currentSelectedModeIndex].MyToggle.isOn = true;
-            OnBuildModeChange(MainToolButtons[currentSelectedModeIndex].ToolIndex, MainToolButtons[currentSelectedModeIndex].ToggleMode);
         }
 
 		inspectableInRange = null;
@@ -260,43 +230,4 @@ public class Mouse : Singleton<Mouse>{
 		// 	_slot.CurrentEfficiency = _efficiency;
 		// }
 	}
-
-	int currentSelectedModeIndex = 0;
-    public void OnBuildModeChange(int _toolIndex, BuildModeEnum _mode) {
-        TryDeselectSelectedObject();
-        if(_toolIndex > -1)
-            currentSelectedModeIndex = _toolIndex;
-        SetMode(_mode);
-    }
-
-    void SetMode(BuildModeEnum _mode) {
-        if (BuildMode == _mode)
-            return;
-
-        BuildMode = _mode;
-        switch (_mode) {
-			case BuildModeEnum.None:
-				WallBuilding.DeActivate ();
-				Coloring.DeActivate ();
-				ObjectPlacing.DeActivate ();
-				break;
-			case BuildModeEnum.Build:
-				Coloring.DeActivate ();
-				ObjectPlacing.DeActivate ();
-				WallBuilding.Activate();
-                break;
-			case BuildModeEnum.Coloring:
-				WallBuilding.DeActivate ();
-				ObjectPlacing.DeActivate ();
-				Coloring.Activate ();
-				break;
-			case BuildModeEnum.PlaceObject:
-				WallBuilding.DeActivate ();
-				Coloring.DeActivate ();
-				ObjectPlacing.Activate ();
-				break;
-            default:
-                throw new System.NotImplementedException(_mode.ToString() + " hasn't been implemented yet!");
-        }
-    }
 }
