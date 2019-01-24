@@ -173,10 +173,10 @@ public class GameGrid : Singleton<GameGrid> {
 				_node = nodeGrid[x, y];
 				
 				if (x == 1 || y == 1 || x == SIZE.x - 2 || y == SIZE.y - 2){
-					_node.SetIsWall(true);
+					_node.TrySetIsWall(true);
 				}
 
-				_node.UpdateGraphicsForSurroundingTiles(_isTemporary: false);
+				_node.ScheduleUpdateGraphicsForSurroundingTiles();
 			}
         }
     }

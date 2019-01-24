@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class NodeObject : MonoBehaviour {
+public class NodeObject : EventOwner {
 
     public Node MyTile;
 	//public UVController[] MyUVControllers;
@@ -12,16 +12,24 @@ public class NodeObject : MonoBehaviour {
 	void Awake() {
 		myInspector = GetComponent<CanInspect>();
 	}
-	void OnEnable() { 
+
+	protected override void OnEnable() {
+		base.OnEnable();
 		if(myInspector != null)
 			myInspector.OnHide += OnHide;
 	}
-	void OnDisable() {
+	
+	protected override void OnDisable() {
+		base.OnDisable();
 		if (myInspector != null)
 			myInspector.OnHide -= OnHide;
 	}
-	void Start () {
-        if (GameGrid.GetInstance() == null)
+
+	public override bool IsUsingStartDefault() { return true; }
+	public override void StartDefault () {
+		base.StartDefault();
+		
+		if (GameGrid.GetInstance() == null)
             return;
 
         SetGridPosition(GameGrid.GetInstance().GetClosestFreeNode(transform.position));

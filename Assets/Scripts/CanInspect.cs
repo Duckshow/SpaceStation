@@ -64,10 +64,6 @@ public class CanInspect : MonoBehaviour {
 		Clickable._OnWithinRange -= OnWithinRange;
     }
 
-    void Start() {
-        MyUVC.ChangeColor(ColorManager.GetColorIndex(ColorManager.ColorUsage.Default), _temporary: true);
-    }
-
 	void LateUpdate(){
 		if (!mouseIsWithinRange && PrevWasOutlined) {
 			PrevWasOutlined = false;
@@ -121,7 +117,7 @@ public class CanInspect : MonoBehaviour {
     public void ShowOutline(bool _true) {
 		byte colorDefault = ColorManager.GetColorIndex(ColorManager.ColorUsage.Default);
 		byte colorSelected = ColorManager.GetColorIndex(ColorManager.ColorUsage.Selected);
-		MyUVC.ChangeColor(_true ? colorSelected : colorDefault, _temporary: true);
+		MyUVC.SetColor(_true ? colorSelected : colorDefault, _isPermanent: false);
     }
 
     public void Hide(bool _b) {

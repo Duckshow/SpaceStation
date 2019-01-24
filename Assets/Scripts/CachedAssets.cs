@@ -108,10 +108,10 @@ public class CachedAssets : MonoBehaviour {
 		bool _isWallBR = _hasNodeBR && _nodeBR.IsWall;
 		bool _isWallBL = _hasNodeBL && _nodeBL.IsWall;
 
-		bool _isWallTemporaryTL = _hasNodeTL && _nodeTL.IsWallTemporary;
-		bool _isWallTemporaryTR = _hasNodeTR && _nodeTR.IsWallTemporary;
-		bool _isWallTemporaryBR = _hasNodeBR && _nodeBR.IsWallTemporary;
-		bool _isWallTemporaryBL = _hasNodeBL && _nodeBL.IsWallTemporary;
+		bool _isWallTemporaryTL = _hasNodeTL && _nodeTL.IsWallTemporarily;
+		bool _isWallTemporaryTR = _hasNodeTR && _nodeTR.IsWallTemporarily;
+		bool _isWallTemporaryBR = _hasNodeBR && _nodeBR.IsWallTemporarily;
+		bool _isWallTemporaryBL = _hasNodeBL && _nodeBL.IsWallTemporarily;
 		_isAnyWallTemporary = _isWallTemporaryTL || _isWallTemporaryTR || _isWallTemporaryBR || _isWallTemporaryBL;
 
 		bool _useIsWallTemporaryTL = _hasNodeTL && _nodeTL.UseIsWallTemporary;
@@ -120,10 +120,10 @@ public class CachedAssets : MonoBehaviour {
 		bool _useIsWallTemporaryBL = _hasNodeBL && _nodeBL.UseIsWallTemporary;
 		_isAnyUsingIsWallTemporary = _useIsWallTemporaryTL || _useIsWallTemporaryTR || _useIsWallTemporaryBR || _useIsWallTemporaryBL;
 
-		bool _isEitherKindOfWallTL = _isWallTL || _isWallTemporaryTL;
-		bool _isEitherKindOfWallTR = _isWallTR || _isWallTemporaryTR;
-		bool _isEitherKindOfWallBR = _isWallBR || _isWallTemporaryBR;
-		bool _isEitherKindOfWallBL = _isWallBL || _isWallTemporaryBL;
+		bool _isEitherKindOfWallTL = _isWallTL || (_useIsWallTemporaryTL && _isWallTemporaryTL);
+		bool _isEitherKindOfWallTR = _isWallTR || (_useIsWallTemporaryTR && _isWallTemporaryTR);
+		bool _isEitherKindOfWallBR = _isWallBR || (_useIsWallTemporaryBR && _isWallTemporaryBR);
+		bool _isEitherKindOfWallBL = _isWallBL || (_useIsWallTemporaryBL && _isWallTemporaryBL);
 
 		bool _isInsideRoom = false;
 		_isInsideRoom = _isInsideRoom || _hasNodeTL && RoomManager.GetInstance().IsInsideShip(_nodeTL.RoomIndex);
@@ -140,49 +140,49 @@ public class CachedAssets : MonoBehaviour {
 		if (!_isInsideRoom){
 			return AssetSets[assetSetIndex].Empty;
 		}
-		else if (_isWallTL && _isWallTR && _isWallBR && _isWallBL){
+		else if (_isEitherKindOfWallTL && _isEitherKindOfWallTR && _isEitherKindOfWallBR && _isEitherKindOfWallBL){
 			return AssetSets[assetSetIndex].Wall_TL_TR_BR_BL;
 		}
-		else if (_isWallTL && _isWallTR && _isWallBR){
+		else if (_isEitherKindOfWallTL && _isEitherKindOfWallTR && _isEitherKindOfWallBR){
 			return AssetSets[assetSetIndex].Wall_TL_TR_BR;
 		}
-		else if (_isWallTR && _isWallBR && _isWallBL){
+		else if (_isEitherKindOfWallTR && _isEitherKindOfWallBR && _isEitherKindOfWallBL){
 			return AssetSets[assetSetIndex].Wall_TR_BR_BL;
 		}
-		else if (_isWallBR && _isWallBL && _isWallTL){
+		else if (_isEitherKindOfWallBR && _isEitherKindOfWallBL && _isEitherKindOfWallTL){
 			return AssetSets[assetSetIndex].Wall_BR_BL_TL;
 		}
-		else if (_isWallBL && _isWallTL && _isWallTR){
+		else if (_isEitherKindOfWallBL && _isEitherKindOfWallTL && _isEitherKindOfWallTR){
 			return AssetSets[assetSetIndex].Wall_BL_TL_TR;
 		}
-		else if (_isWallTL && _isWallTR){
+		else if (_isEitherKindOfWallTL && _isEitherKindOfWallTR){
 			return AssetSets[assetSetIndex].Wall_TL_TR;
 		}
-		else if (_isWallTR && _isWallBR){
+		else if (_isEitherKindOfWallTR && _isEitherKindOfWallBR){
 			return AssetSets[assetSetIndex].Wall_TR_BR;
 		}
-		else if (_isWallBR && _isWallBL){
+		else if (_isEitherKindOfWallBR && _isEitherKindOfWallBL){
 			return AssetSets[assetSetIndex].Wall_BR_BL;
 		}
-		else if (_isWallBL && _isWallTL){
+		else if (_isEitherKindOfWallBL && _isEitherKindOfWallTL){
 			return AssetSets[assetSetIndex].Wall_BL_TL;
 		}
-		else if (_isWallTL && _isWallBR){
+		else if (_isEitherKindOfWallTL && _isEitherKindOfWallBR){
 			return AssetSets[assetSetIndex].Wall_TL_BR;
 		}
-		else if (_isWallTR && _isWallBL){
+		else if (_isEitherKindOfWallTR && _isEitherKindOfWallBL){
 			return AssetSets[assetSetIndex].Wall_TR_BL;
 		}
-		else if (_isWallTL){
+		else if (_isEitherKindOfWallTL){
 			return AssetSets[assetSetIndex].Wall_TL;
 		}
-		else if (_isWallTR){
+		else if (_isEitherKindOfWallTR){
 			return AssetSets[assetSetIndex].Wall_TR;
 		}
-		else if (_isWallBR){
+		else if (_isEitherKindOfWallBR){
 			return AssetSets[assetSetIndex].Wall_BR;
 		}
-		else if (_isWallBL){
+		else if (_isEitherKindOfWallBL){
 			return AssetSets[assetSetIndex].Wall_BL;
 		}
 		else {

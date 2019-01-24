@@ -13,10 +13,13 @@ public class Mouse : Singleton<Mouse>{
 	private StateEnum StateRMB;
 	public StateEnum GetStateLMB() { return StateLMB; }
 	public StateEnum GetStateRMB() { return StateRMB; }
+	public bool DoesEitherButtonEqual(StateEnum state) { return StateLMB == state || StateRMB == state; }
 
 	private Vector2 worldPos;
 	private Int2 gridPos;
+	private Int2 gridPosOld;
 	public Int2 GetGridPos() { return gridPos; }
+	public bool HasMoved() { return gridPos != gridPosOld; }
 
 	private float[] timeAtClicks = new float[SUPPORTED_MOUSE_BUTTON_COUNT];
 	private Int2[] posGridAtClicks = new Int2[SUPPORTED_MOUSE_BUTTON_COUNT];
@@ -43,6 +46,8 @@ public class Mouse : Singleton<Mouse>{
 		base.UpdateEarly();
 
 		worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+		gridPosOld = gridPos;
 		gridPos = GameGrid.GetInstance().GetNodeGridPosFromWorldPos(worldPos);
 
 		StateLMB = GetMouseButtonState(0);

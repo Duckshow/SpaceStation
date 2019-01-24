@@ -53,7 +53,7 @@ public class UVController : MeshSorter {
 			sHasSetShaderProperties = true;
 		}
 
-		ChangeColor(new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, false);
+		SetColor(new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, _isPermanent: true);
 	}
 
 	public void ScheduleUpdate() {
@@ -65,30 +65,22 @@ public class UVController : MeshSorter {
 		base.UpdateLate();
 
 		if (shouldUpdateGraphics){
-			UpdateGraphics();
+			UpdateAssets();
 			ApplyAssetChanges();
 
 			shouldUpdateGraphics = false;
 		}
 	}
 
-	void UpdateGraphics(){
+	void UpdateAssets(){
 		bool _isAnyWallTemporary, _isAnyUsingIsWallTemporary;
 		Int2 _asset = CachedAssets.Instance.GetWallAsset(tileGridPos, out _isAnyWallTemporary, out _isAnyUsingIsWallTemporary);
 
-		ChangeAsset(UVController.GridLayerEnum.Bottom, _asset, _isAnyWallTemporary);
-		ChangeAsset(UVController.GridLayerEnum.Top, _asset, _isAnyWallTemporary);
-
-		ColorManager.ColorUsage context = ColorManager.ColorUsage.Default;
-		if (_isAnyUsingIsWallTemporary && _isAnyWallTemporary)	context = ColorManager.ColorUsage.New;
-		if (_isAnyUsingIsWallTemporary && !_isAnyWallTemporary) context = ColorManager.ColorUsage.Delete;
-		// if (!_isBuildingAllowed)	context = ColorManager.ColorUsage.Blocked;
-		byte colorIndex = ColorManager.GetColorIndex(context);
-
-		ChangeColor(colorIndex, _temporary: true);
+		SetAsset(UVController.GridLayerEnum.Bottom, _asset);
+		SetAsset(UVController.GridLayerEnum.Top, _asset);
 	}
 
-	void ChangeAsset(GridLayerEnum _layer, Int2 _assetPos, bool _temporary){
+	void SetAsset(GridLayerEnum _layer, Int2 _assetPos){
 		if (!Application.isPlaying) { 
 			return;
 		}
@@ -141,7 +133,7 @@ public class UVController : MeshSorter {
 		}
 	}
 
-	public void ChangeColor(byte _colorIndex, bool _temporary) {
+	public void SetColor(byte _colorIndex, bool _isPermanent) {
 		if (!hasStarted) { 
 			Setup();
 		}
@@ -159,22 +151,21 @@ public class UVController : MeshSorter {
 			_colorIndex,
 		};
 
-		ChangeColor(_colorIndexAsArray, _temporary);
-    }
-	
-	public void ResetColor() {
-        ChangeColor(appliedColorChannelIndices, false);
+		SetColor(_colorIndexAsArray, _isPermanent);
     }
 
 	private Vector4[] allColorIndices;
-	public void ChangeColor(byte[] _colorChannelIndices, bool _temporarily) {
+	public void SetColor(byte[] _colorChannelIndices, bool _isPermanent) {
 		if (_colorChannelIndices.Length != BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT){
 			Debug.LogError("_colorChannelIndices has a different length than what is supported!");
 			return;
 		}
+		if (!hasStarted){
+			Setup();
+		}
 
-        if (!_temporarily) {
-			appliedColorChannelIndices = _colorChannelIndices;
+        if (_isPermanent) {
+			_colorChannelIndices.CopyTo(appliedColorChannelIndices, 0);
 		}
 
 		Vector4 _indices = new Vector4();
@@ -182,7 +173,7 @@ public class UVController : MeshSorter {
 		_indices.y = BitCompressor.Byte4ToInt(_colorChannelIndices[4], _colorChannelIndices[5], _colorChannelIndices[6], _colorChannelIndices[7]);
 		_indices.z = BitCompressor.Byte4ToInt(_colorChannelIndices[8], _colorChannelIndices[9], 0, 0);
 
-		if (allColorIndices == null) {
+		if (allColorIndices == null || allColorIndices.Length == 0) {
 			allColorIndices = new Vector4[MyMeshFilter.mesh.vertexCount];
 		}
 		for (int i = 0; i < MyMeshFilter.mesh.vertexCount; i++) {
@@ -190,7 +181,11 @@ public class UVController : MeshSorter {
 		}
 
 		shouldUpdateGraphics = true;
-    }
+	}
+
+	public void ClearTemporaryColor() {
+		SetColor(appliedColorChannelIndices, _isPermanent: true);
+	}
 
 	private List<Color32> vertexColors = new List<Color32>();
 	public void SetVertexColor(int _vTilePosX, int _vTilePosY, Color32 _color){

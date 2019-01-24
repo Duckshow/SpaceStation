@@ -9,16 +9,16 @@ public class BuildTool : Singleton<BuildTool> {
 	// }
 
 	interface IToolSettings{
-		void UseOnNode(Node _node, bool _isDeleting, bool _isTemporary);
+		void UseOnNode(Node _node, bool _isDeleting, bool _isPermanent);
 	}
 
 	public class ToolSettingsBuild : IToolSettings {
-		public void UseOnNode(Node _node, bool _isDeleting, bool _isTemporary) {
-			if (_isTemporary) {
-				_node.SetIsWallTemporary(!_isDeleting);
+		public void UseOnNode(Node _node, bool _isDeleting, bool _isPermanent) {
+			if (_isPermanent) {
+				_node.TrySetIsWall(!_isDeleting);
 			}
 			else{
-				_node.SetIsWall(!_isDeleting);
+				_node.TrySetIsWallTemporary(!_isDeleting);
 			}
 		}
 	}
@@ -43,13 +43,8 @@ public class BuildTool : Singleton<BuildTool> {
 			colorChannelIndices[_channel] = _value;
 		}
 
-		public void UseOnNode(Node _node, bool _isDeleting, bool _isTemporary) {
-			UVController _tileTL, _tileTR, _tileBR, _tileBL;
-			GameGrid.NeighborFinder.GetSurroundingTiles(_node.GridPos, out _tileTL, out _tileTR, out _tileBR, out _tileBL);
-
-			if (_tileTR != null){
-				_tileTR.ChangeColor(colorChannelIndices, _isTemporary);
-			}
+		public void UseOnNode(Node _node, bool _isDeleting, bool _isPermanent){
+			_node.SetColor(colorChannelIndices, _isPermanent);
 		}
 	}
 
@@ -81,7 +76,7 @@ public class BuildTool : Singleton<BuildTool> {
 		}
 	}
 
-	private enum ShapeModeEnum { None, Room, Wall }
+	private enum ShapeModeEnum { None, Room, Wall, Fill }
 	private ShapeModeEnum currentShapeMode = ShapeModeEnum.None;
 
 	private Int2 nodeGridPosStart;
@@ -89,8 +84,12 @@ public class BuildTool : Singleton<BuildTool> {
 	private List<Int2> affectedNodeGridPositions = new List<Int2>();
 
 
-	public override bool IsUsingUpdateEarly() { return true; }
-	public override void UpdateEarly() { 
+	public override bool IsUsingUpdateDefault() { return true; }
+	public override void UpdateDefault() { 
+		if (!Mouse.GetInstance().HasMoved() && !Mouse.GetInstance().DoesEitherButtonEqual(Mouse.StateEnum.Click) && !Mouse.GetInstance().DoesEitherButtonEqual(Mouse.StateEnum.Release)){
+			return;
+		}
+
 		for (int i = affectedNodeGridPositions.Count - 1; i >= 0; i--){
 			Node _node = GameGrid.GetInstance().TryGetNode(affectedNodeGridPositions[i]);
 			affectedNodeGridPositions.RemoveAt(i);
@@ -98,44 +97,44 @@ public class BuildTool : Singleton<BuildTool> {
 				continue;
 			}
 
-			_node.ClearIsWallTemporary();
+			_node.TryClearIsWallTemporary();
+			_node.ClearTemporaryColor();
 		}
 	}
 
-	public override bool IsUsingUpdateDefault(){ return true; }
-	public override void UpdateDefault() {
+	public override bool IsUsingUpdateLate(){ return true; }
+	public override void UpdateLate() {
 		if (currentToolMode == ToolMode.None){
 			return;
 		}
 
 		bool _isDeleting = false;
-		bool _isTemporary = false;
+		bool _isPermanent = false;
 
-		currentShapeMode = ShapeModeEnum.Room;
+		currentShapeMode = ShapeModeEnum.Fill;
 
 		Mouse.StateEnum mouseState = Mouse.GetInstance().GetStateLMB();
 		if (mouseState == Mouse.StateEnum.Idle){
 			mouseState = Mouse.GetInstance().GetStateRMB();
+			_isDeleting = mouseState != Mouse.StateEnum.Idle;
+		}
 
-			if (mouseState == Mouse.StateEnum.Idle){
-				return;
-			}
-
-			_isDeleting = true;
+		if (!Mouse.GetInstance().HasMoved() && (mouseState == Mouse.StateEnum.Idle || mouseState == Mouse.StateEnum.Hold)){
+			return;
 		}
 
 		switch (mouseState){
-			case Mouse.StateEnum.Click:
-				_isTemporary = true;
+			case Mouse.StateEnum.Idle:
 				nodeGridPosStart = Mouse.GetInstance().GetGridPos();
-				nodeGridPosEnd = Mouse.GetInstance().GetGridPos();
-				break;
+				DrawOrPreviewOnNode(nodeGridPosStart, _isDeleting: false, _isPermanent: false);
+				return;
+			case Mouse.StateEnum.Click:
 			case Mouse.StateEnum.Hold:
-				_isTemporary = true;
+				_isPermanent = false;
 				nodeGridPosEnd = Mouse.GetInstance().GetGridPos();
 				break;
 			case Mouse.StateEnum.Release:
-				_isTemporary = false;
+				_isPermanent = true;
 				break;
 			default:
 				Debug.LogError(mouseState + " hasn't been properly implemented yet!");
@@ -146,10 +145,13 @@ public class BuildTool : Singleton<BuildTool> {
 			case ShapeModeEnum.None:
 				break;
 			case ShapeModeEnum.Wall:
-				TryBuildWall(nodeGridPosStart, nodeGridPosEnd, _isTemporary, _isDeleting);
+				TryBuildWall(nodeGridPosStart, nodeGridPosEnd, _isDeleting, _isPermanent);
 				break;
 			case ShapeModeEnum.Room:
-				TryBuildRoom(nodeGridPosStart, nodeGridPosEnd, _isTemporary, _isDeleting);
+				TryBuildRoom(nodeGridPosStart, nodeGridPosEnd, false, _isDeleting, _isPermanent);
+				break;
+			case ShapeModeEnum.Fill:
+				TryBuildRoom(nodeGridPosStart, nodeGridPosEnd, true, _isDeleting, _isPermanent);
 				break;
 			default:
 				Debug.LogError(currentShapeMode + " hasn't been properly implemented yet!");
@@ -157,7 +159,7 @@ public class BuildTool : Singleton<BuildTool> {
 		}
 	}
 
-	void TryBuildWall(Int2 _nodeGridPosStart, Int2 _nodeGridPosEnd, bool _isTemporary, bool _isDeleting) {
+	void TryBuildWall(Int2 _nodeGridPosStart, Int2 _nodeGridPosEnd, bool _isDeleting, bool _isPermanent) {
 		Int2 _nodeGridPosWallStart = new Int2(
 			Mathf.Min(_nodeGridPosStart.x, _nodeGridPosEnd.x),
 			Mathf.Min(_nodeGridPosStart.y, _nodeGridPosEnd.y)
@@ -184,13 +186,17 @@ public class BuildTool : Singleton<BuildTool> {
 					break;
 				}
 
-				affectedNodeGridPositions.Add(_nodeGridPosCurrent);
-				GetCurrentToolSettings().UseOnNode(_node, _isDeleting, _isTemporary);
+				DrawOrPreviewOnNode(_nodeGridPosCurrent, _isDeleting, _isPermanent);
 			}
 		}
 	}
 
-	void TryBuildRoom(Int2 _nodeGridPosStart, Int2 _nodeGridPosEnd, bool _isTemporary, bool _isDeleting) {
+	void DrawOrPreviewOnNode(Int2 _nodeGridPos, bool _isDeleting, bool _isPermanent) {
+		affectedNodeGridPositions.Add(_nodeGridPos);
+		GetCurrentToolSettings().UseOnNode(GameGrid.GetInstance().TryGetNode(_nodeGridPos), _isDeleting, _isPermanent);
+	}
+
+	void TryBuildRoom(Int2 _nodeGridPosStart, Int2 _nodeGridPosEnd, bool _isFilledRoom, bool _isDeleting, bool _isTemporary) {
 		Int2 _nodeGridPosBL = new Int2(
 			Mathf.Min(_nodeGridPosStart.x, _nodeGridPosEnd.x),
 			Mathf.Min(_nodeGridPosStart.y, _nodeGridPosEnd.y)
@@ -215,13 +221,11 @@ public class BuildTool : Singleton<BuildTool> {
 					break;
 				}
 
-				// TODO: roombuilding should still fill the floor!
-				if (_y != 0 && _y != _roomSize.y && _x != 0 && _x != _roomSize.x){
+				if (!_isFilledRoom && _y != 0 && _y != _roomSize.y && _x != 0 && _x != _roomSize.x){
 					continue;
 				}
 
-				affectedNodeGridPositions.Add(_nodeGridPosCurrent);
-				GetCurrentToolSettings().UseOnNode(_node, _isDeleting, _isTemporary);
+				DrawOrPreviewOnNode(_nodeGridPosCurrent, _isDeleting, _isTemporary);
 			}
 		}
 	}

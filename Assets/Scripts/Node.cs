@@ -17,11 +17,11 @@ public class Node : IHeapItem<Node> {
 	public void SetRoomIndex(int _index) {
 		// Debug.Log("Set " + _index);
 		RoomIndex = _index;
-		UpdateGraphicsForSurroundingTiles(_isTemporary: false);
+		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
 	public bool IsWall { get; private set; }
-	public bool IsWallTemporary { get; private set; }
+	public bool IsWallTemporarily { get; private set; }
 	public bool UseIsWallTemporary { get; private set; }
 	public bool IsBuildingAllowed { get; private set; }
 	public bool HasDoorOrAirlock { get; private set; }
@@ -85,41 +85,103 @@ public class Node : IHeapItem<Node> {
         return -compare;
     }
 
-    public void SetIsWall(bool _isWall) {
+    public void TrySetIsWall(bool _isWall) {
+		if (IsWall == _isWall){
+			return;
+		}
+
 		IsWall = _isWall;
 		RoomManager.GetInstance().ScheduleUpdateForRoomOfNode(GridPos);
-		UpdateGraphicsForSurroundingTiles(_isTemporary: false);
+		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-	 public void SetIsWallTemporary(bool _isWallTemporary) {
-		IsWallTemporary = _isWallTemporary;
+	 public void TrySetIsWallTemporary(bool _isWallTemporary) {
+		if (UseIsWallTemporary){
+			return;
+		}
+		
+		IsWallTemporarily = _isWallTemporary;
 		UseIsWallTemporary = true;
-		UpdateGraphicsForSurroundingTiles(_isTemporary: true);
+		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-	 public void ClearIsWallTemporary() {
-		IsWallTemporary = false;
+	 public void TryClearIsWallTemporary() {
+		if (!UseIsWallTemporary){
+			return;
+		}
+
+		IsWallTemporarily = false;
 		UseIsWallTemporary = false;
-		UpdateGraphicsForSurroundingTiles(_isTemporary: false);
+		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-    public void UpdateGraphicsForSurroundingTiles(bool _isTemporary) {
+    public void ScheduleUpdateGraphicsForSurroundingTiles() {
+		ColorManager.ColorUsage _context = ColorManager.ColorUsage.Default;
+		if (UseIsWallTemporary && IsWallTemporarily) _context = ColorManager.ColorUsage.New;
+		if (UseIsWallTemporary && !IsWallTemporarily) _context = ColorManager.ColorUsage.Delete;
+		// if (!_isBuildingAllowed)	context = ColorManager.ColorUsage.Blocked;
+		byte _colorIndex = ColorManager.GetColorIndex(_context);
+
+		byte[] _colorChannelIndices = new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT]{
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex,
+			_colorIndex
+		};
+
 		UVController _tileTL, _tileTR, _tileBR, _tileBL;
 		GameGrid.NeighborFinder.GetSurroundingTiles(GridPos, out _tileTL, out _tileTR, out _tileBR, out _tileBL);
-		if(_tileTL != null) _tileTL.ScheduleUpdate();
-		if(_tileTR != null) _tileTR.ScheduleUpdate();
-		if(_tileBR != null) _tileBR.ScheduleUpdate();
-		if(_tileBL != null) _tileBL.ScheduleUpdate();
+		if (_tileTL != null) { UpdateTileAssetsAndColor(_tileTL, _colorChannelIndices); }
+		if (_tileTR != null) { UpdateTileAssetsAndColor(_tileTR, _colorChannelIndices); }
+		if (_tileBR != null) { UpdateTileAssetsAndColor(_tileBR, _colorChannelIndices); }
+		if (_tileBL != null) { UpdateTileAssetsAndColor(_tileBL, _colorChannelIndices); }
 	}
 
-    public void SetColor(byte _colorIndex, bool _isTemporary) {
-		// MyUVController.ChangeColor(_colorIndex, _temporary);
-    }
-    public void RemoveTemporaryColor(){
-		// MyUVController.ResetColor();
-    }
+	void UpdateTileAssetsAndColor(UVController _tile, byte[] _colorChannelIndices) { 
+		if (UseIsWallTemporary){
+			_tile.SetColor(_colorChannelIndices, _isPermanent: false);
+		}
+		else{
+			_tile.ClearTemporaryColor();
+		}
 
-    public void SetIsBuildingAllowed(bool _b) {
+		_tile.ScheduleUpdate();
+	}
+
+	public void SetColor(byte[] _colorChannelIndices, bool _isPermanent) { 
+		UVController _tileTL, _tileTR, _tileBR, _tileBL;
+		GameGrid.NeighborFinder.GetSurroundingTiles(GridPos, out _tileTL, out _tileTR, out _tileBR, out _tileBL);
+
+		if (_tileTR != null){
+			_tileTR.SetColor(_colorChannelIndices, _isPermanent);
+		}
+	}
+	
+	public void ClearTemporaryColor() {
+		UVController _tileTL, _tileTR, _tileBR, _tileBL;
+		GameGrid.NeighborFinder.GetSurroundingTiles(GridPos, out _tileTL, out _tileTR, out _tileBR, out _tileBL);
+
+		// if (_tileTL != null){
+		// 	_tileTL.ClearTemporaryColor();
+		// }
+		if (_tileTR != null){
+			_tileTR.ClearTemporaryColor();
+		}
+		// if (_tileBR != null){
+		// 	_tileBR.ClearTemporaryColor();
+		// }
+		// if (_tileBL != null){
+		// 	_tileBL.ClearTemporaryColor();
+		// }
+	}
+
+	public void SetIsBuildingAllowed(bool _b) {
         IsBuildingAllowed = _b;
     }
 }
