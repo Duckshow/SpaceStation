@@ -16,13 +16,29 @@ public class Mouse : Singleton<Mouse>{
 	public bool DoesEitherButtonEqual(StateEnum state) { return StateLMB == state || StateRMB == state; }
 
 	private Vector2 worldPos;
-	private Int2 gridPos;
-	private Int2 gridPosOld;
-	public Int2 GetGridPos() { return gridPos; }
-	public bool HasMoved() { return gridPos != gridPosOld; }
+	private Int2 nodeGridPos;
+	private Int2 nodeGridPosOld;
+	private Int2 tileGridPos;
+	private Int2 tileGridPosOld;
+	public Int2 GetGridPos(GameGrid.GridType _gridType) {
+		if (_gridType == GameGrid.GridType.NodeGrid) { 
+			return nodeGridPos; 
+		}
+		else{
+			return tileGridPos;
+		}
+	}
+	public bool HasMovedOnGrid(GameGrid.GridType _gridType) { 
+		if (_gridType == GameGrid.GridType.NodeGrid) { 
+			return nodeGridPos != nodeGridPosOld; 
+		}
+		else{
+			return tileGridPos != tileGridPosOld;
+		}
+	}
 
 	private float[] timeAtClicks = new float[SUPPORTED_MOUSE_BUTTON_COUNT];
-	private Int2[] posGridAtClicks = new Int2[SUPPORTED_MOUSE_BUTTON_COUNT];
+	private Int2[] nodeGridPosAtClicks = new Int2[SUPPORTED_MOUSE_BUTTON_COUNT];
 
 	public static bool IsOverGUI { get; private set; }
 
@@ -47,8 +63,11 @@ public class Mouse : Singleton<Mouse>{
 
 		worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-		gridPosOld = gridPos;
-		gridPos = GameGrid.GetInstance().GetNodeGridPosFromWorldPos(worldPos);
+		nodeGridPosOld = nodeGridPos;
+		nodeGridPos = GameGrid.GetInstance().GetGridPosFromWorldPos(worldPos, GameGrid.GridType.NodeGrid);
+
+		tileGridPosOld = tileGridPos;
+		tileGridPos = GameGrid.GetInstance().GetGridPosFromWorldPos(worldPos, GameGrid.GridType.TileGrid);
 
 		StateLMB = GetMouseButtonState(0);
 		StateRMB = GetMouseButtonState(1);
@@ -158,12 +177,12 @@ public class Mouse : Singleton<Mouse>{
 	StateEnum GetMouseButtonState(int index) { 
 		if (Input.GetMouseButtonDown(index)){
 			timeAtClicks[index] = Time.time;
-			posGridAtClicks[index] = gridPos;
+			nodeGridPosAtClicks[index] = nodeGridPos;
 			return StateEnum.Click;
 		}
 
 		bool hasPassedMinHoldTime = Time.time - timeAtClicks[index] > MIN_HOLD_TIME;
-		bool hasChangedPosGrid = gridPos != posGridAtClicks[index];
+		bool hasChangedPosGrid = nodeGridPos != nodeGridPosAtClicks[index];
 		if (Input.GetMouseButton(index) && (hasPassedMinHoldTime || hasChangedPosGrid)){
 			return StateEnum.Hold;
 		}

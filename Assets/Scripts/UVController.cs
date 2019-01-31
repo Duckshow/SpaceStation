@@ -9,11 +9,11 @@ public class UVController : MeshSorter {
 	public static readonly int GRID_LAYER_COUNT = System.Enum.GetNames(typeof(GridLayerEnum)).Length;
 
 	protected const int UVCHANNEL_UV0 = 0;
-	protected const int UVCHANNEL_UV1 = 1;
-	protected const int UVCHANNEL_COLOR = 2;
+	// protected const int UVCHANNEL_UV1 = 1;
+	protected const int UVCHANNEL_COLOR = 1;
 
 	public List<Vector4> CompressedUVs_0 = new List<Vector4>(MESH_VERTEXCOUNT);
-	public List<Vector4> CompressedUVs_1 = new List<Vector4>(MESH_VERTEXCOUNT);
+	// public List<Vector4> CompressedUVs_1 = new List<Vector4>(MESH_VERTEXCOUNT);
 	protected bool shouldUpdateGraphics = false;
 
 	[System.NonSerialized] public MeshFilter MyMeshFilter;
@@ -34,6 +34,9 @@ public class UVController : MeshSorter {
 	private Int2[] uvsBottom = new Int2[MESH_VERTEXCOUNT];
 	private Int2[] uvsTop = new Int2[MESH_VERTEXCOUNT];
 
+	private Vector4[] allColorIndices;
+	private List<Color32> vertexColors = new List<Color32>();
+
 
 	public override bool IsUsingAwakeDefault() { return true; }
 	public override void AwakeDefault(){
@@ -51,6 +54,11 @@ public class UVController : MeshSorter {
 			myRenderer.sharedMaterial.SetInt("TextureSizeX", CachedAssets.Instance.AssetSets[0].SpriteSheet.width);
 			myRenderer.sharedMaterial.SetInt("TextureSizeY", CachedAssets.Instance.AssetSets[0].SpriteSheet.height);
 			sHasSetShaderProperties = true;
+		}
+
+		vertexColors = new List<Color32>(MyMeshFilter.mesh.vertexCount);
+		for (int i = 0; i < MyMeshFilter.mesh.vertexCount; i++){
+			vertexColors.Add(new Color32());
 		}
 
 		SetColor(new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, _isPermanent: true);
@@ -113,7 +121,7 @@ public class UVController : MeshSorter {
 		}
 
 		CompressedUVs_0.Clear();
-		CompressedUVs_1.Clear();
+		// CompressedUVs_1.Clear();
 		for (int i = 0; i < MESH_VERTEXCOUNT; i++){
 			Int2 _uv0 = uvsBottom[i];
 			Int2 _uv1 = uvsTop[i];
@@ -121,15 +129,15 @@ public class UVController : MeshSorter {
 			Vector4 _compressed = new Vector4();
 			_compressed.x = BitCompressor.Int2ToInt(_uv0.x, _uv0.y);
 			_compressed.y = BitCompressor.Int2ToInt(_uv1.x, _uv1.y);
-			_compressed.z = BitCompressor.Int2ToInt(0, 0);
-			_compressed.w = BitCompressor.Int2ToInt(0, 0);
+			// _compressed.z = BitCompressor.Int2ToInt(0, 0);
+			// _compressed.w = BitCompressor.Int2ToInt(0, 0);
 			CompressedUVs_0.Add(_compressed);
 
-			_compressed.x = BitCompressor.Int2ToInt(0, 0);
-			_compressed.y = BitCompressor.Int2ToInt(0, 0);
-			_compressed.z = BitCompressor.Int2ToInt(0, 0);
-			_compressed.w = BitCompressor.Int2ToInt(0, 0);
-			CompressedUVs_1.Add(_compressed);
+			// _compressed.x = BitCompressor.Int2ToInt(0, 0);
+			// _compressed.y = BitCompressor.Int2ToInt(0, 0);
+			// _compressed.z = BitCompressor.Int2ToInt(0, 0);
+			// _compressed.w = BitCompressor.Int2ToInt(0, 0);
+			// CompressedUVs_1.Add(_compressed);
 		}
 	}
 
@@ -154,7 +162,6 @@ public class UVController : MeshSorter {
 		SetColor(_colorIndexAsArray, _isPermanent);
     }
 
-	private Vector4[] allColorIndices;
 	public void SetColor(byte[] _colorChannelIndices, bool _isPermanent) {
 		if (_colorChannelIndices.Length != BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT){
 			Debug.LogError("_colorChannelIndices has a different length than what is supported!");
@@ -164,14 +171,16 @@ public class UVController : MeshSorter {
 			Setup();
 		}
 
-        if (_isPermanent) {
+		if (_isPermanent) {
 			_colorChannelIndices.CopyTo(appliedColorChannelIndices, 0);
 		}
 
 		Vector4 _indices = new Vector4();
-		_indices.x = BitCompressor.Byte4ToInt(_colorChannelIndices[0], _colorChannelIndices[1], _colorChannelIndices[2], _colorChannelIndices[3]);
-		_indices.y = BitCompressor.Byte4ToInt(_colorChannelIndices[4], _colorChannelIndices[5], _colorChannelIndices[6], _colorChannelIndices[7]);
-		_indices.z = BitCompressor.Byte4ToInt(_colorChannelIndices[8], _colorChannelIndices[9], 0, 0);
+		
+		// WARNING: using the more than 3 bytes per int will cause instability when cast to float!
+		_indices.x = BitCompressor.Byte4ToInt(_colorChannelIndices[0], _colorChannelIndices[1], _colorChannelIndices[2], 0);
+		_indices.y = BitCompressor.Byte4ToInt(_colorChannelIndices[3], _colorChannelIndices[4], _colorChannelIndices[5], 0);
+		_indices.z = BitCompressor.Byte4ToInt(_colorChannelIndices[6], _colorChannelIndices[7], _colorChannelIndices[8], 0);
 
 		if (allColorIndices == null || allColorIndices.Length == 0) {
 			allColorIndices = new Vector4[MyMeshFilter.mesh.vertexCount];
@@ -187,18 +196,8 @@ public class UVController : MeshSorter {
 		SetColor(appliedColorChannelIndices, _isPermanent: true);
 	}
 
-	private List<Color32> vertexColors = new List<Color32>();
-	public void SetVertexColor(int _vTilePosX, int _vTilePosY, Color32 _color){
-		int _vertexIndex = _vTilePosY * MESH_VERTICES_PER_EDGE + _vTilePosX;
-
-		// setup list for caching colors
-		if (vertexColors.Count != MyMeshFilter.mesh.vertexCount){
-			vertexColors = new List<Color32>(MyMeshFilter.mesh.vertexCount);
-			for (int i = 0; i < MyMeshFilter.mesh.vertexCount; i++)
-				vertexColors.Add(new Color32());
-		}
-
-		vertexColors[_vertexIndex] = _color;
+	public void SetLighting(int _vertexIndex, Color32 _lighting) {
+		vertexColors[_vertexIndex] = _lighting;
 		shouldUpdateGraphics = true;
 	}
 
@@ -216,7 +215,7 @@ public class UVController : MeshSorter {
 		}
 
 		MyMeshFilter.mesh.SetUVs(UVCHANNEL_UV0, CompressedUVs_0);
-		MyMeshFilter.mesh.SetUVs(UVCHANNEL_UV1, CompressedUVs_1);
+		// MyMeshFilter.mesh.SetUVs(UVCHANNEL_UV1, CompressedUVs_1);
 		myRenderer.enabled = !isHidden;
 	}
 

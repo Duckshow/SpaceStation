@@ -4,16 +4,21 @@ using UnityEngine;
 
 public class BuildTool : Singleton<BuildTool> {
 
-	// public static class ToolSettings {
-	// 	public static virtual void UseOnNode(Node _node, bool _isDeleting, bool _isTemporary) { }
-	// }
-
-	interface IToolSettings{
-		void UseOnNode(Node _node, bool _isDeleting, bool _isPermanent);
+	public class ToolSettings {
+		public virtual GameGrid.GridType GetGridType() {
+			return GameGrid.GridType.None;
+		}
+		public virtual void UseOnNode(Node _node, bool _isDeleting, bool _isPermanent) {
+		}
 	}
 
-	public class ToolSettingsBuild : IToolSettings {
-		public void UseOnNode(Node _node, bool _isDeleting, bool _isPermanent) {
+	public class ToolSettingsBuild : ToolSettings {
+		public override GameGrid.GridType GetGridType(){
+			return GameGrid.GridType.NodeGrid;
+		}
+		public override void UseOnNode(Node _node, bool _isDeleting, bool _isPermanent) {
+			base.UseOnNode(_node, _isDeleting, _isPermanent);
+
 			if (_isPermanent) {
 				_node.TrySetIsWall(!_isDeleting);
 			}
@@ -23,7 +28,7 @@ public class BuildTool : Singleton<BuildTool> {
 		}
 	}
 
-	public class ToolSettingsColor : IToolSettings {
+	public class ToolSettingsColor : ToolSettings {
 		public const int COLOR_CHANNEL_COUNT = 10;
 
 		private byte[] colorChannelIndices = new byte[COLOR_CHANNEL_COUNT]{
@@ -43,7 +48,12 @@ public class BuildTool : Singleton<BuildTool> {
 			colorChannelIndices[_channel] = _value;
 		}
 
-		public void UseOnNode(Node _node, bool _isDeleting, bool _isPermanent){
+		public override GameGrid.GridType GetGridType(){
+			return GameGrid.GridType.TileGrid;
+		}
+
+		public override void UseOnNode(Node _node, bool _isDeleting, bool _isPermanent){
+			base.UseOnNode(_node, _isDeleting, _isPermanent);
 			_node.SetColor(colorChannelIndices, _isPermanent);
 		}
 	}
@@ -62,7 +72,7 @@ public class BuildTool : Singleton<BuildTool> {
 		currentToolMode = _newMode;
 	}
 
-	private IToolSettings GetCurrentToolSettings() { 
+	private ToolSettings GetCurrentToolSettings() { 
 		switch (currentToolMode){
 			case ToolMode.None:
 				return null;
@@ -85,8 +95,13 @@ public class BuildTool : Singleton<BuildTool> {
 
 
 	public override bool IsUsingUpdateDefault() { return true; }
-	public override void UpdateDefault() { 
-		if (!Mouse.GetInstance().HasMoved() && !Mouse.GetInstance().DoesEitherButtonEqual(Mouse.StateEnum.Click) && !Mouse.GetInstance().DoesEitherButtonEqual(Mouse.StateEnum.Release)){
+	public override void UpdateDefault() {
+		if (currentToolMode == ToolMode.None){
+			return;
+		}
+
+		GameGrid.GridType _gridType = GetCurrentToolSettings().GetGridType();
+		if (!Mouse.GetInstance().HasMovedOnGrid(_gridType) && !Mouse.GetInstance().DoesEitherButtonEqual(Mouse.StateEnum.Click) && !Mouse.GetInstance().DoesEitherButtonEqual(Mouse.StateEnum.Release)){
 			return;
 		}
 
@@ -119,19 +134,21 @@ public class BuildTool : Singleton<BuildTool> {
 			_isDeleting = mouseState != Mouse.StateEnum.Idle;
 		}
 
-		if (!Mouse.GetInstance().HasMoved() && (mouseState == Mouse.StateEnum.Idle || mouseState == Mouse.StateEnum.Hold)){
+		GameGrid.GridType _gridType = GetCurrentToolSettings().GetGridType();
+
+		if (!Mouse.GetInstance().HasMovedOnGrid(_gridType) && (mouseState == Mouse.StateEnum.Idle || mouseState == Mouse.StateEnum.Hold)){
 			return;
 		}
 
 		switch (mouseState){
 			case Mouse.StateEnum.Idle:
-				nodeGridPosStart = Mouse.GetInstance().GetGridPos();
+				nodeGridPosStart = Mouse.GetInstance().GetGridPos(_gridType);
 				DrawOrPreviewOnNode(nodeGridPosStart, _isDeleting: false, _isPermanent: false);
 				return;
 			case Mouse.StateEnum.Click:
 			case Mouse.StateEnum.Hold:
 				_isPermanent = false;
-				nodeGridPosEnd = Mouse.GetInstance().GetGridPos();
+				nodeGridPosEnd = Mouse.GetInstance().GetGridPos(_gridType);
 				break;
 			case Mouse.StateEnum.Release:
 				_isPermanent = true;

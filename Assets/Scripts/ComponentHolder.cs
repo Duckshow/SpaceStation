@@ -5,7 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(CanInspect))] [RequireComponent(typeof(NodeObject))]
-public class ComponentHolder : MonoBehaviour {
+public class ComponentHolder : EventOwner {
 
     [System.Serializable]
     public class ComponentSlot {
@@ -27,12 +27,14 @@ public class ComponentHolder : MonoBehaviour {
     [HideInInspector] public NodeObject MyTileObject;
 
 
-    void Awake() {
+	public override bool IsUsingAwakeDefault() { return true; }
+	public override void AwakeDefault() { 
         Inspectable = GetComponent<CanInspect>();
         MyTileObject = GetComponent<NodeObject>();
-    }
+	}
 
-    void Start() {
+	public override bool IsUsingStartDefault() { return true; }
+	public override void StartDefault() { 
         if (FillSlotsOnStart) {
             for (int i = 0; i < ComponentSlots.Count; i++) {
                 if (ComponentSlots[i].HeldComponent != null)
@@ -49,7 +51,7 @@ public class ComponentHolder : MonoBehaviour {
 
         StartCoroutine(_Deteriorate());
         OnComponentsModified();
-    }
+	}
 
     IEnumerator _Deteriorate() {
         while (true) {

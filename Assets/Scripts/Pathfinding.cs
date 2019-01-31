@@ -6,93 +6,121 @@ using System;
 
 public class Pathfinding : MonoBehaviour {
 
-    PathRequestManager requestManager;
-    GameGrid grid;
+    private PathRequestManager requestManager;
+    private GameGrid grid;
 
 
-    void Awake() {
+	void Awake() {
         requestManager = GetComponent<PathRequestManager>();
         grid = GetComponent<GameGrid>();
     }
 
-    public void StartFindPath(Vector3 startPos, Vector3 targetPos) {
-        StartCoroutine(FindPath(startPos, targetPos));
+    public void StartFindPath(Vector3 _startPosWorld, Vector3 _targetPosWorld) {
+        StartCoroutine(IFindPath(_startPosWorld, _targetPosWorld));
     }
 
-    IEnumerator FindPath(Vector3 _startPos, Vector3 _targetPos) {
+	public bool GetPathLengthBetweenNodes(Node _startNode, Node _targetNode, out int _stepsTaken) {
+		bool _wasSuccessful = FindPath(_startNode, _targetNode, _shouldPrintLogs: false);
 
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
+		_stepsTaken = 0;
+		if (_wasSuccessful){
+			Node _n = _targetNode;
+			Color c = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1.0f);
+			while (_n != _startNode){
+				UnityEngine.Debug.DrawLine(_n.WorldPos, _n.ParentNode.WorldPos, c, Mathf.Infinity);
+				_n = _n.ParentNode;
+				_stepsTaken++;
+			}
+		}
 
-        Waypoint[] waypoints = new Waypoint[0];
-        Waypoint[] waypointsFull = new Waypoint[0];
-        bool pathSuccess = false;
-        
-        Node startNode = grid.GetNodeFromWorldPos(_startPos);
-        Node targetNode = grid.GetNodeFromWorldPos(_targetPos);
+		return _wasSuccessful;
+	}
+
+    IEnumerator IFindPath(Vector3 _startPosWorld, Vector3 _targetPosWorld) {
+		Node _startNode = grid.GetNodeFromWorldPos(_startPosWorld);
+        Node _targetNode = grid.GetNodeFromWorldPos(_targetPosWorld);
 
         if (grid.DisplayWaypoints) {
-            DrawDebugMarker(startNode.WorldPos, Color.blue);
-            DrawDebugMarker(targetNode.WorldPos, Color.blue);
+            DrawDebugMarker(_startNode.WorldPos, Color.blue);
+            DrawDebugMarker(_targetNode.WorldPos, Color.blue);
         }
         
-        if (startNode == targetNode) {
+        if (_startNode == _targetNode) {
             UnityEngine.Debug.Log("Something tried to walk to where it already was! Skip!");
-            requestManager.FinishedProcessingPath(waypoints, waypoints, false);
+            requestManager.FinishedProcessingPath(null, null, false);
             yield break;
         }
 
-        if (startNode.IsWalkable() && targetNode.IsWalkable()) {
-            Heap<Node> openSet = new Heap<Node>(GameGrid.GetArea());
-            HashSet<Node> closedSet = new HashSet<Node>();
+		bool _wasSuccessful = FindPath(_startNode, _targetNode, _shouldPrintLogs: true);
 
-            openSet.Add(startNode);
+        yield return null;
 
-            while (openSet.Count > 0) {
-                Node currentNode = openSet.RemoveFirst();
-                closedSet.Add(currentNode);
+		Waypoint[] _waypoints = new Waypoint[0];
+		Waypoint[] _waypointsFull = new Waypoint[0];
+		if (_wasSuccessful) { 
+			RetracePath(_startNode, _targetNode, out _waypoints, out _waypointsFull);
+		}
+        requestManager.FinishedProcessingPath(_waypoints, _waypointsFull, _wasSuccessful);
+    }
 
-                if (currentNode == targetNode) {
-                    sw.Stop();
-                    print("Path found: " + sw.ElapsedMilliseconds + " ms");
-                    pathSuccess = true;
-                    break;
-                }
+	bool FindPath(Node _startNode, Node _targetNode, bool _shouldPrintLogs) {
+		Stopwatch stopwatch = new Stopwatch();
+		stopwatch.Start();
 
-                foreach (Node neighbour in grid.GetNeighbours(currentNode.GridPos.x, currentNode.GridPos.y)) {
-					if (!neighbour.IsWalkable()) { 
+		Color c = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1.0f);
+
+		if (_startNode.IsWalkable() && _targetNode.IsWalkable()) {
+            Heap<Node> _openSet = new Heap<Node>(GameGrid.GetArea());
+            HashSet<Node> _closedSet = new HashSet<Node>();
+
+            _openSet.Add(_startNode);
+
+            while (_openSet.Count > 0) {
+				Node _currentNode = _openSet.RemoveFirst();
+                _closedSet.Add(_currentNode);
+
+                if (_currentNode == _targetNode) {
+					stopwatch.Stop();
+					if (_shouldPrintLogs){
+	                    print("Path found: " + stopwatch.ElapsedMilliseconds + " ms");
+					}
+					return true;
+				}
+
+				Node[] _neighbors;
+				GameGrid.NeighborFinder.GetSurroundingNodes(_currentNode.GridPos, out _neighbors);
+				foreach (Node _neighbour in _neighbors) {
+					if (!_neighbour.IsWalkable()) { 
 						continue;
 					}
-					if (neighbour.GetOccupyingTileObject() != null && neighbour != targetNode) { 
+					if (_neighbour.GetOccupyingNodeObject() != null && _neighbour != _targetNode) { 
 						continue;
 					}
-					if (closedSet.Contains(neighbour)) { 
+					if (_closedSet.Contains(_neighbour)) { 
 						continue;
 					}
 
-                    int newMovementCostToNeighbour = currentNode.GCost + GetDistance(currentNode, neighbour) + neighbour.MovementPenalty;
-                    if (newMovementCostToNeighbour < neighbour.GCost || !openSet.Contains(neighbour)) {
-                        neighbour.GCost = newMovementCostToNeighbour;
-                        neighbour.HCost = GetDistance(neighbour, targetNode);
-                        neighbour.ParentNode = currentNode;
+                    int _newMovementCostToNeighbour = _currentNode.GCost + GetDistance(_currentNode, _neighbour) + _neighbour.MovementPenalty;
+                    if (_newMovementCostToNeighbour < _neighbour.GCost || !_openSet.Contains(_neighbour)) {
+                        _neighbour.GCost = _newMovementCostToNeighbour;
+                        _neighbour.HCost = GetDistance(_neighbour, _targetNode);
+                        _neighbour.ParentNode = _currentNode;
 
-                        if (!openSet.Contains(neighbour))
-                            openSet.Add(neighbour);
-                        else
-                            openSet.UpdateItem(neighbour);
+						if (!_openSet.Contains(_neighbour)) { 
+							_openSet.Add(_neighbour);
+						}
+						else { 
+							_openSet.UpdateItem(_neighbour);
+						}
                     }
                 }
             }
         }
 
-        yield return null;
-        if (pathSuccess)
-            RetracePath(startNode, targetNode, out waypoints, out waypointsFull);
+		return false;
+	}
 
-        requestManager.FinishedProcessingPath(waypoints, waypointsFull, pathSuccess);
-    }
-
-    void RetracePath(Node startNode, Node endNode, out Waypoint[] newPath, out Waypoint[] fullPath) {
+	void RetracePath(Node startNode, Node endNode, out Waypoint[] newPath, out Waypoint[] fullPath) {
 
         List<Node> path = new List<Node>();
         Node currentNode = endNode;

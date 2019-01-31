@@ -16,11 +16,15 @@ public class PathRequestManager : MonoBehaviour {
         pathfinding = GetComponent<Pathfinding>();
     }
 
-    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Waypoint[], Waypoint[], bool> callback) {
-        PathRequest newRequest = new PathRequest(pathStart, pathEnd, callback);
-        instance.pathRequestQueue.Enqueue(newRequest);
+    public static void RequestPath(Vector3 _startPosWorld, Vector3 _targetPosWorld, Action<Waypoint[], Waypoint[], bool> _onPathFound) {
+        PathRequest _newRequest = new PathRequest(_startPosWorld, _targetPosWorld, _onPathFound);
+        instance.pathRequestQueue.Enqueue(_newRequest);
         instance.TryProcessNext();
     }
+
+	public static bool RequestPathLength(Node _startNode, Node _targetNode, out int _pathLength) {
+		return instance.pathfinding.GetPathLengthBetweenNodes(_startNode, _targetNode, out _pathLength);
+	}
 
     void TryProcessNext() {
         if (!isProcessingPath && pathRequestQueue.Count > 0) {

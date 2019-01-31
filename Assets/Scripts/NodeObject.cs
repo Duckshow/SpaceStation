@@ -2,14 +2,15 @@
 
 public class NodeObject : EventOwner {
 
-    public Node MyTile;
 	//public UVController[] MyUVControllers;
 	public UVController MyUVController;
 	public NodeObject Parent { get; private set; }
 	private CanInspect myInspector;
+	private Int2 nodeGridPosition = new Int2(-1, -1);
 
 
-	void Awake() {
+	public override bool IsUsingAwakeDefault() { return true; }
+	public override void AwakeDefault() { 
 		myInspector = GetComponent<CanInspect>();
 	}
 
@@ -42,26 +43,37 @@ public class NodeObject : EventOwner {
 			Activate();
 	}
 
-	public void SetGridPosition(Node _tile, bool _setPosition = true) {
+	public Node GetNode() {
+		return GameGrid.GetInstance().TryGetNode(nodeGridPosition);
+	}
+
+	public void SetGridPosition(Node _newNode, bool _setPosition = true) {
         if (Parent != null)
             return;
 
-        NodeObject _occupant = _tile.GetOccupyingTileObject();
-        if (_occupant != null && _occupant != this)
-            Debug.LogError(transform.name + "'s new tile is occupied by someone! This shouldn't happen!");
-        if (MyTile != null) {
-            if(MyTile.GetOccupyingTileObject() != this)
-                Debug.LogError("MyTile is occupied by someone other than me! This shouldn't happen!");
-                
-            MyTile.ClearOccupyingTileObject(this);
+		Node _oldNode = GetNode();
+
+		NodeObject _occupant = _newNode.GetOccupyingNodeObject();
+		if (_occupant != null && _occupant != this) { 
+			Debug.LogError(transform.name + "'s new tile is occupied by someone! This shouldn't happen!");
+		}
+
+		if (_oldNode != null) {
+			if (_oldNode.GetOccupyingNodeObject() != this) { 
+				Debug.LogError("MyTile is occupied by someone other than me! This shouldn't happen!");
+			}
+
+			_oldNode.ClearOccupyingNodeObject(this);
         }
 
-        MyTile = _tile;
-        if(_setPosition)
-            transform.position = GetComponent<Actor>() ? MyTile.GetWorldPosCharacter() : MyTile.WorldPosDefault;
+		nodeGridPosition = _newNode.GridPos;
+
+		if (_setPosition) { 
+			transform.position = GetComponent<Actor>() ? _newNode.GetWorldPosCharacter() : _newNode.WorldPosDefault;
+		}
 
         if (isActive) {
-            MyTile.SetOccupyingTileObject(this);
+            _newNode.SetOccupyingNodeObject(this);
         }
 
         Sort();
@@ -74,35 +86,50 @@ public class NodeObject : EventOwner {
 
     private bool isActive = true;
     public void Activate() {
-        if (isActive)
-            return;
-        if (MyTile == null)
-            return;
+		if (isActive) { 
+			return;
+		}
+
+		Node _node = GetNode();
+		if (_node == null) { 
+			return;
+		}
 
         isActive = true;
-        MyTile = GameGrid.GetInstance().GetClosestFreeNode(MyTile);
-        if (MyTile == null)
-            throw new System.Exception(name + " couldn't find a free tile!");
+        _node = GameGrid.GetInstance().GetClosestFreeNode(_node);
+		if (_node == null) { 
+			throw new System.Exception(name + " couldn't find a free node!");
+		}
 
-        MyTile.SetOccupyingTileObject(this);
-        transform.position = GetComponent<Actor>() ? MyTile.GetWorldPosCharacter() : MyTile.WorldPosDefault;
+        _node.SetOccupyingNodeObject(this);
+        transform.position = GetComponent<Actor>() ? _node.GetWorldPosCharacter() : _node.WorldPosDefault;
 
         Sort();
     }
     public void DeActivate() {
-        if (!isActive)
-            return;
-        if (MyTile == null)
-            return;
+		if (!isActive) { 
+			return;
+		}
+
+		Node _node = GetNode();
+		if (_node == null) { 
+			return;
+		}
 
         isActive = false;
-        MyTile.ClearOccupyingTileObject(this);
+        _node.ClearOccupyingNodeObject(this);
     }
 
     public void Sort() {
-		if (MyUVController == null)
-			transform.position = new Vector3(transform.position.x, transform.position.y, -(GameGrid.SIZE.y - MyTile.GridPos.y) * 0.5f);
-		else
-			MyUVController.Sort(MyTile.GridPos.y);
+		if (MyUVController == null) { 
+			transform.position = new Vector3(transform.position.x, transform.position.y, -(GameGrid.SIZE.y - nodeGridPosition.y) * 0.5f);
+		}
+		else { 
+			MyUVController.Sort(nodeGridPosition.y);
+		}
     }
+
+	public int GetRoomIndex() {
+		return GetNode().RoomIndex;
+	}
 }

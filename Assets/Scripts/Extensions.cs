@@ -3,17 +3,20 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 public static class Extensions {
-
-
 	public static string Color(this string s, Color c) {
         Color32 c32 = c;
         string cHex = "#" + c32.r.ToString("X2") + c32.g.ToString("X2") + c32.b.ToString("X2") + c32.a.ToString("X2");
         return "<color=" + cHex + ">" + s + "</color>";
 	}
+
+	public static bool Equals(this Color32 c0, Color c1) {
+		return c0.r == c1.r && c0.g == c1.g && c0.b == c1.b && c0.a == c1.a;
+	}
 }
 
 public enum XYEnum { X, Y }
 public enum NeighborEnum { None, All, TL, T, TR, R, BR, B, BL, L }
+public enum Sorting { None, Back, Front }
 
 [System.Serializable] public struct Float2 {
 	public float x;

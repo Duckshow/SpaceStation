@@ -3,11 +3,13 @@ using System.Collections.Generic;
 
 public class RoomManager : Singleton<RoomManager> {
 
-	private class Room {
+	public class Room {
 		private static int roomCreationAttempts = 0;
 
 		public float TimeCreated { get; private set; }
 		public List<Int2> NodeGridPositions = new List<Int2>(GameGrid.GetArea());
+		public List<Int2> WallNodeGridPositions = new List<Int2>(GameGrid.GetArea());
+		public List<Lamp> Lamps = new List<Lamp>(GameGrid.GetArea());
 
 		public int RoomIndex { get; private set; }
 		public bool IsInsideShip;
@@ -33,34 +35,45 @@ public class RoomManager : Singleton<RoomManager> {
 
 			RoomIndex = _roomIndex;
 			debugColor = new Color(Random.value, Random.value, Random.value, 1.0f);
-			
 		}
 
-		void RecursivelyFindRoomCoverage(Int2 _nodeGridPos, out bool _isInsideShip) { 
+		void RecursivelyFindRoomCoverage(Int2 _nodeGridPos, out bool _isInsideShip, bool _shouldOnlyLookForWalls = false) { 
 			Node _node = GameGrid.GetInstance().TryGetNode(_nodeGridPos);
 			
+			_isInsideShip = true;
+
 			if (_node == null){
 				_isInsideShip = false;
 				return;
 			}
 			if (_node.IsWall){
-				_isInsideShip = true;
+				WallNodeGridPositions.Add(_nodeGridPos);
+				return;
+			}
+			else if (_shouldOnlyLookForWalls){
 				return;
 			}
 			if (_node.RoomIndex == RoomIndex){
-				_isInsideShip = true;
 				return;
 			}
 
 			NodeGridPositions.Add(_nodeGridPos);
 			_node.SetRoomIndex(RoomIndex);
 
-			_isInsideShip = true;
-			if(_isInsideShip) RecursivelyFindRoomCoverage(_nodeGridPos + Int2.Up, out _isInsideShip);
-			if(_isInsideShip) RecursivelyFindRoomCoverage(_nodeGridPos + Int2.Right, out _isInsideShip);
-			if(_isInsideShip) RecursivelyFindRoomCoverage(_nodeGridPos + Int2.Down, out _isInsideShip);
-			if(_isInsideShip) RecursivelyFindRoomCoverage(_nodeGridPos + Int2.Left, out _isInsideShip);
-			// Debug.Log(_isInsideShip);
+			Lamp _lamp = _node.GetOccupyingNodeObject() as Lamp;
+			if (_lamp != null){
+				Lamps.Add(_lamp);
+			}
+
+			RecursivelyFindRoomCoverage(_nodeGridPos + Int2.Up, out _isInsideShip);
+			RecursivelyFindRoomCoverage(_nodeGridPos + Int2.Right, out _isInsideShip);
+			RecursivelyFindRoomCoverage(_nodeGridPos + Int2.Down, out _isInsideShip);
+			RecursivelyFindRoomCoverage(_nodeGridPos + Int2.Left, out _isInsideShip);
+
+			RecursivelyFindRoomCoverage(_nodeGridPos + Int2.UpLeft, out _isInsideShip, _shouldOnlyLookForWalls: true);
+			RecursivelyFindRoomCoverage(_nodeGridPos + Int2.UpRight, out _isInsideShip, _shouldOnlyLookForWalls: true);
+			RecursivelyFindRoomCoverage(_nodeGridPos + Int2.DownLeft, out _isInsideShip, _shouldOnlyLookForWalls: true);
+			RecursivelyFindRoomCoverage(_nodeGridPos + Int2.DownRight, out _isInsideShip, _shouldOnlyLookForWalls: true);
 		}
 
 		void DebugDrawRoom() { 
@@ -85,9 +98,9 @@ public class RoomManager : Singleton<RoomManager> {
 	private Queue<Int2> nodeGridPositionsWhoseRoomsNeedUpdate = new Queue<Int2>(GameGrid.GetArea());
 
 
-	public override bool IsUsingStartDefault() { return true; }
-	public override void StartDefault(){
-		base.StartDefault();
+	public override bool IsUsingStartLate() { return true; }
+	public override void StartLate(){
+		base.StartLate();
 
 		for (int _y = 0; _y < GameGrid.SIZE.y; _y++){
 			for (int _x = 0; _x < GameGrid.SIZE.x; _x++){
@@ -95,11 +108,17 @@ public class RoomManager : Singleton<RoomManager> {
 				ScheduleUpdateForRoomOfNode(new Int2(_x, _y));
 			}
 		}
+
+		UpdateRooms();
 	}
 
 	public override bool IsUsingUpdateLate() { return true; }
 	public override void UpdateLate(){
 		base.UpdateLate();
+		UpdateRooms();
+	}
+
+	void UpdateRooms() { 
 		while (nodeGridPositionsWhoseRoomsNeedUpdate.Count > 0){
 			Int2 _nodeGridPos = nodeGridPositionsWhoseRoomsNeedUpdate.Dequeue();
 			Node _node = GameGrid.GetInstance().TryGetNode(_nodeGridPos);
@@ -141,13 +160,15 @@ public class RoomManager : Singleton<RoomManager> {
 
 				continue;
 			}
-
-			Room _newRoom = Room.CreateRoom(_nodeGridPos);
-			allRooms.Add(_newRoom.RoomIndex, _newRoom);
+			else{
+				Room _newRoom = Room.CreateRoom(_nodeGridPos);
+				allRooms.Add(_newRoom.RoomIndex, _newRoom);
+			}
 		}
 	}
 
 	public void ScheduleUpdateForRoomOfNode(Int2 _nodeGridPos) {
+		// Debug.Log((_nodeGridPos + " (" + nodeGridPositionsWhoseRoomsNeedUpdate.Count + ")").ToString().Color(Color.cyan));
 		nodeGridPositionsWhoseRoomsNeedUpdate.Enqueue(_nodeGridPos);
 	}
 
@@ -156,5 +177,11 @@ public class RoomManager : Singleton<RoomManager> {
 		allRooms.TryGetValue(_roomIndex, out _room);
 
 		return _room != null && _room.IsInsideShip;
+	}
+
+	public Room GetRoom(int _roomIndex) {
+		Room _room;
+		allRooms.TryGetValue(_roomIndex, out _room);
+		return _room;
 	}
 }
