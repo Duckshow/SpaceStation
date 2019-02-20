@@ -4,10 +4,6 @@ using System.Collections.Generic;
 
 public class Node : IHeapItem<Node> {
 
-	public const float RADIUS = 0.5f;
-	public const float DIAMETER = 1;
-	public const int RESOLUTION = 16;
-
 	public bool HasWallT;
 	public bool HasWallR;
 	public bool HasWallB;
@@ -23,14 +19,18 @@ public class Node : IHeapItem<Node> {
 	public bool IsWall { get; private set; }
 	public bool IsWallTemporarily { get; private set; }
 	public bool UseIsWallTemporary { get; private set; }
-	public bool IsBuildingAllowed { get; private set; }
-	public bool HasDoorOrAirlock { get; private set; }
-	public float WaitTime = 0.0f;
+
+	public GameGridInteractiveObject InteractiveObject { get; private set; }
+	public GameGridInteractiveObject InteractiveObjectTemporary { get; private set; }
+	public bool UseInteractiveObjectTemporary { get; private set; }
+	public Rotation InteractiveObjectRotation { get; private set; }
+	public Rotation InteractiveObjectRotationTemporary { get; private set; }
 
 	private Color32 lightingTL = new Color32(0, 0, 0, 0);
 	private Color32 lightingTR = new Color32(0, 0, 0, 0);
 	private Color32 lightingBR = new Color32(0, 0, 0, 0);
 	private Color32 lightingBL = new Color32(0, 0, 0, 0);
+
 
 	public Color32 GetLighting() { 
 		if (!lightingTL.Equals(lightingTR) || !lightingTL.Equals(lightingBR) || !lightingTL.Equals(lightingBL)){
@@ -50,7 +50,7 @@ public class Node : IHeapItem<Node> {
 
 	public void SetLightingBasedOnNeighbors() {
 		Node _nodeTL, _nodeT, _nodeTR, _nodeR, _nodeBR, _nodeB, _nodeBL, _nodeL;
-		GameGrid.NeighborFinder.GetSurroundingNodes(GridPos, out _nodeTL, out _nodeT, out _nodeTR, out _nodeR, out _nodeBR, out _nodeB, out _nodeBL, out _nodeL);
+		NeighborFinder.GetSurroundingNodes(GridPos, out _nodeTL, out _nodeT, out _nodeTR, out _nodeR, out _nodeBR, out _nodeB, out _nodeBL, out _nodeL);
 
 		lightingTL = GetLightingFromDirection(NeighborEnum.TL);
 		lightingTR = GetLightingFromDirection(NeighborEnum.TR);
@@ -93,13 +93,13 @@ public class Node : IHeapItem<Node> {
 				break;
 		}
 
-		GameGrid.NeighborFinder.TryCacheNeighbor(GridPos, _direction);
-		GameGrid.NeighborFinder.TryCacheNeighbor(GridPos, _directionX);
-		GameGrid.NeighborFinder.TryCacheNeighbor(GridPos, _directionY);
+		NeighborFinder.TryCacheNeighbor(GridPos, _direction);
+		NeighborFinder.TryCacheNeighbor(GridPos, _directionX);
+		NeighborFinder.TryCacheNeighbor(GridPos, _directionY);
 
-		Node _neighborXY = GameGrid.NeighborFinder.CachedNeighbors[_direction];
-		Node _neighborY = GameGrid.NeighborFinder.CachedNeighbors[_directionX];
-		Node _neighborX = GameGrid.NeighborFinder.CachedNeighbors[_directionY];
+		Node _neighborXY = NeighborFinder.CachedNeighbors[_direction];
+		Node _neighborY = NeighborFinder.CachedNeighbors[_directionX];
+		Node _neighborX = NeighborFinder.CachedNeighbors[_directionY];
 
 		int _neighborsGivingLight = 0;
 
@@ -139,16 +139,8 @@ public class Node : IHeapItem<Node> {
 		return _newLighting;
 	}
 
-	public bool IsWalkable() {
-		return !IsWall || HasDoorOrAirlock;
-	}
-
 	public Int2 GridPos { get; private set; }
     public Vector2 WorldPos { get; private set; }
-    public Vector2 WorldPosDefault { get; private set; }
-    public Vector2 GetWorldPosCharacter() { // the position a character should stand on (exists to better emulate zero-g)
-		return WorldPosDefault;
-    }
 
     [NonSerialized] public Node ParentNode;
     [NonSerialized] public int GCost;
@@ -205,15 +197,15 @@ public class Node : IHeapItem<Node> {
 		IsWall = _isWall;
 
 		if (_isWall){
-			GameGrid.NeighborFinder.TryCacheNeighbor(GridPos, NeighborEnum.All);
-			LampManager.GetInstance().TryAddNodeToUpdate(GameGrid.NeighborFinder.CachedNeighbors[NeighborEnum.TL]);
-			LampManager.GetInstance().TryAddNodeToUpdate(GameGrid.NeighborFinder.CachedNeighbors[NeighborEnum.T]);
-			LampManager.GetInstance().TryAddNodeToUpdate(GameGrid.NeighborFinder.CachedNeighbors[NeighborEnum.TR]);
-			LampManager.GetInstance().TryAddNodeToUpdate(GameGrid.NeighborFinder.CachedNeighbors[NeighborEnum.R]);
-			LampManager.GetInstance().TryAddNodeToUpdate(GameGrid.NeighborFinder.CachedNeighbors[NeighborEnum.BR]);
-			LampManager.GetInstance().TryAddNodeToUpdate(GameGrid.NeighborFinder.CachedNeighbors[NeighborEnum.B]);
-			LampManager.GetInstance().TryAddNodeToUpdate(GameGrid.NeighborFinder.CachedNeighbors[NeighborEnum.BL]);
-			LampManager.GetInstance().TryAddNodeToUpdate(GameGrid.NeighborFinder.CachedNeighbors[NeighborEnum.L]);
+			NeighborFinder.TryCacheNeighbor(GridPos, NeighborEnum.All);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.TL]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.T]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.TR]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.R]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.BR]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.B]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.BL]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.L]);
 		}
 		else{
 			LampManager.GetInstance().TryAddNodeToUpdate(this);
@@ -243,11 +235,58 @@ public class Node : IHeapItem<Node> {
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
+	public void TrySetInteractiveObject(GameGridInteractiveObject _interactive, Rotation _rotation) {
+		if (InteractiveObject == _interactive){
+			return;
+		}
+
+		InteractiveObject = _interactive;
+		InteractiveObjectRotation = _rotation;
+		ScheduleUpdateGraphicsForSurroundingTiles();
+	}
+
+	public void TrySetInteractiveObjectTemporary(GameGridInteractiveObject _interactive, Rotation _rotation) {
+		if (UseInteractiveObjectTemporary){
+			return;
+		}
+
+		InteractiveObjectTemporary = _interactive;
+		InteractiveObjectRotationTemporary = _rotation;
+		UseInteractiveObjectTemporary = true;
+		ScheduleUpdateGraphicsForSurroundingTiles();
+	}
+
+	public void TryClearInteractiveObjectTemporary() {
+		if (!UseInteractiveObjectTemporary){
+			return;
+		}
+
+		InteractiveObjectTemporary = null;
+		UseInteractiveObjectTemporary = false;
+		ScheduleUpdateGraphicsForSurroundingTiles();
+	}
+
     public void ScheduleUpdateGraphicsForSurroundingTiles() {
 		ColorManager.ColorUsage _context = ColorManager.ColorUsage.Default;
-		if (UseIsWallTemporary && IsWallTemporarily) _context = ColorManager.ColorUsage.New;
-		if (UseIsWallTemporary && !IsWallTemporarily) _context = ColorManager.ColorUsage.Delete;
-		// if (!_isBuildingAllowed)	context = ColorManager.ColorUsage.Blocked;
+
+		if (UseIsWallTemporary && IsWallTemporarily){
+			_context = ColorManager.ColorUsage.New;
+		} 
+		if (UseIsWallTemporary && !IsWallTemporarily){
+			_context = ColorManager.ColorUsage.Delete;
+		} 
+	
+		if (UseInteractiveObjectTemporary && InteractiveObjectTemporary != null){
+			_context = ColorManager.ColorUsage.New;
+
+			if (InteractiveObject != null){
+				_context = ColorManager.ColorUsage.Blocked;
+			}
+		}
+		if (UseInteractiveObjectTemporary && InteractiveObjectTemporary == null){
+			_context = ColorManager.ColorUsage.Delete;
+		}
+
 		byte _colorIndex = ColorManager.GetColorIndex(_context);
 
 		byte[] _colorChannelIndices = new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT]{
@@ -263,44 +302,62 @@ public class Node : IHeapItem<Node> {
 			_colorIndex
 		};
 
-		UVController _tileTL, _tileTR, _tileBR, _tileBL;
-		GameGrid.NeighborFinder.GetSurroundingTiles(GridPos, out _tileTL, out _tileTR, out _tileBR, out _tileBL);
-		if (_tileTR != null) { UpdateTileVisuals(_tileTR, _colorChannelIndices, _vertexIndex: 0, _lighting: lightingTR); }
-		if (_tileBL != null) { UpdateTileVisuals(_tileBL, _colorChannelIndices, _vertexIndex: 1, _lighting: lightingBL); }
-		if (_tileTL != null) { UpdateTileVisuals(_tileTL, _colorChannelIndices, _vertexIndex: 2, _lighting: lightingTL); }
-		if (_tileBR != null) { UpdateTileVisuals(_tileBR, _colorChannelIndices, _vertexIndex: 3, _lighting: lightingBR); }
+		Int2 _tileGridPosTL, _tileGridPosTR, _tileGridPosBR, _tileGridPosBL;
+		NeighborFinder.GetSurroundingTiles(GridPos, out _tileGridPosTL, out _tileGridPosTR, out _tileGridPosBR, out _tileGridPosBL);
+
+		if (_tileGridPosTR != Int2.MinusOne) {
+			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosTR);
+			UpdateTileColor(_tileGridPosTR, _colorChannelIndices);
+			SetTileVertexLighting(_tileGridPosTR, lightingTR, _vertexIndex: GameGridMesh.VERTEX_INDEX_BOTTOM_LEFT);
+		}
+		if (_tileGridPosBL != Int2.MinusOne) {
+			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosBL);
+			UpdateTileColor(_tileGridPosBL, _colorChannelIndices);
+			SetTileVertexLighting(_tileGridPosBL, lightingBL, _vertexIndex: GameGridMesh.VERTEX_INDEX_TOP_RIGHT);
+		}
+		if (_tileGridPosTL != Int2.MinusOne) {
+			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosTL);
+			UpdateTileColor(_tileGridPosTL, _colorChannelIndices);
+			SetTileVertexLighting(_tileGridPosTL, lightingTL, _vertexIndex: GameGridMesh.VERTEX_INDEX_BOTTOM_RIGHT);
+		}
+		if (_tileGridPosBR != Int2.MinusOne) {
+			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosBR);
+			UpdateTileColor(_tileGridPosBR, _colorChannelIndices);
+			SetTileVertexLighting(_tileGridPosBR, lightingBR, _vertexIndex: GameGridMesh.VERTEX_INDEX_TOP_LEFT);
+		}
 	}
 
-	void UpdateTileVisuals(UVController _tile, byte[] _colorChannelIndices, int _vertexIndex, Color32 _lighting) { 
+	void UpdateTileColor(Int2 _tileGridPos, byte[] _colorChannelIndices) { 
 		if (UseIsWallTemporary){
-			_tile.SetColor(_colorChannelIndices, _isPermanent: false);
+			GameGrid.GetInstance().SetColor(_tileGridPos, _colorChannelIndices, _isPermanent: false);
 		}
 		else{
-			_tile.ClearTemporaryColor();
+			GameGrid.GetInstance().ClearTemporaryColor(_tileGridPos);
 		}
+	}
 
-		_tile.SetLighting(_vertexIndex, _lighting);
-		_tile.ScheduleUpdate();
+	void SetTileVertexLighting(Int2 _tileGridPos, Color32 _lighting, int _vertexIndex) { 
+		GameGrid.GetInstance().SetLighting(_tileGridPos, _vertexIndex, _lighting);
 	}
 
 	public void SetColor(byte[] _colorChannelIndices, bool _isPermanent) { 
-		UVController _tileTL, _tileTR, _tileBR, _tileBL;
-		GameGrid.NeighborFinder.GetSurroundingTiles(GridPos, out _tileTL, out _tileTR, out _tileBR, out _tileBL);
+		Int2 _tileGridPosTL, _tileGridPosTR, _tileGridPosBR, _tileGridPosBL;
+		NeighborFinder.GetSurroundingTiles(GridPos, out _tileGridPosTL, out _tileGridPosTR, out _tileGridPosBR, out _tileGridPosBL);
 
-		if (_tileTR != null){
-			_tileTR.SetColor(_colorChannelIndices, _isPermanent);
+		if (_tileGridPosTR != Int2.MinusOne){
+			GameGrid.GetInstance().SetColor(_tileGridPosTR, _colorChannelIndices, _isPermanent);
 		}
 	}
 	
 	public void ClearTemporaryColor() {
-		UVController _tileTL, _tileTR, _tileBR, _tileBL;
-		GameGrid.NeighborFinder.GetSurroundingTiles(GridPos, out _tileTL, out _tileTR, out _tileBR, out _tileBL);
+		Int2 _tileGridPosTL, _tileGridPosTR, _tileGridPosBR, _tileGridPosBL;
+		NeighborFinder.GetSurroundingTiles(GridPos, out _tileGridPosTL, out _tileGridPosTR, out _tileGridPosBR, out _tileGridPosBL);
 
 		// if (_tileTL != null){
 		// 	_tileTL.ClearTemporaryColor();
 		// }
-		if (_tileTR != null){
-			_tileTR.ClearTemporaryColor();
+		if (_tileGridPosTR != Int2.MinusOne){
+			GameGrid.GetInstance().ClearTemporaryColor(_tileGridPosTR);
 		}
 		// if (_tileBR != null){
 		// 	_tileBR.ClearTemporaryColor();
@@ -310,7 +367,6 @@ public class Node : IHeapItem<Node> {
 		// }
 	}
 
-	public void SetIsBuildingAllowed(bool _b) {
-        IsBuildingAllowed = _b;
-    }
+	public bool IsWalkable() { return !IsWall; }
+	public float WaitTime = 0.0f;
 }

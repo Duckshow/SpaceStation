@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 public class RoomManager : Singleton<RoomManager> {
 
+	[SerializeField]
+	private bool drawDebug = false;
+
 	public class Room {
 		private static int roomCreationAttempts = 0;
 
@@ -23,7 +26,7 @@ public class RoomManager : Singleton<RoomManager> {
 
 			_newRoom.RecursivelyFindRoomCoverage(_nodeGridPosOrigin, out _newRoom.IsInsideShip);
 
-			if (_newRoom.IsInsideShip){
+			if (RoomManager.GetInstance().drawDebug && _newRoom.IsInsideShip){
 				_newRoom.DebugDrawRoom();
 			}
 

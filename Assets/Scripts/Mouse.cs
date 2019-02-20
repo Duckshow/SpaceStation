@@ -90,7 +90,7 @@ public class Mouse : Singleton<Mouse>{
 
 		// for testing purposes only
         if (Input.GetKeyUp(KeyCode.O)) {
-            Actor[] _actor = FindObjectsOfType<Actor>();
+            Character[] _actor = FindObjectsOfType<Character>();
             for (int i = 0; i < _actor.Length; i++) {
                 _actor[i].enabled = !_actor[i].enabled;
             }

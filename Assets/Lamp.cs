@@ -31,11 +31,11 @@ public class Lamp : NodeObject {
 		LampManager.GetInstance().OnLampDestroy(this);
 	}
 
-	public void OnTurnOn(){
+	void OnTurnOn(){
 		LampManager.GetInstance().OnLampTurnOn(this);
 	}
 
-	public void OnTurnOff() {
+	void OnTurnOff() {
 		LampManager.GetInstance().OnLampTurnOff(this);
 	}
 

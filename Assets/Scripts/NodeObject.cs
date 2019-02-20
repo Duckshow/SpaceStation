@@ -69,7 +69,7 @@ public class NodeObject : EventOwner {
 		nodeGridPosition = _newNode.GridPos;
 
 		if (_setPosition) { 
-			transform.position = GetComponent<Actor>() ? _newNode.GetWorldPosCharacter() : _newNode.WorldPosDefault;
+			transform.position =_newNode.WorldPos;
 		}
 
         if (isActive) {
@@ -102,7 +102,7 @@ public class NodeObject : EventOwner {
 		}
 
         _node.SetOccupyingNodeObject(this);
-        transform.position = GetComponent<Actor>() ? _node.GetWorldPosCharacter() : _node.WorldPosDefault;
+        transform.position = _node.WorldPos;
 
         Sort();
     }

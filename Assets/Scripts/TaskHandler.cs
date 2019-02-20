@@ -1,36 +1,60 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
-public class TaskHandler {
+public class TaskHandler : EventOwner {
+	private const int MAX_MULTITASK_AMOUNT = 200;
 
-    public Actor Owner;
+	public Character Owner { get; private set; }
 
-    public List<ResourceManager.ResourceType> ResourcesPendingFetch = new List<ResourceManager.ResourceType>();
-    public Heap<MetaTask> PendingTasks = new Heap<MetaTask>(50); // arbitrary number (can't exceed)
+    public MultiTask CurrentMultiTask { get; private set; }
 
-    MetaTask currentMetaTask;
-    bool isPerformingMetaTask;
+	[System.NonSerialized]
+	public Int2 MoveToNodeGridPos;
 
 
-    public void AssignTask(MetaTask _meta) {
-        PendingTasks.Add(_meta);
-        TryPerformingNext();
-    }
+	public void Init(Character _owner) {
+		Owner = _owner;
+	}
+	
+	public override bool IsUsingUpdateDefault() { return true; }
+	public override void UpdateDefault() {
+		base.UpdateDefault();
 
-    void TryPerformingNext() {
-        if (isPerformingMetaTask && PendingTasks.Count > 0 && PendingTasks.GetFirst().CurrentPriority > currentMetaTask.CurrentPriority) {
-            currentMetaTask.Stop();
-            // I could reinsert a copy of the stopped task, so it's redone later, but maybe that isn't actually needed since the player doesn't control the Units?
-        }
+		if (CurrentMultiTask != null){
+			CurrentMultiTask.UpdateDefault();
+		}
+	}
 
-        if (!isPerformingMetaTask && PendingTasks.Count > 0) {
-            currentMetaTask = PendingTasks.RemoveFirst();
-            isPerformingMetaTask = true;
-            currentMetaTask.TryPerformingNext();
-        }
-    }
+	public void AssignMultiTask(MultiTask _multiTask) {
+		if (_multiTask == null){
+			return;
+		}
 
-    public void FinishedMeta() {
-        isPerformingMetaTask = false;
-        TryPerformingNext();
+		if (CurrentMultiTask != null){
+			if (_multiTask.Priority <= CurrentMultiTask.Priority){
+				return;
+			}
+			else{
+				FinishedMultiTask(CurrentMultiTask, _wasSuccess: false);
+			}
+		}
+
+		CurrentMultiTask = _multiTask;
+		CurrentMultiTask.StartNextTask();
+	}
+
+	public void FinishedMultiTask(MultiTask _multiTask, bool _wasSuccess) {
+		if (_multiTask != CurrentMultiTask){
+			Debug.LogError(Owner.name + " somehow has multiple multitasks!");
+		}
+
+		if (_wasSuccess){
+			Debug.Log((Owner.name + " successfully completed multitask!").Color(Color.green));
+		}
+		else{
+			Debug.LogWarning((Owner.name + " failed to complete multitask!").Color(Color.red));
+		}
+
+		CurrentMultiTask = null;
     }
 }

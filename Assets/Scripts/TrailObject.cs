@@ -6,7 +6,7 @@ public class TrailObject : MonoBehaviour {
     [SerializeField] private float FollowSpeed;
     [SerializeField] private float RotateSpeed;
 
-    [HideInInspector] public ActorOrientation.OrientationEnum Orientation;
+    [HideInInspector] public CharacterOrienter.OrientationEnum Orientation;
     [HideInInspector] public bool ForceTargetRotation = false;
 
     private const float VERTICAL_TARGETROTATION_MOVEDOWN = 180;

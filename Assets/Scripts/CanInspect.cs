@@ -117,18 +117,22 @@ public class CanInspect : MonoBehaviour {
     public void ShowOutline(bool _true) {
 		byte colorDefault = ColorManager.GetColorIndex(ColorManager.ColorUsage.Default);
 		byte colorSelected = ColorManager.GetColorIndex(ColorManager.ColorUsage.Selected);
-		MyUVC.SetColor(_true ? colorSelected : colorDefault, _isPermanent: false);
+		Debug.Log("Implement this!");
+		// MyUVC.SetColor(_true ? colorSelected : colorDefault, _isPermanent: false);
     }
 
     public void Hide(bool _b) {
 		IsHidden = _b;
 
-		if (!hasSetup)
-            Setup();
+		if (!hasSetup) { 
+			Setup();
+		}
 
-        MyUVC.Hide(_b);
+		Debug.Log("Implement this!");
+		// MyUVC.Hide(_b);
 
-		if(OnHide != null)
+		if (OnHide != null) { 
 			OnHide(_b);
+		}
     }
 }

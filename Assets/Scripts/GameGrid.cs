@@ -4,131 +4,22 @@ using System.Collections.Generic;
 public class GameGrid : Singleton<GameGrid> {
 
 	public static readonly Int2 SIZE = new Int2(48, 48);
+	public const float TILE_RADIUS = 0.5f;
+	public const float TILE_DIAMETER = 1;
+	public const int TILE_RESOLUTION = 16;
+
 	public static int GetArea(){
 		return SIZE.x * SIZE.y;
 	}
-	public static bool IsInsideGrid(int _x, int _y){
+	
+	public static bool IsInsideNodeGrid(Int2 _nodeGridPos){
+		return IsInsideNodeGrid(_nodeGridPos.x, _nodeGridPos.y);
+	}
+	
+	public static bool IsInsideNodeGrid(int _x, int _y){
 		return _x >= 0 && _x < SIZE.x && _y >= 0 && _y < SIZE.y;
 	}
 
-	public static class NeighborFinder {
-		public static Dictionary<NeighborEnum, Node> CachedNeighbors = new Dictionary<NeighborEnum, Node>() { 
-			{ NeighborEnum.None, null },
-			{ NeighborEnum.TL, null },
-			{ NeighborEnum.T, null },
-			{ NeighborEnum.TR, null },
-			{ NeighborEnum.R, null },
-			{ NeighborEnum.BR, null },
-			{ NeighborEnum.B, null },
-			{ NeighborEnum.L, null }
-		};
-
-		public static bool TryCacheNeighbor(Int2 _nodeGridPos, NeighborEnum _neighbor){
-			switch (_neighbor){
-				case NeighborEnum.All:
-					TryCacheNeighbor(_nodeGridPos, NeighborEnum.TL);
-					TryCacheNeighbor(_nodeGridPos, NeighborEnum.T);
-					TryCacheNeighbor(_nodeGridPos, NeighborEnum.TR);
-					TryCacheNeighbor(_nodeGridPos, NeighborEnum.R);
-					TryCacheNeighbor(_nodeGridPos, NeighborEnum.BR);
-					TryCacheNeighbor(_nodeGridPos, NeighborEnum.B);
-					TryCacheNeighbor(_nodeGridPos, NeighborEnum.BL);
-					TryCacheNeighbor(_nodeGridPos, NeighborEnum.L);
-					return true;
-				case NeighborEnum.None:
-					_nodeGridPos = Int2.Zero;
-					break;
-				case NeighborEnum.TL:
-					_nodeGridPos += Int2.UpLeft;
-					break;
-				case NeighborEnum.T:
-					_nodeGridPos += Int2.Up;
-					break;
-				case NeighborEnum.TR:
-					_nodeGridPos += Int2.UpRight;
-					break;
-				case NeighborEnum.R:
-					_nodeGridPos += Int2.Right;
-					break;
-				case NeighborEnum.BR:
-					_nodeGridPos += Int2.DownRight;
-					break;
-				case NeighborEnum.B:
-					_nodeGridPos += Int2.Down;
-					break;
-				case NeighborEnum.BL:
-					_nodeGridPos += Int2.DownLeft;
-					break;
-				case NeighborEnum.L:
-					_nodeGridPos += Int2.Left;
-					break;
-				default:
-					_nodeGridPos = Int2.Zero;
-					Debug.LogError(_neighbor + " hasn't been properly implemented yet!");
-					break;
-			}
-
-			Node node = GameGrid.GetInstance().TryGetNode(_nodeGridPos.x, _nodeGridPos.y);
-			CachedNeighbors[_neighbor] = node;
-			return node != null;
-		}
-
-		public static bool IsCardinalNeighborWall(Int2 _nodeGridPos) {
-			TryCacheNeighbor(_nodeGridPos, NeighborEnum.T);
-			TryCacheNeighbor(_nodeGridPos, NeighborEnum.B);
-			TryCacheNeighbor(_nodeGridPos, NeighborEnum.L);
-			TryCacheNeighbor(_nodeGridPos, NeighborEnum.R);
-			bool _isWallT = CachedNeighbors[NeighborEnum.T].IsWall;
-			bool _isWallB = CachedNeighbors[NeighborEnum.B].IsWall;
-			bool _isWallL = CachedNeighbors[NeighborEnum.L].IsWall;
-			bool _isWallR = CachedNeighbors[NeighborEnum.R].IsWall;
-			return _isWallT || _isWallB || _isWallL || _isWallR;
-		}
-
-		public static void GetSurroundingTiles(Int2 _nodeGridPos, out UVController tileTL, out UVController tileTR, out UVController tileBR, out UVController tileBL) {
-			Int2 _nodeGridPosTL = new Int2(_nodeGridPos.x - 1, _nodeGridPos.y);
-			Int2 _nodeGridPosTR = new Int2(_nodeGridPos.x, _nodeGridPos.y);
-			Int2 _nodeGridPosBR = new Int2(_nodeGridPos.x, _nodeGridPos.y - 1);
-			Int2 _nodeGridPosBL = new Int2(_nodeGridPos.x - 1, _nodeGridPos.y - 1);
-			tileTL = GameGrid.GetInstance().TryGetTile(_nodeGridPosTL);
-			tileTR = GameGrid.GetInstance().TryGetTile(_nodeGridPosTR);
-			tileBR = GameGrid.GetInstance().TryGetTile(_nodeGridPosBR);
-			tileBL = GameGrid.GetInstance().TryGetTile(_nodeGridPosBL);
-		}
-
-		public static void GetSurroundingNodes(Int2 _tileGridPos, out Node _nodeTL, out Node _nodeTR, out Node _nodeBR, out Node _nodeBL) {
-			Int2 _nodeGridPos = _tileGridPos;
-			_nodeTL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Up);
-			_nodeTR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpRight);
-			_nodeBR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Right);
-			_nodeBL = GameGrid.GetInstance().TryGetNode(_nodeGridPos);
-		}
-
-		public static void GetSurroundingNodes(Int2 _nodeGridPos, out Node _nodeTL, out Node _nodeT, out Node _nodeTR, out Node _nodeR, out Node _nodeBR, out Node _nodeB, out Node _nodeBL, out Node _nodeL) {
-			_nodeTL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpLeft);
-			_nodeT = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Up);
-			_nodeTR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpRight);
-			_nodeR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Right);
-			_nodeBR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownRight);
-			_nodeB = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Down);
-			_nodeBL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownLeft);
-			_nodeL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Left);
-		}
-		
-		public static void GetSurroundingNodes(Int2 _nodeGridPos, out Node[] _nodes) {
-			_nodes = new Node[8];
-			_nodes[0] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpLeft);
-			_nodes[1] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Up);
-			_nodes[2] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpRight);
-			_nodes[3] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Right);
-			_nodes[4] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownRight);
-			_nodes[5] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Down);
-			_nodes[6] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownLeft);
-			_nodes[7] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Left);
-		}
-	}
-
-	public Material GridMaterial;
 	[SerializeField]
 	private GameObject tilePrefab;
 
@@ -139,9 +30,37 @@ public class GameGrid : Singleton<GameGrid> {
     public bool DisplayPaths;
     public bool DisplayWaypoints;
 
-    private Node[,] nodeGrid;
-	private UVController[,] tileGrid;
+	[SerializeField] private int Seed;
+	[Space]
+	[SerializeField] private Material gridMaterial;
+	[SerializeField] private GameGridMesh meshBackground;
+	[SerializeField] private GameGridMesh meshInteractivesBack;
+	[SerializeField] private GameGridMesh meshInteractivesFront;
 
+	private Node[,] nodeGrid;
+	// private UVController[,] tileGrid;
+
+
+	[EasyButtons.Button]
+	public void GenerateMeshes() {
+		GameGridMesh.GridMaterial = gridMaterial;
+		meshBackground.CreateMesh();
+		meshInteractivesBack.CreateMesh();
+		meshInteractivesFront.CreateMesh();
+	}
+
+	public override bool IsUsingAwakeEarly() { return true; }
+	public override void AwakeEarly() {
+		base.AwakeEarly();
+
+		transform.position = new Vector3(0.25f, 0.25f, 0.0f);
+
+		GameGridMesh.InitStatic();
+		meshBackground.Init(Sorting.Back, GameGridMesh.RenderMode.Walls);
+		meshInteractivesBack.Init(Sorting.Back, GameGridMesh.RenderMode.Interactives);
+		meshInteractivesFront.Init(Sorting.Front, GameGridMesh.RenderMode.Interactives);
+		GenerateMeshes();
+	}
 
 	public override bool IsUsingStartEarly() { return true; }
 	public override void StartEarly() {
@@ -149,12 +68,19 @@ public class GameGrid : Singleton<GameGrid> {
 		CreateGrid();
 	}
 
-	[SerializeField] private int Seed;
+	public override bool IsUsingUpdateLate() { return true; }
+	public override void UpdateLate(){
+		base.UpdateLate();
+		meshBackground.TryUpdateVisuals();
+		meshInteractivesBack.TryUpdateVisuals();
+		meshInteractivesFront.TryUpdateVisuals();
+	}
+
 	void CreateGrid() {
 		Random.InitState(Seed);
 		
 		nodeGrid = new Node[SIZE.x, SIZE.y];
-		tileGrid = new UVController[SIZE.x + 2, SIZE.y + 2];
+		// tileGrid = new UVController[SIZE.x + 2, SIZE.y + 2];
 
 		Vector3 worldPosBottomLeft = transform.position;
 		worldPosBottomLeft.x -= SIZE.x * 0.5f;
@@ -163,23 +89,23 @@ public class GameGrid : Singleton<GameGrid> {
 		for (int y = 0; y < SIZE.y; y++) {
             for (int x = 0; x < SIZE.x; x++) {
 				Vector3 worldPos = worldPosBottomLeft;
-				worldPos.x += x * Node.DIAMETER + Node.RADIUS;
-				worldPos.y += y * Node.DIAMETER + Node.RADIUS;
+				worldPos.x += x * TILE_DIAMETER + TILE_RADIUS;
+				worldPos.y += y * TILE_DIAMETER + TILE_RADIUS;
 
                 nodeGrid[x, y] = new Node(worldPos, x, y);
 			}
         }
 
-		for (int y = 0; y < SIZE.y - 1; y++) {
-            for (int x = 0; x < SIZE.x - 1; x++) {
-				Vector3 worldPos = worldPosBottomLeft + new Vector3(Node.RADIUS, Node.RADIUS, 0.0f);
-				worldPos.x += x * Node.DIAMETER + Node.RADIUS;
-				worldPos.y += y * Node.DIAMETER + Node.RADIUS;
+		// for (int y = 0; y < SIZE.y - 1; y++) {
+        //     for (int x = 0; x < SIZE.x - 1; x++) {
+		// 		Vector3 worldPos = worldPosBottomLeft + new Vector3(TILE_RADIUS, TILE_RADIUS, 0.0f);
+		// 		worldPos.x += x * TILE_DIAMETER + TILE_RADIUS;
+		// 		worldPos.y += y * TILE_DIAMETER + TILE_RADIUS;
 
-				tileGrid[x, y] = (Instantiate(tilePrefab, worldPos, Quaternion.identity) as GameObject).GetComponent<UVController>();
-				tileGrid[x, y].SetTileGridPos(new Int2(x, y));
-			}
-        }
+		// 		tileGrid[x, y] = (Instantiate(tilePrefab, worldPos, Quaternion.identity) as GameObject).GetComponent<UVController>();
+		// 		tileGrid[x, y].SetTileGridPos(new Int2(x, y));
+		// 	}
+        // }
 
 		Node _node;
         for (int y = 0; y < SIZE.y; y++) {
@@ -187,46 +113,46 @@ public class GameGrid : Singleton<GameGrid> {
 				_node = nodeGrid[x, y];
 
 				bool _isXAtLeftBorder = x == 1;
-				bool _isXAtRightBorder = x == SIZE.x - 2;
+				bool _isXAtRightBorder = x == SIZE.x - 1;
 				bool _isXBetweenBorders = x > 0 && x < SIZE.x - 1;
 
 				bool _isYAtBottomBorder = y == 1;
-				bool _isYAtTopBorder = y == SIZE.y - 2;
+				bool _isYAtTopBorder = y == SIZE.y - 1;
 				bool _isYBetweenBorders = y > 0 && y < SIZE.y - 1;
 
 				if (((_isXAtLeftBorder || _isXAtRightBorder) && _isYBetweenBorders) || ((_isYAtBottomBorder || _isYAtTopBorder) && _isXBetweenBorders)){
 					_node.TrySetIsWall(true);
 				}
 
-				int _roomSize = 4;
-				if ((x == SIZE.x * 0.5f - _roomSize || x == SIZE.x * 0.5f + _roomSize) && y <= SIZE.y * 0.5f + _roomSize && y >= SIZE.y * 0.5f - _roomSize){
-					_node.TrySetIsWall(true);
-				}
-				if ((y == SIZE.y * 0.5f - _roomSize || y == SIZE.y * 0.5f + _roomSize) && x <= SIZE.x * 0.5f + _roomSize && x >= SIZE.x * 0.5f - _roomSize){
-					_node.TrySetIsWall(true);
-				}
+				// int _roomSize = 4;
+				// if ((x == SIZE.x * 0.5f - _roomSize || x == SIZE.x * 0.5f + _roomSize) && y <= SIZE.y * 0.5f + _roomSize && y >= SIZE.y * 0.5f - _roomSize){
+				// 	_node.TrySetIsWall(true);
+				// }
+				// if ((y == SIZE.y * 0.5f - _roomSize || y == SIZE.y * 0.5f + _roomSize) && x <= SIZE.x * 0.5f + _roomSize && x >= SIZE.x * 0.5f - _roomSize){
+				// 	_node.TrySetIsWall(true);
+				// }
 
 				_node.ScheduleUpdateGraphicsForSurroundingTiles();
 			}
         }
     }
 
-	public Int2 GetGridPosFromWorldPos(Vector3 _worldPos, GameGrid.GridType _gridType) {
+	public Int2 GetGridPosFromWorldPos(Vector3 _worldPos, GridType _gridType) {
 		float _nodeOffset = 0.0f;
 		switch (_gridType){
-			case GameGrid.GridType.None:
-			case GameGrid.GridType.NodeGrid:
+			case GridType.None:
+			case GridType.NodeGrid:
 				break;
-			case GameGrid.GridType.TileGrid:
-				_nodeOffset = Node.RADIUS;
+			case GridType.TileGrid:
+				_nodeOffset = TILE_RADIUS;
 				break;
 			default:
 				Debug.LogError(_gridType + " hasn't been properly implemented yet!");
 				break;
 		}
 
-		float percentX = (_worldPos.x - (Node.RADIUS + _nodeOffset) + SIZE.x * 0.5f) / (float)SIZE.x;
-		float percentY = (_worldPos.y - (Node.RADIUS + _nodeOffset) + SIZE.y * 0.5f) / (float)SIZE.y;
+		float percentX = (_worldPos.x - (TILE_RADIUS + _nodeOffset) + SIZE.x * 0.5f) / (float)SIZE.x;
+		float percentY = (_worldPos.y - (TILE_RADIUS + _nodeOffset) + SIZE.y * 0.5f) / (float)SIZE.y;
 		percentX = Mathf.Clamp01(percentX);
 		percentY = Mathf.Clamp01(percentY);
 
@@ -239,12 +165,12 @@ public class GameGrid : Singleton<GameGrid> {
 	}
 
 	public Node GetNodeFromWorldPos(Vector3 _worldPos) {
-		Int2 _nodeGridPos = GetGridPosFromWorldPos(_worldPos, GameGrid.GridType.NodeGrid);
+		Int2 _nodeGridPos = GetGridPosFromWorldPos(_worldPos, GridType.NodeGrid);
 		return nodeGrid[_nodeGridPos.x, _nodeGridPos.y];
     }
     
 	public Vector3 GetWorldPosFromNodeGridPos(Int2 _nodeGridPos){
-        Vector3 _worldPos = new Vector3(_nodeGridPos.x + Node.RADIUS, _nodeGridPos.y + Node.RADIUS, 0.0f);
+        Vector3 _worldPos = new Vector3(_nodeGridPos.x + TILE_RADIUS, _nodeGridPos.y + TILE_RADIUS, 0.0f);
         _worldPos.x -= (SIZE.x * 0.5f);
         _worldPos.y -= (SIZE.y * 0.5f);
         return _worldPos;
@@ -257,7 +183,7 @@ public class GameGrid : Singleton<GameGrid> {
 		}
 
 		Node[] _nodes;
-		GameGrid.NeighborFinder.GetSurroundingNodes(_node.GridPos, out _nodes);
+		NeighborFinder.GetSurroundingNodes(_node.GridPos, out _nodes);
 		List<Node> _neighbours = new List<Node>(_nodes);
 
 		int _lastCount = 0;
@@ -277,7 +203,7 @@ public class GameGrid : Singleton<GameGrid> {
             // iterate over _neighbours - if their neighbours aren't in _neighbours, add them.
             Node[] _newNeighbours;
             for (int i = _prevLastCount; i < _lastCount; i++) {
-                GameGrid.NeighborFinder.GetSurroundingNodes(_neighbours[i].GridPos, out _newNeighbours);
+                NeighborFinder.GetSurroundingNodes(_neighbours[i].GridPos, out _newNeighbours);
                 for (int j = 0; j < _newNeighbours.Length; j++) {
                     if (_neighbours.Contains(_newNeighbours[j]))
                         continue;
@@ -294,7 +220,7 @@ public class GameGrid : Singleton<GameGrid> {
 		}
 
 		Node[] _nodes;
-		GameGrid.NeighborFinder.GetSurroundingNodes(_node.GridPos, out _nodes);
+		NeighborFinder.GetSurroundingNodes(_node.GridPos, out _nodes);
 		List<Node> _neighbours = new List<Node>(_nodes);
 		int _lastCount = 0;
 
@@ -313,7 +239,7 @@ public class GameGrid : Singleton<GameGrid> {
 			// iterate over _neighbours - if their neighbours aren't in _neighbours, add them.
 			Node[] _newNeighbours;
 			for (int i = _prevLastCount; i < _lastCount; i++) {
-				GameGrid.NeighborFinder.GetSurroundingNodes(_neighbours[i].GridPos, out _newNeighbours);
+				NeighborFinder.GetSurroundingNodes(_neighbours[i].GridPos, out _newNeighbours);
 				for (int j = 0; j < _newNeighbours.Length; j++) {
 					if (_neighbours.Contains(_newNeighbours[j])) { 
 						continue;
@@ -357,22 +283,52 @@ public class GameGrid : Singleton<GameGrid> {
 	}
 
 	public Node TryGetNode(int _posGridX, int _posGridY) {
-		if (!IsInsideGrid(_posGridX, _posGridY)) {
+		if (!IsInsideNodeGrid(_posGridX, _posGridY)) {
 			return null;
 		}
 
 		return nodeGrid[_posGridX, _posGridY];
 	}
 
-	public UVController TryGetTile(Int2 _posGrid) {
-		return TryGetTile(_posGrid.x, _posGrid.y);
+	public void ScheduleUpdateForTile(Int2 _tileGridPos){
+		meshBackground.ScheduleUpdateForTile(_tileGridPos);
+		meshInteractivesBack.ScheduleUpdateForTile(_tileGridPos);
+		meshInteractivesFront.ScheduleUpdateForTile(_tileGridPos);
+	}
+	
+	public void ClearTemporaryColor(Int2 _tileGridPos){
+		meshBackground.ClearTemporaryColor(_tileGridPos);
+		meshInteractivesBack.ClearTemporaryColor(_tileGridPos);
+		meshInteractivesFront.ClearTemporaryColor(_tileGridPos);
 	}
 
-	public UVController TryGetTile(int _posGridX, int _posGridY) {
-		if (!IsInsideGrid(_posGridX, _posGridY)) {
-			return null;
-		}
-
-		return tileGrid[_posGridX, _posGridY];
+	public void SetColor(Int2 _tileGridPos, byte _colorIndex, bool _isPermanent) {
+		meshBackground.SetColor(_tileGridPos, _colorIndex, _isPermanent);
+		meshInteractivesBack.SetColor(_tileGridPos, _colorIndex, _isPermanent);
+		meshInteractivesFront.SetColor(_tileGridPos, _colorIndex, _isPermanent);
 	}
+
+	public void SetColor(Int2 _tileGridPos, byte[] _colorIndices, bool _isPermanent) {
+		meshBackground.SetColor(_tileGridPos, _colorIndices, _isPermanent);
+		meshInteractivesBack.SetColor(_tileGridPos, _colorIndices, _isPermanent);
+		meshInteractivesFront.SetColor(_tileGridPos, _colorIndices, _isPermanent);
+	}
+
+	public void SetLighting(Int2 _tileGridPos, int _vertexIndex, Color32 _lighting) {
+		meshBackground.SetLighting(_tileGridPos, _vertexIndex, _lighting);
+		meshInteractivesBack.SetLighting(_tileGridPos, _vertexIndex, _lighting);
+		meshInteractivesFront.SetLighting(_tileGridPos, _vertexIndex, _lighting);
+	}
+
+	// public UVController TryGetTile(Int2 _posGrid) {
+	// 	return TryGetTile(_posGrid.x, _posGrid.y);
+	// }
+
+	// public UVController TryGetTile(int _posGridX, int _posGridY) {
+	// 	if (!IsInsideGrid(_posGridX, _posGridY)) {
+	// 		return null;
+	// 	}
+
+	// 	return tileGrid[_posGridX, _posGridY];
+	// }
 }

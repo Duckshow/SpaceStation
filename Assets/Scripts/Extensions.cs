@@ -17,6 +17,7 @@ public static class Extensions {
 public enum XYEnum { X, Y }
 public enum NeighborEnum { None, All, TL, T, TR, R, BR, B, BL, L }
 public enum Sorting { None, Back, Front }
+public enum Rotation { None, Up, Right, Down, Left }
 
 [System.Serializable] public struct Float2 {
 	public float x;
@@ -74,6 +75,11 @@ public class Float2Drawer : PropertyDrawer {
 	public Int2(float x, float y) {
 		this.x = (int)x;
 		this.y = (int)y;
+	}
+
+	public void Set(int _x, int _y){
+		this.x = _x;
+		this.y = _y;
 	}
 
 	public override string ToString(){
@@ -134,6 +140,7 @@ public class Float2Drawer : PropertyDrawer {
 
 	public static Int2 Zero { get { return new Int2(0, 0); } }
 	public static Int2 One { get { return new Int2(1, 1); } }
+	public static Int2 MinusOne { get { return new Int2(-1, -1); } }
 
 	public static Int2 Up { get { return new Int2(0, 1); } }
 	public static Int2 Down { get { return new Int2(0, -1); } }

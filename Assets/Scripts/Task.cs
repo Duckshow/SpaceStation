@@ -1,285 +1,330 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 
-public class Task {
+public abstract class Task {
+	public enum State { Start, Tick, Done, Abort }
+	private State currentState = State.Start;
 
-    public bool ParallelToPrevious = false;
-    public bool Success = false;
-    public bool IsRunning = false;
+	protected MultiTask owner;
 
-    protected MetaTask meta;
+	public Task(MultiTask _owner){ owner = _owner; }
+	public virtual void Start(out State _state){ _state = State.Done; }
+	public virtual void Tick(out State _state){ _state = State.Done; }
 
-    private IEnumerator cachedRoutine;
+	public State Perform(MultiTask _multiTask) { 
+		switch (currentState){
+			case Task.State.Done:
+			case Task.State.Abort:
+			case Task.State.Start:
+				Start(out currentState);
+				break;
+			case Task.State.Tick:
+				Tick(out currentState);
+				break;
+			default:
+				Debug.LogError(currentState + " hasn't been properly implemented yet!");
+				break;
+		}
 
+		return currentState;
+	}
 
-    public virtual void Start(MetaTask _meta) {
-        IsRunning = true;
-        meta = _meta;
-    }
+	public class FindPath : Task {
 
-    public virtual void Stop() {
-        IsRunning = false;
-        meta.FinishedTask();
-    }
+		private Node startNode;
+		private Node targetNode;
+		private Color32 debugColor;
+		private Heap<Node> openSet;
+		private HashSet<Node> closedSet;
+		private Vector2[] path;
+		private Vector2[] pathFull;
+		private float pathLength;
 
-    public class Move : Task {
+		public void SetStartAndTarget(Node _startNode, Node _targetNode) {
+			startNode = _startNode;
+			targetNode = _targetNode;
+		}
 
-        Vector3 target;
-        float speed;
-        Waypoint[] path;
-        Waypoint[] pathFull;
+		public Vector2[] GetLatestPath() {
+			return path;
+		}
 
-        int targetIndex = 0;
+		public FindPath(MultiTask _owner) : base(_owner){ }
 
-        Waypoint nextWaypoint;
-        Waypoint previousWaypoint;
-        Vector3 newPosition;
-        Vector3 diff;
-        Node nextWaypointTile;
-        Node prevWaypointTile;
-        int nextWaypointInFullPath;
-        float distance;
-        float timeAtPrevWaypoint;
-        float yieldTime;
+		public static bool TryGetPathLength(Node _from, Node _to, out float _length) { // very hax
+			FindPath _pathFinder = new FindPath(null);
 
+			_pathFinder.startNode = _from;
+			_pathFinder.targetNode = _to;
 
-        public Move(Vector3 _target, float _speed) {
-            target = _target;
-            speed = _speed;
-        }
+			State _state;
+			_pathFinder.Start(out _state);
+			if (_state == State.Abort){
+				_length = 0;
+				return false;
+			}
 
-        public override void Start(MetaTask _meta) {
-            PathRequestManager.RequestPath(_meta.Handler.Owner.transform.position, target, OnPathFound);
-            base.Start(_meta);
-        }
+			while (_state == State.Tick){
+				_pathFinder.Tick(out _state);
+			}
 
-        void OnPathFound(Waypoint[] newPath, Waypoint[] fullPath, bool pathSuccessful) {
-            if (!IsRunning) // if the task was cancelled during the pathfinding
-                return;
+			_length = _pathFinder.pathLength;
+			return _state == State.Done;
+		}
 
-            if (pathSuccessful) {
-                path = newPath;
-                pathFull = fullPath;
-                cachedRoutine = _PerformTask();
-                meta.Handler.Owner.StartCoroutine(cachedRoutine);
-            }
-            else {
-                Debug.LogWarning(meta.Handler.Owner.name + " couldn't find a path!");
-                Stop();
-            }
-        }
+		public override void Start(out State _state) {
+			if (GameGrid.GetInstance().DisplayWaypoints) {
+				DrawDebugMarker(startNode.WorldPos, Color.blue);
+				DrawDebugMarker(targetNode.WorldPos, Color.blue);
+			}
+			
+			if (!startNode.IsWalkable() || !targetNode.IsWalkable()){
+				Debug.Log("The start or target node was unwalkable! Skip!");
+				_state = State.Abort;
+				return;
+			}
 
-        IEnumerator _PerformTask() {
-            meta.Handler.Owner.CurrentTask = "Moving to " + target;
+			debugColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1.0f);
 
-            nextWaypoint = path[0];
-            previousWaypoint = new Waypoint(meta.Handler.Owner.transform.position, meta.Handler.Owner.transform.position);
-            nextWaypointTile = GameGrid.GetInstance().GetNodeFromWorldPos(nextWaypoint.CharacterPosition);
-            nextWaypointInFullPath = 0;
-            prevWaypointTile = GameGrid.GetInstance().GetNodeFromWorldPos(meta.Handler.Owner.transform.position);
-            distance = Vector3.Distance(previousWaypoint.CharacterPosition, nextWaypoint.CharacterPosition);
-            timeAtPrevWaypoint = Time.time;
-            yieldTime = 0;
-            
-            SendActorNewOrientation((nextWaypoint.CharacterPosition - meta.Handler.Owner.transform.position).normalized);
-            while (true) {
-                if (Mathf.Abs(nextWaypoint.CharacterPosition.x - meta.Handler.Owner.transform.position.x) < 0.01f && Mathf.Abs(nextWaypoint.CharacterPosition.y - meta.Handler.Owner.transform.position.y) < 0.01f) {
+			openSet = new Heap<Node>(GameGrid.GetArea());
+			closedSet = new HashSet<Node>();
 
-                    targetIndex++;
-                    if (targetIndex >= path.Length)
-                        break;
+			openSet.Add(startNode);
+			_state = State.Tick;
+		}
 
-                    // update variables
-                    previousWaypoint = nextWaypoint;
-                    prevWaypointTile = nextWaypointTile;
-                    nextWaypoint = path[targetIndex];
-                    nextWaypointTile = GameGrid.GetInstance().GetNodeFromWorldPos(nextWaypoint.CharacterPosition);
-                    distance = Vector3.Distance(previousWaypoint.CharacterPosition, nextWaypoint.CharacterPosition);
-                    
-                    for(int i = 0; i < pathFull.Length; i++){
-                        if((pathFull[i].CenterPosition - nextWaypoint.CenterPosition).magnitude > 0.05f)
-                            continue;
-                        nextWaypointInFullPath = i;
-                        break;
-                    }
+		public override void Tick(out State _state) {
+			if (openSet == null || openSet.Count == 0){
+				_state = State.Abort;
+				return;
+			}
 
-                    // update orientation
-                    SendActorNewOrientation((nextWaypoint.CharacterPosition - previousWaypoint.CharacterPosition).normalized);
+			Node _currentNode = openSet.RemoveFirst();
+			closedSet.Add(_currentNode);
 
-                    // force actor to lie down if the next tile is not adjacent to a wall (looks better)
-					ForceActorLieDown(!nextWaypointTile.IsWall && GameGrid.NeighborFinder.IsCardinalNeighborWall(nextWaypointTile.GridPos));
+			if (_currentNode != targetNode) {
+				Node[] _neighbors;
+				NeighborFinder.GetSurroundingNodes(_currentNode.GridPos, out _neighbors);
+				for (int i = 0; i < _neighbors.Length; i++){
+					Node _neighbor = _neighbors[i];
 
-                    // set time so movement is kept at a good pace
-                    timeAtPrevWaypoint = Time.time;
-                }
+					if (_neighbor == null){
+						continue;
+					}
+					if (!_neighbor.IsWalkable()) { 
+						continue;
+					}
+					if (_neighbor.GetOccupyingNodeObject() != null && _neighbor != targetNode) { 
+						continue;
+					}
+					if (closedSet.Contains(_neighbor)) { 
+						continue;
+					}
 
-                // create a slowdown-effect when approaching nextwaypoint
-                newPosition = Vector3.Lerp(previousWaypoint.CharacterPosition, nextWaypoint.CharacterPosition, Mathf.Clamp01((Time.time - timeAtPrevWaypoint) / (distance / speed)));
-                diff = newPosition - meta.Handler.Owner.transform.position; 
-                if (Vector3.Distance(newPosition, nextWaypoint.CharacterPosition) < Node.RADIUS)
-                    diff *= Mathf.Max(0.1f, Vector3.Distance(newPosition, nextWaypoint.CharacterPosition) / Node.RADIUS);
+					int _newMovementCostToNeighbour = _currentNode.GCost + GetDistance(_currentNode, _neighbor) + _neighbor.MovementPenalty;
+					if (_newMovementCostToNeighbour < _neighbor.GCost || !openSet.Contains(_neighbor)) {
+						_neighbor.GCost = _newMovementCostToNeighbour;
+						_neighbor.HCost = GetDistance(_neighbor, targetNode);
+						_neighbor.ParentNode = _currentNode;
 
-                meta.Handler.Owner.transform.position += diff;
-                yield return null;
-            }
+						if (!openSet.Contains(_neighbor)) { 
+							openSet.Add(_neighbor);
+						}
+						else { 
+							openSet.UpdateItem(_neighbor);
+						}
+					}
+				}
 
-            Success = true;
-            Stop();
-        }
+				_state = State.Tick;
+			}
+			else{
+				RetracePath(startNode, targetNode, out path, out pathFull, out pathLength);
+				_state = State.Done;
+			}
+		}
 
-        public override void Stop() {
-            if(cachedRoutine != null) // not sure if the "if" is dangerous...
-                meta.Handler.Owner.StopCoroutine(cachedRoutine);
-            base.Stop();
-        }
+		static int GetDistance(Node nodeA, Node nodeB) {
+			int distX = Mathf.Abs(nodeA.GridPos.x - nodeB.GridPos.x);
+			int distY = Mathf.Abs(nodeA.GridPos.y - nodeB.GridPos.y);
 
-        float directionAngle;
-        void SendActorNewOrientation(Vector3 _newDirection) {
-            directionAngle = (Mathf.Rad2Deg * Mathf.Atan2(-_newDirection.x, -_newDirection.y)) + 180;
-            
-            // up
-            if (directionAngle > 315 || directionAngle < 45)
-                meta.Handler.Owner.Orienter.SetOrientation(ActorOrientation.OrientationEnum.Up);
-            // right
-            else if (directionAngle > 45 && directionAngle < 135)
-                meta.Handler.Owner.Orienter.SetOrientation(ActorOrientation.OrientationEnum.Right);
-            // down
-            else if (directionAngle > 135 && directionAngle < 225)
-                meta.Handler.Owner.Orienter.SetOrientation(ActorOrientation.OrientationEnum.Down);
-            // left
-            else if (directionAngle > 225 && directionAngle < 315)
-                meta.Handler.Owner.Orienter.SetOrientation(ActorOrientation.OrientationEnum.Left);
-        }
+			if (distX > distY) { 
+				return 14 * distY + 10 * (distX - distY);
+			}
+			else { 
+				return 14 * distX + 10 * (distY - distX);
+			}
+		}
 
-        void ForceActorLieDown(bool _b) {
-            meta.Handler.Owner.Orienter.ForceLieDown(_b);
-        }
-    }
+		static void RetracePath(Node _startNode, Node _targetNode, out Vector2[] _newPath, out Vector2[] _fullPath, out float _pathLength) {
+			_pathLength = 0.0f;
 
-    public class TakeResource : Task {
+			List<Node> _path = new List<Node>();
+			Node _currentNode = _targetNode;
+			while (_currentNode != _startNode) {
+				Vector2 _direction = (_currentNode.ParentNode.WorldPos - _currentNode.WorldPos).normalized;
+				bool _isDirectionDiagonal = _direction.x != 0 && _direction.y != 0;
+				_pathLength += _isDirectionDiagonal ? 1.5f : 1.0f;
 
-        ResourceContainer toContainer;
-        ResourceContainer fromContainer;
-        float amount;
+				_path.Add(_currentNode);
+				_currentNode = _currentNode.ParentNode;
+			}
+			
+			_fullPath = MakeWaypointArray(_path);
+			Array.Reverse(_fullPath);
 
-        public TakeResource(TaskHandler _handler, ResourceContainer _to, ResourceContainer _from, float _amount, bool _parallelToPrevious) {
-            toContainer = _to;
-            fromContainer = _from;
-            amount = _amount;
-            ParallelToPrevious = _parallelToPrevious;
+			_newPath = SimplifyPath(_path);
+			Array.Reverse(_newPath);
 
-            _handler.ResourcesPendingFetch.Add(_from.Type);
-        }
-        public TakeResource(TaskHandler _handler, ResourceContainer _to, ResourceContainer _from, bool _parallelToPrevious) { 
-            toContainer = _to;
-            fromContainer = _from;
-            amount = 100000; // arbitrary
-            ParallelToPrevious = _parallelToPrevious;
+			if (GameGrid.GetInstance().DisplayPaths || GameGrid.GetInstance().DisplayWaypoints) {
+				for (int i = 1; i < _newPath.Length; i++) {
+					if (GameGrid.GetInstance().DisplayPaths) { 
+						Debug.DrawLine(_newPath[i - 1], _newPath[i], Color.yellow, 30);
+					}
+					if (GameGrid.GetInstance().DisplayWaypoints) {
+						DrawDebugMarker(_newPath[i - 1], Color.red);
 
-            _handler.ResourcesPendingFetch.Add(_from.Type);
-        }
+						if (i == _newPath.Length - 1) { 
+							DrawDebugMarker(_newPath[i], Color.red);
+						}
+					}
+				}
+			}
+		}
 
-        public override void Start(MetaTask _meta) {
-            base.Start(_meta);
+		static Vector2[] MakeWaypointArray(List<Node> _path){
+			Vector2[] _waypoints = new Vector2[_path.Count];
+			for (int i = 0; i < _path.Count; i++) {
+				_waypoints[i] = _path[i].WorldPos;
+			}
+			return _waypoints;
+		}
 
-            fromContainer.AmountUsingThis++;
-            cachedRoutine = _PerformTask();
-            if (toContainer.Type != fromContainer.Type) {
-                Debug.LogWarning(toContainer.name + " and " + fromContainer.name + " differed in resource type, but tried to make a transfer anyway! This shouldn't happen!");
-                Stop();
-                return;
-            }
-            meta.Handler.Owner.StartCoroutine(cachedRoutine);
-        }
+		static Vector2[] SimplifyPath(List<Node> _path) {
+			List<Vector2> _waypoints = new List<Vector2>();
+			Vector2 _dirFromLast = new Vector2();
+			Vector2 _dirToNext = new Vector2();
 
-        IEnumerator _PerformTask() {
-            meta.Handler.Owner.CurrentTask = "Fetching " + fromContainer.Type;
+			for (int i = 0; i < _path.Count - 1; i++) {
+				DrawDebugMarker(_path[i].WorldPos, Color.green);
 
-            float cap = Mathf.Min(toContainer.Max, toContainer._Current_ + amount);
-            while (toContainer._Current_ < cap) {
-                yield return new WaitForSeconds(1);
+				Vector2 _currentPos = _path[i].WorldPos;
+				Vector2 _nextPos = _path[i + 1].WorldPos;
 
-                // break if fail, or if it just dispenses caches (cheap trick, but should work)
-                if (!fromContainer.TryTakeResource(toContainer) || fromContainer.DispensesHeldCaches)
-                    break;
-            }
+				if (i < _path.Count - 1) {
+					_dirFromLast = _dirToNext;
+					_dirToNext = new Vector2(_currentPos.x - _nextPos.x, _currentPos.y - _nextPos.y).normalized;
+				}
 
-            Success = true;
-            Stop();
-        }
+				if (_path[i].WaitTime > 0) {
+				_waypoints[i] = _path[i].WorldPos;
+					_waypoints.Add(_currentPos);
+					continue;
+				}
 
-        public override void Stop() {
-            fromContainer.AmountUsingThis--;
-            meta.Handler.Owner.StopCoroutine(cachedRoutine);
-            meta.Handler.ResourcesPendingFetch.Remove(toContainer.Type);
-            base.Stop();
-        }
-    }
+				if (_dirToNext != _dirFromLast) {
+					_waypoints.Add(_currentPos);
+					continue;
+				}
 
-    public class ConsumeHeldResource : Task {
+				if (i == 0 || i == _path.Count - 1) {
+					_waypoints.Add(_currentPos);
+					continue;
+				}
+			}
 
-        ResourceContainer toContainer;
-        float heldResourceAmount;
+			return _waypoints.ToArray();
+		}
 
-        public ConsumeHeldResource(TaskHandler _handler, ResourceContainer _to, bool _parallelToPrevious) {
-            toContainer = _to;
-            ParallelToPrevious = _parallelToPrevious;
+		static void DrawDebugMarker(Vector3 _pos, Color _color){
+			Debug.DrawLine(_pos + new Vector3(0, 0.1f, 0), _pos + new Vector3(0.1f, 0, 0), _color, 30);
+			Debug.DrawLine(_pos + new Vector3(0.1f, 0, 0), _pos + new Vector3(0, -0.1f, 0), _color, 30);
+			Debug.DrawLine(_pos + new Vector3(0, -0.1f, 0), _pos + new Vector3(-0.1f, 0, 0), _color, 30);
+			Debug.DrawLine(_pos + new Vector3(-0.1f, 0, 0), _pos + new Vector3(0, 0.1f, 0), _color, 30);
+		}
+	}
 
-            switch (_to.Type) {
-                case ResourceManager.ResourceType.Water:
-                    heldResourceAmount = _to.OwnerPawn.HeldWater;
-                    break;
-                case ResourceManager.ResourceType.Food:
-                    heldResourceAmount = _to.OwnerPawn.HeldFood;
-                    break;
-            }
+	public class MoveAlongPath : Task {
 
-            _handler.ResourcesPendingFetch.Add(_to.Type);
-        }
+		private Vector3 target;
+		private Vector2 next;
+		private Vector2 prev;
+		private Node nextNode;
+		private Node prevNode;
+		private int waypointIndex;
+		private float timeAtPrev;
+		private float speed;
+		private Vector2[] path;
 
-        public override void Start(MetaTask _meta) {
-            base.Start(_meta);
+		public void SetSpeed(float _speed) {
+			speed = _speed;
+		}
 
-            cachedRoutine = _PerformTask();
-            if (heldResourceAmount == 0) {
-                Debug.LogWarning(toContainer.OwnerPawn.name + " tried to consume its Held" + toContainer.Type.ToString() + " but it was empty! This shouldn't happen!");
-                Stop();
-                return;
-            }
-            meta.Handler.Owner.StartCoroutine(cachedRoutine);
-        }
+		public MoveAlongPath(MultiTask _owner) : base(_owner){ }
 
-        IEnumerator _PerformTask() {
-            meta.Handler.Owner.CurrentTask = "Consuming Held" + toContainer.Type;
+		public override void Start(out State _state) {
+			path = owner.GetPathFindResult();
 
-            while (toContainer._Current_ < toContainer.Max) {
-                yield return new WaitForSeconds(1);
+			next = path[0];
+			prev = owner.TaskHandler.transform.position;
 
-                float _received = Mathf.Min(Actor.RATE_CONSUME, heldResourceAmount); 
-                heldResourceAmount -= _received;
-                toContainer.SetResourceCurrent(toContainer._Current_ + _received);
+			nextNode = GameGrid.GetInstance().GetNodeFromWorldPos(next);
+			prevNode = GameGrid.GetInstance().GetNodeFromWorldPos(prev);
 
-                switch (toContainer.Type) {
-                    case ResourceManager.ResourceType.Water:
-                        toContainer.OwnerPawn.HeldWater = heldResourceAmount;
-                        break;
-                    case ResourceManager.ResourceType.Food:
-                        toContainer.OwnerPawn.HeldFood = heldResourceAmount;
-                        break;
-                }
+			timeAtPrev = Time.time;
 
-                if (heldResourceAmount == 0)
-                    break;
-            }
+			SetCharacterOrientation((next - (Vector2)owner.TaskHandler.transform.position).normalized);
+			_state = State.Tick;
+		}
 
-            Success = true;
-            Stop();
-        }
+		public override void Tick(out State _state) {
+			if ((next - (Vector2)owner.TaskHandler.transform.position).sqrMagnitude < 0.01f) {
+				waypointIndex++;
+				if (waypointIndex >= path.Length) {
+					_state = State.Done;
+					return;
+				}
 
-        public override void Stop() {
-            meta.Handler.Owner.StopCoroutine(cachedRoutine);
-            meta.Handler.ResourcesPendingFetch.Remove(toContainer.Type);
-            base.Stop();
-        }
-    }
+				prev = next;
+				prevNode = nextNode;
+
+				next = path[waypointIndex];
+				nextNode = GameGrid.GetInstance().GetNodeFromWorldPos(next);
+
+				bool _isNextNodeWithoutCloseWalls = !nextNode.IsWall && !NeighborFinder.IsCardinalNeighborWall(nextNode.GridPos);
+				ForceCharacterLieDown(_isNextNodeWithoutCloseWalls);
+				SetCharacterOrientation((next - prev).normalized);
+
+				// set time so movement is kept at a good pace
+				timeAtPrev = Time.time;
+			}
+
+			owner.TaskHandler.transform.position += GetDeltaPos();
+			_state = State.Tick;
+		}
+
+		void SetCharacterOrientation(Vector3 _newDirection) {
+			float _directionAngle = (Mathf.Rad2Deg * Mathf.Atan2(-_newDirection.x, -_newDirection.y)) + 180;
+			owner.TaskHandler.Owner.GetOrienter().SetOrientation(_directionAngle);
+		}
+
+		void ForceCharacterLieDown(bool _b) {
+			owner.TaskHandler.Owner.GetOrienter().ForceLieDown(_b);
+		}
+
+		Vector3 GetDeltaPos() {
+			float _distance = (next - prev).magnitude;
+			Vector3 _newPos = Vector3.Lerp(prev, next, Mathf.Clamp01((Time.time - timeAtPrev) / (_distance / speed)));
+			Vector3 _diff = _newPos - owner.TaskHandler.transform.position;
+
+			float _dist = Vector3.Distance(_newPos, next);
+			if (_dist < GameGrid.TILE_RADIUS) { 
+				_diff *= Mathf.Max(0.1f, _dist / GameGrid.TILE_RADIUS);
+			}
+
+			return _diff;
+		}
+	}
 }

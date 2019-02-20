@@ -25,8 +25,8 @@ public class GridSelectShaderController : MonoBehaviour {
 
     void Start() {
 		Int2 resolution = new Int2();
-		resolution.x = GameGrid.SIZE.x * Node.RESOLUTION;
-		resolution.y = GameGrid.SIZE.y * Node.RESOLUTION;
+		resolution.x = GameGrid.SIZE.x * GameGrid.TILE_RESOLUTION;
+		resolution.y = GameGrid.SIZE.y * GameGrid.TILE_RESOLUTION;
 
 		rend.material.mainTexture = new Texture2D(resolution.x, resolution.y, TextureFormat.RGBA32, false);
         rend.material.mainTexture.wrapMode = TextureWrapMode.Clamp;

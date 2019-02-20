@@ -72,8 +72,8 @@ public class LampManager : Singleton<LampManager> {
 						continue;
 					}
 
-					int _pathLength;
-					bool _hasFoundPath = PathRequestManager.RequestPathLength(_node, _lamp.GetNode(), out _pathLength);
+					float _pathLength;
+					bool _hasFoundPath = Task.FindPath.TryGetPathLength(_node, _lamp.GetNode(), out _pathLength);
 					if (!_hasFoundPath){
 						continue;
 					}
@@ -82,7 +82,7 @@ public class LampManager : Singleton<LampManager> {
 					}
 
 					float _distanceRelativeToRange = Mathf.Clamp01((_node.WorldPos - _lamp.GetNode().WorldPos).magnitude / (float)_lamp.GetRadius());
-					float _lightFromLamp = (1.0f - _distanceRelativeToRange * ((float)_pathLength / (float)_lamp.GetRadius()));
+					float _lightFromLamp = 1.0f - _distanceRelativeToRange * ((float)_pathLength / (float)_lamp.GetRadius());
 
 					_lightColor = new Color32(
 						(byte)(_lightColor.r + _lamp.GetColor().r * _lightFromLamp),

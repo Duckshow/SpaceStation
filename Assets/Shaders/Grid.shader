@@ -47,30 +47,27 @@ Shader "Custom/Grid" {
 			struct appData {
 				float4 Vertex : POSITION;
 				float4 VColor : COLOR; // vertex color
-				float4 AssetCoord_0123 : TEXCOORD0;
-				// float4 AssetCoord_4 : TEXCOORD1;
+				float2 UV : TEXCOORD0;
 				float3 ColorIndices : TEXCOORD1;
 			};
 			struct v2f {
 				float4 Pos : POSITION;
 				float4 WorldPos : NORMAL;
 				fixed4 VColor : COLOR;
-				float4 UV01  : TEXCOORD0;
-				// float4 UV23  : TEXCOORD1;
-				// float2 UV4  : TEXCOORD2;
+				float4 UV  : TEXCOORD0;
 				int3 ColorIndices0to2 : TEXCOORD1;
 				int3 ColorIndices3to5 : TEXCOORD2;
 				int3 ColorIndices6to8 : TEXCOORD3;
 			};
 			
 			//-- VERT --//
-			float2 DecompressAssetCoordChannelToUV(int _channel){
-				return float2(
-					// 0xFFFF == 65535 == 1111111111111111 (16 bits)
-					(_channel 		& 0xFFFF) / TextureSizeX,
-					(_channel >> 16 & 0xFFFF) / TextureSizeY 
-				);
-			}
+			// float2 DecompressAssetCoordChannelToUV(int _channel){
+			// 	return float2(
+			// 		// 0xFFFF == 65535 == 1111111111111111 (16 bits)
+			// 		(_channel 		& 0xFFFF) / TextureSizeX,
+			// 		(_channel >> 16 & 0xFFFF) / TextureSizeY 
+			// 	);
+			// }
 			int3 DecompressColorIndices(int _channel){
 				return int3(
 					// 0xFF == 255 == 11111111 (8 bits)
@@ -85,11 +82,7 @@ Shader "Custom/Grid" {
 				o.WorldPos = mul(unity_ObjectToWorld, v.Vertex);
 				o.VColor = v.VColor;
 
-				o.UV01.xy = DecompressAssetCoordChannelToUV(v.AssetCoord_0123.x);
-				o.UV01.zw = DecompressAssetCoordChannelToUV(v.AssetCoord_0123.y);
-				// o.UV23.xy = DecompressAssetCoordChannelToUV(v.AssetCoord_0123.z);
-				// o.UV23.zw = DecompressAssetCoordChannelToUV(v.AssetCoord_0123.w);
-				// o.UV4.xy  = DecompressAssetCoordChannelToUV(v.AssetCoord_4.x);
+				o.UV.xy = v.UV;
 				o.ColorIndices0to2 = DecompressColorIndices(v.ColorIndices.x);
 				o.ColorIndices3to5 = DecompressColorIndices(v.ColorIndices.y);
 				o.ColorIndices6to8 = DecompressColorIndices(v.ColorIndices.z);
@@ -113,21 +106,17 @@ Shader "Custom/Grid" {
 				_emi = AddOrOverwriteColors(_emi, _sampleEmissive, 	_sampleEmissive.a);
 			}
 			fixed4 frag(v2f i) : COLOR {
-				TryApplyTextures(i.UV01.xy, tex, nrmTex, emTex, palTex); // bottom
-				TryApplyTextures(i.UV01.zw, tex, nrmTex, emTex, palTex); // top
-				// TryApplyTextures(i.UV23.xy, tex, nrmTex, emTex, palTex);
-				// TryApplyTextures(i.UV23.zw, tex, nrmTex, emTex, palTex);
-				// TryApplyTextures(i.UV4.xy, 	tex, nrmTex, emTex, palTex);
+				TryApplyTextures(i.UV, tex, nrmTex, emTex, palTex);
 
-				colorIndices[0] = floor(i.ColorIndices0to2.x);// floor(i.ColorIndices0to3.x);
-				colorIndices[1] = floor(i.ColorIndices0to2.y);// floor(i.ColorIndices0to3.y);
-				colorIndices[2] = floor(i.ColorIndices0to2.z);// floor(i.ColorIndices0to3.z);
-				colorIndices[3] = floor(i.ColorIndices3to5.x);// floor(i.ColorIndices0to3.w);
-				colorIndices[4] = floor(i.ColorIndices3to5.y);// floor(i.ColorIndices4to7.x);
-				colorIndices[5] = floor(i.ColorIndices3to5.z);// floor(i.ColorIndices4to7.y);
-				colorIndices[6] = floor(i.ColorIndices6to8.x);// floor(i.ColorIndices4to7.z);
-				colorIndices[7] = floor(i.ColorIndices6to8.y);// floor(i.ColorIndices4to7.w);
-				colorIndices[8] = floor(i.ColorIndices6to8.z);// floor(i.ColorIndices8to9.x);
+				colorIndices[0] = floor(i.ColorIndices0to2.x);
+				colorIndices[1] = floor(i.ColorIndices0to2.y);
+				colorIndices[2] = floor(i.ColorIndices0to2.z);
+				colorIndices[3] = floor(i.ColorIndices3to5.x);
+				colorIndices[4] = floor(i.ColorIndices3to5.y);
+				colorIndices[5] = floor(i.ColorIndices3to5.z);
+				colorIndices[6] = floor(i.ColorIndices6to8.x);
+				colorIndices[7] = floor(i.ColorIndices6to8.y);
+				colorIndices[8] = floor(i.ColorIndices6to8.z);
 
 
 				int _indexToUse = floor(palTex.r * 10.0);
