@@ -3,54 +3,54 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public static class NeighborFinder {
-	public static Dictionary<NeighborEnum, Node> CachedNeighbors = new Dictionary<NeighborEnum, Node>() { 
-		{ NeighborEnum.None, null },
-		{ NeighborEnum.TL, null },
-		{ NeighborEnum.T, null },
-		{ NeighborEnum.TR, null },
-		{ NeighborEnum.R, null },
-		{ NeighborEnum.BR, null },
-		{ NeighborEnum.B, null },
-		{ NeighborEnum.L, null }
+	public static Dictionary<Direction, Node> CachedNeighbors = new Dictionary<Direction, Node>() { 
+		{ Direction.None, null },
+		{ Direction.TL, null },
+		{ Direction.T, null },
+		{ Direction.TR, null },
+		{ Direction.R, null },
+		{ Direction.BR, null },
+		{ Direction.B, null },
+		{ Direction.L, null }
 	};
 
-	public static bool TryCacheNeighbor(Int2 _nodeGridPos, NeighborEnum _neighbor){
+	public static bool TryCacheNeighbor(Int2 _nodeGridPos, Direction _neighbor){
 		switch (_neighbor){
-			case NeighborEnum.All:
-				TryCacheNeighbor(_nodeGridPos, NeighborEnum.TL);
-				TryCacheNeighbor(_nodeGridPos, NeighborEnum.T);
-				TryCacheNeighbor(_nodeGridPos, NeighborEnum.TR);
-				TryCacheNeighbor(_nodeGridPos, NeighborEnum.R);
-				TryCacheNeighbor(_nodeGridPos, NeighborEnum.BR);
-				TryCacheNeighbor(_nodeGridPos, NeighborEnum.B);
-				TryCacheNeighbor(_nodeGridPos, NeighborEnum.BL);
-				TryCacheNeighbor(_nodeGridPos, NeighborEnum.L);
+			case Direction.All:
+				TryCacheNeighbor(_nodeGridPos, Direction.TL);
+				TryCacheNeighbor(_nodeGridPos, Direction.T);
+				TryCacheNeighbor(_nodeGridPos, Direction.TR);
+				TryCacheNeighbor(_nodeGridPos, Direction.R);
+				TryCacheNeighbor(_nodeGridPos, Direction.BR);
+				TryCacheNeighbor(_nodeGridPos, Direction.B);
+				TryCacheNeighbor(_nodeGridPos, Direction.BL);
+				TryCacheNeighbor(_nodeGridPos, Direction.L);
 				return true;
-			case NeighborEnum.None:
+			case Direction.None:
 				_nodeGridPos = Int2.Zero;
 				break;
-			case NeighborEnum.TL:
+			case Direction.TL:
 				_nodeGridPos += Int2.UpLeft;
 				break;
-			case NeighborEnum.T:
+			case Direction.T:
 				_nodeGridPos += Int2.Up;
 				break;
-			case NeighborEnum.TR:
+			case Direction.TR:
 				_nodeGridPos += Int2.UpRight;
 				break;
-			case NeighborEnum.R:
+			case Direction.R:
 				_nodeGridPos += Int2.Right;
 				break;
-			case NeighborEnum.BR:
+			case Direction.BR:
 				_nodeGridPos += Int2.DownRight;
 				break;
-			case NeighborEnum.B:
+			case Direction.B:
 				_nodeGridPos += Int2.Down;
 				break;
-			case NeighborEnum.BL:
+			case Direction.BL:
 				_nodeGridPos += Int2.DownLeft;
 				break;
-			case NeighborEnum.L:
+			case Direction.L:
 				_nodeGridPos += Int2.Left;
 				break;
 			default:
@@ -65,14 +65,14 @@ public static class NeighborFinder {
 	}
 
 	public static bool IsCardinalNeighborWall(Int2 _nodeGridPos) {
-		TryCacheNeighbor(_nodeGridPos, NeighborEnum.T);
-		TryCacheNeighbor(_nodeGridPos, NeighborEnum.B);
-		TryCacheNeighbor(_nodeGridPos, NeighborEnum.L);
-		TryCacheNeighbor(_nodeGridPos, NeighborEnum.R);
-		bool _isWallT = CachedNeighbors[NeighborEnum.T].IsWall;
-		bool _isWallB = CachedNeighbors[NeighborEnum.B].IsWall;
-		bool _isWallL = CachedNeighbors[NeighborEnum.L].IsWall;
-		bool _isWallR = CachedNeighbors[NeighborEnum.R].IsWall;
+		TryCacheNeighbor(_nodeGridPos, Direction.T);
+		TryCacheNeighbor(_nodeGridPos, Direction.B);
+		TryCacheNeighbor(_nodeGridPos, Direction.L);
+		TryCacheNeighbor(_nodeGridPos, Direction.R);
+		bool _isWallT = CachedNeighbors[Direction.T].IsWall;
+		bool _isWallB = CachedNeighbors[Direction.B].IsWall;
+		bool _isWallL = CachedNeighbors[Direction.L].IsWall;
+		bool _isWallR = CachedNeighbors[Direction.R].IsWall;
 		return _isWallT || _isWallB || _isWallL || _isWallR;
 	}
 

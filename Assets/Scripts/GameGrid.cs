@@ -53,7 +53,7 @@ public class GameGrid : Singleton<GameGrid> {
 	public override void AwakeEarly() {
 		base.AwakeEarly();
 
-		transform.position = new Vector3(0.25f, 0.25f, 0.0f);
+		transform.position = new Vector3(0.5f, 0.5f, 0.0f);
 
 		GameGridMesh.InitStatic();
 		meshBackground.Init(Sorting.Back, GameGridMesh.RenderMode.Walls);
@@ -124,13 +124,13 @@ public class GameGrid : Singleton<GameGrid> {
 					_node.TrySetIsWall(true);
 				}
 
-				// int _roomSize = 4;
-				// if ((x == SIZE.x * 0.5f - _roomSize || x == SIZE.x * 0.5f + _roomSize) && y <= SIZE.y * 0.5f + _roomSize && y >= SIZE.y * 0.5f - _roomSize){
-				// 	_node.TrySetIsWall(true);
-				// }
-				// if ((y == SIZE.y * 0.5f - _roomSize || y == SIZE.y * 0.5f + _roomSize) && x <= SIZE.x * 0.5f + _roomSize && x >= SIZE.x * 0.5f - _roomSize){
-				// 	_node.TrySetIsWall(true);
-				// }
+				int _roomSize = 4;
+				if ((x == SIZE.x * 0.5f - _roomSize || x == SIZE.x * 0.5f + _roomSize) && y <= SIZE.y * 0.5f + _roomSize && y >= SIZE.y * 0.5f - _roomSize){
+					_node.TrySetIsWall(true);
+				}
+				if ((y == SIZE.y * 0.5f - _roomSize || y == SIZE.y * 0.5f + _roomSize) && x <= SIZE.x * 0.5f + _roomSize && x >= SIZE.x * 0.5f - _roomSize){
+					_node.TrySetIsWall(true);
+				}
 
 				_node.ScheduleUpdateGraphicsForSurroundingTiles();
 			}
@@ -151,8 +151,8 @@ public class GameGrid : Singleton<GameGrid> {
 				break;
 		}
 
-		float percentX = (_worldPos.x - (TILE_RADIUS + _nodeOffset) + SIZE.x * 0.5f) / (float)SIZE.x;
-		float percentY = (_worldPos.y - (TILE_RADIUS + _nodeOffset) + SIZE.y * 0.5f) / (float)SIZE.y;
+		float percentX = (_worldPos.x - (TILE_DIAMETER + _nodeOffset) + SIZE.x * 0.5f) / (float)SIZE.x;
+		float percentY = (_worldPos.y - (TILE_DIAMETER + _nodeOffset) + SIZE.y * 0.5f) / (float)SIZE.y;
 		percentX = Mathf.Clamp01(percentX);
 		percentY = Mathf.Clamp01(percentY);
 
@@ -178,7 +178,7 @@ public class GameGrid : Singleton<GameGrid> {
 
     public Node GetClosestFreeNode(Vector3 _worldPos) {
         Node _node = GetNodeFromWorldPos(_worldPos);
-		if (_node.IsWalkable()) { 
+		if (_node.GetIsWalkable()) { 
 			return _node;
 		}
 
@@ -192,7 +192,7 @@ public class GameGrid : Singleton<GameGrid> {
 
             // iterate over _neighbours until a free node is found
             for (int i = _lastCount; i < _neighbours.Count; i++) {
-				if (_neighbours[i].IsWalkable() && _neighbours[i].GetOccupyingNodeObject() == null) { 
+				if (_neighbours[i].GetIsWalkable() && _neighbours[i].GetOccupyingNodeObject() == null) { 
 					return _neighbours[i];
 				}
             }
@@ -252,27 +252,30 @@ public class GameGrid : Singleton<GameGrid> {
         return null;
     }
 
-    public Node GetRandomWalkableNode(Node _exclude = null) {
-        Node _node = null;
-        int _x = 0;
-        int _y = 0;
+    public Node GetRandomWalkableNode(Node _node) {
+		RoomManager.Room _room = RoomManager.GetInstance().GetRoom(_node.RoomIndex);
+		Int2 _randomNodeGridPos;
+		Node _randomNode;
 
-        do {
-            _x = (int)Random.Range(0, SIZE.x);
-            _y = (int)Random.Range(0, SIZE.y);
+		do{
+			_randomNodeGridPos = new Int2(Random.Range(0, GameGrid.SIZE.x), Random.Range(0, GameGrid.SIZE.y));
+			_randomNode = TryGetNode(_randomNodeGridPos);
+		} while (_randomNodeGridPos == _node.GridPos || _randomNode == null || !_randomNode.GetIsWalkable());
+		
+		// do{
+		// 	_randomNodeGridPos = _room.NodeGridPositions[Random.Range(0, _room.NodeGridPositions.Count)];
+		// 	_randomNode = TryGetNode(_randomNodeGridPos);
+		// } while (_randomNodeGridPos == _node.GridPos || _randomNode == null || !_randomNode.GetIsWalkable());
 
-            _node = nodeGrid[_x, _y];
-        } while (!_node.IsWalkable());
-
-        return _node;
-    }
+		return _randomNode;
+	}
     
     void OnDrawGizmos() {
         Gizmos.DrawWireCube(transform.position, new Vector3(SIZE.x, SIZE.y, 1));
 
         if (nodeGrid != null && DisplayGridGizmos) {
             foreach (Node _node in nodeGrid) {
-                Gizmos.color = _node.IsWalkable() ? Color.white : Color.red;
+                Gizmos.color = _node.GetIsWalkable() ? Color.white : Color.red;
                 Gizmos.DrawWireCube(_node.WorldPos, Vector3.one * 0.1f);
             }
         }

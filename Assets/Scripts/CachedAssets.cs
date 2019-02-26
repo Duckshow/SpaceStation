@@ -195,59 +195,56 @@ public class CachedAssets : MonoBehaviour {
 		bool _hasNodeBR = _nodeBR != null;
 		bool _hasNodeBL = _nodeBL != null;
 
-		GameGridInteractiveObject _interactiveObjectTL = _hasNodeTL ? _nodeTL.InteractiveObject : null;
-		GameGridInteractiveObject _interactiveObjectTR = _hasNodeTR ? _nodeTR.InteractiveObject : null;
-		GameGridInteractiveObject _interactiveObjectBR = _hasNodeBR ? _nodeBR.InteractiveObject : null;
-		GameGridInteractiveObject _interactiveObjectBL = _hasNodeBL ? _nodeBL.InteractiveObject : null;
+		Node.InteractiveObject _interactiveObjectTL = _hasNodeTL ? _nodeTL.AttachedInteractiveObject : null;
+		Node.InteractiveObject _interactiveObjectTR = _hasNodeTR ? _nodeTR.AttachedInteractiveObject : null;
+		Node.InteractiveObject _interactiveObjectBR = _hasNodeBR ? _nodeBR.AttachedInteractiveObject : null;
+		Node.InteractiveObject _interactiveObjectBL = _hasNodeBL ? _nodeBL.AttachedInteractiveObject : null;
 
-		GameGridInteractiveObject _interactiveObjectTemporaryTL = _hasNodeTL ? _nodeTL.InteractiveObjectTemporary : null;
-		GameGridInteractiveObject _interactiveObjectTemporaryTR = _hasNodeTR ? _nodeTR.InteractiveObjectTemporary : null;
-		GameGridInteractiveObject _interactiveObjectTemporaryBR = _hasNodeBR ? _nodeBR.InteractiveObjectTemporary : null;
-		GameGridInteractiveObject _interactiveObjectTemporaryBL = _hasNodeBL ? _nodeBL.InteractiveObjectTemporary : null;
+		Node.InteractiveObject _interactiveObjectTemporaryTL = _hasNodeTL ? _nodeTL.AttachedInteractiveObjectTemporary : null;
+		Node.InteractiveObject _interactiveObjectTemporaryTR = _hasNodeTR ? _nodeTR.AttachedInteractiveObjectTemporary : null;
+		Node.InteractiveObject _interactiveObjectTemporaryBR = _hasNodeBR ? _nodeBR.AttachedInteractiveObjectTemporary : null;
+		Node.InteractiveObject _interactiveObjectTemporaryBL = _hasNodeBL ? _nodeBL.AttachedInteractiveObjectTemporary : null;
 
-		bool _useInteractiveObjectTemporaryTL = _hasNodeTL && _nodeTL.UseInteractiveObjectTemporary;
-		bool _useInteractiveObjectTemporaryTR = _hasNodeTR && _nodeTR.UseInteractiveObjectTemporary;
-		bool _useInteractiveObjectTemporaryBR = _hasNodeBR && _nodeBR.UseInteractiveObjectTemporary;
-		bool _useInteractiveObjectTemporaryBL = _hasNodeBL && _nodeBL.UseInteractiveObjectTemporary;
+		bool _useInteractiveObjectTemporaryTL = _hasNodeTL && _nodeTL.UseAttachedInteractiveObjectTemporary;
+		bool _useInteractiveObjectTemporaryTR = _hasNodeTR && _nodeTR.UseAttachedInteractiveObjectTemporary;
+		bool _useInteractiveObjectTemporaryBR = _hasNodeBR && _nodeBR.UseAttachedInteractiveObjectTemporary;
+		bool _useInteractiveObjectTemporaryBL = _hasNodeBL && _nodeBL.UseAttachedInteractiveObjectTemporary;
 
-		GameGridInteractiveObject _foundInteractive = null;
-		NeighborEnum _foundInteractiveDirection = NeighborEnum.None;
-		Rotation _foundInteractiveRotation = Rotation.None;
+		Node.InteractiveObject _foundInteractive = null;
+		Direction _foundInteractiveDirection = Direction.None;
 		Node _foundInteractivesNode = null;
 
-		if (TryGetInteractiveObject(_nodeTL, out _foundInteractive, out _foundInteractiveRotation)){
-			_foundInteractiveDirection = NeighborEnum.TL;
+		if (TryGetInteractiveObject(_nodeTL, out _foundInteractive)){
+			_foundInteractiveDirection = Direction.TL;
 			_foundInteractivesNode = _nodeTL;
 		}
-		else if (TryGetInteractiveObject(_nodeTR, out _foundInteractive, out _foundInteractiveRotation)){
-			_foundInteractiveDirection = NeighborEnum.TR;
+		else if (TryGetInteractiveObject(_nodeTR, out _foundInteractive)){
+			_foundInteractiveDirection = Direction.TR;
 			_foundInteractivesNode = _nodeTR;
 		}
-		else if (TryGetInteractiveObject(_nodeBR, out _foundInteractive, out _foundInteractiveRotation)){
-			_foundInteractiveDirection = NeighborEnum.BR;
+		else if (TryGetInteractiveObject(_nodeBR, out _foundInteractive)){
+			_foundInteractiveDirection = Direction.BR;
 			_foundInteractivesNode = _nodeBR;
 		}
-		else if (TryGetInteractiveObject(_nodeBL, out _foundInteractive, out _foundInteractiveRotation)){
-			_foundInteractiveDirection = NeighborEnum.BL;
+		else if (TryGetInteractiveObject(_nodeBL, out _foundInteractive)){
+			_foundInteractiveDirection = Direction.BL;
 			_foundInteractivesNode = _nodeBL;
 		}
 
 		if (_foundInteractive != null){
-			return _foundInteractive.GetTileAssetPosForDefaultState(_sorting, _foundInteractiveRotation, _foundInteractiveDirection);
+			return _foundInteractive.GetTileAssetPos(_sorting, _foundInteractiveDirection);
 		}
 
 		return DefaultAssets.Empty;
 	}
 
-	bool TryGetInteractiveObject(Node _node, out GameGridInteractiveObject _foundInteractive, out Rotation _foundInteractiveRotation) {
+	bool TryGetInteractiveObject(Node _node, out Node.InteractiveObject _foundInteractive) {
 		if (_node == null){
 			_foundInteractive = null;
-			_foundInteractiveRotation = Rotation.None;
 			return false;
 		}
 
-		_foundInteractive = _node.UseInteractiveObjectTemporary ? _node.InteractiveObjectTemporary : _node.InteractiveObject;
-		_foundInteractiveRotation = _node.UseInteractiveObjectTemporary ? _node.InteractiveObjectRotationTemporary : _node.InteractiveObjectRotation;
+		_foundInteractive = _node.UseAttachedInteractiveObjectTemporary ? _node.AttachedInteractiveObjectTemporary : _node.AttachedInteractiveObject;
 		return _foundInteractive != null;
 	}
 }

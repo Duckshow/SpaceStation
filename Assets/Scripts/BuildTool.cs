@@ -62,10 +62,11 @@ public class BuildTool : Singleton<BuildTool> {
 	}
 
 	[System.Serializable]
-	public class ToolSettingsPlaceInteractives : ToolSettings {
+	public abstract class ToolSettingsPlaceInteractives : ToolSettings {
 
-		public GameGridInteractiveObject Door;
 		private Rotation currentRotation;
+
+		public abstract InteractiveObjectAsset GetAsset();
 
 		public override GameGrid.GridType GetGridType(){
 			return GameGrid.GridType.NodeGrid;
@@ -76,20 +77,20 @@ public class BuildTool : Singleton<BuildTool> {
 				return false;
 			}
 
-			NeighborFinder.TryCacheNeighbor(_node.GridPos, NeighborEnum.T);
-			NeighborFinder.TryCacheNeighbor(_node.GridPos, NeighborEnum.B);
-			Node _nodeT = NeighborFinder.CachedNeighbors[NeighborEnum.T];
-			Node _nodeB = NeighborFinder.CachedNeighbors[NeighborEnum.B];
-			if (_nodeT != null && _nodeB != null &&  _nodeT.IsWall && _nodeB.IsWall && _nodeT.InteractiveObject == null && _nodeB.InteractiveObject == null){
+			NeighborFinder.TryCacheNeighbor(_node.GridPos, Direction.T);
+			NeighborFinder.TryCacheNeighbor(_node.GridPos, Direction.B);
+			Node _nodeT = NeighborFinder.CachedNeighbors[Direction.T];
+			Node _nodeB = NeighborFinder.CachedNeighbors[Direction.B];
+			if (_nodeT != null && _nodeB != null &&  _nodeT.IsWall && _nodeB.IsWall && _nodeT.AttachedInteractiveObject == null && _nodeB.AttachedInteractiveObject == null){
 				currentRotation = Rotation.Left;
 				return true;
 			}
 
-			NeighborFinder.TryCacheNeighbor(_node.GridPos, NeighborEnum.L);
-			NeighborFinder.TryCacheNeighbor(_node.GridPos, NeighborEnum.R);
-			Node _nodeL = NeighborFinder.CachedNeighbors[NeighborEnum.L];
-			Node _nodeR = NeighborFinder.CachedNeighbors[NeighborEnum.R];
-			if (_nodeL != null && _nodeR != null && _nodeL.IsWall && _nodeR.IsWall && _nodeL.InteractiveObject == null && _nodeR.InteractiveObject == null){
+			NeighborFinder.TryCacheNeighbor(_node.GridPos, Direction.L);
+			NeighborFinder.TryCacheNeighbor(_node.GridPos, Direction.R);
+			Node _nodeL = NeighborFinder.CachedNeighbors[Direction.L];
+			Node _nodeR = NeighborFinder.CachedNeighbors[Direction.R];
+			if (_nodeL != null && _nodeR != null && _nodeL.IsWall && _nodeR.IsWall && _nodeL.AttachedInteractiveObject == null && _nodeR.AttachedInteractiveObject == null){
 				currentRotation = Rotation.Down;
 				return true;
 			}
@@ -102,19 +103,34 @@ public class BuildTool : Singleton<BuildTool> {
 
 
 			if (_isPermanent) {
-				_node.TrySetInteractiveObject(_isDeleting ? null : Door, currentRotation);
+				_node.TrySetInteractiveObject(_isDeleting ? null : GetAsset(), currentRotation);
 			}
 			else{
-				_node.TrySetInteractiveObjectTemporary(Door, currentRotation);
+				_node.TrySetInteractiveObjectTemporary(GetAsset(), currentRotation);
 			}
 		}
 	}
 
+	[System.Serializable]
+	public class ToolSettingsPlaceDoors : ToolSettingsPlaceInteractives {
+
+		public InteractiveObjectAsset Door;
+		public override InteractiveObjectAsset GetAsset() { return Door; }
+	}
+
+	[System.Serializable]
+	public class ToolSettingsPlaceAirlocks : ToolSettingsPlaceInteractives {
+
+		public InteractiveObjectAsset Airlock;
+		public override InteractiveObjectAsset GetAsset() { return Airlock; }
+	}
+
 	public ToolSettingsBuild Building = new ToolSettingsBuild();
 	public ToolSettingsColor Coloring = new ToolSettingsColor();
-	public ToolSettingsPlaceInteractives PlaceInteractives = new ToolSettingsPlaceInteractives();
+	public ToolSettingsPlaceDoors PlaceDoors = new ToolSettingsPlaceDoors();
+	public ToolSettingsPlaceAirlocks PlaceAirlocks = new ToolSettingsPlaceAirlocks();
 
-	public enum ToolMode { None, Build, Color, PlaceInteractives }
+	public enum ToolMode { None, Build, Color, PlaceDoors, PlaceAirlocks }
 	private ToolMode currentToolMode = ToolMode.Build;
 
 	public ToolMode GetCurrentToolMode() {
@@ -133,8 +149,10 @@ public class BuildTool : Singleton<BuildTool> {
 				return Building;
 			case ToolMode.Color:
 				return Coloring;
-			case ToolMode.PlaceInteractives:
-				return PlaceInteractives;
+			case ToolMode.PlaceDoors:
+				return PlaceDoors;
+			case ToolMode.PlaceAirlocks:
+				return PlaceAirlocks;
 			default:
 				Debug.LogError(currentToolMode + " hasn't been properly implemented yet!");
 				return null;

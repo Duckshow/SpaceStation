@@ -12,12 +12,52 @@ public static class Extensions {
 	public static bool Equals(this Color32 c0, Color c1) {
 		return c0.r == c1.r && c0.g == c1.g && c0.b == c1.b && c0.a == c1.a;
 	}
+
+	// public static Direction GetDirection(Int2 _from, Int2 _to) {
+	// 	Int2 _diff = _to - _from;
+
+	// 	if (_diff.x > 0) { 
+	// 		if (_diff.y > 0){
+	// 			return Direction.TR;
+	// 		}
+	// 		else if (_diff.y == 0){
+	// 			return Direction.R;
+	// 		}
+	// 		else if (_diff.y < 0){
+	// 			return Direction.BR;
+	// 		}
+	// 	}
+	// 	else if (_diff.x == 0) { 
+	// 		if (_diff.y > 0){
+	// 			return Direction.T;
+	// 		}
+	// 		else if (_diff.y == 0){
+	// 			return Direction.None;
+	// 		}
+	// 		else if (_diff.y < 0){
+	// 			return Direction.B;
+	// 		}
+	// 	}
+	// 	else if (_diff.x < 0) { 
+	// 		if (_diff.y > 0){
+	// 			return Direction.TL;
+	// 		}
+	// 		else if (_diff.y == 0){
+	// 			return Direction.L;
+	// 		}
+	// 		else if (_diff.y < 0){
+	// 			return Direction.BL;
+	// 		}
+	// 	}
+
+	// 	return Direction.None;
+	// }
 }
 
 public enum XYEnum { X, Y }
-public enum NeighborEnum { None, All, TL, T, TR, R, BR, B, BL, L }
 public enum Sorting { None, Back, Front }
 public enum Rotation { None, Up, Right, Down, Left }
+public enum Direction { None, All, TL, T, TR, R, BR, B, BL, L }
 
 [System.Serializable] public struct Float2 {
 	public float x;

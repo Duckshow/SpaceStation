@@ -16,6 +16,9 @@ public class MultiTask : IHeapItem<MultiTask> {
 	private Task.State currentTaskState;
 	private float timeStarted = 0;
 
+	public delegate void DefaultDelegate();
+	public DefaultDelegate OnAbort;
+
 	// possible tasks
 	private Task.FindPath taskFindPath;
 	private Task.MoveAlongPath taskMoveAlongPath;
@@ -31,8 +34,9 @@ public class MultiTask : IHeapItem<MultiTask> {
 		_multiTask.SetTasks(new Queue<Func<Task.State>>(new Func<Task.State>[]{
 			() => {
 				Node _currentNode = GameGrid.GetInstance().GetNodeFromWorldPos(_taskHandler.transform.position);
-				Node _randomNode = GameGrid.GetInstance().GetRandomWalkableNode(_exclude: _currentNode);
-				_multiTask.taskFindPath.SetStartAndTarget(_currentNode, GameGrid.GetInstance().GetClosestFreeNode(_randomNode));
+				Node _randomNode = GameGrid.GetInstance().GetClosestFreeNode(GameGrid.GetInstance().GetRandomWalkableNode(_currentNode));
+
+				_multiTask.taskFindPath.SetStartAndTarget(_currentNode, _randomNode);
 				_multiTask.taskMoveAlongPath.SetSpeed(1.0f + (float)_multiTask.Priority);
 				return Task.State.Done;
 			},

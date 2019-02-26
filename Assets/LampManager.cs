@@ -81,14 +81,13 @@ public class LampManager : Singleton<LampManager> {
 						continue;
 					}
 
-					float _distanceRelativeToRange = Mathf.Clamp01((_node.WorldPos - _lamp.GetNode().WorldPos).magnitude / (float)_lamp.GetRadius());
-					float _lightFromLamp = 1.0f - _distanceRelativeToRange * ((float)_pathLength / (float)_lamp.GetRadius());
+					float _lightFromLamp = 1.0f - _pathLength / (float)_lamp.GetRadius();
 
 					_lightColor = new Color32(
-						(byte)(_lightColor.r + _lamp.GetColor().r * _lightFromLamp),
-						(byte)(_lightColor.g + _lamp.GetColor().g * _lightFromLamp),
-						(byte)(_lightColor.b + _lamp.GetColor().b * _lightFromLamp),
-						(byte)(_lightColor.a + 255 * _lightFromLamp)
+						(byte)(_lamp.GetColor().r * _lightFromLamp),
+						(byte)(_lamp.GetColor().g * _lightFromLamp),
+						(byte)(_lamp.GetColor().b * _lightFromLamp),
+						(byte)(255 * _lightFromLamp)
 					);
 				}
 

@@ -53,6 +53,9 @@ public class TaskHandler : EventOwner {
 		}
 		else{
 			Debug.LogWarning((Owner.name + " failed to complete multitask!").Color(Color.red));
+			if (_multiTask.OnAbort != null){
+				_multiTask.OnAbort();
+			}
 		}
 
 		CurrentMultiTask = null;

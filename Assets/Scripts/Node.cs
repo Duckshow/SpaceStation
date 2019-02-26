@@ -2,7 +2,88 @@
 using System;
 using System.Collections.Generic;
 
-public class Node : IHeapItem<Node> {
+public class Node {
+
+	public class InteractiveObject {
+		public enum State { None, Default, OpenLeft, OpenRight, OpenAbove, OpenBelow }
+
+		public InteractiveObjectAsset Asset { get; private set; }
+		public State CurrentState { get; private set; }
+		public Rotation Rotation { get; private set; }
+
+		private Node node;
+
+
+		public InteractiveObject(Node _node, InteractiveObjectAsset _asset, Rotation _rotation) {
+			node = _node;
+			Asset = _asset;
+			Rotation = _rotation;
+			CurrentState = State.Default;
+		}
+
+		public float GetWaitTime() {
+			return Asset.WaitTime;
+		}
+		
+		public bool GetIsWalkable() {
+			return Asset.IsWalkable;
+		}
+
+		public Int2 GetTileAssetPos(Sorting _sorting, Direction _direction) {
+			switch (CurrentState){
+				case State.None:
+					return Int2.Zero;
+				case State.Default:
+					return Asset.GetTileAssetPosForDefaultState(_sorting, Rotation, _direction);
+				case State.OpenLeft:
+				case State.OpenBelow:
+					return Asset.GetTileAssetPosForOpenLeftOrBelow(_sorting, Rotation, _direction);
+				case State.OpenRight:
+				case State.OpenAbove:
+					return Asset.GetTileAssetPosForOpenRightOrAbove(_sorting, Rotation, _direction);
+				default:
+					Debug.LogError(CurrentState + " hasn't been properly implemented yet!");
+					return Int2.Zero;
+			}
+		}
+
+		public void OnCharacterApproachingOrDeparting(Character character) {
+			State _oldState = CurrentState;
+
+			Vector2 _dir = ((Vector2)character.transform.position - node.WorldPos).normalized;
+			bool _isCharacterToTheLeft = _dir.x < -0.5f;
+			bool _isCharacterToTheRight = _dir.x > 0.5f;
+			bool _isCharacterAbove = _dir.y > 0.5f;
+			bool _isCharacterBelow = _dir.y < -0.5f;
+
+			if (_isCharacterToTheLeft && Asset.OnCharacterIsLeft != State.None){
+				CurrentState = Asset.OnCharacterIsLeft;
+			}
+			else if (_isCharacterToTheRight && Asset.OnCharacterIsRight != State.None){
+				CurrentState = Asset.OnCharacterIsRight;
+			}
+			else if (_isCharacterAbove && Asset.OnCharacterIsAbove != State.None){
+				CurrentState = Asset.OnCharacterIsAbove;
+			}
+			else if (_isCharacterBelow && Asset.OnCharacterIsBelow != State.None){
+				CurrentState = Asset.OnCharacterIsBelow;
+			}
+
+			if (CurrentState != _oldState){
+				node.ScheduleUpdateGraphicsForSurroundingTiles();
+			}
+		}
+
+		public void OnCharacterApproachOrDepartCancelled(Character _character) {
+			CurrentState = State.Default;
+			node.ScheduleUpdateGraphicsForSurroundingTiles();
+		}
+
+		public void OnCharacterApproachOrDepartFinished(Character character) {
+			CurrentState = State.Default;
+			node.ScheduleUpdateGraphicsForSurroundingTiles();
+		}
+	}
 
 	public bool HasWallT;
 	public bool HasWallR;
@@ -20,17 +101,23 @@ public class Node : IHeapItem<Node> {
 	public bool IsWallTemporarily { get; private set; }
 	public bool UseIsWallTemporary { get; private set; }
 
-	public GameGridInteractiveObject InteractiveObject { get; private set; }
-	public GameGridInteractiveObject InteractiveObjectTemporary { get; private set; }
-	public bool UseInteractiveObjectTemporary { get; private set; }
-	public Rotation InteractiveObjectRotation { get; private set; }
-	public Rotation InteractiveObjectRotationTemporary { get; private set; }
+	public bool UseAttachedInteractiveObjectTemporary { get; private set; }
+	public InteractiveObject AttachedInteractiveObject { get; private set; }
+	public InteractiveObject AttachedInteractiveObjectTemporary { get; private set; }
 
 	private Color32 lightingTL = new Color32(0, 0, 0, 0);
 	private Color32 lightingTR = new Color32(0, 0, 0, 0);
 	private Color32 lightingBR = new Color32(0, 0, 0, 0);
 	private Color32 lightingBL = new Color32(0, 0, 0, 0);
 
+
+	public float GetWaitTime() { 
+		return AttachedInteractiveObject != null ? AttachedInteractiveObject.GetWaitTime() : 0.0f; 
+	}
+	
+	public bool GetIsWalkable() { 
+		return !IsWall || (AttachedInteractiveObject != null && AttachedInteractiveObject.GetIsWalkable()); 
+	}
 
 	public Color32 GetLighting() { 
 		if (!lightingTL.Equals(lightingTR) || !lightingTL.Equals(lightingBR) || !lightingTL.Equals(lightingBL)){
@@ -52,41 +139,41 @@ public class Node : IHeapItem<Node> {
 		Node _nodeTL, _nodeT, _nodeTR, _nodeR, _nodeBR, _nodeB, _nodeBL, _nodeL;
 		NeighborFinder.GetSurroundingNodes(GridPos, out _nodeTL, out _nodeT, out _nodeTR, out _nodeR, out _nodeBR, out _nodeB, out _nodeBL, out _nodeL);
 
-		lightingTL = GetLightingFromDirection(NeighborEnum.TL);
-		lightingTR = GetLightingFromDirection(NeighborEnum.TR);
-		lightingBR = GetLightingFromDirection(NeighborEnum.BR);
-		lightingBL = GetLightingFromDirection(NeighborEnum.BL);
+		lightingTL = GetLightingFromDirection(Direction.TL);
+		lightingTR = GetLightingFromDirection(Direction.TR);
+		lightingBR = GetLightingFromDirection(Direction.BR);
+		lightingBL = GetLightingFromDirection(Direction.BL);
 
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-	Color32 GetLightingFromDirection(NeighborEnum _direction) {
-		NeighborEnum _directionY = NeighborEnum.None;
-		NeighborEnum _directionX = NeighborEnum.None;
+	Color32 GetLightingFromDirection(Direction _direction) {
+		Direction _directionY = Direction.None;
+		Direction _directionX = Direction.None;
 		switch (_direction){
-			case NeighborEnum.None:
-			case NeighborEnum.All:
-			case NeighborEnum.T:
-			case NeighborEnum.R:
-			case NeighborEnum.B:
-			case NeighborEnum.L:
+			case Direction.None:
+			case Direction.All:
+			case Direction.T:
+			case Direction.R:
+			case Direction.B:
+			case Direction.L:
 				Debug.LogError(_direction + " isn't supported by GetLightingFromDirection()!");
 				break;
-			case NeighborEnum.TL:
-				_directionY = NeighborEnum.T;
-				_directionX = NeighborEnum.L;
+			case Direction.TL:
+				_directionY = Direction.T;
+				_directionX = Direction.L;
 				break;
-			case NeighborEnum.TR:
-				_directionY = NeighborEnum.T;
-				_directionX = NeighborEnum.R;
+			case Direction.TR:
+				_directionY = Direction.T;
+				_directionX = Direction.R;
 				break;
-			case NeighborEnum.BR:
-				_directionY = NeighborEnum.B;
-				_directionX = NeighborEnum.R;
+			case Direction.BR:
+				_directionY = Direction.B;
+				_directionX = Direction.R;
 				break;
-			case NeighborEnum.BL:
-				_directionY = NeighborEnum.B;
-				_directionX = NeighborEnum.L;
+			case Direction.BL:
+				_directionY = Direction.B;
+				_directionX = Direction.L;
 				break;
 			default:
 				Debug.LogError(_direction + " hasn't been properly implemented yet!");
@@ -142,19 +229,6 @@ public class Node : IHeapItem<Node> {
 	public Int2 GridPos { get; private set; }
     public Vector2 WorldPos { get; private set; }
 
-    [NonSerialized] public Node ParentNode;
-    [NonSerialized] public int GCost;
-    [NonSerialized] public int HCost;
-    public int _FCost_ { get { return GCost + HCost; } }
-
-    private int heapIndex;
-    public int HeapIndex {
-        get { return heapIndex; }
-        set { heapIndex = value; }
-    }
-
-    public int MovementPenalty { get; private set; }
-
     private NodeObject occupyingNodeObject = null;
     public NodeObject GetOccupyingNodeObject(){ 
         return occupyingNodeObject; 
@@ -178,16 +252,8 @@ public class Node : IHeapItem<Node> {
 		// MyUVController = ((GameObject)GameGrid.Instantiate(CachedAssets.Instance.TilePrefab, new Vector3(PosWorld.x, PosWorld.y + 0.5f, 0), Quaternion.identity)).GetComponent<UVController>();
 		// MyUVController.name = "TileQuad " + PosGrid.x + "x" + PosGrid.y + " (" + PosWorld.x + ", " + PosWorld.y + ")";
 		// MyUVController.Setup();
-        // Animator = new TileAnimator(this);
-    }
-
-	public int CompareTo(Node nodeToCompare) {
-        int compare = _FCost_.CompareTo(nodeToCompare._FCost_);
-        if (compare == 0)
-            compare = HCost.CompareTo(nodeToCompare.HCost);
-
-        return -compare;
-    }
+		// Animator = new TileAnimator(this);
+	}
 
     public void TrySetIsWall(bool _isWall) {
 		if (IsWall == _isWall){
@@ -197,15 +263,15 @@ public class Node : IHeapItem<Node> {
 		IsWall = _isWall;
 
 		if (_isWall){
-			NeighborFinder.TryCacheNeighbor(GridPos, NeighborEnum.All);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.TL]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.T]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.TR]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.R]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.BR]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.B]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.BL]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[NeighborEnum.L]);
+			NeighborFinder.TryCacheNeighbor(GridPos, Direction.All);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.TL]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.T]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.TR]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.R]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.BR]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.B]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.BL]);
+			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.L]);
 		}
 		else{
 			LampManager.GetInstance().TryAddNodeToUpdate(this);
@@ -235,34 +301,32 @@ public class Node : IHeapItem<Node> {
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-	public void TrySetInteractiveObject(GameGridInteractiveObject _interactive, Rotation _rotation) {
-		if (InteractiveObject == _interactive){
+	public void TrySetInteractiveObject(InteractiveObjectAsset _asset, Rotation _rotation) {
+		if (AttachedInteractiveObject != null){
 			return;
 		}
 
-		InteractiveObject = _interactive;
-		InteractiveObjectRotation = _rotation;
+		AttachedInteractiveObject = new InteractiveObject(this, _asset, _rotation);
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-	public void TrySetInteractiveObjectTemporary(GameGridInteractiveObject _interactive, Rotation _rotation) {
-		if (UseInteractiveObjectTemporary){
+	public void TrySetInteractiveObjectTemporary(InteractiveObjectAsset _asset, Rotation _rotation) {
+		if (UseAttachedInteractiveObjectTemporary){
 			return;
 		}
 
-		InteractiveObjectTemporary = _interactive;
-		InteractiveObjectRotationTemporary = _rotation;
-		UseInteractiveObjectTemporary = true;
+		AttachedInteractiveObjectTemporary = new InteractiveObject(this, _asset, _rotation);
+		UseAttachedInteractiveObjectTemporary = true;
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
 	public void TryClearInteractiveObjectTemporary() {
-		if (!UseInteractiveObjectTemporary){
+		if (!UseAttachedInteractiveObjectTemporary){
 			return;
 		}
 
-		InteractiveObjectTemporary = null;
-		UseInteractiveObjectTemporary = false;
+		AttachedInteractiveObjectTemporary = null;
+		UseAttachedInteractiveObjectTemporary = false;
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
@@ -276,14 +340,14 @@ public class Node : IHeapItem<Node> {
 			_context = ColorManager.ColorUsage.Delete;
 		} 
 	
-		if (UseInteractiveObjectTemporary && InteractiveObjectTemporary != null){
+		if (UseAttachedInteractiveObjectTemporary && AttachedInteractiveObjectTemporary != null){
 			_context = ColorManager.ColorUsage.New;
 
-			if (InteractiveObject != null){
+			if (AttachedInteractiveObject != null){
 				_context = ColorManager.ColorUsage.Blocked;
 			}
 		}
-		if (UseInteractiveObjectTemporary && InteractiveObjectTemporary == null){
+		if (UseAttachedInteractiveObjectTemporary && AttachedInteractiveObjectTemporary == null){
 			_context = ColorManager.ColorUsage.Delete;
 		}
 
@@ -367,6 +431,43 @@ public class Node : IHeapItem<Node> {
 		// }
 	}
 
-	public bool IsWalkable() { return !IsWall; }
-	public float WaitTime = 0.0f;
+	public int GetMovementPenalty(){
+		return 0;
+	}
+
+	public void OnCharacterApproaching(Character character) { 
+		if (AttachedInteractiveObject != null){
+			AttachedInteractiveObject.OnCharacterApproachingOrDeparting(character);
+		}
+	}
+
+	public void OnCharacterApproachCancel(Character character) { 
+		if (AttachedInteractiveObject != null){
+			AttachedInteractiveObject.OnCharacterApproachOrDepartCancelled(character);
+		}
+	}
+
+	public void OnCharacterApproachFinished(Character character) { 
+		if (AttachedInteractiveObject != null){
+			AttachedInteractiveObject.OnCharacterApproachOrDepartFinished(character);
+		}
+	}
+
+	public void OnCharacterDeparting(Character character) {
+		if (AttachedInteractiveObject != null){
+			AttachedInteractiveObject.OnCharacterApproachingOrDeparting(character);
+		}
+	}
+
+	public void OnCharacterDepartCancelled(Character character) { 
+		if (AttachedInteractiveObject != null){
+			AttachedInteractiveObject.OnCharacterApproachOrDepartCancelled(character);
+		}
+	}
+
+	public void OnCharacterDepartFinished(Character character) { 
+		if (AttachedInteractiveObject != null){
+			AttachedInteractiveObject.OnCharacterApproachOrDepartFinished(character);
+		}
+	}
 }

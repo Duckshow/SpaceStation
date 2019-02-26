@@ -9,7 +9,14 @@ public abstract class Task {
 
 	protected MultiTask owner;
 
-	public Task(MultiTask _owner){ owner = _owner; }
+	public Task(MultiTask _owner){ 
+		owner = _owner; 
+
+		if (owner != null){
+			owner.OnAbort += OnAbort;
+		}
+	}
+	public abstract void OnAbort();
 	public virtual void Start(out State _state){ _state = State.Done; }
 	public virtual void Tick(out State _state){ _state = State.Done; }
 
@@ -33,31 +40,69 @@ public abstract class Task {
 
 	public class FindPath : Task {
 
-		private Node startNode;
-		private Node targetNode;
+		public class PathNode : IHeapItem<PathNode> {
+			public Int2 GridPos { get; private set; }
+			public Vector2 WorldPos { get; private set; }
+
+			public PathNode Parent;
+			public int HeapIndex { get; set; }
+			public int GCost;
+			public int HCost;
+
+			public PathNode(int _x, int _y) {
+				GridPos = new Int2(_x, _y);
+				WorldPos = GameGrid.GetInstance().GetWorldPosFromNodeGridPos(GridPos);
+			}
+
+			public int GetFCost() { 
+				return GCost + HCost;
+			}
+
+			public int CompareTo(PathNode _otherPathNode) {
+				int compare = GetFCost().CompareTo(_otherPathNode.GetFCost());
+				if (compare == 0) { 
+					compare = HCost.CompareTo(_otherPathNode.HCost);
+				}
+
+				return -compare;
+			}
+		}
+
+		private PathNode[,] nodeGrid;
+
+		private Int2 startNodeGridPos;
+		private Int2 targetNodeGridPos;
+
 		private Color32 debugColor;
-		private Heap<Node> openSet;
-		private HashSet<Node> closedSet;
+		private Heap<PathNode> openSet;
+		private HashSet<PathNode> closedSet;
 		private Vector2[] path;
 		private Vector2[] pathFull;
 		private float pathLength;
 
 		public void SetStartAndTarget(Node _startNode, Node _targetNode) {
-			startNode = _startNode;
-			targetNode = _targetNode;
+			startNodeGridPos = _startNode.GridPos;
+			targetNodeGridPos = _targetNode.GridPos;
 		}
 
 		public Vector2[] GetLatestPath() {
 			return path;
 		}
 
-		public FindPath(MultiTask _owner) : base(_owner){ }
+		public FindPath(MultiTask _owner) : base(_owner){
+			nodeGrid = new PathNode[GameGrid.SIZE.x, GameGrid.SIZE.y];
+			for (int y = 0; y < GameGrid.SIZE.y; y++){
+				for (int x = 0; x < GameGrid.SIZE.x; x++){
+					nodeGrid[x, y] = new PathNode(x, y);
+				}
+			}
+		}
 
 		public static bool TryGetPathLength(Node _from, Node _to, out float _length) { // very hax
 			FindPath _pathFinder = new FindPath(null);
 
-			_pathFinder.startNode = _from;
-			_pathFinder.targetNode = _to;
+			_pathFinder.startNodeGridPos = _from.GridPos;
+			_pathFinder.targetNodeGridPos = _to.GridPos;
 
 			State _state;
 			_pathFinder.Start(out _state);
@@ -74,13 +119,20 @@ public abstract class Task {
 			return _state == State.Done;
 		}
 
+		public override void OnAbort() { 
+
+		}
+
 		public override void Start(out State _state) {
+			Node _actualStartNode = GameGrid.GetInstance().TryGetNode(startNodeGridPos);
+			Node _actualTargetNode = GameGrid.GetInstance().TryGetNode(targetNodeGridPos);
+
 			if (GameGrid.GetInstance().DisplayWaypoints) {
-				DrawDebugMarker(startNode.WorldPos, Color.blue);
-				DrawDebugMarker(targetNode.WorldPos, Color.blue);
+				DrawDebugMarker(_actualStartNode.WorldPos, Color.blue);
+				DrawDebugMarker(_actualTargetNode.WorldPos, Color.blue);
 			}
 			
-			if (!startNode.IsWalkable() || !targetNode.IsWalkable()){
+			if (!_actualStartNode.GetIsWalkable() || !_actualTargetNode.GetIsWalkable()){
 				Debug.Log("The start or target node was unwalkable! Skip!");
 				_state = State.Abort;
 				return;
@@ -88,10 +140,10 @@ public abstract class Task {
 
 			debugColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value, 1.0f);
 
-			openSet = new Heap<Node>(GameGrid.GetArea());
-			closedSet = new HashSet<Node>();
+			openSet = new Heap<PathNode>(GameGrid.GetArea());
+			closedSet = new HashSet<PathNode>();
 
-			openSet.Add(startNode);
+			openSet.Add(nodeGrid[startNodeGridPos.x, startNodeGridPos.y]);
 			_state = State.Tick;
 		}
 
@@ -101,39 +153,32 @@ public abstract class Task {
 				return;
 			}
 
-			Node _currentNode = openSet.RemoveFirst();
-			closedSet.Add(_currentNode);
+			PathNode _currentPathNode = openSet.RemoveFirst();
+			closedSet.Add(_currentPathNode);
 
-			if (_currentNode != targetNode) {
+			if (_currentPathNode.GridPos != targetNodeGridPos) {
 				Node[] _neighbors;
-				NeighborFinder.GetSurroundingNodes(_currentNode.GridPos, out _neighbors);
+				NeighborFinder.GetSurroundingNodes(_currentPathNode.GridPos, out _neighbors);
 				for (int i = 0; i < _neighbors.Length; i++){
 					Node _neighbor = _neighbors[i];
-
 					if (_neighbor == null){
 						continue;
 					}
-					if (!_neighbor.IsWalkable()) { 
-						continue;
-					}
-					if (_neighbor.GetOccupyingNodeObject() != null && _neighbor != targetNode) { 
-						continue;
-					}
-					if (closedSet.Contains(_neighbor)) { 
-						continue;
-					}
+					
+					PathNode _neighborPathNode = nodeGrid[_neighbor.GridPos.x, _neighbor.GridPos.y];
 
-					int _newMovementCostToNeighbour = _currentNode.GCost + GetDistance(_currentNode, _neighbor) + _neighbor.MovementPenalty;
-					if (_newMovementCostToNeighbour < _neighbor.GCost || !openSet.Contains(_neighbor)) {
-						_neighbor.GCost = _newMovementCostToNeighbour;
-						_neighbor.HCost = GetDistance(_neighbor, targetNode);
-						_neighbor.ParentNode = _currentNode;
+					if (ShouldConsiderUsingNeighbor(_neighborPathNode, _currentPathNode)){
+						Debug.DrawLine(_currentPathNode.WorldPos, _neighborPathNode.WorldPos, Color.magenta, 1.0f);
 
-						if (!openSet.Contains(_neighbor)) { 
-							openSet.Add(_neighbor);
+						_neighborPathNode.GCost = GetMovementCost(_currentPathNode, _neighborPathNode); 
+						_neighborPathNode.HCost = GetDistance(_neighborPathNode.GridPos, targetNodeGridPos);
+						_neighborPathNode.Parent = _currentPathNode;
+
+						if (!openSet.Contains(_neighborPathNode)) { 
+							openSet.Add(_neighborPathNode);
 						}
 						else { 
-							openSet.UpdateItem(_neighbor);
+							openSet.UpdateItem(_neighborPathNode);
 						}
 					}
 				}
@@ -141,14 +186,51 @@ public abstract class Task {
 				_state = State.Tick;
 			}
 			else{
-				RetracePath(startNode, targetNode, out path, out pathFull, out pathLength);
+				RetracePath(out path, out pathFull, out pathLength);
 				_state = State.Done;
 			}
 		}
 
-		static int GetDistance(Node nodeA, Node nodeB) {
-			int distX = Mathf.Abs(nodeA.GridPos.x - nodeB.GridPos.x);
-			int distY = Mathf.Abs(nodeA.GridPos.y - nodeB.GridPos.y);
+		bool ShouldConsiderUsingNeighbor(PathNode _neighborPathNode, PathNode _currentPathNode) {
+			Node _neighborNode = GameGrid.GetInstance().TryGetNode(_neighborPathNode.GridPos);
+			Node _currentNode = GameGrid.GetInstance().TryGetNode(_currentPathNode.GridPos);
+
+			if (_neighborPathNode == null){
+				return false;
+			}
+			if (!_neighborNode.GetIsWalkable()) {
+				return false;
+			}
+
+			bool _isDiagonal = _neighborNode.GridPos.x - _currentNode.GridPos.x != 0 && _neighborNode.GridPos.y - _currentNode.GridPos.y != 0;
+			if (_neighborNode.AttachedInteractiveObject != null && _isDiagonal){
+				return false;
+			}
+			if (_currentNode.AttachedInteractiveObject != null && _isDiagonal){
+				return false;
+			}
+
+			if (_neighborNode.GetOccupyingNodeObject() != null && _neighborPathNode.GridPos != targetNodeGridPos) {
+				return false;
+			}
+			if (closedSet.Contains(_neighborPathNode)) {
+				return false;
+			}
+			if (openSet.Contains(_neighborPathNode) && GetMovementCost(_currentPathNode, _neighborPathNode) >= _neighborPathNode.GCost){
+				return false;
+			}
+
+			return true;
+		}
+
+		int GetMovementCost(PathNode _from, PathNode _to) {
+			Node _toNode = GameGrid.GetInstance().TryGetNode(_to.GridPos);
+			return _from.GCost + GetDistance(_from.GridPos, _to.GridPos) + _toNode.GetMovementPenalty();
+		}
+
+		static int GetDistance(Int2 _gridPos1, Int2 _gridPos2) {
+			int distX = Mathf.Abs(_gridPos1.x - _gridPos2.x);
+			int distY = Mathf.Abs(_gridPos1.y - _gridPos2.y);
 
 			if (distX > distY) { 
 				return 14 * distY + 10 * (distX - distY);
@@ -158,18 +240,21 @@ public abstract class Task {
 			}
 		}
 
-		static void RetracePath(Node _startNode, Node _targetNode, out Vector2[] _newPath, out Vector2[] _fullPath, out float _pathLength) {
+		void RetracePath(out Vector2[] _newPath, out Vector2[] _fullPath, out float _pathLength) {
 			_pathLength = 0.0f;
 
-			List<Node> _path = new List<Node>();
-			Node _currentNode = _targetNode;
-			while (_currentNode != _startNode) {
-				Vector2 _direction = (_currentNode.ParentNode.WorldPos - _currentNode.WorldPos).normalized;
+			List<PathNode> _path = new List<PathNode>();
+			PathNode _currentPathNode = nodeGrid[targetNodeGridPos.x, targetNodeGridPos.y];
+
+			while (_currentPathNode.GridPos != startNodeGridPos) {
+				PathNode _parent = _currentPathNode.Parent;
+				Vector2 _direction = (_parent.WorldPos - _currentPathNode.WorldPos).normalized;
 				bool _isDirectionDiagonal = _direction.x != 0 && _direction.y != 0;
 				_pathLength += _isDirectionDiagonal ? 1.5f : 1.0f;
 
-				_path.Add(_currentNode);
-				_currentNode = _currentNode.ParentNode;
+				_path.Add(_currentPathNode);
+				Debug.DrawLine(_currentPathNode.WorldPos, _parent.WorldPos, Color.magenta, Mathf.Infinity);
+				_currentPathNode = _parent;
 			}
 			
 			_fullPath = MakeWaypointArray(_path);
@@ -194,7 +279,7 @@ public abstract class Task {
 			}
 		}
 
-		static Vector2[] MakeWaypointArray(List<Node> _path){
+		static Vector2[] MakeWaypointArray(List<PathNode> _path){
 			Vector2[] _waypoints = new Vector2[_path.Count];
 			for (int i = 0; i < _path.Count; i++) {
 				_waypoints[i] = _path[i].WorldPos;
@@ -202,40 +287,46 @@ public abstract class Task {
 			return _waypoints;
 		}
 
-		static Vector2[] SimplifyPath(List<Node> _path) {
+		static Vector2[] SimplifyPath(List<PathNode> _path) {
 			List<Vector2> _waypoints = new List<Vector2>();
-			Vector2 _dirFromLast = new Vector2();
-			Vector2 _dirToNext = new Vector2();
 
-			for (int i = 0; i < _path.Count - 1; i++) {
+			for (int i = 0; i < _path.Count; i++) {
 				DrawDebugMarker(_path[i].WorldPos, Color.green);
 
-				Vector2 _currentPos = _path[i].WorldPos;
-				Vector2 _nextPos = _path[i + 1].WorldPos;
+				Node _currentNode = GameGrid.GetInstance().TryGetNode(_path[i].GridPos);
+				Node _nextNode = i < _path.Count - 1 ? GameGrid.GetInstance().TryGetNode(_path[i + 1].GridPos) : null;
+				Node _previousNode = i > 0 ? GameGrid.GetInstance().TryGetNode(_path[i - 1].GridPos) : null;
 
-				if (i < _path.Count - 1) {
-					_dirFromLast = _dirToNext;
-					_dirToNext = new Vector2(_currentPos.x - _nextPos.x, _currentPos.y - _nextPos.y).normalized;
-				}
-
-				if (_path[i].WaitTime > 0) {
-				_waypoints[i] = _path[i].WorldPos;
-					_waypoints.Add(_currentPos);
-					continue;
-				}
-
-				if (_dirToNext != _dirFromLast) {
-					_waypoints.Add(_currentPos);
-					continue;
-				}
-
-				if (i == 0 || i == _path.Count - 1) {
-					_waypoints.Add(_currentPos);
-					continue;
+				if (ShouldAddPointInPath(_currentNode, _previousNode, _nextNode)){
+					_waypoints.Add(_currentNode.WorldPos);
 				}
 			}
 
 			return _waypoints.ToArray();
+		}
+
+		static bool ShouldAddPointInPath(Node _node, Node _previousNode, Node _nextNode) { 
+			if (_node.AttachedInteractiveObject != null) {
+				return true;
+			}
+
+			if (_previousNode == null || _previousNode.AttachedInteractiveObject != null) {
+				return true;
+			}
+
+			if (_nextNode == null || _previousNode.AttachedInteractiveObject != null) {
+				return true;
+			}
+
+			Int2 _cur = _node.GridPos;
+			Int2 _prev = _previousNode.GridPos;
+			Int2 _next = _node.GridPos;
+
+			if (_next.x - _cur.x != _cur.x - _prev.x || _next.y - _cur.y != _cur.y - _prev.y) {
+				return true;
+			}
+
+			return false;
 		}
 
 		static void DrawDebugMarker(Vector3 _pos, Color _color){
@@ -264,8 +355,17 @@ public abstract class Task {
 
 		public MoveAlongPath(MultiTask _owner) : base(_owner){ }
 
+		public override void OnAbort(){
+			owner.TaskHandler.Owner.OnNodeDepartCancelled();
+			owner.TaskHandler.Owner.OnNodeApproachCancelled();
+		}
+
 		public override void Start(out State _state) {
 			path = owner.GetPathFindResult();
+			if (path == null || path.Length == 0){
+				_state = State.Abort;
+				return;
+			}
 
 			next = path[0];
 			prev = owner.TaskHandler.transform.position;
@@ -281,6 +381,16 @@ public abstract class Task {
 
 		public override void Tick(out State _state) {
 			if ((next - (Vector2)owner.TaskHandler.transform.position).sqrMagnitude < 0.01f) {
+				if (owner.TaskHandler.Owner.GetPresentNode() == null){
+					owner.TaskHandler.Owner.OnNodeDepartFinished(prevNode);
+					owner.TaskHandler.Owner.OnNodeApproachFinished(nextNode);
+				}
+
+				if (!owner.TaskHandler.Owner.MayLeavePresentNode()){
+					_state = State.Tick;
+					return;
+				}
+
 				waypointIndex++;
 				if (waypointIndex >= path.Length) {
 					_state = State.Done;
@@ -301,8 +411,16 @@ public abstract class Task {
 				timeAtPrev = Time.time;
 			}
 
+			if (!owner.TaskHandler.Owner.MayApproachNode()){
+				_state = State.Tick;
+				return;
+			}
+
 			owner.TaskHandler.transform.position += GetDeltaPos();
 			_state = State.Tick;
+
+			owner.TaskHandler.Owner.OnNodeDeparting(prevNode);
+			owner.TaskHandler.Owner.OnNodeApproaching(nextNode);
 		}
 
 		void SetCharacterOrientation(Vector3 _newDirection) {
