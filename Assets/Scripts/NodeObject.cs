@@ -60,7 +60,7 @@ public class NodeObject : EventOwner {
 
 		if (_oldNode != null) {
 			if (_oldNode.GetOccupyingNodeObject() != this) { 
-				Debug.LogError("MyTile is occupied by someone other than me! This shouldn't happen!");
+				Debug.LogErrorFormat("Node occupied by {0} was claimed by {1}!", _oldNode.GetOccupyingNodeObject(), name);
 			}
 
 			_oldNode.ClearOccupyingNodeObject(this);

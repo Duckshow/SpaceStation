@@ -49,10 +49,10 @@ public class TaskHandler : EventOwner {
 		}
 
 		if (_wasSuccess){
-			Debug.Log((Owner.name + " successfully completed multitask!").Color(Color.green));
+			// Debug.Log((Owner.name + " successfully completed multitask!").Color(Color.green));
 		}
 		else{
-			Debug.LogWarning((Owner.name + " failed to complete multitask!").Color(Color.red));
+			// Debug.LogWarning((Owner.name + " failed to complete multitask!").Color(Color.red));
 			if (_multiTask.OnAbort != null){
 				_multiTask.OnAbort();
 			}

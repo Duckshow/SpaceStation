@@ -38,7 +38,6 @@ public class GameGrid : Singleton<GameGrid> {
 	[SerializeField] private GameGridMesh meshInteractivesFront;
 
 	private Node[,] nodeGrid;
-	// private UVController[,] tileGrid;
 
 
 	[EasyButtons.Button]
@@ -74,13 +73,33 @@ public class GameGrid : Singleton<GameGrid> {
 		meshBackground.TryUpdateVisuals();
 		meshInteractivesBack.TryUpdateVisuals();
 		meshInteractivesFront.TryUpdateVisuals();
+
+		// for (int y = 0; y < SIZE.y; y++){
+		// 	for (int x = 0; x < SIZE.x; x++){
+		// 		nodeGrid[x, y].ChemicalContent.UpdateWallBounce();
+		// 	}
+		// }
+		
+		// for (int y = 0; y < SIZE.y; y++){
+		// 	for (int x = 0; x < SIZE.x; x++){
+		// 		nodeGrid[x, y].ChemicalContent.UpdatePressure();
+		// 	}
+		// }
+
+		// float _total = 0.0f;
+		// for (int y = 0; y < SIZE.y; y++){
+		// 	for (int x = 0; x < SIZE.x; x++){
+		// 		nodeGrid[x, y].ChemicalContent.ApplyAmountDelta();
+		// 		_total += nodeGrid[x, y].ChemicalContent.Amount;
+		// 	}
+		// }
+		// Debug.Log("Total: " + _total);
 	}
 
 	void CreateGrid() {
 		Random.InitState(Seed);
 		
 		nodeGrid = new Node[SIZE.x, SIZE.y];
-		// tileGrid = new UVController[SIZE.x + 2, SIZE.y + 2];
 
 		Vector3 worldPosBottomLeft = transform.position;
 		worldPosBottomLeft.x -= SIZE.x * 0.5f;
@@ -95,17 +114,6 @@ public class GameGrid : Singleton<GameGrid> {
                 nodeGrid[x, y] = new Node(worldPos, x, y);
 			}
         }
-
-		// for (int y = 0; y < SIZE.y - 1; y++) {
-        //     for (int x = 0; x < SIZE.x - 1; x++) {
-		// 		Vector3 worldPos = worldPosBottomLeft + new Vector3(TILE_RADIUS, TILE_RADIUS, 0.0f);
-		// 		worldPos.x += x * TILE_DIAMETER + TILE_RADIUS;
-		// 		worldPos.y += y * TILE_DIAMETER + TILE_RADIUS;
-
-		// 		tileGrid[x, y] = (Instantiate(tilePrefab, worldPos, Quaternion.identity) as GameObject).GetComponent<UVController>();
-		// 		tileGrid[x, y].SetTileGridPos(new Int2(x, y));
-		// 	}
-        // }
 
 		Node _node;
         for (int y = 0; y < SIZE.y; y++) {
@@ -125,12 +133,26 @@ public class GameGrid : Singleton<GameGrid> {
 				}
 
 				int _roomSize = 4;
-				if ((x == SIZE.x * 0.5f - _roomSize || x == SIZE.x * 0.5f + _roomSize) && y <= SIZE.y * 0.5f + _roomSize && y >= SIZE.y * 0.5f - _roomSize){
-					_node.TrySetIsWall(true);
-				}
-				if ((y == SIZE.y * 0.5f - _roomSize || y == SIZE.y * 0.5f + _roomSize) && x <= SIZE.x * 0.5f + _roomSize && x >= SIZE.x * 0.5f - _roomSize){
-					_node.TrySetIsWall(true);
-				}
+				int _roomMinX = SIZE.x / 2 - _roomSize;
+				int _roomMinY = SIZE.x / 2 - _roomSize;
+				int _roomMaxX = SIZE.x / 2 + _roomSize;
+				int _roomMaxY = SIZE.x / 2 + _roomSize;
+
+				int _gasBubbleSize = 1;
+				int _gasMinX = SIZE.x / 2 - _gasBubbleSize;
+				int _gasMinY = SIZE.x / 2 - _gasBubbleSize;
+				int _gasMaxX = SIZE.x / 2 + _gasBubbleSize;
+				int _gasMaxY = SIZE.x / 2 + _gasBubbleSize;
+
+				// if ((x == _roomMinX || x == _roomMaxX) && y >= _roomMinY && y <= _roomMaxY){
+				// 	_node.TrySetIsWall(true);
+				// }
+				// if ((y == _roomMinY || y == _roomMaxY) && x >= _roomMinX && x <= _roomMaxX){
+				// 	_node.TrySetIsWall(true);
+				// }
+				// if (x > _gasMinX && x < _gasMaxX && y > _gasMinY && y < _gasMaxY){
+				// 	_node.ChemicalContent.SetAmount(Mathf.RoundToInt(100));
+				// }
 
 				_node.ScheduleUpdateGraphicsForSurroundingTiles();
 			}
@@ -272,13 +294,32 @@ public class GameGrid : Singleton<GameGrid> {
     
     void OnDrawGizmos() {
         Gizmos.DrawWireCube(transform.position, new Vector3(SIZE.x, SIZE.y, 1));
+		if (nodeGrid == null){
+			return;
+		}
 
-        if (nodeGrid != null && DisplayGridGizmos) {
+        if (DisplayGridGizmos) {
             foreach (Node _node in nodeGrid) {
                 Gizmos.color = _node.GetIsWalkable() ? Color.white : Color.red;
                 Gizmos.DrawWireCube(_node.WorldPos, Vector3.one * 0.1f);
             }
         }
+
+		// for (int y = 0; y < SIZE.y; y++){
+		// 	for (int x = 0; x < SIZE.x; x++){
+		// 		Node _node = nodeGrid[x, y];
+		// 		if (_node.ChemicalContent.Amount == 0){
+		// 			continue;
+		// 		}
+
+		// 		GUIStyle _style = new GUIStyle();
+		// 		_style.normal.textColor = Color.cyan;
+		// 		_style.fontSize = 10;
+
+		// 		string _text = _node.ChemicalContent.Amount.ToString();
+		// 		UnityEditor.Handles.Label(_node.WorldPos, _text, _style);
+		// 	}
+		// }
     }
 
 	public Node TryGetNode(Int2 _posGrid) {
@@ -317,10 +358,17 @@ public class GameGrid : Singleton<GameGrid> {
 		meshInteractivesFront.SetColor(_tileGridPos, _colorIndices, _isPermanent);
 	}
 
-	public void SetLighting(Int2 _tileGridPos, int _vertexIndex, Color32 _lighting) {
-		meshBackground.SetLighting(_tileGridPos, _vertexIndex, _lighting);
-		meshInteractivesBack.SetLighting(_tileGridPos, _vertexIndex, _lighting);
-		meshInteractivesFront.SetLighting(_tileGridPos, _vertexIndex, _lighting);
+	public void SetLighting(Int2 _tileGridPos, int _vertexIndex, Color32 _lighting, bool _setAverage = true) {
+		meshBackground.SetLighting(_tileGridPos, _vertexIndex, _lighting, _setAverage);
+		meshInteractivesBack.SetLighting(_tileGridPos, _vertexIndex, _lighting, _setAverage);
+		meshInteractivesFront.SetLighting(_tileGridPos, _vertexIndex, _lighting, _setAverage);
+	}
+
+	public void SetChemicalAmount(Int2 _nodeGridPos, int _amount){
+		nodeGrid[_nodeGridPos.x, _nodeGridPos.y].ChemicalContent.SetAmount(_amount);
+		meshBackground.SetChemicalAmount(_nodeGridPos, _amount);
+		meshInteractivesBack.SetChemicalAmount(_nodeGridPos, _amount);
+		meshInteractivesFront.SetChemicalAmount(_nodeGridPos, _amount);
 	}
 
 	// public UVController TryGetTile(Int2 _posGrid) {

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 public class ColorManager : Singleton<ColorManager> {
 
+	public const int COLOR_CHANNEL_COUNT = 10;
+
 	public enum ColorName : byte { 
 		White = 0,
 		OffWhite = 1, 

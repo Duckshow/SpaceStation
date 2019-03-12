@@ -46,18 +46,19 @@ Shader "Custom/Grid" {
 
 			struct appData {
 				float4 Vertex : POSITION;
-				float4 VColor : COLOR; // vertex color
-				float2 UV : TEXCOORD0;
-				float3 ColorIndices : TEXCOORD1;
+				float4 VColor : COLOR; // lighting
+				float3 UVAndChemicalAmount : TEXCOORD0; // uvs for tiles and test-value for chemicals
+				float3 ColorIndices : TEXCOORD1; // compressed color indices for coloring tool
 			};
 			struct v2f {
 				float4 Pos : POSITION;
 				float4 WorldPos : NORMAL;
 				fixed4 VColor : COLOR;
-				float4 UV  : TEXCOORD0;
+				float2 UV  : TEXCOORD0;
 				int3 ColorIndices0to2 : TEXCOORD1;
 				int3 ColorIndices3to5 : TEXCOORD2;
 				int3 ColorIndices6to8 : TEXCOORD3;
+				fixed ChemicalAmount : TEXCOORD4;
 			};
 			
 			//-- VERT --//
@@ -82,7 +83,8 @@ Shader "Custom/Grid" {
 				o.WorldPos = mul(unity_ObjectToWorld, v.Vertex);
 				o.VColor = v.VColor;
 
-				o.UV.xy = v.UV;
+				o.UV.xy = v.UVAndChemicalAmount.xy;
+				o.ChemicalAmount = v.UVAndChemicalAmount.z;
 				o.ColorIndices0to2 = DecompressColorIndices(v.ColorIndices.x);
 				o.ColorIndices3to5 = DecompressColorIndices(v.ColorIndices.y);
 				o.ColorIndices6to8 = DecompressColorIndices(v.ColorIndices.z);
@@ -126,13 +128,10 @@ Shader "Custom/Grid" {
 				_combinedColors.rgb *= i.VColor.a;
 
 				return fixed4(
-					// _indexToUse, 0, 0,
-					// (colorIndices[_indexToUse] * colorIndices[_indexToUse]) / 128.0, 
-					// 0, 0,
-					// (_indexToUse / 10.0), 0, 0,
-					// allColors[colorIndices[1]].rgb,
-					lerp(_combinedColors, emTex, emTex.a),
-					tex.a
+					// lerp(_combinedColors, emTex, emTex.a),
+					i.VColor
+					// i.ChemicalAmount, 0, 0,
+					// tex.a
 				);
 			}
 			

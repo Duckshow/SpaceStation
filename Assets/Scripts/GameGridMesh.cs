@@ -17,7 +17,7 @@ public class GameGridMesh {
 	public const int VERTEX_INDEX_BOTTOM_RIGHT = 3;
 	public const int VERTEX_INDEX_CENTER = 4;
 
-	private const int UVCHANNEL_UV0 = 0;
+	private const int UVCHANNEL_UV = 0;
 	private const int UVCHANNEL_COLOR = 1;
 
 	private static List<Color32> vertexColors;
@@ -33,11 +33,12 @@ public class GameGridMesh {
 	private MeshFilter meshFilter;
 	private MeshRenderer meshRenderer;
 	private Mesh mesh;
-	private List<Vector2> uvs = new List<Vector2>();
+	private List<Vector3> uvsAndChemicals = new List<Vector3>();
 
 	private Queue<Int2> tilesToUpdate = new Queue<Int2>();
 	private bool isColorDirty = false;
 	private bool isLightingDirty = false;
+	private bool isUVOrChemicalsDirty = false;
 
 	public static void InitStatic() {
 		int _verticesPerGrid = GameGrid.SIZE.x * GameGrid.SIZE.y * VERTICES_PER_TILE;
@@ -48,7 +49,7 @@ public class GameGridMesh {
 			compressedColorIndices.Add(new Vector4());
 		}
 
-		appliedColorIndices = new byte[GameGrid.SIZE.x * GameGrid.SIZE.y * BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT];
+		appliedColorIndices = new byte[GameGrid.SIZE.x * GameGrid.SIZE.y * ColorManager.COLOR_CHANNEL_COUNT];
 	}
 
 	public void Init(Sorting _sorting, RenderMode _renderMode) {
@@ -58,9 +59,9 @@ public class GameGridMesh {
 		meshFilter = transform.GetComponent<MeshFilter>();
 		meshRenderer = transform.GetComponent<MeshRenderer>();
 		
-		uvs = new List<Vector2>();
+		uvsAndChemicals = new List<Vector3>();
 		for (int i = 0; i < GameGrid.SIZE.x * GameGrid.SIZE.y * VERTICES_PER_TILE; i++){
-			uvs.Add(new Vector4());
+			uvsAndChemicals.Add(new Vector3());
 		}
 	}
 
@@ -119,8 +120,8 @@ public class GameGridMesh {
 	}
 
 	public void ClearTemporaryColor(Int2 _tileGridPos){
-		int _index = (_tileGridPos.y * GameGrid.SIZE.x + _tileGridPos.x) * BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT;
-		byte[] _appliedColorIndicesForTile = new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT]{
+		int _index = (_tileGridPos.y * GameGrid.SIZE.x + _tileGridPos.x) * ColorManager.COLOR_CHANNEL_COUNT;
+		byte[] _appliedColorIndicesForTile = new byte[ColorManager.COLOR_CHANNEL_COUNT]{
 			appliedColorIndices[_index + 0],
 			appliedColorIndices[_index + 1],
 			appliedColorIndices[_index + 2],
@@ -137,7 +138,7 @@ public class GameGridMesh {
 	}
 
 	public void SetColor(Int2 _tileGridPos, byte _colorIndex, bool _isPermanent) {
-		byte[] _colorIndexAsArray = new byte[BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT]{
+		byte[] _colorIndexAsArray = new byte[ColorManager.COLOR_CHANNEL_COUNT]{
 			_colorIndex,
 			_colorIndex,
 			_colorIndex,
@@ -154,7 +155,7 @@ public class GameGridMesh {
 	}
 
 	public void SetColor(Int2 _tileGridPos, byte[] _colorIndices, bool _isPermanent) {
-		if (_colorIndices.Length != BuildTool.ToolSettingsColor.COLOR_CHANNEL_COUNT){
+		if (_colorIndices.Length != ColorManager.COLOR_CHANNEL_COUNT){
 			Debug.LogError("_colorChannelIndices has a different length than what is supported!");
 			return;
 		}
@@ -182,7 +183,7 @@ public class GameGridMesh {
 		isColorDirty = true;
 	}
 
-	public void SetLighting(Int2 _tileGridPos, int _vertexIndex, Color32 _lighting) {
+	public void SetLighting(Int2 _tileGridPos, int _vertexIndex, Color32 _lighting, bool _setAverage = true) {
 		if (_vertexIndex == VERTEX_INDEX_CENTER){
 			Debug.LogError("Tried to set lighting for a tile's center vertex! This is done automatically!");
 		}
@@ -190,9 +191,11 @@ public class GameGridMesh {
 		int _vertexIndexInGrid = GetVertexIndexInGrid(_tileGridPos, _vertexIndex);
 		vertexColors[_vertexIndexInGrid] = _lighting;
 
-		int _centerVertexIndexInGrid = GetVertexIndexInGrid(_tileGridPos, VERTEX_INDEX_CENTER);
-		Color32 _average = GetAverageColorInCornerVertices(_tileGridPos);
-		vertexColors[_centerVertexIndexInGrid] = _average;
+		if (_setAverage){
+			int _centerVertexIndexInGrid = GetVertexIndexInGrid(_tileGridPos, VERTEX_INDEX_CENTER);
+			Color32 _average = GetAverageColorInCornerVertices(_tileGridPos);
+			vertexColors[_centerVertexIndexInGrid] = _average;
+		}
 
 		isLightingDirty = true;
 	}
@@ -208,11 +211,15 @@ public class GameGridMesh {
 		Color32 _colorBR = vertexColors[GetVertexIndexInGrid(_tileGridPos, VERTEX_INDEX_BOTTOM_RIGHT)];
 
 		return new Color32(
-			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4),
-			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4),
-			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4),
-			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4)
+			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4.0f),
+			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4.0f),
+			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4.0f),
+			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4.0f)
 		);
+	}
+
+	public void ScheduleUpdateForTile(Int2 _tileGridPos){
+		tilesToUpdate.Enqueue(_tileGridPos);
 	}
 
 	public void TryUpdateVisuals(){
@@ -236,7 +243,12 @@ public class GameGridMesh {
 				SetAsset(_tileGridPos, _asset);
 			}
 
-			mesh.SetUVs(UVCHANNEL_UV0, uvs);
+		}
+
+		if (isUVOrChemicalsDirty){
+			isUVOrChemicalsDirty = false;
+			SetChemicalAmountForCenterVertices();
+			mesh.SetUVs(UVCHANNEL_UV, uvsAndChemicals);
 		}
 
 		if (isColorDirty){ 
@@ -262,11 +274,32 @@ public class GameGridMesh {
 
 		int _uvStartIndex = (_tileGridPos.y * GameGrid.SIZE.x + _tileGridPos.x) * VERTICES_PER_TILE;
 
-		uvs[_uvStartIndex + 0] = new Vector2(_uvL, _uvB);
-		uvs[_uvStartIndex + 1] = new Vector2(_uvL, _uvT);
-		uvs[_uvStartIndex + 2] = new Vector2(_uvR, _uvT);
-		uvs[_uvStartIndex + 3] = new Vector2(_uvR, _uvB);
-		uvs[_uvStartIndex + 4] = new Vector2(_uvMX, _uvMY);
+		Vector3 _uvBL = uvsAndChemicals[_uvStartIndex + 0];
+		Vector3 _uvTL = uvsAndChemicals[_uvStartIndex + 1];
+		Vector3 _uvTR = uvsAndChemicals[_uvStartIndex + 2];
+		Vector3 _uvBR = uvsAndChemicals[_uvStartIndex + 3];
+		Vector3 _uvM = uvsAndChemicals[_uvStartIndex + 4];
+
+		_uvBL.x = _uvL;
+		_uvBL.y = _uvB;
+
+		_uvTL.x = _uvL;
+		_uvTL.y = _uvT;
+		
+		_uvTR.x = _uvR;
+		_uvTR.y = _uvT;
+		
+		_uvBR.x = _uvR;
+		_uvBR.y = _uvB;
+		
+		_uvM.x = _uvMX;
+		_uvM.y = _uvMY;
+
+		uvsAndChemicals[_uvStartIndex + 0] = _uvBL;
+		uvsAndChemicals[_uvStartIndex + 1] = _uvTL;
+		uvsAndChemicals[_uvStartIndex + 2] = _uvTR;
+		uvsAndChemicals[_uvStartIndex + 3] = _uvBR;
+		uvsAndChemicals[_uvStartIndex + 4] = _uvM;
 
 		// compressedUVs.Clear();
 		// for (int i = 0; i < VERTICES_PER_TILE; i++){
@@ -279,9 +312,50 @@ public class GameGridMesh {
 		// 	// _compressed.w = BitCompressor.Int2ToInt(0, 0);
 		// 	compressedUVs.Add(_compressed);
 		// }
+
+		isUVOrChemicalsDirty = true;
 	}
 
-	public void ScheduleUpdateForTile(Int2 _tileGridPos) {
-		tilesToUpdate.Enqueue(_tileGridPos);
+	public void SetChemicalAmount(Int2 _nodeGridPos, float _amount) {
+		isUVOrChemicalsDirty = true;
+
+		int _vertexIndexTR = (_nodeGridPos.y * GameGrid.SIZE.x + _nodeGridPos.x) * VERTICES_PER_TILE;
+		SetChemicalAmount(_vertexIndexTR, _amount);
+
+		if (_nodeGridPos.x > 0) { 
+			int _vertexIndexTL = VERTEX_INDEX_BOTTOM_RIGHT + (_nodeGridPos.y * GameGrid.SIZE.x + (_nodeGridPos.x - 1)) * VERTICES_PER_TILE;
+			SetChemicalAmount(_vertexIndexTL, _amount);
+		}
+
+		if (_nodeGridPos.y > 0) {
+			int _vertexIndexBR = VERTEX_INDEX_TOP_LEFT + ((_nodeGridPos.y - 1) * GameGrid.SIZE.x + _nodeGridPos.x) * VERTICES_PER_TILE;
+			SetChemicalAmount(_vertexIndexBR, _amount);
+		}
+
+		if (_nodeGridPos.x > 0 && _nodeGridPos.y > 0){
+			int _vertexIndexBL = VERTEX_INDEX_TOP_RIGHT + ((_nodeGridPos.y - 1) * GameGrid.SIZE.x + (_nodeGridPos.x - 1)) * VERTICES_PER_TILE;
+			 SetChemicalAmount(_vertexIndexBL, _amount);
+		}
+	}
+
+	void SetChemicalAmount(int _index, float _amount){
+		Vector3 _uvsAndChemical = uvsAndChemicals[_index];
+		_uvsAndChemical.z = _amount * 0.1f;
+		uvsAndChemicals[_index] = _uvsAndChemical;
+	}
+
+	void SetChemicalAmountForCenterVertices() {
+		for (int i = 0; i < uvsAndChemicals.Count; i += VERTICES_PER_TILE){
+			float _amountBL = uvsAndChemicals[i + VERTEX_INDEX_BOTTOM_LEFT].z;
+			float _amountTL = uvsAndChemicals[i + VERTEX_INDEX_TOP_LEFT].z;
+			float _amountTR = uvsAndChemicals[i + VERTEX_INDEX_TOP_RIGHT].z;
+			float _amountBR = uvsAndChemicals[i + VERTEX_INDEX_BOTTOM_RIGHT].z;
+			float _average = (_amountBL + _amountTL + _amountTR + _amountBR) * 0.25f;
+			
+			Vector3 _uvsAndChemical = uvsAndChemicals[i + VERTEX_INDEX_CENTER];
+			_uvsAndChemical.z = _average;
+			uvsAndChemicals[i + VERTEX_INDEX_CENTER] = _uvsAndChemical;
+
+		}
 	}
 }

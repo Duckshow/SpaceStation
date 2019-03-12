@@ -32,9 +32,7 @@ public class BuildTool : Singleton<BuildTool> {
 	}
 
 	public class ToolSettingsColor : ToolSettings {
-		public const int COLOR_CHANNEL_COUNT = 10;
-
-		private byte[] colorChannelIndices = new byte[COLOR_CHANNEL_COUNT]{
+		private byte[] colorChannelIndices = new byte[ColorManager.COLOR_CHANNEL_COUNT]{
 			5,
 			5,
 			5,

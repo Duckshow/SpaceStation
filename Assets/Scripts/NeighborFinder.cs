@@ -98,13 +98,13 @@ public static class NeighborFinder {
 
 	public static void GetSurroundingNodes(Int2 _nodeGridPos, out Node _nodeTL, out Node _nodeT, out Node _nodeTR, out Node _nodeR, out Node _nodeBR, out Node _nodeB, out Node _nodeBL, out Node _nodeL) {
 		_nodeTL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpLeft);
-		_nodeT = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Up);
+		_nodeT 	= GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Up);
 		_nodeTR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpRight);
-		_nodeR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Right);
+		_nodeR 	= GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Right);
 		_nodeBR = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownRight);
-		_nodeB = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Down);
+		_nodeB 	= GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Down);
 		_nodeBL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownLeft);
-		_nodeL = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Left);
+		_nodeL 	= GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Left);
 	}
 	
 	public static void GetSurroundingNodes(Int2 _nodeGridPos, out Node[] _nodes) {
@@ -117,5 +117,60 @@ public static class NeighborFinder {
 		_nodes[5] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Down);
 		_nodes[6] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownLeft);
 		_nodes[7] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Left);
+	}
+
+	public static void GetSurroundingNodes(Int2 _nodeGridPos, out List<Node> _nodes) {
+		_nodes = new List<Node>(8);
+		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpLeft));
+		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Up));
+		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpRight));
+		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Right));
+		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownRight));
+		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Down));
+		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownLeft));
+		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Left));
+	}
+
+	public static Direction GetNeighborDirection(Int2 _originGridPos, Int2 _neighborGridPos) {
+		Int2 _diff = _neighborGridPos - _originGridPos;
+
+		if (_diff.x < 0 && _diff.y > 0) { return Direction.TL; }
+		if (_diff.x == 0 && _diff.y > 0) { return Direction.T; }
+		if (_diff.x > 0 && _diff.y > 0) { return Direction.TR; }
+		if (_diff.x > 0 && _diff.y == 0) { return Direction.R; }
+		if (_diff.x > 0 && _diff.y < 0) { return Direction.BR; }
+		if (_diff.x == 0 && _diff.y < 0) { return Direction.B; }
+		if (_diff.x < 0 && _diff.y < 0) { return Direction.BL; }
+		if (_diff.x < 0 && _diff.y == 0) { return Direction.L; }
+
+		return Direction.None;
+	}
+
+	public static Direction GetOppositeDirection(Direction _dir) {
+		switch (_dir){
+			case Direction.TL:	return Direction.BR;
+			case Direction.T:	return Direction.B;
+			case Direction.TR:	return Direction.BL;
+			case Direction.R:	return Direction.L;
+			case Direction.BR:	return Direction.TL;
+			case Direction.B:	return Direction.T;
+			case Direction.BL:	return Direction.TR;
+			case Direction.L:	return Direction.R;
+			default:			return Direction.None;
+		}
+	}
+
+	public static Int2 ConvertDirectionToInt2(Direction _dir) {
+		switch (_dir){
+			case Direction.TL:	return Int2.UpLeft;
+			case Direction.T:	return Int2.Up;
+			case Direction.TR:	return Int2.UpRight;
+			case Direction.R:	return Int2.Right;
+			case Direction.BR:	return Int2.DownRight;
+			case Direction.B:	return Int2.Down;
+			case Direction.BL:	return Int2.DownLeft;
+			case Direction.L:	return Int2.Left;
+			default:			return Int2.Zero;
+		}
 	}
 }
