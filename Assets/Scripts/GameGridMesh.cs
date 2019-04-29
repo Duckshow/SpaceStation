@@ -5,7 +5,6 @@ using UnityEngine;
 [System.Serializable]
 public class GameGridMesh {
 
-
 	public static Material GridMaterial;
 
 	private const int VERTICES_PER_TILE = 5;
@@ -23,7 +22,7 @@ public class GameGridMesh {
 	private static List<Color32> vertexColors;
 	private static List<Vector4> compressedColorIndices;
 	private static byte[] appliedColorIndices;
-	
+
 	[SerializeField] private Transform transform;
 
 	public enum RenderMode { Walls, Interactives }
@@ -44,7 +43,7 @@ public class GameGridMesh {
 		int _verticesPerGrid = GameGrid.SIZE.x * GameGrid.SIZE.y * VERTICES_PER_TILE;
 		vertexColors = new List<Color32>(_verticesPerGrid);
 		compressedColorIndices = new List<Vector4>(_verticesPerGrid);
-		for (int i = 0; i < _verticesPerGrid; i++){
+		for (int i = 0; i < _verticesPerGrid; i++) {
 			vertexColors.Add(new Color32());
 			compressedColorIndices.Add(new Vector4());
 		}
@@ -58,9 +57,9 @@ public class GameGridMesh {
 
 		meshFilter = transform.GetComponent<MeshFilter>();
 		meshRenderer = transform.GetComponent<MeshRenderer>();
-		
+
 		uvsAndChemicals = new List<Vector3>();
-		for (int i = 0; i < GameGrid.SIZE.x * GameGrid.SIZE.y * VERTICES_PER_TILE; i++){
+		for (int i = 0; i < GameGrid.SIZE.x * GameGrid.SIZE.y * VERTICES_PER_TILE; i++) {
 			uvsAndChemicals.Add(new Vector3());
 		}
 	}
@@ -74,22 +73,22 @@ public class GameGridMesh {
 
 		int _vertexIndex = 0;
 		int _tileIndex = 0;
-		for (int _y = 0; _y < GameGrid.SIZE.y; _y++){
-			for (int _x = 0; _x < GameGrid.SIZE.x; _x++){
+		for (int _y = 0; _y < GameGrid.SIZE.y; _y++) {
+			for (int _x = 0; _x < GameGrid.SIZE.x; _x++) {
 				int _vertexIndexBL = _vertexIndex + VERTEX_INDEX_BOTTOM_LEFT;
 				int _vertexIndexTL = _vertexIndex + VERTEX_INDEX_TOP_LEFT;
 				int _vertexIndexTR = _vertexIndex + VERTEX_INDEX_TOP_RIGHT;
 				int _vertexIndexBR = _vertexIndex + VERTEX_INDEX_BOTTOM_RIGHT;
 				int _vertexIndexM = _vertexIndex + VERTEX_INDEX_CENTER;
 
-				_verts[_vertexIndexBL] 	= _originWorldPos + new Vector3(_x, _y, 0.0f);
-				_verts[_vertexIndexTL] 	= _originWorldPos + new Vector3(_x, _y + GameGrid.TILE_DIAMETER, 0.0f);
-				_verts[_vertexIndexTR] 	= _originWorldPos + new Vector3(_x + GameGrid.TILE_DIAMETER, _y + GameGrid.TILE_DIAMETER, 0.0f);
-				_verts[_vertexIndexBR] 	= _originWorldPos + new Vector3(_x + GameGrid.TILE_DIAMETER, _y, 0.0f);
-				_verts[_vertexIndexM] 	= _originWorldPos + new Vector3(_x + GameGrid.TILE_DIAMETER * 0.5f, _y + GameGrid.TILE_DIAMETER * 0.5f, 0.0f);
+				_verts[_vertexIndexBL] = _originWorldPos + new Vector3(_x, _y, 0.0f);
+				_verts[_vertexIndexTL] = _originWorldPos + new Vector3(_x, _y + GameGrid.TILE_DIAMETER, 0.0f);
+				_verts[_vertexIndexTR] = _originWorldPos + new Vector3(_x + GameGrid.TILE_DIAMETER, _y + GameGrid.TILE_DIAMETER, 0.0f);
+				_verts[_vertexIndexBR] = _originWorldPos + new Vector3(_x + GameGrid.TILE_DIAMETER, _y, 0.0f);
+				_verts[_vertexIndexM] = _originWorldPos + new Vector3(_x + GameGrid.TILE_DIAMETER * 0.5f, _y + GameGrid.TILE_DIAMETER * 0.5f, 0.0f);
 
 				_vertexIndex += VERTICES_PER_TILE;
-				
+
 				_tris[_tileIndex + 0] = _vertexIndexBL;
 				_tris[_tileIndex + 1] = _vertexIndexTL;
 				_tris[_tileIndex + 2] = _vertexIndexM;
@@ -119,26 +118,26 @@ public class GameGridMesh {
 		meshRenderer.material = GridMaterial;
 	}
 
-	public void ClearTemporaryColor(Int2 _tileGridPos){
+	public void ClearTemporaryColor(Int2 _tileGridPos) {
 		int _index = (_tileGridPos.y * GameGrid.SIZE.x + _tileGridPos.x) * ColorManager.COLOR_CHANNEL_COUNT;
-		byte[] _appliedColorIndicesForTile = new byte[ColorManager.COLOR_CHANNEL_COUNT]{
+		byte[] _appliedColorIndicesForTile = new byte[ColorManager.COLOR_CHANNEL_COUNT] {
 			appliedColorIndices[_index + 0],
-			appliedColorIndices[_index + 1],
-			appliedColorIndices[_index + 2],
-			appliedColorIndices[_index + 3],
-			appliedColorIndices[_index + 4],
-			appliedColorIndices[_index + 5],
-			appliedColorIndices[_index + 6],
-			appliedColorIndices[_index + 7],
-			appliedColorIndices[_index + 8],
-			appliedColorIndices[_index + 9]
+				appliedColorIndices[_index + 1],
+				appliedColorIndices[_index + 2],
+				appliedColorIndices[_index + 3],
+				appliedColorIndices[_index + 4],
+				appliedColorIndices[_index + 5],
+				appliedColorIndices[_index + 6],
+				appliedColorIndices[_index + 7],
+				appliedColorIndices[_index + 8],
+				appliedColorIndices[_index + 9]
 		};
 
-		SetColor(_tileGridPos, _appliedColorIndicesForTile, _isPermanent: true);
+		SetColor(_tileGridPos, _appliedColorIndicesForTile, _isPermanent : true);
 	}
 
 	public void SetColor(Int2 _tileGridPos, byte _colorIndex, bool _isPermanent) {
-		byte[] _colorIndexAsArray = new byte[ColorManager.COLOR_CHANNEL_COUNT]{
+		byte[] _colorIndexAsArray = new byte[ColorManager.COLOR_CHANNEL_COUNT] {
 			_colorIndex,
 			_colorIndex,
 			_colorIndex,
@@ -155,14 +154,14 @@ public class GameGridMesh {
 	}
 
 	public void SetColor(Int2 _tileGridPos, byte[] _colorIndices, bool _isPermanent) {
-		if (_colorIndices.Length != ColorManager.COLOR_CHANNEL_COUNT){
+		if (_colorIndices.Length != ColorManager.COLOR_CHANNEL_COUNT) {
 			Debug.LogError("_colorChannelIndices has a different length than what is supported!");
 			return;
 		}
 
 		if (_isPermanent) {
 			int _appliedColorIndex = (_tileGridPos.y * GameGrid.SIZE.x + _tileGridPos.x) * _colorIndices.Length;
-			for (int i = 0; i < _colorIndices.Length; i++){
+			for (int i = 0; i < _colorIndices.Length; i++) {
 				appliedColorIndices[_appliedColorIndex + i] = _colorIndices[i];
 			}
 		}
@@ -176,31 +175,29 @@ public class GameGridMesh {
 		);
 
 		int _vertexIndex = (_tileGridPos.y * GameGrid.SIZE.x + _tileGridPos.x) * VERTICES_PER_TILE;
-		for (int i = 0; i < VERTICES_PER_TILE; i++){
+		for (int i = 0; i < VERTICES_PER_TILE; i++) {
 			compressedColorIndices[_vertexIndex + i] = _newCompressedColorIndices;
 		}
 
 		isColorDirty = true;
 	}
 
-	public void SetLighting(Int2 _tileGridPos, int _vertexIndex, Color32 _lighting, bool _setAverage = true) {
-		if (_vertexIndex == VERTEX_INDEX_CENTER){
+	public void SetLighting(Int2 _tileGridPos, int _vertexIndex, Color32 _lighting) {
+		if (_vertexIndex == VERTEX_INDEX_CENTER) {
 			Debug.LogError("Tried to set lighting for a tile's center vertex! This is done automatically!");
 		}
 
 		int _vertexIndexInGrid = GetVertexIndexInGrid(_tileGridPos, _vertexIndex);
 		vertexColors[_vertexIndexInGrid] = _lighting;
 
-		if (_setAverage){
-			int _centerVertexIndexInGrid = GetVertexIndexInGrid(_tileGridPos, VERTEX_INDEX_CENTER);
-			Color32 _average = GetAverageColorInCornerVertices(_tileGridPos);
-			vertexColors[_centerVertexIndexInGrid] = _average;
-		}
+		int _centerVertexIndexInGrid = GetVertexIndexInGrid(_tileGridPos, VERTEX_INDEX_CENTER);
+		Color32 _average = GetAverageColorInCornerVertices(_tileGridPos);
+		vertexColors[_centerVertexIndexInGrid] = _average;
 
 		isLightingDirty = true;
 	}
-	
-	int GetVertexIndexInGrid(Int2 _tileGridPos, int _vertexIndex) { 
+
+	int GetVertexIndexInGrid(Int2 _tileGridPos, int _vertexIndex) {
 		return _tileGridPos.y * GameGrid.SIZE.x * VERTICES_PER_TILE + _tileGridPos.x * VERTICES_PER_TILE + _vertexIndex;
 	}
 
@@ -211,24 +208,24 @@ public class GameGridMesh {
 		Color32 _colorBR = vertexColors[GetVertexIndexInGrid(_tileGridPos, VERTEX_INDEX_BOTTOM_RIGHT)];
 
 		return new Color32(
-			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4.0f),
-			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4.0f),
-			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4.0f),
-			(byte)((_colorBL.r + _colorTL.g + _colorTR.b + _colorBR.a) / 4.0f)
+			(byte) ((_colorBL.r + _colorTL.r + _colorTR.r + _colorBR.r) / 4.0f),
+			(byte) ((_colorBL.g + _colorTL.g + _colorTR.g + _colorBR.g) / 4.0f),
+			(byte) ((_colorBL.b + _colorTL.b + _colorTR.b + _colorBR.b) / 4.0f),
+			(byte) ((_colorBL.a + _colorTL.a + _colorTR.a + _colorBR.a) / 4.0f)
 		);
 	}
 
-	public void ScheduleUpdateForTile(Int2 _tileGridPos){
+	public void ScheduleUpdateForTile(Int2 _tileGridPos) {
 		tilesToUpdate.Enqueue(_tileGridPos);
 	}
 
-	public void TryUpdateVisuals(){
-		if (tilesToUpdate.Count > 0){
-			while (tilesToUpdate.Count > 0){
+	public void TryUpdateVisuals() {
+		if (tilesToUpdate.Count > 0) {
+			while (tilesToUpdate.Count > 0) {
 				Int2 _tileGridPos = tilesToUpdate.Dequeue();
 				Int2 _asset = new Int2();
 
-				switch (renderMode){
+				switch (renderMode) {
 					case RenderMode.Walls:
 						_asset = CachedAssets.Instance.GetWallAsset(_tileGridPos, sorting);
 						break;
@@ -245,32 +242,32 @@ public class GameGridMesh {
 
 		}
 
-		if (isUVOrChemicalsDirty){
+		if (isUVOrChemicalsDirty) {
 			isUVOrChemicalsDirty = false;
 			SetChemicalAmountForCenterVertices();
 			mesh.SetUVs(UVCHANNEL_UV, uvsAndChemicals);
 		}
 
-		if (isColorDirty){ 
+		if (isColorDirty) {
 			isColorDirty = false;
 			mesh.SetUVs(UVCHANNEL_COLOR, compressedColorIndices);
 		}
 
-		if (isLightingDirty){
+		if (isLightingDirty) {
 			isLightingDirty = false;
 			mesh.SetColors(vertexColors);
 		}
 	}
 
-	void SetAsset(Int2 _tileGridPos, Int2 _assetPos){
+	void SetAsset(Int2 _tileGridPos, Int2 _assetPos) {
 		Texture2D texture = CachedAssets.Instance.DefaultAssets.SpriteSheet;
-		float _uvB 	= (GameGrid.TILE_RESOLUTION * (_assetPos.y + 0.0f)) / (texture.height);
+		float _uvB = (GameGrid.TILE_RESOLUTION * (_assetPos.y + 0.0f)) / (texture.height);
 		float _uvMY = (GameGrid.TILE_RESOLUTION * (_assetPos.y + 0.5f)) / (texture.height);
-		float _uvT 	= (GameGrid.TILE_RESOLUTION * (_assetPos.y + 1.0f)) / (texture.height);
+		float _uvT = (GameGrid.TILE_RESOLUTION * (_assetPos.y + 1.0f)) / (texture.height);
 
-		float _uvL 	= (GameGrid.TILE_RESOLUTION * (_assetPos.x + 0.0f)) / (texture.width);
+		float _uvL = (GameGrid.TILE_RESOLUTION * (_assetPos.x + 0.0f)) / (texture.width);
 		float _uvMX = (GameGrid.TILE_RESOLUTION * (_assetPos.x + 0.5f)) / (texture.width);
-		float _uvR 	= (GameGrid.TILE_RESOLUTION * (_assetPos.x + 1.0f)) / (texture.width);
+		float _uvR = (GameGrid.TILE_RESOLUTION * (_assetPos.x + 1.0f)) / (texture.width);
 
 		int _uvStartIndex = (_tileGridPos.y * GameGrid.SIZE.x + _tileGridPos.x) * VERTICES_PER_TILE;
 
@@ -285,13 +282,13 @@ public class GameGridMesh {
 
 		_uvTL.x = _uvL;
 		_uvTL.y = _uvT;
-		
+
 		_uvTR.x = _uvR;
 		_uvTR.y = _uvT;
-		
+
 		_uvBR.x = _uvR;
 		_uvBR.y = _uvB;
-		
+
 		_uvM.x = _uvMX;
 		_uvM.y = _uvMY;
 
@@ -322,7 +319,7 @@ public class GameGridMesh {
 		int _vertexIndexTR = (_nodeGridPos.y * GameGrid.SIZE.x + _nodeGridPos.x) * VERTICES_PER_TILE;
 		SetChemicalAmount(_vertexIndexTR, _amount);
 
-		if (_nodeGridPos.x > 0) { 
+		if (_nodeGridPos.x > 0) {
 			int _vertexIndexTL = VERTEX_INDEX_BOTTOM_RIGHT + (_nodeGridPos.y * GameGrid.SIZE.x + (_nodeGridPos.x - 1)) * VERTICES_PER_TILE;
 			SetChemicalAmount(_vertexIndexTL, _amount);
 		}
@@ -332,26 +329,26 @@ public class GameGridMesh {
 			SetChemicalAmount(_vertexIndexBR, _amount);
 		}
 
-		if (_nodeGridPos.x > 0 && _nodeGridPos.y > 0){
+		if (_nodeGridPos.x > 0 && _nodeGridPos.y > 0) {
 			int _vertexIndexBL = VERTEX_INDEX_TOP_RIGHT + ((_nodeGridPos.y - 1) * GameGrid.SIZE.x + (_nodeGridPos.x - 1)) * VERTICES_PER_TILE;
-			 SetChemicalAmount(_vertexIndexBL, _amount);
+			SetChemicalAmount(_vertexIndexBL, _amount);
 		}
 	}
 
-	void SetChemicalAmount(int _index, float _amount){
+	void SetChemicalAmount(int _index, float _amount) {
 		Vector3 _uvsAndChemical = uvsAndChemicals[_index];
 		_uvsAndChemical.z = _amount * 0.1f;
 		uvsAndChemicals[_index] = _uvsAndChemical;
 	}
 
 	void SetChemicalAmountForCenterVertices() {
-		for (int i = 0; i < uvsAndChemicals.Count; i += VERTICES_PER_TILE){
+		for (int i = 0; i < uvsAndChemicals.Count; i += VERTICES_PER_TILE) {
 			float _amountBL = uvsAndChemicals[i + VERTEX_INDEX_BOTTOM_LEFT].z;
 			float _amountTL = uvsAndChemicals[i + VERTEX_INDEX_TOP_LEFT].z;
 			float _amountTR = uvsAndChemicals[i + VERTEX_INDEX_TOP_RIGHT].z;
 			float _amountBR = uvsAndChemicals[i + VERTEX_INDEX_BOTTOM_RIGHT].z;
 			float _average = (_amountBL + _amountTL + _amountTR + _amountBR) * 0.25f;
-			
+
 			Vector3 _uvsAndChemical = uvsAndChemicals[i + VERTEX_INDEX_CENTER];
 			_uvsAndChemical.z = _average;
 			uvsAndChemicals[i + VERTEX_INDEX_CENTER] = _uvsAndChemical;

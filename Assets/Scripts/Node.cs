@@ -1,6 +1,6 @@
-﻿using UnityEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class Node {
@@ -14,7 +14,6 @@ public class Node {
 
 		private Node node;
 
-
 		public InteractiveObject(Node _node, InteractiveObjectAsset _asset, Rotation _rotation) {
 			node = _node;
 			Asset = _asset;
@@ -25,13 +24,13 @@ public class Node {
 		public float GetWaitTime() {
 			return Asset.WaitTime;
 		}
-		
+
 		public bool GetIsWalkable() {
 			return Asset.IsWalkable;
 		}
 
 		public Int2 GetTileAssetPos(Sorting _sorting, Direction _direction) {
-			switch (CurrentState){
+			switch (CurrentState) {
 				case State.None:
 					return Int2.Zero;
 				case State.Default:
@@ -51,26 +50,23 @@ public class Node {
 		public void OnCharacterApproachingOrDeparting(Character character) {
 			State _oldState = CurrentState;
 
-			Vector2 _dir = ((Vector2)character.transform.position - node.WorldPos).normalized;
+			Vector2 _dir = ((Vector2) character.transform.position - node.WorldPos).normalized;
 			bool _isCharacterToTheLeft = _dir.x < -0.5f;
 			bool _isCharacterToTheRight = _dir.x > 0.5f;
 			bool _isCharacterAbove = _dir.y > 0.5f;
 			bool _isCharacterBelow = _dir.y < -0.5f;
 
-			if (_isCharacterToTheLeft && Asset.OnCharacterIsLeft != State.None){
+			if (_isCharacterToTheLeft && Asset.OnCharacterIsLeft != State.None) {
 				CurrentState = Asset.OnCharacterIsLeft;
-			}
-			else if (_isCharacterToTheRight && Asset.OnCharacterIsRight != State.None){
+			} else if (_isCharacterToTheRight && Asset.OnCharacterIsRight != State.None) {
 				CurrentState = Asset.OnCharacterIsRight;
-			}
-			else if (_isCharacterAbove && Asset.OnCharacterIsAbove != State.None){
+			} else if (_isCharacterAbove && Asset.OnCharacterIsAbove != State.None) {
 				CurrentState = Asset.OnCharacterIsAbove;
-			}
-			else if (_isCharacterBelow && Asset.OnCharacterIsBelow != State.None){
+			} else if (_isCharacterBelow && Asset.OnCharacterIsBelow != State.None) {
 				CurrentState = Asset.OnCharacterIsBelow;
 			}
 
-			if (CurrentState != _oldState){
+			if (CurrentState != _oldState) {
 				node.ScheduleUpdateGraphicsForSurroundingTiles();
 			}
 		}
@@ -212,7 +208,7 @@ public class Node {
 		// 	for (int i = 0; i < _weakerNeighbors.Count; i++){
 		// 		Node _neighbor = _weakerNeighbors[i];
 		// 		Direction _dir = NeighborFinder.GetNeighborDirection(owner.GridPos, _neighbor.GridPos);
-				
+
 		// 		Packet _packet = packetsReceived.Find(x => x.Direction == _dir);
 		// 		if (_packet != null){
 		// 			_packet.Amount /= packetsReceived.Count;
@@ -237,7 +233,7 @@ public class Node {
 		// 		_neighbor.ChemicalContent.packetsToReceive.Add(_packet);
 
 		// 		_amountRemaining -= _packet.Amount;
-				
+
 		// 		if (_amountRemaining <= 0){
 		// 			break;
 		// 		}
@@ -288,18 +284,17 @@ public class Node {
 	private Color32 lightingBR = new Color32(0, 0, 0, 0);
 	private Color32 lightingBL = new Color32(0, 0, 0, 0);
 
-
-	public float GetWaitTime() { 
-		return AttachedInteractiveObject != null ? AttachedInteractiveObject.GetWaitTime() : 0.0f; 
-	}
-	
-	public bool GetIsWalkable() { 
-		return !IsWall || (AttachedInteractiveObject != null && AttachedInteractiveObject.GetIsWalkable()); 
+	public float GetWaitTime() {
+		return AttachedInteractiveObject != null ? AttachedInteractiveObject.GetWaitTime() : 0.0f;
 	}
 
-	public Color32 GetLighting() { 
-		if (!lightingTL.Equals(lightingTR) || !lightingTL.Equals(lightingBR) || !lightingTL.Equals(lightingBL)){
-			Debug.LogErrorFormat("Node({0})'s lighting varies across vertices, but is still expected to return a uniform lighting variable!");
+	public bool GetIsWalkable() {
+		return !IsWall || (AttachedInteractiveObject != null && AttachedInteractiveObject.GetIsWalkable());
+	}
+
+	public Color32 GetLighting() {
+		if (!lightingTL.Equals(lightingTR) || !lightingTL.Equals(lightingBR) || !lightingTL.Equals(lightingBL)) {
+			Debug.LogErrorFormat("Node({0})'s lighting varies across vertices, but is still expected to return a uniform lighting variable!", GridPos);
 		}
 
 		return lightingTL;
@@ -328,7 +323,7 @@ public class Node {
 	Color32 GetLightingFromDirection(Direction _direction) {
 		Direction _directionY = Direction.None;
 		Direction _directionX = Direction.None;
-		switch (_direction){
+		switch (_direction) {
 			case Direction.None:
 			case Direction.All:
 			case Direction.T:
@@ -369,32 +364,32 @@ public class Node {
 		int _neighborsGivingLight = 0;
 
 		Color32 _lightingFromNeighborXY = new Color32();
-		if (_neighborXY != null && !_neighborXY.IsWall){
+		if (_neighborXY != null && !_neighborXY.IsWall) {
 			_lightingFromNeighborXY = _neighborXY.GetLighting();
 			_neighborsGivingLight++;
 		}
 
 		Color32 _lightingFromNeighborY = new Color32();
-		if (_neighborY != null && !_neighborY.IsWall){
+		if (_neighborY != null && !_neighborY.IsWall) {
 			_lightingFromNeighborY = _neighborY.GetLighting();
 			_neighborsGivingLight++;
 		}
 
 		Color32 _lightingFromNeighborX = new Color32();
-		if (_neighborX != null && !_neighborX.IsWall){
+		if (_neighborX != null && !_neighborX.IsWall) {
 			_lightingFromNeighborX = _neighborX.GetLighting();
 			_neighborsGivingLight++;
 		}
 
-		if (_neighborsGivingLight == 0){
+		if (_neighborsGivingLight == 0) {
 			return new Color32();
 		}
 
 		Color32 _newLighting = new Color32(
-			(byte)((_lightingFromNeighborXY.r + _lightingFromNeighborY.r + _lightingFromNeighborX.r) / _neighborsGivingLight),
-			(byte)((_lightingFromNeighborXY.g + _lightingFromNeighborY.g + _lightingFromNeighborX.g) / _neighborsGivingLight),
-			(byte)((_lightingFromNeighborXY.b + _lightingFromNeighborY.b + _lightingFromNeighborX.b) / _neighborsGivingLight),
-			(byte)((_lightingFromNeighborXY.a + _lightingFromNeighborY.a + _lightingFromNeighborX.a) / _neighborsGivingLight)
+			(byte) ((_lightingFromNeighborXY.r + _lightingFromNeighborY.r + _lightingFromNeighborX.r) / _neighborsGivingLight),
+			(byte) ((_lightingFromNeighborXY.g + _lightingFromNeighborY.g + _lightingFromNeighborX.g) / _neighborsGivingLight),
+			(byte) ((_lightingFromNeighborXY.b + _lightingFromNeighborY.b + _lightingFromNeighborX.b) / _neighborsGivingLight),
+			(byte) ((_lightingFromNeighborXY.a + _lightingFromNeighborY.a + _lightingFromNeighborX.a) / _neighborsGivingLight)
 		);
 
 		// Color32 _newLighting = new Color32(
@@ -405,39 +400,38 @@ public class Node {
 	}
 
 	public Int2 GridPos { get; private set; }
-    public Vector2 WorldPos { get; private set; }
+	public Vector2 WorldPos { get; private set; }
 
-    private NodeObject occupyingNodeObject = null;
-    public NodeObject GetOccupyingNodeObject(){ 
-        return occupyingNodeObject; 
-    }
-    public void SetOccupyingNodeObject(NodeObject _newOccupant){
-        if (occupyingNodeObject != null && occupyingNodeObject != _newOccupant)
-            Debug.LogErrorFormat("{0}'s new node ({1}) is occupied by {2}! This shouldn't happen!", _newOccupant.transform.name, GridPos, occupyingNodeObject.transform.name);
-        occupyingNodeObject = _newOccupant;
-    }
-    public void ClearOccupyingNodeObject(NodeObject _caller){
-        if(occupyingNodeObject != null && occupyingNodeObject != _caller)
-            Debug.LogErrorFormat("{0} tried to set Node({1})'s occupyingNodeObject to null, but isn't actually its current occupant!", _caller.transform.name, GridPos);
-        occupyingNodeObject = null;
-    }
+	private NodeObject occupyingNodeObject = null;
+	public NodeObject GetOccupyingNodeObject() {
+		return occupyingNodeObject;
+	}
+	public void SetOccupyingNodeObject(NodeObject _newOccupant) {
+		if (occupyingNodeObject != null && occupyingNodeObject != _newOccupant)
+			Debug.LogErrorFormat("{0}'s new node ({1}) is occupied by {2}! This shouldn't happen!", _newOccupant.transform.name, GridPos, occupyingNodeObject.transform.name);
+		occupyingNodeObject = _newOccupant;
+	}
+	public void ClearOccupyingNodeObject(NodeObject _caller) {
+		if (occupyingNodeObject != null && occupyingNodeObject != _caller)
+			Debug.LogErrorFormat("{0} tried to set Node({1})'s occupyingNodeObject to null, but isn't actually its current occupant!", _caller.transform.name, GridPos);
+		occupyingNodeObject = null;
+	}
 
-
-    public Node(Vector3 _worldPos, int _gridX, int _gridY) {
+	public Node(Vector3 _worldPos, int _gridX, int _gridY) {
 		WorldPos = _worldPos;
-        GridPos = new Int2(_gridX, _gridY);
+		GridPos = new Int2(_gridX, _gridY);
 
 		ChemicalContent = new ChemicalContentHandler(this);
 	}
 
-    public void TrySetIsWall(bool _isWall) {
-		if (IsWall == _isWall){
+	public void TrySetIsWall(bool _isWall) {
+		if (IsWall == _isWall) {
 			return;
 		}
 
 		IsWall = _isWall;
 
-		if (_isWall){
+		if (_isWall) {
 			NeighborFinder.TryCacheNeighbor(GridPos, Direction.All);
 			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.TL]);
 			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.T]);
@@ -447,8 +441,7 @@ public class Node {
 			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.B]);
 			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.BL]);
 			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.L]);
-		}
-		else{
+		} else {
 			LampManager.GetInstance().TryAddNodeToUpdate(this);
 		}
 
@@ -456,18 +449,18 @@ public class Node {
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-	 public void TrySetIsWallTemporary(bool _isWallTemporary) {
-		if (UseIsWallTemporary){
+	public void TrySetIsWallTemporary(bool _isWallTemporary) {
+		if (UseIsWallTemporary) {
 			return;
 		}
-		
+
 		IsWallTemporarily = _isWallTemporary;
 		UseIsWallTemporary = true;
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-	 public void TryClearIsWallTemporary() {
-		if (!UseIsWallTemporary){
+	public void TryClearIsWallTemporary() {
+		if (!UseIsWallTemporary) {
 			return;
 		}
 
@@ -477,7 +470,7 @@ public class Node {
 	}
 
 	public void TrySetInteractiveObject(InteractiveObjectAsset _asset, Rotation _rotation) {
-		if (AttachedInteractiveObject != null){
+		if (AttachedInteractiveObject != null) {
 			return;
 		}
 
@@ -486,7 +479,7 @@ public class Node {
 	}
 
 	public void TrySetInteractiveObjectTemporary(InteractiveObjectAsset _asset, Rotation _rotation) {
-		if (UseAttachedInteractiveObjectTemporary){
+		if (UseAttachedInteractiveObjectTemporary) {
 			return;
 		}
 
@@ -496,7 +489,7 @@ public class Node {
 	}
 
 	public void TryClearInteractiveObjectTemporary() {
-		if (!UseAttachedInteractiveObjectTemporary){
+		if (!UseAttachedInteractiveObjectTemporary) {
 			return;
 		}
 
@@ -505,30 +498,30 @@ public class Node {
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-    public void ScheduleUpdateGraphicsForSurroundingTiles() {
+	public void ScheduleUpdateGraphicsForSurroundingTiles() {
 		ColorManager.ColorUsage _context = ColorManager.ColorUsage.Default;
 
-		if (UseIsWallTemporary && IsWallTemporarily){
+		if (UseIsWallTemporary && IsWallTemporarily) {
 			_context = ColorManager.ColorUsage.New;
-		} 
-		if (UseIsWallTemporary && !IsWallTemporarily){
+		}
+		if (UseIsWallTemporary && !IsWallTemporarily) {
 			_context = ColorManager.ColorUsage.Delete;
-		} 
-	
-		if (UseAttachedInteractiveObjectTemporary && AttachedInteractiveObjectTemporary != null){
+		}
+
+		if (UseAttachedInteractiveObjectTemporary && AttachedInteractiveObjectTemporary != null) {
 			_context = ColorManager.ColorUsage.New;
 
-			if (AttachedInteractiveObject != null){
+			if (AttachedInteractiveObject != null) {
 				_context = ColorManager.ColorUsage.Blocked;
 			}
 		}
-		if (UseAttachedInteractiveObjectTemporary && AttachedInteractiveObjectTemporary == null){
+		if (UseAttachedInteractiveObjectTemporary && AttachedInteractiveObjectTemporary == null) {
 			_context = ColorManager.ColorUsage.Delete;
 		}
 
 		byte _colorIndex = ColorManager.GetColorIndex(_context);
 
-		byte[] _colorChannelIndices = new byte[ColorManager.COLOR_CHANNEL_COUNT]{
+		byte[] _colorChannelIndices = new byte[ColorManager.COLOR_CHANNEL_COUNT] {
 			_colorIndex,
 			_colorIndex,
 			_colorIndex,
@@ -547,47 +540,46 @@ public class Node {
 		if (_tileGridPosTR != Int2.MinusOne) {
 			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosTR);
 			UpdateTileColor(_tileGridPosTR, _colorChannelIndices);
-			SetTileVertexLighting(_tileGridPosTR, lightingTR, _vertexIndex: GameGridMesh.VERTEX_INDEX_BOTTOM_LEFT);
+			SetTileVertexLighting(_tileGridPosTR, lightingTR, _vertexIndex : GameGridMesh.VERTEX_INDEX_BOTTOM_LEFT);
 		}
 		if (_tileGridPosBL != Int2.MinusOne) {
 			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosBL);
 			UpdateTileColor(_tileGridPosBL, _colorChannelIndices);
-			SetTileVertexLighting(_tileGridPosBL, lightingBL, _vertexIndex: GameGridMesh.VERTEX_INDEX_TOP_RIGHT);
+			SetTileVertexLighting(_tileGridPosBL, lightingBL, _vertexIndex : GameGridMesh.VERTEX_INDEX_TOP_RIGHT);
 		}
 		if (_tileGridPosTL != Int2.MinusOne) {
 			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosTL);
 			UpdateTileColor(_tileGridPosTL, _colorChannelIndices);
-			SetTileVertexLighting(_tileGridPosTL, lightingTL, _vertexIndex: GameGridMesh.VERTEX_INDEX_BOTTOM_RIGHT);
+			SetTileVertexLighting(_tileGridPosTL, lightingTL, _vertexIndex : GameGridMesh.VERTEX_INDEX_BOTTOM_RIGHT);
 		}
 		if (_tileGridPosBR != Int2.MinusOne) {
 			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosBR);
 			UpdateTileColor(_tileGridPosBR, _colorChannelIndices);
-			SetTileVertexLighting(_tileGridPosBR, lightingBR, _vertexIndex: GameGridMesh.VERTEX_INDEX_TOP_LEFT);
+			SetTileVertexLighting(_tileGridPosBR, lightingBR, _vertexIndex : GameGridMesh.VERTEX_INDEX_TOP_LEFT);
 		}
 	}
 
-	void UpdateTileColor(Int2 _tileGridPos, byte[] _colorChannelIndices) { 
-		if (UseIsWallTemporary){
-			GameGrid.GetInstance().SetColor(_tileGridPos, _colorChannelIndices, _isPermanent: false);
-		}
-		else{
+	void UpdateTileColor(Int2 _tileGridPos, byte[] _colorChannelIndices) {
+		if (UseIsWallTemporary) {
+			GameGrid.GetInstance().SetColor(_tileGridPos, _colorChannelIndices, _isPermanent : false);
+		} else {
 			GameGrid.GetInstance().ClearTemporaryColor(_tileGridPos);
 		}
 	}
 
-	void SetTileVertexLighting(Int2 _tileGridPos, Color32 _lighting, int _vertexIndex) { 
+	void SetTileVertexLighting(Int2 _tileGridPos, Color32 _lighting, int _vertexIndex) {
 		GameGrid.GetInstance().SetLighting(_tileGridPos, _vertexIndex, _lighting);
 	}
 
-	public void SetColor(byte[] _colorChannelIndices, bool _isPermanent) { 
+	public void SetColor(byte[] _colorChannelIndices, bool _isPermanent) {
 		Int2 _tileGridPosTL, _tileGridPosTR, _tileGridPosBR, _tileGridPosBL;
 		NeighborFinder.GetSurroundingTiles(GridPos, out _tileGridPosTL, out _tileGridPosTR, out _tileGridPosBR, out _tileGridPosBL);
 
-		if (_tileGridPosTR != Int2.MinusOne){
+		if (_tileGridPosTR != Int2.MinusOne) {
 			GameGrid.GetInstance().SetColor(_tileGridPosTR, _colorChannelIndices, _isPermanent);
 		}
 	}
-	
+
 	public void ClearTemporaryColor() {
 		Int2 _tileGridPosTL, _tileGridPosTR, _tileGridPosBR, _tileGridPosBL;
 		NeighborFinder.GetSurroundingTiles(GridPos, out _tileGridPosTL, out _tileGridPosTR, out _tileGridPosBR, out _tileGridPosBL);
@@ -595,7 +587,7 @@ public class Node {
 		// if (_tileTL != null){
 		// 	_tileTL.ClearTemporaryColor();
 		// }
-		if (_tileGridPosTR != Int2.MinusOne){
+		if (_tileGridPosTR != Int2.MinusOne) {
 			GameGrid.GetInstance().ClearTemporaryColor(_tileGridPosTR);
 		}
 		// if (_tileBR != null){
@@ -606,42 +598,42 @@ public class Node {
 		// }
 	}
 
-	public int GetMovementPenalty(){
+	public int GetMovementPenalty() {
 		return 0;
 	}
 
-	public void OnCharacterApproaching(Character character) { 
-		if (AttachedInteractiveObject != null){
+	public void OnCharacterApproaching(Character character) {
+		if (AttachedInteractiveObject != null) {
 			AttachedInteractiveObject.OnCharacterApproachingOrDeparting(character);
 		}
 	}
 
-	public void OnCharacterApproachCancel(Character character) { 
-		if (AttachedInteractiveObject != null){
+	public void OnCharacterApproachCancel(Character character) {
+		if (AttachedInteractiveObject != null) {
 			AttachedInteractiveObject.OnCharacterApproachOrDepartCancelled(character);
 		}
 	}
 
-	public void OnCharacterApproachFinished(Character character) { 
-		if (AttachedInteractiveObject != null){
+	public void OnCharacterApproachFinished(Character character) {
+		if (AttachedInteractiveObject != null) {
 			AttachedInteractiveObject.OnCharacterApproachOrDepartFinished(character);
 		}
 	}
 
 	public void OnCharacterDeparting(Character character) {
-		if (AttachedInteractiveObject != null){
+		if (AttachedInteractiveObject != null) {
 			AttachedInteractiveObject.OnCharacterApproachingOrDeparting(character);
 		}
 	}
 
-	public void OnCharacterDepartCancelled(Character character) { 
-		if (AttachedInteractiveObject != null){
+	public void OnCharacterDepartCancelled(Character character) {
+		if (AttachedInteractiveObject != null) {
 			AttachedInteractiveObject.OnCharacterApproachOrDepartCancelled(character);
 		}
 	}
 
-	public void OnCharacterDepartFinished(Character character) { 
-		if (AttachedInteractiveObject != null){
+	public void OnCharacterDepartFinished(Character character) {
+		if (AttachedInteractiveObject != null) {
 			AttachedInteractiveObject.OnCharacterApproachOrDepartFinished(character);
 		}
 	}

@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class GameGrid : Singleton<GameGrid> {
 
@@ -8,15 +8,15 @@ public class GameGrid : Singleton<GameGrid> {
 	public const float TILE_DIAMETER = 1;
 	public const int TILE_RESOLUTION = 16;
 
-	public static int GetArea(){
+	public static int GetArea() {
 		return SIZE.x * SIZE.y;
 	}
-	
-	public static bool IsInsideNodeGrid(Int2 _nodeGridPos){
+
+	public static bool IsInsideNodeGrid(Int2 _nodeGridPos) {
 		return IsInsideNodeGrid(_nodeGridPos.x, _nodeGridPos.y);
 	}
-	
-	public static bool IsInsideNodeGrid(int _x, int _y){
+
+	public static bool IsInsideNodeGrid(int _x, int _y) {
 		return _x >= 0 && _x < SIZE.x && _y >= 0 && _y < SIZE.y;
 	}
 
@@ -26,9 +26,9 @@ public class GameGrid : Singleton<GameGrid> {
 	public enum GridType { None, NodeGrid, TileGrid }
 
 	public bool GenerateWalls = true;
-    public bool DisplayGridGizmos;
-    public bool DisplayPaths;
-    public bool DisplayWaypoints;
+	public bool DisplayGridGizmos;
+	public bool DisplayPaths;
+	public bool DisplayWaypoints;
 
 	[SerializeField] private int Seed;
 	[Space]
@@ -37,8 +37,7 @@ public class GameGrid : Singleton<GameGrid> {
 	[SerializeField] private GameGridMesh meshInteractivesBack;
 	[SerializeField] private GameGridMesh meshInteractivesFront;
 
-	private Node[,] nodeGrid;
-
+	private Node[, ] nodeGrid;
 
 	[EasyButtons.Button]
 	public void GenerateMeshes() {
@@ -68,8 +67,9 @@ public class GameGrid : Singleton<GameGrid> {
 	}
 
 	public override bool IsUsingUpdateLate() { return true; }
-	public override void UpdateLate(){
+	public override void UpdateLate() {
 		base.UpdateLate();
+
 		meshBackground.TryUpdateVisuals();
 		meshInteractivesBack.TryUpdateVisuals();
 		meshInteractivesFront.TryUpdateVisuals();
@@ -79,7 +79,7 @@ public class GameGrid : Singleton<GameGrid> {
 		// 		nodeGrid[x, y].ChemicalContent.UpdateWallBounce();
 		// 	}
 		// }
-		
+
 		// for (int y = 0; y < SIZE.y; y++){
 		// 	for (int x = 0; x < SIZE.x; x++){
 		// 		nodeGrid[x, y].ChemicalContent.UpdatePressure();
@@ -98,7 +98,7 @@ public class GameGrid : Singleton<GameGrid> {
 
 	void CreateGrid() {
 		Random.InitState(Seed);
-		
+
 		nodeGrid = new Node[SIZE.x, SIZE.y];
 
 		Vector3 worldPosBottomLeft = transform.position;
@@ -106,29 +106,29 @@ public class GameGrid : Singleton<GameGrid> {
 		worldPosBottomLeft.y -= SIZE.y * 0.5f;
 
 		for (int y = 0; y < SIZE.y; y++) {
-            for (int x = 0; x < SIZE.x; x++) {
+			for (int x = 0; x < SIZE.x; x++) {
 				Vector3 worldPos = worldPosBottomLeft;
 				worldPos.x += x * TILE_DIAMETER + TILE_RADIUS;
 				worldPos.y += y * TILE_DIAMETER + TILE_RADIUS;
 
-                nodeGrid[x, y] = new Node(worldPos, x, y);
+				nodeGrid[x, y] = new Node(worldPos, x, y);
 			}
-        }
+		}
 
 		Node _node;
-        for (int y = 0; y < SIZE.y; y++) {
-            for (int x = 0; x < SIZE.x; x++) {
+		for (int y = 0; y < SIZE.y; y++) {
+			for (int x = 0; x < SIZE.x; x++) {
 				_node = nodeGrid[x, y];
 
 				bool _isXAtLeftBorder = x == 1;
-				bool _isXAtRightBorder = x == SIZE.x - 1;
-				bool _isXBetweenBorders = x > 0 && x < SIZE.x - 1;
+				bool _isXAtRightBorder = x == SIZE.x - 2;
+				bool _isXBetweenBorders = x > 0 && x < SIZE.x - 2;
 
 				bool _isYAtBottomBorder = y == 1;
-				bool _isYAtTopBorder = y == SIZE.y - 1;
-				bool _isYBetweenBorders = y > 0 && y < SIZE.y - 1;
+				bool _isYAtTopBorder = y == SIZE.y - 2;
+				bool _isYBetweenBorders = y > 0 && y < SIZE.y - 2;
 
-				if (((_isXAtLeftBorder || _isXAtRightBorder) && _isYBetweenBorders) || ((_isYAtBottomBorder || _isYAtTopBorder) && _isXBetweenBorders)){
+				if (((_isXAtLeftBorder || _isXAtRightBorder) && _isYBetweenBorders) || ((_isYAtBottomBorder || _isYAtTopBorder) && _isXBetweenBorders)) {
 					_node.TrySetIsWall(true);
 				}
 
@@ -156,12 +156,12 @@ public class GameGrid : Singleton<GameGrid> {
 
 				_node.ScheduleUpdateGraphicsForSurroundingTiles();
 			}
-        }
-    }
+		}
+	}
 
 	public Int2 GetGridPosFromWorldPos(Vector3 _worldPos, GridType _gridType) {
 		float _nodeOffset = 0.0f;
-		switch (_gridType){
+		switch (_gridType) {
 			case GridType.None:
 			case GridType.NodeGrid:
 				break;
@@ -189,18 +189,18 @@ public class GameGrid : Singleton<GameGrid> {
 	public Node GetNodeFromWorldPos(Vector3 _worldPos) {
 		Int2 _nodeGridPos = GetGridPosFromWorldPos(_worldPos, GridType.NodeGrid);
 		return nodeGrid[_nodeGridPos.x, _nodeGridPos.y];
-    }
-    
-	public Vector3 GetWorldPosFromNodeGridPos(Int2 _nodeGridPos){
-        Vector3 _worldPos = new Vector3(_nodeGridPos.x + TILE_RADIUS, _nodeGridPos.y + TILE_RADIUS, 0.0f);
-        _worldPos.x -= (SIZE.x * 0.5f);
-        _worldPos.y -= (SIZE.y * 0.5f);
-        return _worldPos;
-    }
+	}
 
-    public Node GetClosestFreeNode(Vector3 _worldPos) {
-        Node _node = GetNodeFromWorldPos(_worldPos);
-		if (_node.GetIsWalkable()) { 
+	public Vector3 GetWorldPosFromNodeGridPos(Int2 _nodeGridPos) {
+		Vector3 _worldPos = new Vector3(_nodeGridPos.x + TILE_RADIUS, _nodeGridPos.y + TILE_RADIUS, 0.0f);
+		_worldPos.x -= (SIZE.x * 0.5f);
+		_worldPos.y -= (SIZE.y * 0.5f);
+		return _worldPos;
+	}
+
+	public Node GetClosestFreeNode(Vector3 _worldPos) {
+		Node _node = GetNodeFromWorldPos(_worldPos);
+		if (_node.GetIsWalkable()) {
 			return _node;
 		}
 
@@ -210,80 +210,80 @@ public class GameGrid : Singleton<GameGrid> {
 
 		int _lastCount = 0;
 
-        while (_neighbours.Count < (SIZE.x * SIZE.y)) {
+		while (_neighbours.Count < (SIZE.x * SIZE.y)) {
 
-            // iterate over _neighbours until a free node is found
-            for (int i = _lastCount; i < _neighbours.Count; i++) {
-				if (_neighbours[i].GetIsWalkable() && _neighbours[i].GetOccupyingNodeObject() == null) { 
+			// iterate over _neighbours until a free node is found
+			for (int i = _lastCount; i < _neighbours.Count; i++) {
+				if (_neighbours[i].GetIsWalkable() && _neighbours[i].GetOccupyingNodeObject() == null) {
 					return _neighbours[i];
 				}
-            }
+			}
 
-            int _prevLastCount = _lastCount;
-            _lastCount = _neighbours.Count; // save progress before we add new neighbours, so we don't iterate over old stuff later
-
-            // iterate over _neighbours - if their neighbours aren't in _neighbours, add them.
-            Node[] _newNeighbours;
-            for (int i = _prevLastCount; i < _lastCount; i++) {
-                NeighborFinder.GetSurroundingNodes(_neighbours[i].GridPos, out _newNeighbours);
-                for (int j = 0; j < _newNeighbours.Length; j++) {
-                    if (_neighbours.Contains(_newNeighbours[j]))
-                        continue;
-
-                    _neighbours.Add(_newNeighbours[j]);
-                }
-            }
-        }
-        return null;
-    }
-    public Node GetClosestFreeNode(Node _node) {
-		if (!_node.IsWall && _node.GetOccupyingNodeObject() == null) { 
-			return _node;
-		}
-
-		Node[] _nodes;
-		NeighborFinder.GetSurroundingNodes(_node.GridPos, out _nodes);
-		List<Node> _neighbours = new List<Node>(_nodes);
-		int _lastCount = 0;
-
-        while (_neighbours.Count < (SIZE.x * SIZE.y)) {
-
-            // iterate over _neighbours until a free node is found
-            for (int i = _lastCount; i < _neighbours.Count; i++) {
-				if (!_neighbours[i].IsWall && _neighbours[i].GetOccupyingNodeObject() == null) { 
-					return _neighbours[i];
-				}
-            }
-
-            int _prevLastCount = _lastCount;
-            _lastCount = _neighbours.Count; // save progress before we add new neighbours, so we don't iterate over old stuff later
+			int _prevLastCount = _lastCount;
+			_lastCount = _neighbours.Count; // save progress before we add new neighbours, so we don't iterate over old stuff later
 
 			// iterate over _neighbours - if their neighbours aren't in _neighbours, add them.
 			Node[] _newNeighbours;
 			for (int i = _prevLastCount; i < _lastCount; i++) {
 				NeighborFinder.GetSurroundingNodes(_neighbours[i].GridPos, out _newNeighbours);
 				for (int j = 0; j < _newNeighbours.Length; j++) {
-					if (_neighbours.Contains(_newNeighbours[j])) { 
+					if (_neighbours.Contains(_newNeighbours[j]))
+						continue;
+
+					_neighbours.Add(_newNeighbours[j]);
+				}
+			}
+		}
+		return null;
+	}
+	public Node GetClosestFreeNode(Node _node) {
+		if (!_node.IsWall && _node.GetOccupyingNodeObject() == null) {
+			return _node;
+		}
+
+		Node[] _nodes;
+		NeighborFinder.GetSurroundingNodes(_node.GridPos, out _nodes);
+		List<Node> _neighbours = new List<Node>(_nodes);
+		int _lastCount = 0;
+
+		while (_neighbours.Count < (SIZE.x * SIZE.y)) {
+
+			// iterate over _neighbours until a free node is found
+			for (int i = _lastCount; i < _neighbours.Count; i++) {
+				if (!_neighbours[i].IsWall && _neighbours[i].GetOccupyingNodeObject() == null) {
+					return _neighbours[i];
+				}
+			}
+
+			int _prevLastCount = _lastCount;
+			_lastCount = _neighbours.Count; // save progress before we add new neighbours, so we don't iterate over old stuff later
+
+			// iterate over _neighbours - if their neighbours aren't in _neighbours, add them.
+			Node[] _newNeighbours;
+			for (int i = _prevLastCount; i < _lastCount; i++) {
+				NeighborFinder.GetSurroundingNodes(_neighbours[i].GridPos, out _newNeighbours);
+				for (int j = 0; j < _newNeighbours.Length; j++) {
+					if (_neighbours.Contains(_newNeighbours[j])) {
 						continue;
 					}
 
-                    _neighbours.Add(_newNeighbours[j]);
-                }
-            }
-        }
-        return null;
-    }
+					_neighbours.Add(_newNeighbours[j]);
+				}
+			}
+		}
+		return null;
+	}
 
-    public Node GetRandomWalkableNode(Node _node) {
+	public Node GetRandomWalkableNode(Node _node) {
 		RoomManager.Room _room = RoomManager.GetInstance().GetRoom(_node.RoomIndex);
 		Int2 _randomNodeGridPos;
 		Node _randomNode;
 
-		do{
+		do {
 			_randomNodeGridPos = new Int2(Random.Range(0, GameGrid.SIZE.x), Random.Range(0, GameGrid.SIZE.y));
 			_randomNode = TryGetNode(_randomNodeGridPos);
 		} while (_randomNodeGridPos == _node.GridPos || _randomNode == null || !_randomNode.GetIsWalkable());
-		
+
 		// do{
 		// 	_randomNodeGridPos = _room.NodeGridPositions[Random.Range(0, _room.NodeGridPositions.Count)];
 		// 	_randomNode = TryGetNode(_randomNodeGridPos);
@@ -291,19 +291,19 @@ public class GameGrid : Singleton<GameGrid> {
 
 		return _randomNode;
 	}
-    
-    void OnDrawGizmos() {
-        Gizmos.DrawWireCube(transform.position, new Vector3(SIZE.x, SIZE.y, 1));
-		if (nodeGrid == null){
+
+	void OnDrawGizmos() {
+		Gizmos.DrawWireCube(transform.position, new Vector3(SIZE.x, SIZE.y, 1));
+		if (nodeGrid == null) {
 			return;
 		}
 
-        if (DisplayGridGizmos) {
-            foreach (Node _node in nodeGrid) {
-                Gizmos.color = _node.GetIsWalkable() ? Color.white : Color.red;
-                Gizmos.DrawWireCube(_node.WorldPos, Vector3.one * 0.1f);
-            }
-        }
+		if (DisplayGridGizmos) {
+			foreach (Node _node in nodeGrid) {
+				Gizmos.color = _node.GetIsWalkable() ? Color.white : Color.red;
+				Gizmos.DrawWireCube(_node.WorldPos, Vector3.one * 0.1f);
+			}
+		}
 
 		// for (int y = 0; y < SIZE.y; y++){
 		// 	for (int x = 0; x < SIZE.x; x++){
@@ -320,7 +320,7 @@ public class GameGrid : Singleton<GameGrid> {
 		// 		UnityEditor.Handles.Label(_node.WorldPos, _text, _style);
 		// 	}
 		// }
-    }
+	}
 
 	public Node TryGetNode(Int2 _posGrid) {
 		return TryGetNode(_posGrid.x, _posGrid.y);
@@ -334,13 +334,13 @@ public class GameGrid : Singleton<GameGrid> {
 		return nodeGrid[_posGridX, _posGridY];
 	}
 
-	public void ScheduleUpdateForTile(Int2 _tileGridPos){
+	public void ScheduleUpdateForTile(Int2 _tileGridPos) {
 		meshBackground.ScheduleUpdateForTile(_tileGridPos);
 		meshInteractivesBack.ScheduleUpdateForTile(_tileGridPos);
 		meshInteractivesFront.ScheduleUpdateForTile(_tileGridPos);
 	}
-	
-	public void ClearTemporaryColor(Int2 _tileGridPos){
+
+	public void ClearTemporaryColor(Int2 _tileGridPos) {
 		meshBackground.ClearTemporaryColor(_tileGridPos);
 		meshInteractivesBack.ClearTemporaryColor(_tileGridPos);
 		meshInteractivesFront.ClearTemporaryColor(_tileGridPos);
@@ -358,28 +358,16 @@ public class GameGrid : Singleton<GameGrid> {
 		meshInteractivesFront.SetColor(_tileGridPos, _colorIndices, _isPermanent);
 	}
 
-	public void SetLighting(Int2 _tileGridPos, int _vertexIndex, Color32 _lighting, bool _setAverage = true) {
-		meshBackground.SetLighting(_tileGridPos, _vertexIndex, _lighting, _setAverage);
-		meshInteractivesBack.SetLighting(_tileGridPos, _vertexIndex, _lighting, _setAverage);
-		meshInteractivesFront.SetLighting(_tileGridPos, _vertexIndex, _lighting, _setAverage);
+	public void SetLighting(Int2 _tileGridPos, int _vertexIndex, Color32 _lighting) {
+		meshBackground.SetLighting(_tileGridPos, _vertexIndex, _lighting);
+		meshInteractivesBack.SetLighting(_tileGridPos, _vertexIndex, _lighting);
+		meshInteractivesFront.SetLighting(_tileGridPos, _vertexIndex, _lighting);
 	}
 
-	public void SetChemicalAmount(Int2 _nodeGridPos, int _amount){
+	public void SetChemicalAmount(Int2 _nodeGridPos, int _amount) {
 		nodeGrid[_nodeGridPos.x, _nodeGridPos.y].ChemicalContent.SetAmount(_amount);
 		meshBackground.SetChemicalAmount(_nodeGridPos, _amount);
 		meshInteractivesBack.SetChemicalAmount(_nodeGridPos, _amount);
 		meshInteractivesFront.SetChemicalAmount(_nodeGridPos, _amount);
 	}
-
-	// public UVController TryGetTile(Int2 _posGrid) {
-	// 	return TryGetTile(_posGrid.x, _posGrid.y);
-	// }
-
-	// public UVController TryGetTile(int _posGridX, int _posGridY) {
-	// 	if (!IsInsideGrid(_posGridX, _posGridY)) {
-	// 		return null;
-	// 	}
-
-	// 	return tileGrid[_posGridX, _posGridY];
-	// }
 }
