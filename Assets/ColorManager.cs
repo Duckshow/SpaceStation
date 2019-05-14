@@ -1,19 +1,19 @@
-﻿using UnityEngine;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class ColorManager : Singleton<ColorManager> {
 
 	public const int COLOR_CHANNEL_COUNT = 10;
 
-	public enum ColorName : byte { 
+	public enum ColorName : byte {
 		White = 0,
-		OffWhite = 1, 
-		Grey = 8, 
-		Red = 124, 
-		Orange = 36 
+		OffWhite = 1,
+		Grey = 8,
+		Red = 124,
+		Orange = 36
 	}
 
-	public enum ColorUsage { 
+	public enum ColorUsage {
 		Default,
 		Selected,
 		New,
@@ -22,8 +22,7 @@ public class ColorManager : Singleton<ColorManager> {
 		Delete
 	}
 
-	private static Dictionary<ColorUsage, ColorName> contextColors = new Dictionary<ColorUsage, ColorName>{
-		{ ColorUsage.Default, ColorName.White },
+	private static Dictionary<ColorUsage, ColorName> contextColors = new Dictionary<ColorUsage, ColorName> { { ColorUsage.Default, ColorName.White },
 		{ ColorUsage.Selected, ColorName.Grey },
 		{ ColorUsage.New, ColorName.OffWhite },
 		{ ColorUsage.AlreadyExisting, ColorName.Grey },
@@ -40,7 +39,6 @@ public class ColorManager : Singleton<ColorManager> {
 
 	private static List<Vector4> allColorsForShaders = new List<Vector4>();
 
-
 	void OnValidate() {
 		Color[] pixels;
 
@@ -48,9 +46,9 @@ public class ColorManager : Singleton<ColorManager> {
 		allColors = new Color[pixels.Length];
 
 		int _index = 0;
-		for (int _y = (paletteTexture.height - 1); _y >= 0; _y--){
-			for (int _x = 0; _x < paletteTexture.width; _x++){
-				int pixelIndex = (paletteTexture.width * _y) + _x;
+		for(int _y =(paletteTexture.height - 1); _y >= 0; _y--) {
+			for(int _x = 0; _x < paletteTexture.width; _x++) {
+				int pixelIndex =(paletteTexture.width * _y) + _x;
 				allColors[_index] = pixels[pixelIndex];
 				_index++;
 			}
@@ -59,11 +57,7 @@ public class ColorManager : Singleton<ColorManager> {
 
 	public override bool IsUsingAwakeEarly() { return true; }
 	public override void AwakeEarly() {
-		for (int i = 0; i < allColors.Length; i++){
-			allColorsForShaders.Add(new Vector4(allColors[i].r, allColors[i].g, allColors[i].b, allColors[i].a));
-		}
-
-		materialGrid.SetVectorArray("allColors", allColorsForShaders);
+		materialGrid.SetColorArray("allColors", allColors);
 	}
 
 	public static Color GetColor(ColorName colorName) {
@@ -71,15 +65,15 @@ public class ColorManager : Singleton<ColorManager> {
 	}
 
 	public static Color GetColor(int colorIndex) {
-		if (Application.isPlaying){
+		if(Application.isPlaying) {
 			return ColorManager.GetInstance().allColors[colorIndex];
 		}
-		else{
+		else {
 			return FindObjectOfType<ColorManager>().allColors[colorIndex];
 		}
 	}
 
 	public static byte GetColorIndex(ColorUsage usage) {
-		return (byte)contextColors[usage];
+		return(byte)contextColors[usage];
 	}
 }

@@ -5,16 +5,21 @@ using UnityEngine;
 public class ChemicalContainer {
 	public int MaxAmount { get; private set; }
 	public float Temperature { get; private set; }
-	public Chemical.Blob Water;
+	public Chemical.Blob[] Contents;
 
 	public ChemicalContainer(int _maxAmount) {
 		MaxAmount = _maxAmount;
-		Water = new Chemical.Blob(Chemical.WATER, this);
+
+		Chemical[] _allChemicals = ChemicalManager.GetInstance().GetAllChemicals();
+		Contents = new Chemical.Blob[_allChemicals.Length];
+		for(int i = 0; i < Contents.Length; i++) {
+			Contents[i] = new Chemical.Blob(_allChemicals[i], this);
+		}
 	}
 
-	public void SetStartValues(int _amount, int _temperature) {
+	public void SetStartValues(int _amount, int _temperature) { // TODO: remove this
 		Temperature = _temperature;
-		Water.SetAmount(_amount);
+		Contents[0].SetAmount(_amount);
 	}
 
 	public void SetTemperature(float _temperature) {
@@ -23,43 +28,26 @@ public class ChemicalContainer {
 
 	public Color32 GetColor() {
 		// Color32 _c = Color32.Lerp(Color.cyan, Color.red, Temperature / 1000.0f);
-		Color32 _c = new Color32((byte)Mathf.Lerp(0, 255, Temperature / 1000.0f), 0, 0, 0);
-		_c.a =(byte)Mathf.Lerp(0, 255, Water.Amount /(float)MaxAmount);
-		return _c;
+		// Color32 _c = new Color32((byte)Mathf.Lerp(0, 255, Temperature / 1000.0f), 0, 0, 0);
+		// _c.a =(byte)Mathf.Lerp(0, 255, Water.Amount /(float)MaxAmount);
+		return Color.magenta;
 	}
 
 	public int GetAmountTotal() {
 		int _total = 0;
 
-		_total += Water.Amount;
+		for(int i = 0; i < Contents.Length; i++) {
+			_total += Contents[i].Amount;
+		}
 
 		return _total;
 	}
 
-	public Chemical.Blob GetChemical(Chemical.ID _id) {
-		switch(_id) {
-			case Chemical.ID.Water:
-				return Water;
-			default:
-				throw new System.NotImplementedException();
-		}
-	}
-
-	public void SetChemical(Chemical.ID _id, Chemical.Blob _blob) {
-		switch(_id) {
-			case Chemical.ID.Water:
-				Water = _blob;
-				break;
-			default:
-				throw new System.NotImplementedException();
-		}
-	}
-
 	public float GetMaxPossibleAmountToTransfer() {
 		float _amount = 0.0f;
-		System.Array _ids = System.Enum.GetValues(typeof(Chemical.ID));
-		foreach(Chemical.ID _id in _ids) {
-			_amount += GetChemical(_id).GetAmountTransferablePerFrame();
+
+		for(int i = 0; i < Contents.Length; i++) {
+			_amount += Contents[i].GetAmountTransferablePerFrame();
 		}
 
 		return _amount;
@@ -67,10 +55,28 @@ public class ChemicalContainer {
 
 	public void Add(ChemicalContainer _otherChemicalContainer) {
 		Temperature += _otherChemicalContainer.Temperature;
-		Water.SetAmount(Water.Amount + _otherChemicalContainer.Water.Amount);
+
+		for(int i = 0; i < Contents.Length; i++) {
+			Contents[i].SetAmount(Contents[i].Amount + _otherChemicalContainer.Contents[i].Amount);
+		}
 	}
 
 	public void Subtract(ChemicalContainer _otherChemicalContainer) {
-		Water.SetAmount(Water.Amount - _otherChemicalContainer.Water.Amount);
+		for(int i = 0; i < Contents.Length; i++) {
+			Contents[i].SetAmount(Contents[i].Amount - _otherChemicalContainer.Contents[i].Amount);
+		}
+	}
+
+	public void GetThreeMostPrevalentChemicals(out Chemical.Blob _chem0, out Chemical.Blob _chem1, out Chemical.Blob _chem2) {
+		List<Chemical.Blob> _chems = new List<Chemical.Blob>(Contents.Length);
+		for(int i = 0; i < Contents.Length; i++) {
+			_chems.Add(Contents[i]);
+		}
+
+		_chems.Sort((x, y) => x.Amount.CompareTo(y.Amount));
+
+		_chem0 = _chems[0];
+		_chem1 = _chems[1];
+		_chem2 = _chems[2];
 	}
 }

@@ -4,6 +4,8 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class Node {
+	
+	public const int CHEM_AMOUNT_MAX = 100;
 
 	public class InteractiveObject {
 		public enum State { None, Default, OpenLeft, OpenRight, OpenAbove, OpenBelow }
@@ -82,188 +84,7 @@ public class Node {
 		}
 	}
 
-	public class ChemicalContentHandler {
-
-		private Node owner;
-		// public int Amount { get; private set; }
-
-		// private int amountGiven = 0;
-		// private int amountReceived = 0;
-
-		// private class Packet {
-		// 	public int Amount;
-		// 	public Direction Direction;
-		// 	public Packet(int _amount, Direction _direction) {
-		// 		Amount = _amount;
-		// 		Direction = _direction;
-		// 	}
-		// }
-
-		// private List<Packet> packetsGiven = new List<Packet>();
-		// private List<Packet> packetsToReceive = new List<Packet>();
-		// private List<Packet> packetsReceived = new List<Packet>();
-
-		public ChemicalContentHandler(Node _owner) {
-			owner = _owner;
-		}
-
-		public void SetAmount(int _amount) {
-			// Amount = _amount;
-		}
-
-		// public void UpdateAmountDelta() {
-		// 	if (Amount == 0.0f){
-		// 		return;
-		// 	}
-
-		// 	List<Node> _neighbors;
-		// 	NeighborFinder.GetSurroundingNodes(owner.GridPos, out _neighbors);
-
-		// 	List<Node.ChemicalContentHandler> _usableNeighbors = new List<Node.ChemicalContentHandler>();
-		// 	for (int i = 0; i < _neighbors.Count; i++){
-		// 		Node _neighbor = _neighbors[i];
-		// 		if (_neighbor == null){
-		// 			continue;
-		// 		}
-		// 		if (_neighbor.IsWall){
-		// 			continue;
-		// 		}
-
-		// 		_usableNeighbors.Add(_neighbor.ChemicalContent);
-		// 	}
-
-		// 	float _evenDistributionMod = 1.0f / (float)_usableNeighbors.Count;
-
-		// 	_usableNeighbors.Sort((x, y) => x.Amount.CompareTo(y.Amount));
-		// 	_usableNeighbors.Reverse(); // TODO: can this be done in Sort?
-
-		// 	float _amountRemaining = Amount;
-		// 	for (int i = 0; i < _usableNeighbors.Count; i++){
-		// 		Node.ChemicalContentHandler _neighbor = _usableNeighbors[i];
-		// 		if (_amountRemaining == 0.0f){
-		// 			break;
-		// 		}
-
-		// 		float _amountDelta = Mathf.Lerp(0.0f, _amountRemaining, _evenDistributionMod);
-		// 		_amountRemaining -= _amountDelta;
-
-		// 		Vector2 _direction = (_neighbor.owner.WorldPos - owner.WorldPos).normalized;
-		// 		_neighbor.packetsReceived.Add(_amountDelta);
-		// 		packetsGiven.Add(_amountDelta); 
-		// 	}
-		// }
-
-		// public void UpdatePressure() {
-		// 	if (owner.IsWall){
-		// 		return;
-		// 	}
-
-		// 	List<Node> _neighbors;
-		// 	NeighborFinder.GetSurroundingNodes(owner.GridPos, out _neighbors);
-
-		// 	List<Node> _weakerNeighbors = new List<Node>();
-
-		// 	for (int i = 0; i < _neighbors.Count; i++){
-		// 		Node _neighbor = _neighbors[i];
-		// 		if (_neighbor == null){
-		// 			continue;
-		// 		}
-		// 		if (_neighbor.IsWall){
-		// 			continue;
-		// 		}
-		// 		// if (_neighbor.ChemicalContent.Amount >= Amount){
-		// 		// 	continue;
-		// 		// }
-
-		// 		_weakerNeighbors.Add(_neighbor);
-		// 	}
-
-		// 	// _weakerNeighbors.Sort((x, y) => {
-		// 	// 	return x.ChemicalContent.Amount.CompareTo(y.ChemicalContent.Amount); 
-		// 	// });
-
-		// 	for (int i = 0; i < packetsReceived.Count; i++){
-		// 		Packet _packet = packetsReceived[i];
-		// 		Node _node = GameGrid.GetInstance().TryGetNode(owner.GridPos + NeighborFinder.ConvertDirectionToInt2(_packet.Direction));
-		// 		if (_node == null){
-		// 			continue; // TODO: should remove packet from game
-		// 		}
-		// 		if (!_node.IsWall){
-		// 			continue;
-		// 		}
-
-		// 		_packet.Direction = NeighborFinder.GetOppositeDirection(_packet.Direction);
-		// 		for (int i2 = packetsReceived.Count - 1; i2 >= i; i2--){
-		// 			Packet _otherPacket = packetsReceived[i2];
-		// 			if (_otherPacket.Direction != _packet.Direction){
-		// 				continue;
-		// 			}
-
-		// 			_packet.Amount += _otherPacket.Amount;
-		// 			packetsReceived.RemoveAt(i2);
-		// 		}
-		// 	}
-
-		// 	int _amountRemaining = Amount;
-		// 	for (int i = 0; i < _weakerNeighbors.Count; i++){
-		// 		Node _neighbor = _weakerNeighbors[i];
-		// 		Direction _dir = NeighborFinder.GetNeighborDirection(owner.GridPos, _neighbor.GridPos);
-
-		// 		Packet _packet = packetsReceived.Find(x => x.Direction == _dir);
-		// 		if (_packet != null){
-		// 			_packet.Amount /= packetsReceived.Count;
-		// 			// _packet.Amount *= Mathf.RoundToInt(_packet.Amount / (float)_amountRemaining);
-		// 		}
-		// 		else if(_amountRemaining > _neighbor.ChemicalContent.Amount){
-		// 			float _diff = _amountRemaining - _neighbor.ChemicalContent.Amount;
-		// 			float _factor = Mathf.Lerp(0.5f, 0.1f, _diff / 100.0f);
-		// 			// if (_dir.x != 0.0f && _dir.y != 0.0f){
-		// 			// 	_factor *= 0.66f;
-		// 			// }
-
-		// 			int _amountDelta = Mathf.RoundToInt(_diff * _factor);
-		// 			_amountDelta = Mathf.Min(_amountRemaining, _amountDelta);
-		// 			_packet = new Packet(_amountDelta, _dir);
-		// 		}
-		// 		else{
-		// 			continue;
-		// 		}
-
-		// 		packetsGiven.Add(_packet);
-		// 		_neighbor.ChemicalContent.packetsToReceive.Add(_packet);
-
-		// 		_amountRemaining -= _packet.Amount;
-
-		// 		if (_amountRemaining <= 0){
-		// 			break;
-		// 		}
-		// 	}
-		// }
-
-		// public void ApplyAmountDelta() {
-		// 	for (int i = 0; i < packetsGiven.Count; i++){
-		// 		Amount -= packetsGiven[i].Amount;
-		// 	}
-
-		// 	packetsReceived.Clear();
-		// 	for (int i = 0; i < packetsToReceive.Count; i++){
-		// 		Amount += packetsToReceive[i].Amount;
-		// 		packetsReceived.Add(packetsToReceive[i]);
-		// 	}
-
-		// 	packetsGiven.Clear();
-		// 	packetsToReceive.Clear();
-
-		// 	GameGrid.GetInstance().SetChemicalAmount(owner.GridPos, Amount);
-		// }
-	}
-
-	public ChemicalContentHandler ChemicalContent;
-
-	public bool HasWallT;
-	public bool HasWallR;
-	public bool HasWallB;
-	public bool HasWallL;
+	public ChemicalContainer ChemicalContainer;
 
 	public int RoomIndex { get; private set; }
 	public void SetRoomIndex(int _index) {
@@ -420,8 +241,8 @@ public class Node {
 	public Node(Vector3 _worldPos, int _gridX, int _gridY) {
 		WorldPos = _worldPos;
 		GridPos = new Int2(_gridX, _gridY);
-
-		ChemicalContent = new ChemicalContentHandler(this);
+		
+		ChemicalContainer = new ChemicalContainer(CHEM_AMOUNT_MAX);
 	}
 
 	public void TrySetIsWall(bool _isWall) {
@@ -538,27 +359,27 @@ public class Node {
 		NeighborFinder.GetSurroundingTiles(GridPos, out _tileGridPosTL, out _tileGridPosTR, out _tileGridPosBR, out _tileGridPosBL);
 
 		if (_tileGridPosTR != Int2.MinusOne) {
-			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosTR);
+			GameGrid.GetInstance().ScheduleUpdateForTileAsset(_tileGridPosTR);
 			UpdateTileColor(_tileGridPosTR, _colorChannelIndices);
 			SetTileVertexLighting(_tileGridPosTR, lightingTR, _vertexIndex : GameGridMesh.VERTEX_INDEX_BOTTOM_LEFT);
 		}
 		if (_tileGridPosBL != Int2.MinusOne) {
-			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosBL);
+			GameGrid.GetInstance().ScheduleUpdateForTileAsset(_tileGridPosBL);
 			UpdateTileColor(_tileGridPosBL, _colorChannelIndices);
 			SetTileVertexLighting(_tileGridPosBL, lightingBL, _vertexIndex : GameGridMesh.VERTEX_INDEX_TOP_RIGHT);
 		}
 		if (_tileGridPosTL != Int2.MinusOne) {
-			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosTL);
+			GameGrid.GetInstance().ScheduleUpdateForTileAsset(_tileGridPosTL);
 			UpdateTileColor(_tileGridPosTL, _colorChannelIndices);
 			SetTileVertexLighting(_tileGridPosTL, lightingTL, _vertexIndex : GameGridMesh.VERTEX_INDEX_BOTTOM_RIGHT);
 		}
 		if (_tileGridPosBR != Int2.MinusOne) {
-			GameGrid.GetInstance().ScheduleUpdateForTile(_tileGridPosBR);
+			GameGrid.GetInstance().ScheduleUpdateForTileAsset(_tileGridPosBR);
 			UpdateTileColor(_tileGridPosBR, _colorChannelIndices);
 			SetTileVertexLighting(_tileGridPosBR, lightingBR, _vertexIndex : GameGridMesh.VERTEX_INDEX_TOP_LEFT);
 		}
 	}
-
+	
 	void UpdateTileColor(Int2 _tileGridPos, byte[] _colorChannelIndices) {
 		if (UseIsWallTemporary) {
 			GameGrid.GetInstance().SetColor(_tileGridPos, _colorChannelIndices, _isPermanent : false);

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class GameGrid : Singleton<GameGrid> {
+public partial class GameGrid : Singleton<GameGrid> {
 
 	public static readonly Int2 SIZE = new Int2(48, 48);
 	public const float TILE_RADIUS = 0.5f;
@@ -20,9 +20,6 @@ public class GameGrid : Singleton<GameGrid> {
 		return _x >= 0 && _x < SIZE.x && _y >= 0 && _y < SIZE.y;
 	}
 
-	[SerializeField]
-	private GameObject tilePrefab;
-
 	public enum GridType { None, NodeGrid, TileGrid }
 
 	public bool GenerateWalls = true;
@@ -38,6 +35,7 @@ public class GameGrid : Singleton<GameGrid> {
 	[SerializeField] private GameGridMesh meshInteractivesFront;
 
 	private Node[, ] nodeGrid;
+	private Node[, ] nodeGridStartFrame;
 
 	[EasyButtons.Button]
 	public void GenerateMeshes() {
@@ -65,6 +63,12 @@ public class GameGrid : Singleton<GameGrid> {
 		base.StartEarly();
 		CreateGrid();
 	}
+	
+	public override bool IsUsingUpdateEarly() { return true; }
+	public override void UpdateEarly() {
+		base.UpdateEarly();
+		nodeGridStartFrame = nodeGrid;
+	}
 
 	public override bool IsUsingUpdateLate() { return true; }
 	public override void UpdateLate() {
@@ -73,27 +77,6 @@ public class GameGrid : Singleton<GameGrid> {
 		meshBackground.TryUpdateVisuals();
 		meshInteractivesBack.TryUpdateVisuals();
 		meshInteractivesFront.TryUpdateVisuals();
-
-		// for (int y = 0; y < SIZE.y; y++){
-		// 	for (int x = 0; x < SIZE.x; x++){
-		// 		nodeGrid[x, y].ChemicalContent.UpdateWallBounce();
-		// 	}
-		// }
-
-		// for (int y = 0; y < SIZE.y; y++){
-		// 	for (int x = 0; x < SIZE.x; x++){
-		// 		nodeGrid[x, y].ChemicalContent.UpdatePressure();
-		// 	}
-		// }
-
-		// float _total = 0.0f;
-		// for (int y = 0; y < SIZE.y; y++){
-		// 	for (int x = 0; x < SIZE.x; x++){
-		// 		nodeGrid[x, y].ChemicalContent.ApplyAmountDelta();
-		// 		_total += nodeGrid[x, y].ChemicalContent.Amount;
-		// 	}
-		// }
-		// Debug.Log("Total: " + _total);
 	}
 
 	void CreateGrid() {
@@ -105,8 +88,8 @@ public class GameGrid : Singleton<GameGrid> {
 		worldPosBottomLeft.x -= SIZE.x * 0.5f;
 		worldPosBottomLeft.y -= SIZE.y * 0.5f;
 
-		for (int y = 0; y < SIZE.y; y++) {
-			for (int x = 0; x < SIZE.x; x++) {
+		for(int y = 0; y < SIZE.y; y++) {
+			for(int x = 0; x < SIZE.x; x++) {
 				Vector3 worldPos = worldPosBottomLeft;
 				worldPos.x += x * TILE_DIAMETER + TILE_RADIUS;
 				worldPos.y += y * TILE_DIAMETER + TILE_RADIUS;
@@ -116,8 +99,8 @@ public class GameGrid : Singleton<GameGrid> {
 		}
 
 		Node _node;
-		for (int y = 0; y < SIZE.y; y++) {
-			for (int x = 0; x < SIZE.x; x++) {
+		for(int y = 0; y < SIZE.y; y++) {
+			for(int x = 0; x < SIZE.x; x++) {
 				_node = nodeGrid[x, y];
 
 				bool _isXAtLeftBorder = x == 1;
@@ -128,7 +111,7 @@ public class GameGrid : Singleton<GameGrid> {
 				bool _isYAtTopBorder = y == SIZE.y - 2;
 				bool _isYBetweenBorders = y > 0 && y < SIZE.y - 2;
 
-				if (((_isXAtLeftBorder || _isXAtRightBorder) && _isYBetweenBorders) || ((_isYAtBottomBorder || _isYAtTopBorder) && _isXBetweenBorders)) {
+				if(((_isXAtLeftBorder || _isXAtRightBorder) && _isYBetweenBorders) ||((_isYAtBottomBorder || _isYAtTopBorder) && _isXBetweenBorders)) {
 					_node.TrySetIsWall(true);
 				}
 
@@ -138,22 +121,27 @@ public class GameGrid : Singleton<GameGrid> {
 				int _roomMaxX = SIZE.x / 2 + _roomSize;
 				int _roomMaxY = SIZE.x / 2 + _roomSize;
 
-				int _gasBubbleSize = 1;
-				int _gasMinX = SIZE.x / 2 - _gasBubbleSize;
-				int _gasMinY = SIZE.x / 2 - _gasBubbleSize;
-				int _gasMaxX = SIZE.x / 2 + _gasBubbleSize;
-				int _gasMaxY = SIZE.x / 2 + _gasBubbleSize;
+				if((x == _roomMinX || x == _roomMaxX) && y >= _roomMinY && y <= _roomMaxY) {
+					_node.TrySetIsWall(true);
+				}
+				if((y == _roomMinY || y == _roomMaxY) && x >= _roomMinX && x <= _roomMaxX) {
+					_node.TrySetIsWall(true);
+				}
 
-				// if ((x == _roomMinX || x == _roomMaxX) && y >= _roomMinY && y <= _roomMaxY){
-				// 	_node.TrySetIsWall(true);
-				// }
-				// if ((y == _roomMinY || y == _roomMaxY) && x >= _roomMinX && x <= _roomMaxX){
-				// 	_node.TrySetIsWall(true);
-				// }
-				// if (x > _gasMinX && x < _gasMaxX && y > _gasMinY && y < _gasMaxY){
-				// 	_node.ChemicalContent.SetAmount(Mathf.RoundToInt(100));
-				// }
-
+				// chems
+				int _amount      = 0;
+				int _temperature = 0;
+				if(x < 24) {
+					_amount      = 100;
+					_temperature = 1000;
+				}
+				else {
+					_amount      = 0;
+					_temperature = 0;
+				}
+				_node.ChemicalContainer.SetStartValues(_amount, _temperature);
+				//
+				
 				_node.ScheduleUpdateGraphicsForSurroundingTiles();
 			}
 		}
@@ -161,7 +149,7 @@ public class GameGrid : Singleton<GameGrid> {
 
 	public Int2 GetGridPosFromWorldPos(Vector3 _worldPos, GridType _gridType) {
 		float _nodeOffset = 0.0f;
-		switch (_gridType) {
+		switch(_gridType) {
 			case GridType.None:
 			case GridType.NodeGrid:
 				break;
@@ -173,15 +161,15 @@ public class GameGrid : Singleton<GameGrid> {
 				break;
 		}
 
-		float percentX = (_worldPos.x - (TILE_DIAMETER + _nodeOffset) + SIZE.x * 0.5f) / (float)SIZE.x;
-		float percentY = (_worldPos.y - (TILE_DIAMETER + _nodeOffset) + SIZE.y * 0.5f) / (float)SIZE.y;
+		float percentX =(_worldPos.x -(TILE_DIAMETER + _nodeOffset) + SIZE.x * 0.5f) /(float)SIZE.x;
+		float percentY =(_worldPos.y -(TILE_DIAMETER + _nodeOffset) + SIZE.y * 0.5f) /(float)SIZE.y;
 		percentX = Mathf.Clamp01(percentX);
 		percentY = Mathf.Clamp01(percentY);
 
 		int _x = Mathf.RoundToInt(SIZE.x * percentX);
 		int _y = Mathf.RoundToInt(SIZE.y * percentY);
-		_x = (int)Mathf.Clamp(_x, 0, SIZE.x - 1);
-		_y = (int)Mathf.Clamp(_y, 0, SIZE.y - 1);
+		_x =(int)Mathf.Clamp(_x, 0, SIZE.x - 1);
+		_y =(int)Mathf.Clamp(_y, 0, SIZE.y - 1);
 
 		return new Int2(_x, _y);
 	}
@@ -193,14 +181,14 @@ public class GameGrid : Singleton<GameGrid> {
 
 	public Vector3 GetWorldPosFromNodeGridPos(Int2 _nodeGridPos) {
 		Vector3 _worldPos = new Vector3(_nodeGridPos.x + TILE_RADIUS, _nodeGridPos.y + TILE_RADIUS, 0.0f);
-		_worldPos.x -= (SIZE.x * 0.5f);
-		_worldPos.y -= (SIZE.y * 0.5f);
+		_worldPos.x -=(SIZE.x * 0.5f);
+		_worldPos.y -=(SIZE.y * 0.5f);
 		return _worldPos;
 	}
 
 	public Node GetClosestFreeNode(Vector3 _worldPos) {
 		Node _node = GetNodeFromWorldPos(_worldPos);
-		if (_node.GetIsWalkable()) {
+		if(_node.GetIsWalkable()) {
 			return _node;
 		}
 
@@ -210,11 +198,11 @@ public class GameGrid : Singleton<GameGrid> {
 
 		int _lastCount = 0;
 
-		while (_neighbours.Count < (SIZE.x * SIZE.y)) {
+		while(_neighbours.Count <(SIZE.x * SIZE.y)) {
 
 			// iterate over _neighbours until a free node is found
-			for (int i = _lastCount; i < _neighbours.Count; i++) {
-				if (_neighbours[i].GetIsWalkable() && _neighbours[i].GetOccupyingNodeObject() == null) {
+			for(int i = _lastCount; i < _neighbours.Count; i++) {
+				if(_neighbours[i].GetIsWalkable() && _neighbours[i].GetOccupyingNodeObject() == null) {
 					return _neighbours[i];
 				}
 			}
@@ -224,10 +212,10 @@ public class GameGrid : Singleton<GameGrid> {
 
 			// iterate over _neighbours - if their neighbours aren't in _neighbours, add them.
 			Node[] _newNeighbours;
-			for (int i = _prevLastCount; i < _lastCount; i++) {
+			for(int i = _prevLastCount; i < _lastCount; i++) {
 				NeighborFinder.GetSurroundingNodes(_neighbours[i].GridPos, out _newNeighbours);
-				for (int j = 0; j < _newNeighbours.Length; j++) {
-					if (_neighbours.Contains(_newNeighbours[j]))
+				for(int j = 0; j < _newNeighbours.Length; j++) {
+					if(_neighbours.Contains(_newNeighbours[j]))
 						continue;
 
 					_neighbours.Add(_newNeighbours[j]);
@@ -237,7 +225,7 @@ public class GameGrid : Singleton<GameGrid> {
 		return null;
 	}
 	public Node GetClosestFreeNode(Node _node) {
-		if (!_node.IsWall && _node.GetOccupyingNodeObject() == null) {
+		if(!_node.IsWall && _node.GetOccupyingNodeObject() == null) {
 			return _node;
 		}
 
@@ -246,11 +234,11 @@ public class GameGrid : Singleton<GameGrid> {
 		List<Node> _neighbours = new List<Node>(_nodes);
 		int _lastCount = 0;
 
-		while (_neighbours.Count < (SIZE.x * SIZE.y)) {
+		while(_neighbours.Count <(SIZE.x * SIZE.y)) {
 
 			// iterate over _neighbours until a free node is found
-			for (int i = _lastCount; i < _neighbours.Count; i++) {
-				if (!_neighbours[i].IsWall && _neighbours[i].GetOccupyingNodeObject() == null) {
+			for(int i = _lastCount; i < _neighbours.Count; i++) {
+				if(!_neighbours[i].IsWall && _neighbours[i].GetOccupyingNodeObject() == null) {
 					return _neighbours[i];
 				}
 			}
@@ -260,10 +248,10 @@ public class GameGrid : Singleton<GameGrid> {
 
 			// iterate over _neighbours - if their neighbours aren't in _neighbours, add them.
 			Node[] _newNeighbours;
-			for (int i = _prevLastCount; i < _lastCount; i++) {
+			for(int i = _prevLastCount; i < _lastCount; i++) {
 				NeighborFinder.GetSurroundingNodes(_neighbours[i].GridPos, out _newNeighbours);
-				for (int j = 0; j < _newNeighbours.Length; j++) {
-					if (_neighbours.Contains(_newNeighbours[j])) {
+				for(int j = 0; j < _newNeighbours.Length; j++) {
+					if(_neighbours.Contains(_newNeighbours[j])) {
 						continue;
 					}
 
@@ -282,7 +270,7 @@ public class GameGrid : Singleton<GameGrid> {
 		do {
 			_randomNodeGridPos = new Int2(Random.Range(0, GameGrid.SIZE.x), Random.Range(0, GameGrid.SIZE.y));
 			_randomNode = TryGetNode(_randomNodeGridPos);
-		} while (_randomNodeGridPos == _node.GridPos || _randomNode == null || !_randomNode.GetIsWalkable());
+		} while(_randomNodeGridPos == _node.GridPos || _randomNode == null || !_randomNode.GetIsWalkable());
 
 		// do{
 		// 	_randomNodeGridPos = _room.NodeGridPositions[Random.Range(0, _room.NodeGridPositions.Count)];
@@ -294,12 +282,12 @@ public class GameGrid : Singleton<GameGrid> {
 
 	void OnDrawGizmos() {
 		Gizmos.DrawWireCube(transform.position, new Vector3(SIZE.x, SIZE.y, 1));
-		if (nodeGrid == null) {
+		if(nodeGrid == null) {
 			return;
 		}
 
-		if (DisplayGridGizmos) {
-			foreach (Node _node in nodeGrid) {
+		if(DisplayGridGizmos) {
+			foreach(Node _node in nodeGrid) {
 				Gizmos.color = _node.GetIsWalkable() ? Color.white : Color.red;
 				Gizmos.DrawWireCube(_node.WorldPos, Vector3.one * 0.1f);
 			}
@@ -327,17 +315,23 @@ public class GameGrid : Singleton<GameGrid> {
 	}
 
 	public Node TryGetNode(int _posGridX, int _posGridY) {
-		if (!IsInsideNodeGrid(_posGridX, _posGridY)) {
+		if(!IsInsideNodeGrid(_posGridX, _posGridY)) {
 			return null;
 		}
 
 		return nodeGrid[_posGridX, _posGridY];
 	}
 
-	public void ScheduleUpdateForTile(Int2 _tileGridPos) {
-		meshBackground.ScheduleUpdateForTile(_tileGridPos);
-		meshInteractivesBack.ScheduleUpdateForTile(_tileGridPos);
-		meshInteractivesFront.ScheduleUpdateForTile(_tileGridPos);
+	public void ScheduleUpdateForTileAsset(Int2 _tileGridPos) {
+		meshBackground.ScheduleUpdateForTileAsset(_tileGridPos);
+		meshInteractivesBack.ScheduleUpdateForTileAsset(_tileGridPos);
+		meshInteractivesFront.ScheduleUpdateForTileAsset(_tileGridPos);
+	}
+	
+	public void ScheduleCacheChemicalData(Int2 _nodeGridPos) {
+		meshBackground.ScheduleCacheChemicalData(_nodeGridPos);
+		meshInteractivesBack.ScheduleCacheChemicalData(_nodeGridPos);
+		meshInteractivesFront.ScheduleCacheChemicalData(_nodeGridPos);
 	}
 
 	public void ClearTemporaryColor(Int2 _tileGridPos) {
@@ -364,10 +358,7 @@ public class GameGrid : Singleton<GameGrid> {
 		meshInteractivesFront.SetLighting(_tileGridPos, _vertexIndex, _lighting);
 	}
 
-	public void SetChemicalAmount(Int2 _nodeGridPos, int _amount) {
-		nodeGrid[_nodeGridPos.x, _nodeGridPos.y].ChemicalContent.SetAmount(_amount);
-		meshBackground.SetChemicalAmount(_nodeGridPos, _amount);
-		meshInteractivesBack.SetChemicalAmount(_nodeGridPos, _amount);
-		meshInteractivesFront.SetChemicalAmount(_nodeGridPos, _amount);
+	public GameGridMesh GetMeshForChemicals() {
+		return meshBackground;
 	}
 }
