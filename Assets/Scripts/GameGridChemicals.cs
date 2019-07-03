@@ -1,25 +1,25 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.Remoting.Channels;
 using UnityEngine;
 
 public partial class GameGrid {
 
-
-	private ChemicalContainer[, ] chemicalGridSpreadT = new ChemicalContainer[SIZE.x, SIZE.y];
-	private ChemicalContainer[, ] chemicalGridSpreadB = new ChemicalContainer[SIZE.x, SIZE.y];
-	private ChemicalContainer[, ] chemicalGridSpreadL = new ChemicalContainer[SIZE.x, SIZE.y];
-	private ChemicalContainer[, ] chemicalGridSpreadR = new ChemicalContainer[SIZE.x, SIZE.y];
+	private ChemicalSpread[, ] chemicalGridSpreadT = new ChemicalSpread[SIZE.x, SIZE.y];
+	private ChemicalSpread[, ] chemicalGridSpreadB = new ChemicalSpread[SIZE.x, SIZE.y];
+	private ChemicalSpread[, ] chemicalGridSpreadL = new ChemicalSpread[SIZE.x, SIZE.y];
+	private ChemicalSpread[, ] chemicalGridSpreadR = new ChemicalSpread[SIZE.x, SIZE.y];
 
 	public override bool IsUsingAwakeLate() { return true; }
 	public override void AwakeLate() {
 		base.AwakeLate();
-		
+
 		for(int x = 0; x < SIZE.x; x++) {
 			for(int y = 0; y < SIZE.y; y++) {
-				chemicalGridSpreadT[x, y] = new ChemicalContainer(Node.CHEM_AMOUNT_MAX);
-				chemicalGridSpreadB[x, y] = new ChemicalContainer(Node.CHEM_AMOUNT_MAX);
-				chemicalGridSpreadL[x, y] = new ChemicalContainer(Node.CHEM_AMOUNT_MAX);
-				chemicalGridSpreadR[x, y] = new ChemicalContainer(Node.CHEM_AMOUNT_MAX);
+				chemicalGridSpreadT[x, y] = new ChemicalSpread(Node.CHEM_AMOUNT_MAX);
+				chemicalGridSpreadB[x, y] = new ChemicalSpread(Node.CHEM_AMOUNT_MAX);
+				chemicalGridSpreadL[x, y] = new ChemicalSpread(Node.CHEM_AMOUNT_MAX);
+				chemicalGridSpreadR[x, y] = new ChemicalSpread(Node.CHEM_AMOUNT_MAX);
 			}
 		}
 	}
@@ -42,6 +42,31 @@ public partial class GameGrid {
 				ScheduleCacheChemicalData(_nodeGridPos);
 			}
 		}
+
+		float _total = 0.0f;
+		float _temp = 0.0f;
+		float min = Mathf.Infinity;
+		float max = Mathf.NegativeInfinity;
+		for(int x = 0; x < SIZE.x; x++) {
+			for(int y = 0; y < SIZE.y; y++) {
+				ChemicalContainer chemCont = nodeGrid[x, y].ChemicalContainer;
+
+				int _a = chemCont.Contents[0].Amount;
+				_total += _a;
+				_temp += chemCont.Temperature;
+
+				if (_a < min) {
+					min = _a;
+				}
+
+				if (_a > max) {
+					max = _a;
+				}
+			}
+		}
+
+		_temp /=(float)(SIZE.x * SIZE.y);
+		Debug.LogFormat("Amount: {0}, Min Amount: {1}, Max Amount: {2}, Temperature: {3}", _total, min, max, _temp);
 	}
 
 	void CalculateChemicalsAndTemperatureToSpread(Int2 _nodeGridPos) {
@@ -105,7 +130,7 @@ public partial class GameGrid {
 			return;
 		}
 
-		ChemicalContainer[, ] gridSpread;
+		ChemicalSpread[, ] gridSpread;
 		switch(_direction) {
 			case Direction.T:
 				gridSpread = chemicalGridSpreadT;
@@ -123,29 +148,43 @@ public partial class GameGrid {
 				throw new System.NotImplementedException(_dir + " hasn't been properly implemented yet!");
 		}
 
-		ChemicalContainer _giveSpread = gridSpread[_nodeGridPos.x, _nodeGridPos.y];
+		ChemicalSpread _giveSpread = gridSpread[_nodeGridPos.x, _nodeGridPos.y];
 		ChemicalContainer _takeFrom = nodeGrid[_nodeGridPos.x, _nodeGridPos.y].ChemicalContainer;
 		ChemicalContainer _giveTo = nodeGrid[_nodeGridPos.x + _dir.x, _nodeGridPos.y + _dir.y].ChemicalContainer;
 		
 		_takeFrom.Subtract(_giveSpread);
 		_giveTo.Add(_giveSpread);
+		
+		nodeGrid[_nodeGridPos.x, _nodeGridPos.y].DebugChemicalContainer.Contents[0].SetAmount(chemicalGridSpreadT[_nodeGridPos.x, _nodeGridPos.y].Contents[0].Amount);
+		nodeGrid[_nodeGridPos.x, _nodeGridPos.y].DebugChemicalContainer.Contents[1].SetAmount(0);
+		nodeGrid[_nodeGridPos.x, _nodeGridPos.y].DebugChemicalContainer.Contents[2].SetAmount(0);
 	}
 
-	ChemicalContainer TryGetNewSpread(ChemicalContainer _origin, Int2 _nodeGridPosNeighbor, ref int _amountRemaining) {
-		ChemicalContainer _spread = new ChemicalContainer(_origin.MaxAmount);
+	ChemicalSpread TryGetNewSpread(ChemicalContainer _origin, Int2 _nodeGridPosNeighbor, ref int _amountRemaining) {
+		ChemicalSpread _spread = new ChemicalSpread(_origin.MaxAmount);
 		ChemicalContainer _neighbor = nodeGridStartFrame[_nodeGridPosNeighbor.x, _nodeGridPosNeighbor.y].ChemicalContainer;
 
 		int _neighborAmountTotal = _neighbor.GetAmountTotal();
 		float _neighborAmountTotalClamped = Mathf.Max(0.001f, _neighborAmountTotal);
-		
-		_spread.SetTemperature(Mathf.Lerp(0.0f,(_origin.Temperature - _neighbor.Temperature) * 0.5f,(_amountRemaining / _neighborAmountTotalClamped) * 0.5f));
 
-		if(_amountRemaining <= _neighborAmountTotal) {
-			return _spread;
-		}
+		float _t = Mathf.Clamp01(_amountRemaining / _neighborAmountTotalClamped * 0.5f);
+
+		float _averageTemperatureTransferRate = 0.0f;
+		int _transferredTemperatureCount = 0;
+		int _transferredAmount = 0;
 
 		int _chemicalCount = ChemicalManager.GetInstance().GetAllChemicals().Length;
 		for(int i = 0; i < _chemicalCount; i++) {
+			
+			float _originTemperatureTransferRate = _origin.Contents[i].GetTemperatureTransferRate();
+			float _neighborTemperatureTransferRate = _neighbor.Contents[i].GetTemperatureTransferRate();
+			_averageTemperatureTransferRate +=(_originTemperatureTransferRate + _neighborTemperatureTransferRate) * 0.5f;
+			_transferredTemperatureCount++;
+			
+			if(_amountRemaining < _neighborAmountTotal) {
+				continue;
+			}
+
 			int _amount = GetChemicalAmountToTransfer(i, _origin, _neighbor);
 			if(_amount <= 0) {
 				continue;
@@ -153,19 +192,35 @@ public partial class GameGrid {
 
 			_spread.Contents[i].SetAmount(_amount);
 			_amountRemaining -= _amount;
+			_transferredAmount += _amount;
+		}
+
+		_averageTemperatureTransferRate /=(float)(_transferredTemperatureCount + 1);
+		float _maxTemperatureAbleToSet =(_origin.Temperature - _neighbor.Temperature);
+		float _finalTemperatureTransferRate = _averageTemperatureTransferRate * _maxTemperatureAbleToSet;
+
+		float _temperatureTransferredByContact = _finalTemperatureTransferRate * _t;
+		float _temperatureTransferredByAmount = _maxTemperatureAbleToSet * Mathf.Clamp01(_transferredAmount / _neighborAmountTotalClamped);
+	
+		if (_temperatureTransferredByContact > 0 && _temperatureTransferredByContact > _temperatureTransferredByAmount) {
+			_spread.Temperature = _temperatureTransferredByContact;
+			_spread.TemperatureLossMod = _neighborAmountTotal / (float)_amountRemaining;
+		}
+		else if(_temperatureTransferredByAmount > 0){
+			_spread.Temperature        = _temperatureTransferredByAmount;
+			_spread.TemperatureLossMod = _neighborAmountTotal / (float)_transferredAmount;
+		}
+		else {
+			_spread.Temperature = 0;
+			_spread.TemperatureLossMod = 0;
 		}
 
 		return _spread;
 	}
 
-	public static int GetChemicalAmountToTransfer(int _chemicalIndex, ChemicalContainer _source, ChemicalContainer _target) {
-		int _totalAmountSource = _source.GetAmountTotal();
-		int _totalAmountTarget = _target.GetAmountTotal();
-
-		if(_totalAmountSource == 0 ||  _totalAmountSource <= _totalAmountTarget) {
-			return 0;
-		}
-
+	static int GetChemicalAmountToTransfer(int _chemicalIndex, ChemicalContainer _source, ChemicalContainer _target) {
+		int _totalAmountSource = Mathf.Clamp(_source.GetAmountTotal(), 0, _source.MaxAmount);
+		int _totalAmountTarget = Mathf.Clamp(_target.GetAmountTotal(), 0, _target.MaxAmount);
 		int _totalAmountDiff = _totalAmountSource - _totalAmountTarget;
 
 		Chemical.Blob _sourceChem = _source.Contents[_chemicalIndex];
@@ -174,8 +229,6 @@ public partial class GameGrid {
 		int _maxAmountAbleToSet = _target.MaxAmount - _totalAmountTarget;
 		float _shareOfTotalAmountAtSource = _sourceChem.Amount /(float)_totalAmountSource;
 
-		float _amountToTransfer = Mathf.Min(_maxAmountAbleToSet, _maxAmountAbleToGet * _shareOfTotalAmountAtSource);
-
-		return Mathf.RoundToInt(_amountToTransfer);
+		return Mathf.RoundToInt(Mathf.Min(_maxAmountAbleToSet, _maxAmountAbleToGet * _shareOfTotalAmountAtSource));
 	}
 }

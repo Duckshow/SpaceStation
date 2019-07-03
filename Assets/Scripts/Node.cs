@@ -85,6 +85,7 @@ public class Node {
 	}
 
 	public ChemicalContainer ChemicalContainer;
+	public ChemicalContainer DebugChemicalContainer;
 
 	public int RoomIndex { get; private set; }
 	public void SetRoomIndex(int _index) {
@@ -243,6 +244,7 @@ public class Node {
 		GridPos = new Int2(_gridX, _gridY);
 		
 		ChemicalContainer = new ChemicalContainer(CHEM_AMOUNT_MAX);
+		DebugChemicalContainer = new ChemicalContainer(CHEM_AMOUNT_MAX);
 	}
 
 	public void TrySetIsWall(bool _isWall) {

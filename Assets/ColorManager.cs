@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class ColorManager : Singleton<ColorManager> {
 
+	public const int COLOR_COUNT = 128;
 	public const int COLOR_CHANNEL_COUNT = 10;
 
 	public enum ColorName : byte {

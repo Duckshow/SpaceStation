@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class ChemicalContainer {
-	public int MaxAmount { get; private set; }
-	public float Temperature { get; private set; }
 	public Chemical.Blob[] Contents;
+	public int MaxAmount { get; private set; }
+	public float Temperature {
+		get { return temperature; }
+		set { temperature = Mathf.Clamp(value, 0, Chemical.MAX_TEMPERATURE - 1); }
+	}
+	private float temperature;
 
 	public ChemicalContainer(int _maxAmount) {
 		MaxAmount = _maxAmount;
@@ -20,10 +24,6 @@ public class ChemicalContainer {
 	public void SetStartValues(int _amount, int _temperature) { // TODO: remove this
 		Temperature = _temperature;
 		Contents[0].SetAmount(_amount);
-	}
-
-	public void SetTemperature(float _temperature) {
-		Temperature = _temperature;
 	}
 
 	public Color32 GetColor() {
@@ -43,27 +43,19 @@ public class ChemicalContainer {
 		return _total;
 	}
 
-	public float GetMaxPossibleAmountToTransfer() {
-		float _amount = 0.0f;
+	public void Add(ChemicalSpread _spread) {
+		Temperature += _spread.Temperature;
 
 		for(int i = 0; i < Contents.Length; i++) {
-			_amount += Contents[i].GetAmountTransferablePerFrame();
-		}
-
-		return _amount;
-	}
-
-	public void Add(ChemicalContainer _otherChemicalContainer) {
-		Temperature += _otherChemicalContainer.Temperature;
-
-		for(int i = 0; i < Contents.Length; i++) {
-			Contents[i].SetAmount(Contents[i].Amount + _otherChemicalContainer.Contents[i].Amount);
+			Contents[i].SetAmount(Contents[i].Amount + _spread.Contents[i].Amount);
 		}
 	}
 
-	public void Subtract(ChemicalContainer _otherChemicalContainer) {
+	public void Subtract(ChemicalSpread _spread) {
+		Temperature -= _spread.Temperature * Mathf.Max(0.0f, _spread.TemperatureLossMod);
+
 		for(int i = 0; i < Contents.Length; i++) {
-			Contents[i].SetAmount(Contents[i].Amount - _otherChemicalContainer.Contents[i].Amount);
+			Contents[i].SetAmount(Contents[i].Amount - _spread.Contents[i].Amount);
 		}
 	}
 
@@ -79,4 +71,14 @@ public class ChemicalContainer {
 		_chem1 = _chems[1];
 		_chem2 = _chems[2];
 	}
+}
+
+public class ChemicalSpread : ChemicalContainer {
+	public float TemperatureLossMod {
+		get { return temperatureLossMod; }
+		set { temperatureLossMod = Mathf.Clamp01(value); }
+	}
+	private float temperatureLossMod;
+
+	public ChemicalSpread(int _maxAmount) : base(_maxAmount) { }
 }

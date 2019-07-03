@@ -1,8 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using UnityEditor;
 using UnityEngine;
+
 public static class Extensions {
+	public static bool IsGreaterOrEqual(this float _f, params float[] _fs) {
+		for (int i = 0; i < _fs.Length; i++) {
+			if (_fs[i] > _f) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public static string Color(this string s, Color c) {
 		Color32 c32 = c;
 		string cHex = "#" + c32.r.ToString("X2") + c32.g.ToString("X2") + c32.b.ToString("X2") + c32.a.ToString("X2");

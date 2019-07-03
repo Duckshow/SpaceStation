@@ -4,6 +4,7 @@ using UnityEngine;
 public partial class GameGrid : Singleton<GameGrid> {
 
 	public static readonly Int2 SIZE = new Int2(48, 48);
+	public static readonly Int2 TILE_COUNT = SIZE + Int2.One;
 	public const float TILE_RADIUS = 0.5f;
 	public const float TILE_DIAMETER = 1;
 	public const int TILE_RESOLUTION = 16;
@@ -51,7 +52,6 @@ public partial class GameGrid : Singleton<GameGrid> {
 
 		transform.position = new Vector3(0.5f, 0.5f, 0.0f);
 
-		GameGridMesh.InitStatic();
 		meshBackground.Init(Sorting.Back, GameGridMesh.RenderMode.Walls);
 		meshInteractivesBack.Init(Sorting.Back, GameGridMesh.RenderMode.Interactives);
 		meshInteractivesFront.Init(Sorting.Front, GameGridMesh.RenderMode.Interactives);
@@ -63,7 +63,7 @@ public partial class GameGrid : Singleton<GameGrid> {
 		base.StartEarly();
 		CreateGrid();
 	}
-	
+
 	public override bool IsUsingUpdateEarly() { return true; }
 	public override void UpdateEarly() {
 		base.UpdateEarly();
@@ -103,15 +103,15 @@ public partial class GameGrid : Singleton<GameGrid> {
 			for(int x = 0; x < SIZE.x; x++) {
 				_node = nodeGrid[x, y];
 
-				bool _isXAtLeftBorder = x == 1;
-				bool _isXAtRightBorder = x == SIZE.x - 2;
-				bool _isXBetweenBorders = x > 0 && x < SIZE.x - 2;
+				bool _isXAtLeftBorder = x == 0;
+				bool _isXAtRightBorder = x == SIZE.x - 1;
+				bool _isXBetweenBorders = x > 0 && x < SIZE.x - 1;
 
-				bool _isYAtBottomBorder = y == 1;
-				bool _isYAtTopBorder = y == SIZE.y - 2;
-				bool _isYBetweenBorders = y > 0 && y < SIZE.y - 2;
+				bool _isYAtBottomBorder = y == 0;
+				bool _isYAtTopBorder = y == SIZE.y - 1;
+				bool _isYBetweenBorders = y > 0 && y < SIZE.y - 1;
 
-				if(((_isXAtLeftBorder || _isXAtRightBorder) && _isYBetweenBorders) ||((_isYAtBottomBorder || _isYAtTopBorder) && _isXBetweenBorders)) {
+				if(_isXAtLeftBorder || _isXAtRightBorder || _isYAtBottomBorder || _isYAtTopBorder) {
 					_node.TrySetIsWall(true);
 				}
 
@@ -129,19 +129,35 @@ public partial class GameGrid : Singleton<GameGrid> {
 				}
 
 				// chems
-				int _amount      = 0;
+				int _amount = 0;
 				int _temperature = 0;
-				if(x < 24) {
-					_amount      = 100;
-					_temperature = 1000;
+				// if(x < 30 && x > 20 && y < 30 && y > 20) {
+				// 	_amount = 100;
+				// 	_temperature = 500;
+				// }
+				// // else if(x >= 16 && x < 32) {
+				// // 	_amount = 0;
+				// // 	_temperature = 0;
+				// // }
+				// else {
+				// 	_amount = 0;
+				// 	_temperature = 0;
+				// }
+
+				
+				if (x == 10 && y == 10) {
+					_amount = 99;
+					_temperature = 500;
 				}
 				else {
-					_amount      = 0;
-					_temperature = 0;
+					_amount = 100;
+					_temperature = 500;
 				}
+				
+
 				_node.ChemicalContainer.SetStartValues(_amount, _temperature);
 				//
-				
+
 				_node.ScheduleUpdateGraphicsForSurroundingTiles();
 			}
 		}
@@ -327,7 +343,7 @@ public partial class GameGrid : Singleton<GameGrid> {
 		meshInteractivesBack.ScheduleUpdateForTileAsset(_tileGridPos);
 		meshInteractivesFront.ScheduleUpdateForTileAsset(_tileGridPos);
 	}
-	
+
 	public void ScheduleCacheChemicalData(Int2 _nodeGridPos) {
 		meshBackground.ScheduleCacheChemicalData(_nodeGridPos);
 		meshInteractivesBack.ScheduleCacheChemicalData(_nodeGridPos);
