@@ -4,7 +4,26 @@ using System.Security.Cryptography.X509Certificates;
 using UnityEditor;
 using UnityEngine;
 
+public interface ICloneable<T> {
+	T Clone();
+}
+
 public static class Extensions {
+	
+	public static T[,] CloneArrayAndContents<T>(this T[,] _array) where T : ICloneable<T> {
+		int _lengthX = _array.GetLength(0);
+		int _lengthY = _array.GetLength(1);
+		T[,] _clone = new T[_lengthX, _lengthY];
+
+		for (int x = 0; x < _lengthX; x++) {
+			for (int y = 0; y < _lengthY; y++) {
+				_clone[x, y] = _array[x, y].Clone();
+			}
+		}
+
+		return _clone;
+	}
+
 	public static bool IsGreaterOrEqual(this float _f, params float[] _fs) {
 		for (int i = 0; i < _fs.Length; i++) {
 			if (_fs[i] > _f) {

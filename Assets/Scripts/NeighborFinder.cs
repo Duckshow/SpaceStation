@@ -119,34 +119,7 @@ public static class NeighborFinder {
 		_nodes[7] = GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Left);
 	}
 
-	public static void GetSurroundingNodes(Int2 _nodeGridPos, out List<Node> _nodes) {
-		_nodes = new List<Node>(8);
-		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpLeft));
-		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Up));
-		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.UpRight));
-		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Right));
-		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownRight));
-		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Down));
-		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.DownLeft));
-		_nodes.Add(GameGrid.GetInstance().TryGetNode(_nodeGridPos + Int2.Left));
-	}
-
-	public static Direction GetNeighborDirection(Int2 _originGridPos, Int2 _neighborGridPos) {
-		Int2 _diff = _neighborGridPos - _originGridPos;
-
-		if (_diff.x < 0 && _diff.y > 0) { return Direction.TL; }
-		if (_diff.x == 0 && _diff.y > 0) { return Direction.T; }
-		if (_diff.x > 0 && _diff.y > 0) { return Direction.TR; }
-		if (_diff.x > 0 && _diff.y == 0) { return Direction.R; }
-		if (_diff.x > 0 && _diff.y < 0) { return Direction.BR; }
-		if (_diff.x == 0 && _diff.y < 0) { return Direction.B; }
-		if (_diff.x < 0 && _diff.y < 0) { return Direction.BL; }
-		if (_diff.x < 0 && _diff.y == 0) { return Direction.L; }
-
-		return Direction.None;
-	}
-
-	public static Direction GetOppositeDirection(Direction _dir) {
+	public static Direction GetDirectionMirrored(Direction _dir) {
 		switch (_dir){
 			case Direction.TL:	return Direction.BR;
 			case Direction.T:	return Direction.B;
@@ -159,18 +132,32 @@ public static class NeighborFinder {
 			default:			return Direction.None;
 		}
 	}
-
-	public static Int2 ConvertDirectionToInt2(Direction _dir) {
+	
+	public static Direction GetDirectionMirroredInX(Direction _dir) {
 		switch (_dir){
-			case Direction.TL:	return Int2.UpLeft;
-			case Direction.T:	return Int2.Up;
-			case Direction.TR:	return Int2.UpRight;
-			case Direction.R:	return Int2.Right;
-			case Direction.BR:	return Int2.DownRight;
-			case Direction.B:	return Int2.Down;
-			case Direction.BL:	return Int2.DownLeft;
-			case Direction.L:	return Int2.Left;
-			default:			return Int2.Zero;
+			case Direction.TL: return Direction.TR;
+			case Direction.T:  return Direction.T;
+			case Direction.TR: return Direction.TL;
+			case Direction.R:  return Direction.L;
+			case Direction.BR: return Direction.BL;
+			case Direction.B:  return Direction.B;
+			case Direction.BL: return Direction.BR;
+			case Direction.L:  return Direction.R;
+			default:           return Direction.None;
+		}
+	}
+	
+	public static Direction GetDirectionMirroredInY(Direction _dir) {
+		switch (_dir){
+			case Direction.TL: return Direction.BL;
+			case Direction.T:  return Direction.B;
+			case Direction.TR: return Direction.BR;
+			case Direction.R:  return Direction.R;
+			case Direction.BR: return Direction.TR;
+			case Direction.B:  return Direction.B;
+			case Direction.BL: return Direction.TL;
+			case Direction.L:  return Direction.L;
+			default:           return Direction.None;
 		}
 	}
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class ObjectPooler : MonoBehaviour {
-	public enum PoolableID { None, UVController }
+	public enum PoolableID { None, UVController, IncandescenceLamp }
 
     [Serializable]
 	public class Pool {

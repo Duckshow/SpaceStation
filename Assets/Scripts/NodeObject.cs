@@ -47,6 +47,10 @@ public class NodeObject : EventOwner {
 		return GameGrid.GetInstance().TryGetNode(nodeGridPosition);
 	}
 
+	public Int2 GetGridPosition() {
+		return nodeGridPosition;
+	}
+
 	public void SetGridPosition(Node _newNode, bool _setPosition = true) {
         if (Parent != null)
             return;

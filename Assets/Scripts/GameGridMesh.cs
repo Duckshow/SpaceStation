@@ -114,7 +114,6 @@ public class GameGridMesh {
 		chemColors_2 = new Color[_nodesPerGrid];
 		debugColors = new Color[_nodesPerGrid];
 		chemStates = new Color[_nodesPerGrid];
-		
 
 		appliedColorIndices = new byte[GameGrid.TILE_COUNT.x * GameGrid.TILE_COUNT.y * ColorManager.COLOR_CHANNEL_COUNT];
 		compressedColorIndices = new List<Vector4>(_verticesPerGrid);
@@ -438,16 +437,19 @@ public class GameGridMesh {
 		// chemColorIndices[_vertexIndexBR] = new Vector3(_colorIndex_0, _colorIndex_1, _colorIndex_2);
 		// chemColorIndices[_vertexIndexTL] = new Vector3(_colorIndex_0, _colorIndex_1, _colorIndex_2);
 		// chemColorIndices[_vertexIndexTR] = new Vector3(_colorIndex_0, _colorIndex_1, _colorIndex_2);
-		chemColors_0[_nodeIndex] = _chem_0.GetCurrentColor();
-		chemColors_1[_nodeIndex] = _chem_1.GetCurrentColor();
-		chemColors_2[_nodeIndex] = _chem_2.GetCurrentColor();
+		chemColors_0[_nodeIndex] = _chem_0.GetColorIndicesForStates();
+		chemColors_1[_nodeIndex] = _chem_1.GetColorIndicesForStates();
+		chemColors_2[_nodeIndex] = _chem_2.GetColorIndicesForStates();
 		//
 
+		
 		// Texture data
-		int _stateCount = System.Enum.GetValues(typeof(Chemical.State)).Length - 1;
-		float _state_0 = _chem_0.GetStateAsFloat() /(float)_stateCount;
-		float _state_1 = _chem_1.GetStateAsFloat() /(float)_stateCount;
-		float _state_2 = _chem_2.GetStateAsFloat() /(float)_stateCount;
+		int _stateCount = System.Enum.GetValues(typeof(Chemical.State)).Length;
+		float _state_0 = _chem_0.GetStateAsFloat() /(float)(_stateCount - 1.0f);
+		float _state_1 = _chem_1.GetStateAsFloat() /(float)(_stateCount - 1.0f);
+		float _state_2 = _chem_2.GetStateAsFloat() /(float)(_stateCount - 1.0f);
+
+		// Debug.Log(_chem_0.GetStateAsFloat() + ", " + _state_0);
 
 		// chemStates[_vertexIndexBL] = new Vector3(_state_0, _state_1, _state_2);
 		// chemStates[_vertexIndexBR] = new Vector3(_state_0, _state_1, _state_2);
@@ -462,6 +464,29 @@ public class GameGridMesh {
 		//
 		// 	Debug.Log("state = " +(_state_0 * 3.0f) + ", stateR = " + _stateR);
 		// }
+
+		if (_chemicalContainer.IsIncandescent() || _chemicalContainer.HasLostIncandescence()) {
+ 			LampManager.GetInstance().SetNodeIncandescenceDirty(_nodeGridPos);
+		}
+		
+		// Color _incandescence_0 = _chem_0.GetIncandescence() * _amount_0;
+		// Color _incandescence_1 = _chem_1.GetIncandescence() * _amount_1;
+		// Color _incandescence_2 = _chem_2.GetIncandescence() * _amount_2;
+		//
+		// float _maxIncandescenceR = Mathf.Max(_incandescence_0.r, Mathf.Max(_incandescence_1.r, _incandescence_2.r));
+		// float _maxIncandescenceG = Mathf.Max(_incandescence_0.g, Mathf.Max(_incandescence_1.g, _incandescence_2.g));
+		// float _maxIncandescenceB = Mathf.Max(_incandescence_0.b, Mathf.Max(_incandescence_1.b, _incandescence_2.b));
+		// float _maxIncandescenceA = Mathf.Max(_incandescence_0.a, Mathf.Max(_incandescence_1.a, _incandescence_2.a));
+		//
+		// Node _node = GameGrid.GetInstance().TryGetNode(_nodeGridPos);
+		// Color32 _lighting = _node.GetLighting();
+		//
+		// _lighting.r = (byte)Mathf.Max(_lighting.r, _maxIncandescenceR * 255.0f);
+		// _lighting.g = (byte)Mathf.Max(_lighting.g, _maxIncandescenceG * 255.0f);
+		// _lighting.b = (byte)Mathf.Max(_lighting.b, _maxIncandescenceB * 255.0f);
+		// _lighting.a = (byte)Mathf.Max(_lighting.a, _maxIncandescenceA * 255.0f);
+		//
+		// _node.SetLighting(_lighting);
 	}
 
 	// void CacheChemicalDataForAllCenterVertices() {

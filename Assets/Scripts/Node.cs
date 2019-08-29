@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class Node {
+public class Node : ICloneable<Node> {
 	
-	public const int CHEM_AMOUNT_MAX = 100;
+	public const int CHEM_AMOUNT_MAX = 10000;
 
 	public class InteractiveObject {
 		public enum State { None, Default, OpenLeft, OpenRight, OpenAbove, OpenBelow }
@@ -101,10 +101,36 @@ public class Node {
 	public InteractiveObject AttachedInteractiveObject { get; private set; }
 	public InteractiveObject AttachedInteractiveObjectTemporary { get; private set; }
 
+	public Int2    GridPos  { get; private set; }
+	public Vector2 WorldPos { get; private set; }
+	
 	private Color32 lightingTL = new Color32(0, 0, 0, 0);
 	private Color32 lightingTR = new Color32(0, 0, 0, 0);
 	private Color32 lightingBR = new Color32(0, 0, 0, 0);
 	private Color32 lightingBL = new Color32(0, 0, 0, 0);
+
+	private NodeObject occupyingNodeObject = null;
+
+	public Node Clone() {
+		Node _n = new Node(WorldPos, GridPos.x, GridPos.y);
+		_n.ChemicalContainer = ChemicalContainer.Clone();
+		_n.DebugChemicalContainer = DebugChemicalContainer.Clone();
+		_n.RoomIndex = RoomIndex;
+		_n.IsWall = IsWall;
+		_n.IsWallTemporarily = IsWallTemporarily;
+		_n.UseIsWallTemporary = UseIsWallTemporary;
+		_n.UseAttachedInteractiveObjectTemporary = UseAttachedInteractiveObjectTemporary;
+		_n.AttachedInteractiveObject = AttachedInteractiveObject;
+		_n.AttachedInteractiveObjectTemporary = AttachedInteractiveObjectTemporary;
+		_n.GridPos = GridPos;
+		_n.WorldPos = WorldPos;
+		_n.lightingTL = lightingTL;
+		_n.lightingTR = lightingTR;
+		_n.lightingBR = lightingBR;
+		_n.lightingBL = lightingBL;
+		_n.occupyingNodeObject = occupyingNodeObject;
+		return _n;
+	}
 
 	public float GetWaitTime() {
 		return AttachedInteractiveObject != null ? AttachedInteractiveObject.GetWaitTime() : 0.0f;
@@ -114,12 +140,32 @@ public class Node {
 		return !IsWall || (AttachedInteractiveObject != null && AttachedInteractiveObject.GetIsWalkable());
 	}
 
-	public Color32 GetLighting() {
-		if (!lightingTL.Equals(lightingTR) || !lightingTL.Equals(lightingBR) || !lightingTL.Equals(lightingBL)) {
-			Debug.LogErrorFormat("Node({0})'s lighting varies across vertices, but is still expected to return a uniform lighting variable!", GridPos);
-		}
+	public Color32 GetLighting(Direction _lightingDirection) {
+		// if (!lightingTL.Equals(lightingTR) || !lightingTL.Equals(lightingBR) || !lightingTL.Equals(lightingBL)) {
+		// 	Debug.LogErrorFormat("Node({0})'s lighting varies across vertices, but is still expected to return a uniform lighting variable!", GridPos);
+		// }
+		//
+		// return lightingTL;
 
-		return lightingTL;
+		switch (_lightingDirection) {
+			case Direction.None:
+			case Direction.All:
+			case Direction.T:
+			case Direction.R:
+			case Direction.B:
+			case Direction.L:
+				Debug.LogError(_lightingDirection + " isn't supported by GetLightingFromDirection()!");
+				break;
+			case Direction.TL: return lightingTL;
+			case Direction.TR: return lightingTR;
+			case Direction.BR: return lightingBR;
+			case Direction.BL: return lightingBL;
+			default:
+				Debug.LogError(_lightingDirection + " hasn't been properly implemented yet!");
+				break;
+		}
+	
+		return new Color32();
 	}
 
 	public void SetLighting(Color32 _light) {
@@ -130,7 +176,7 @@ public class Node {
 		ScheduleUpdateGraphicsForSurroundingTiles();
 	}
 
-	public void SetLightingBasedOnNeighbors() {
+	public void SetLightingBasedOnNeighbors() { // TODO: this causes jagged lighting along walls - can definitely be fixed though!
 		Node _nodeTL, _nodeT, _nodeTR, _nodeR, _nodeBR, _nodeB, _nodeBL, _nodeL;
 		NeighborFinder.GetSurroundingNodes(GridPos, out _nodeTL, out _nodeT, out _nodeTR, out _nodeR, out _nodeBR, out _nodeB, out _nodeBL, out _nodeL);
 
@@ -180,51 +226,34 @@ public class Node {
 		NeighborFinder.TryCacheNeighbor(GridPos, _directionY);
 
 		Node _neighborXY = NeighborFinder.CachedNeighbors[_direction];
-		Node _neighborY = NeighborFinder.CachedNeighbors[_directionX];
 		Node _neighborX = NeighborFinder.CachedNeighbors[_directionY];
-
-		int _neighborsGivingLight = 0;
+		Node _neighborY = NeighborFinder.CachedNeighbors[_directionX];
 
 		Color32 _lightingFromNeighborXY = new Color32();
 		if (_neighborXY != null && !_neighborXY.IsWall) {
-			_lightingFromNeighborXY = _neighborXY.GetLighting();
-			_neighborsGivingLight++;
-		}
-
-		Color32 _lightingFromNeighborY = new Color32();
-		if (_neighborY != null && !_neighborY.IsWall) {
-			_lightingFromNeighborY = _neighborY.GetLighting();
-			_neighborsGivingLight++;
+			_lightingFromNeighborXY = _neighborXY.GetLighting(NeighborFinder.GetDirectionMirrored(_direction));
 		}
 
 		Color32 _lightingFromNeighborX = new Color32();
 		if (_neighborX != null && !_neighborX.IsWall) {
-			_lightingFromNeighborX = _neighborX.GetLighting();
-			_neighborsGivingLight++;
+			_lightingFromNeighborX = _neighborX.GetLighting(NeighborFinder.GetDirectionMirroredInX(_direction));
 		}
-
-		if (_neighborsGivingLight == 0) {
-			return new Color32();
+		
+		Color32 _lightingFromNeighborY = new Color32();
+		if (_neighborY != null && !_neighborY.IsWall) {
+			_lightingFromNeighborY = _neighborY.GetLighting(NeighborFinder.GetDirectionMirroredInY(_direction));
 		}
 
 		Color32 _newLighting = new Color32(
-			(byte) ((_lightingFromNeighborXY.r + _lightingFromNeighborY.r + _lightingFromNeighborX.r) / _neighborsGivingLight),
-			(byte) ((_lightingFromNeighborXY.g + _lightingFromNeighborY.g + _lightingFromNeighborX.g) / _neighborsGivingLight),
-			(byte) ((_lightingFromNeighborXY.b + _lightingFromNeighborY.b + _lightingFromNeighborX.b) / _neighborsGivingLight),
-			(byte) ((_lightingFromNeighborXY.a + _lightingFromNeighborY.a + _lightingFromNeighborX.a) / _neighborsGivingLight)
+			(byte) Mathf.Max(_lightingFromNeighborXY.r, Mathf.Max(_lightingFromNeighborY.r, _lightingFromNeighborX.r)),
+			(byte) Mathf.Max(_lightingFromNeighborXY.g, Mathf.Max(_lightingFromNeighborY.r, _lightingFromNeighborX.r)),
+			(byte) Mathf.Max(_lightingFromNeighborXY.b, Mathf.Max(_lightingFromNeighborY.r, _lightingFromNeighborX.r)),
+			(byte) Mathf.Max(_lightingFromNeighborXY.a, Mathf.Max(_lightingFromNeighborY.r, _lightingFromNeighborX.r))
 		);
-
-		// Color32 _newLighting = new Color32(
-		// 	255, 255, 255, 255
-		// );
 
 		return _newLighting;
 	}
-
-	public Int2 GridPos { get; private set; }
-	public Vector2 WorldPos { get; private set; }
-
-	private NodeObject occupyingNodeObject = null;
+	
 	public NodeObject GetOccupyingNodeObject() {
 		return occupyingNodeObject;
 	}
@@ -256,16 +285,16 @@ public class Node {
 
 		if (_isWall) {
 			NeighborFinder.TryCacheNeighbor(GridPos, Direction.All);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.TL]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.T]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.TR]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.R]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.BR]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.B]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.BL]);
-			LampManager.GetInstance().TryAddNodeToUpdate(NeighborFinder.CachedNeighbors[Direction.L]);
+			LampManager.GetInstance().SetNodeLightingDirty(NeighborFinder.CachedNeighbors[Direction.TL]);
+			LampManager.GetInstance().SetNodeLightingDirty(NeighborFinder.CachedNeighbors[Direction.T]);
+			LampManager.GetInstance().SetNodeLightingDirty(NeighborFinder.CachedNeighbors[Direction.TR]);
+			LampManager.GetInstance().SetNodeLightingDirty(NeighborFinder.CachedNeighbors[Direction.R]);
+			LampManager.GetInstance().SetNodeLightingDirty(NeighborFinder.CachedNeighbors[Direction.BR]);
+			LampManager.GetInstance().SetNodeLightingDirty(NeighborFinder.CachedNeighbors[Direction.B]);
+			LampManager.GetInstance().SetNodeLightingDirty(NeighborFinder.CachedNeighbors[Direction.BL]);
+			LampManager.GetInstance().SetNodeLightingDirty(NeighborFinder.CachedNeighbors[Direction.L]);
 		} else {
-			LampManager.GetInstance().TryAddNodeToUpdate(this);
+			LampManager.GetInstance().SetNodeLightingDirty(this);
 		}
 
 		RoomManager.GetInstance().ScheduleUpdateForRoomOfNode(GridPos);

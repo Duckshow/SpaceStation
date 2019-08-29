@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.Remoting.Channels;
 using UnityEngine;
 
 public partial class GameGrid : Singleton<GameGrid> {
@@ -67,7 +68,7 @@ public partial class GameGrid : Singleton<GameGrid> {
 	public override bool IsUsingUpdateEarly() { return true; }
 	public override void UpdateEarly() {
 		base.UpdateEarly();
-		nodeGridStartFrame = nodeGrid;
+		nodeGridStartFrame = nodeGrid.CloneArrayAndContents();
 	}
 
 	public override bool IsUsingUpdateLate() { return true; }
@@ -144,16 +145,20 @@ public partial class GameGrid : Singleton<GameGrid> {
 				// 	_temperature = 0;
 				// }
 
-				
-				if (x == 10 && y == 10) {
-					_amount = 99;
-					_temperature = 500;
+				if (!_node.IsWall) {
+					if (x >= 30 && x < 40 && y >= 30 && y < 40) {
+						_amount = 10000;
+						_temperature = 10000;
+					}
+					// else if(x < 30) {
+					// 	_amount = 1000;
+					// 	_temperature = 700;
+					// }
+					else {
+						_amount = 10000;
+						_temperature = 0;
+					}
 				}
-				else {
-					_amount = 100;
-					_temperature = 500;
-				}
-				
 
 				_node.ChemicalContainer.SetStartValues(_amount, _temperature);
 				//
@@ -326,16 +331,16 @@ public partial class GameGrid : Singleton<GameGrid> {
 		// }
 	}
 
-	public Node TryGetNode(Int2 _posGrid) {
-		return TryGetNode(_posGrid.x, _posGrid.y);
+	public Node TryGetNode(Int2 _nodeGridPos, bool _atStartFrame = false) {
+		return TryGetNode(_nodeGridPos.x, _nodeGridPos.y, _atStartFrame);
 	}
 
-	public Node TryGetNode(int _posGridX, int _posGridY) {
-		if(!IsInsideNodeGrid(_posGridX, _posGridY)) {
+	public Node TryGetNode(int _nodeGridPosX, int _nodeGridPosY, bool _atStartFrame = false) {
+		if(!IsInsideNodeGrid(_nodeGridPosX, _nodeGridPosY)) {
 			return null;
 		}
 
-		return nodeGrid[_posGridX, _posGridY];
+		return _atStartFrame ? nodeGridStartFrame[_nodeGridPosX, _nodeGridPosY] : nodeGrid[_nodeGridPosX, _nodeGridPosY];
 	}
 
 	public void ScheduleUpdateForTileAsset(Int2 _tileGridPos) {
@@ -372,9 +377,5 @@ public partial class GameGrid : Singleton<GameGrid> {
 		meshBackground.SetLighting(_tileGridPos, _vertexIndex, _lighting);
 		meshInteractivesBack.SetLighting(_tileGridPos, _vertexIndex, _lighting);
 		meshInteractivesFront.SetLighting(_tileGridPos, _vertexIndex, _lighting);
-	}
-
-	public GameGridMesh GetMeshForChemicals() {
-		return meshBackground;
 	}
 }

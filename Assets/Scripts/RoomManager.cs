@@ -10,9 +10,9 @@ public class RoomManager : Singleton<RoomManager> {
 		private static int roomCreationAttempts = 0;
 
 		public float TimeCreated { get; private set; }
-		public List<Int2> NodeGridPositions = new List<Int2>(GameGrid.GetArea());
-		public List<Int2> WallNodeGridPositions = new List<Int2>(GameGrid.GetArea());
-		public List<Lamp> Lamps = new List<Lamp>(GameGrid.GetArea());
+		public readonly List<Int2> NodeGridPositions = new List<Int2>(GameGrid.GetArea());
+		public readonly List<Int2> WallNodeGridPositions = new List<Int2>(GameGrid.GetArea());
+		public readonly List<Lamp> Lamps = new List<Lamp>(GameGrid.GetArea());
 
 		public int RoomIndex { get; private set; }
 		public bool IsInsideShip;
