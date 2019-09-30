@@ -21,10 +21,7 @@ Shader "Custom/Grid" {
 		_AlphaPlasma ("AlphaPlasma ", Float) = 1.0
 
 		_ChemAmountsAndTemperatureTex ("ChemAmountsAndTemperature (assigned in code)", 2D) = "white" {}
-		_ChemColorsTex_0 ("ChemColorsTex_0 (assigned in code)", 2D) = "white" {}
-		_ChemColorsTex_1 ("ChemColorsTex_1 (assigned in code)", 2D) = "white" {}
-		_ChemColorsTex_2 ("ChemColorsTex_2 (assigned in code)", 2D) = "white" {}
-		_DebugTex ("DebugTex (assigned in code)", 2D) = "white" {}
+		_ChemColorsTex ("ChemColorsTex (assigned in code)", 2D) = "white" {}
 		_ChemStatesTex ("ChemStatesTex (assigned in code)", 2D) = "white" {}
 
         _MainTex_1("Bugfix (Don't assign)", 2D) = "white" {} 
@@ -58,10 +55,7 @@ Shader "Custom/Grid" {
 			sampler2D _PerlinTex_2;
 
 			sampler2D _ChemAmountsAndTemperatureTex;
-			sampler2D _ChemColorsTex_0;
-			sampler2D _ChemColorsTex_1;
-			sampler2D _ChemColorsTex_2;
-			sampler2D _DebugTex;
+			sampler2D _ChemColorsTex;
 			sampler2D _ChemStatesTex;
 
 			fixed _Emission;
@@ -269,7 +263,7 @@ Shader "Custom/Grid" {
 			    return _incandescense * step(_tempDraperPoint, _temp);
 			}
 			
-			fixed4 GetPixelForChem(fixed _chemAmount, fixed4 _chemColorIndices, fixed _chemState, fixed _morphingPerlin, fixed _staticPerlin){
+			fixed4 GetPixelForChem(fixed _chemAmount, fixed3 _chemColor, fixed _chemState, fixed _morphingPerlin, fixed _staticPerlin){
 			    if(_chemAmount == 0) {
 			        return 0;
 			    }
@@ -277,16 +271,13 @@ Shader "Custom/Grid" {
                 fixed _chemStateSolid = _chemState - 0.0;
                 fixed _chemStateLiquid = _chemState - 1.0;
                 fixed _chemStateGas = _chemState - 2.0;
-                fixed _chemStatePlasma = _chemState - 3.0;
 			
 			    fixed _solidMod = floor(_staticPerlin + lerp(0.25, 1.0, _chemAmount * 1.0) * ceil(_chemAmount));
                 fixed _liquidMod = floor(_staticPerlin + lerp(0.25, 1.0, _chemAmount * 2.0) * ceil(_chemAmount));
 			    fixed _gasMod = (_morphingPerlin + _chemAmount) * 10.0 * _chemAmount;
-			    fixed _plasmaMod = _gasMod;
 			    
 			    fixed _solidLiquidMod = lerp(_solidMod, _liquidMod, 0.5);
 			    fixed _liquidGasMod = lerp(_liquidMod, _gasMod, 0.5);
-			    fixed _gasPlasmaMod = lerp(_gasMod, _plasmaMod, 0.5);
 
 				float _alpha = 0.0;
 				_alpha += TryGetValueInterpolatedTowardsLowerState(_solidMod, _solidMod, _chemStateSolid);
@@ -296,34 +287,16 @@ Shader "Custom/Grid" {
 				_alpha += TryGetValueInterpolatedTowardsHigherState(_liquidMod, _liquidGasMod, _chemStateLiquid);
 				
 				_alpha += TryGetValueInterpolatedTowardsLowerState(_liquidGasMod, _gasMod, _chemStateGas);
-				_alpha += TryGetValueInterpolatedTowardsHigherState(_gasMod, _gasPlasmaMod, _chemStateGas);
+				_alpha += TryGetValueInterpolatedTowardsHigherState(_gasMod, 1.0, _chemStateGas);
 				
-				_alpha += TryGetValueInterpolatedTowardsLowerState(_gasPlasmaMod, _plasmaMod, _chemStatePlasma);
-				_alpha += TryGetValueInterpolatedTowardsHigherState(_plasmaMod, 1.0, _chemStatePlasma);
-				
-                fixed3 _colorSolid = allColors[_chemColorIndices.x] + 0.25;
-                fixed3 _colorLiquid = allColors[_chemColorIndices.y];
-                fixed3 _colorGas = allColors[_chemColorIndices.z] + 0.5;
-                fixed3 _colorPlasma = allColors[_chemColorIndices.w] + 1.0;
+                fixed3 _color = _chemColor + 0.25;
+                _color += 0.25 * (_solidMod > 0.0);// step(0.0, _solidMod);
+                _color += 0.0 * (_liquidMod > 0.0);// step(0.0, _liquidMod);
+                _color += 0.5 * (_gasMod > 0.0);// step(0.0, _gasMod);
                 
-                fixed3 _colorSolidLiquid = lerp(_colorSolid, _colorLiquid, 0.5);
-                fixed3 _colorLiquidGas = lerp(_colorLiquid, _colorGas, 0.5);
-                fixed3 _colorGasPlasma = lerp(_colorGas, _colorPlasma, 0.5);
-
-                fixed3 _colorToUse = 0;
-                _colorToUse += TryGetValueInterpolatedTowardsLowerState(_colorSolid, _colorSolid, _chemStateSolid);
-				_colorToUse += TryGetValueInterpolatedTowardsHigherState(_colorSolid, _colorSolidLiquid, _chemStateSolid);
-				
-				_colorToUse += TryGetValueInterpolatedTowardsLowerState(_colorSolidLiquid, _colorLiquid, _chemStateLiquid);
-				_colorToUse += TryGetValueInterpolatedTowardsHigherState(_colorLiquid, _colorLiquidGas, _chemStateLiquid);
-				
-				_colorToUse += TryGetValueInterpolatedTowardsLowerState(_colorLiquidGas, _colorGas, _chemStateGas);
-				_colorToUse += TryGetValueInterpolatedTowardsHigherState(_colorGas, _colorGasPlasma, _chemStateGas);
-				
-				_colorToUse += TryGetValueInterpolatedTowardsLowerState(_colorGasPlasma, _colorPlasma, _chemStatePlasma);
-				_colorToUse += TryGetValueInterpolatedTowardsHigherState(_colorPlasma, _colorPlasma, _chemStatePlasma);
-
-				return fixed4(_colorToUse.r, _colorToUse.g, _colorToUse.b, _alpha);
+                
+                daodaudu9w // continue debugging this - why is the final color always seemingly white?
+				return fixed4(_gasMod, _gasMod, _gasMod, _gasMod);
 			}
 			
 			fixed4 frag(v2f i) : COLOR { // TODO: I could possibly move some stuff to vert - using the UV I could probably reverse the interpolation!
@@ -339,14 +312,6 @@ Shader "Custom/Grid" {
 				float2 _nodeGridUVTL = (_nodeGridPos + int2(0, 1)) / _gridMax;
 				float2 _nodeGridUVTR = (_nodeGridPos + int2(1, 1)) / _gridMax;
 				float2 _nodeGridUVBR = (_nodeGridPos + int2(1, 0)) / _gridMax;
-				// // return fixed4((_nodeGridUVTR.x - _nodeGridUVBL.x), (_nodeGridUVTR.y - _nodeGridUVBL.y), 0, 1);
-
-				// return fixed4(_nodeGridPosDecimals.x, _nodeGridPosDecimals.y, 0, 1);
-
-				// fixed _chemAmount_0 = i.ChemAmountsAndTemperature.r;
-				// fixed _chemAmount_1 = i.ChemAmountsAndTemperature.g;
-				// fixed _chemAmount_2 = i.ChemAmountsAndTemperature.b;
-				// fixed _temperature = i.ChemAmountsAndTemperature.a;
 
 				fixed4 _chemAmountsAndTemperatureBL = tex2D(_ChemAmountsAndTemperatureTex, _nodeGridUVBL);
 				fixed4 _chemAmountsAndTemperatureTL = tex2D(_ChemAmountsAndTemperatureTex, _nodeGridUVTL);
@@ -358,95 +323,46 @@ Shader "Custom/Grid" {
 
 				fixed4 _chemAmountsAndTemperature = lerp(_lerpAmountsAndTemperatureBLToBR, _lerpAmountsAndTemperatureTLToTR, _nodeGridPosDecimals.y);
 				
-				
-//				return fixed4(_nodeGridUVBL.x, 0, _nodeGridUVBL.y, 1);
-//                return tex2D(_DebugTex, _nodeGridUVBL) + fixed4(_chemAmountsAndTemperature.r, 0, 0, 1);
-//				return fixed4(_chemAmountsAndTemperature.r * 1.0, 0, 0.2, 1);
-
-				
-				// _chemAmountsAndTemperatureBL = lerp(_chemAmountsAndTemperatureBL, 0.0, _nodeGridPosDecimals.x);
-				// _chemAmountsAndTemperatureTL = lerp(_chemAmountsAndTemperatureTL, 0.0, _nodeGridPosDecimals.x);
-				// _chemAmountsAndTemperatureTR = lerp(0.0, _chemAmountsAndTemperatureTR, _nodeGridPosDecimals.x);
-				// _chemAmountsAndTemperatureBR = lerp(0.0, _chemAmountsAndTemperatureBR, _nodeGridPosDecimals.x);
-				// fixed4 _chemAmountsAndTemperatureL = lerp(_chemAmountsAndTemperatureBL, _chemAmountsAndTemperatureTL, _nodeGridPosDecimals.y);
-				// fixed4 _chemAmountsAndTemperatureR = lerp(_chemAmountsAndTemperatureBR, _chemAmountsAndTemperatureTR, _nodeGridPosDecimals.y);
-				// fixed4 _chemAmountsAndTemperature = (_chemAmountsAndTemperatureL + _chemAmountsAndTemperatureR) * 0.5;
-
-
-
-                // fixed3 _chemStates = GetProperlyFormattedChemStates(i.ChemStates * 3);
 				fixed3 _chemStatesBL = tex2D(_ChemStatesTex, _nodeGridUVBL) * 3.0;
 				fixed3 _chemStatesTL = tex2D(_ChemStatesTex, _nodeGridUVTL) * 3.0;
 				fixed3 _chemStatesTR = tex2D(_ChemStatesTex, _nodeGridUVTR) * 3.0;
 				fixed3 _chemStatesBR = tex2D(_ChemStatesTex, _nodeGridUVBR) * 3.0;
 
-//				_chemStatesBL = lerp(_chemStatesBL, 0.0, _nodeGridPosDecimals.x);
-//				_chemStatesTL = lerp(_chemStatesTL, 0.0, _nodeGridPosDecimals.x);
-//				_chemStatesTR = lerp(0.0, _chemStatesTR, _nodeGridPosDecimals.x);
-//				_chemStatesBR = lerp(0.0, _chemStatesBR, _nodeGridPosDecimals.x);
-				
-
 				fixed3 _chemStatesL = lerp(_chemStatesBL, _chemStatesTL, _nodeGridPosDecimals.y);
 				fixed3 _chemStatesR = lerp(_chemStatesBR, _chemStatesTR, _nodeGridPosDecimals.y);
 				fixed3 _chemStates = lerp(_chemStatesL, _chemStatesR, _nodeGridPosDecimals.x);
-
-				// return fixed4(lerp(_lerpStatesBLToBR, _lerpStatesTLToTR, _nodeGridPosDecimals.y).r, 0.0, 0.0, 1.0);
-
-				// fixed3 _chemColor_0 = i.ChemColor_0; 
-				// fixed3 _chemColor_1 = i.ChemColor_1; 
-				// fixed3 _chemColor_2 = i.ChemColor_2;
 				
-
-				int4 _chemColorIndicesBL_0 = tex2D(_ChemColorsTex_0, _nodeGridUVBL) * (COLOR_COUNT - 1);
-				int4 _chemColorIndicesTL_0 = tex2D(_ChemColorsTex_0, _nodeGridUVTL) * (COLOR_COUNT - 1);
-				int4 _chemColorIndicesTR_0 = tex2D(_ChemColorsTex_0, _nodeGridUVTR) * (COLOR_COUNT - 1);
-				int4 _chemColorIndicesBR_0 = tex2D(_ChemColorsTex_0, _nodeGridUVBR) * (COLOR_COUNT - 1);
-
-				int4 _chemColorIndicesBL_1 = tex2D(_ChemColorsTex_1, _nodeGridUVBL) * (COLOR_COUNT - 1);
-				int4 _chemColorIndicesTL_1 = tex2D(_ChemColorsTex_1, _nodeGridUVTL) * (COLOR_COUNT - 1);
-				int4 _chemColorIndicesTR_1 = tex2D(_ChemColorsTex_1, _nodeGridUVTR) * (COLOR_COUNT - 1);
-				int4 _chemColorIndicesBR_1 = tex2D(_ChemColorsTex_1, _nodeGridUVBR) * (COLOR_COUNT - 1);
-
-				int4 _chemColorIndicesBL_2 = tex2D(_ChemColorsTex_2, _nodeGridUVBL) * (COLOR_COUNT - 1);
-				int4 _chemColorIndicesTL_2 = tex2D(_ChemColorsTex_2, _nodeGridUVTL) * (COLOR_COUNT - 1);
-				int4 _chemColorIndicesTR_2 = tex2D(_ChemColorsTex_2, _nodeGridUVTR) * (COLOR_COUNT - 1);
-				int4 _chemColorIndicesBR_2 = tex2D(_ChemColorsTex_2, _nodeGridUVBR) * (COLOR_COUNT - 1);
+				int3 _chemColorIndicesBL = tex2D(_ChemColorsTex, _nodeGridUVBL) * (COLOR_COUNT - 1);
+				int3 _chemColorIndicesTL = tex2D(_ChemColorsTex, _nodeGridUVTL) * (COLOR_COUNT - 1);
+				int3 _chemColorIndicesTR = tex2D(_ChemColorsTex, _nodeGridUVTR) * (COLOR_COUNT - 1);
+				int3 _chemColorIndicesBR = tex2D(_ChemColorsTex, _nodeGridUVBR) * (COLOR_COUNT - 1);
 				
 				int2 _nodeGridPosDecimalsRounded = round(_nodeGridPosDecimals);
 				
-				fixed4 _tmpColorIndicesL_0 = lerp(_chemColorIndicesBL_0, _chemColorIndicesTL_0, _nodeGridPosDecimalsRounded.y);
-				fixed4 _tmpColorIndicesL_1 = lerp(_chemColorIndicesBL_1, _chemColorIndicesTL_1, _nodeGridPosDecimalsRounded.y);
-				fixed4 _tmpColorIndicesL_2 = lerp(_chemColorIndicesBL_2, _chemColorIndicesTL_2, _nodeGridPosDecimalsRounded.y);
+				fixed3 _chemColor_0 = lerp(
+				    lerp(allColors[_chemColorIndicesBL.x], allColors[_chemColorIndicesTL.x], allColors[_nodeGridPosDecimalsRounded.y]), 
+				    lerp(allColors[_chemColorIndicesBR.x], allColors[_chemColorIndicesTR.x], allColors[_nodeGridPosDecimalsRounded.y]), 
+				    _nodeGridPosDecimalsRounded.x
+				);
+				fixed3 _chemColor_1 = lerp(
+				    lerp(allColors[_chemColorIndicesBL.y], allColors[_chemColorIndicesTL.y], allColors[_nodeGridPosDecimalsRounded.y]), 
+				    lerp(allColors[_chemColorIndicesBR.y], allColors[_chemColorIndicesTR.y], allColors[_nodeGridPosDecimalsRounded.y]), 
+				    _nodeGridPosDecimalsRounded.x
+				);
+				fixed3 _chemColor_2 = lerp(
+				    lerp(allColors[_chemColorIndicesBL.z], allColors[_chemColorIndicesTL.z], allColors[_nodeGridPosDecimalsRounded.y]), 
+				    lerp(allColors[_chemColorIndicesBR.z], allColors[_chemColorIndicesTR.z], allColors[_nodeGridPosDecimalsRounded.y]), 
+				    _nodeGridPosDecimalsRounded.x
+				);
 				
-				fixed4 _tmpColorIndicesR_0 = lerp(_chemColorIndicesBR_0, _chemColorIndicesTR_0, _nodeGridPosDecimalsRounded.y);
-				fixed4 _tmpColorIndicesR_1 = lerp(_chemColorIndicesBR_1, _chemColorIndicesTR_1, _nodeGridPosDecimalsRounded.y);
-				fixed4 _tmpColorIndicesR_2 = lerp(_chemColorIndicesBR_2, _chemColorIndicesTR_2, _nodeGridPosDecimalsRounded.y);
-				
-				fixed4 _chemColorIndices_0 = lerp(_tmpColorIndicesL_0, _tmpColorIndicesR_0, _nodeGridPosDecimalsRounded.x);
-				fixed4 _chemColorIndices_1 = lerp(_tmpColorIndicesL_1, _tmpColorIndicesR_1, _nodeGridPosDecimalsRounded.x);
-				fixed4 _chemColorIndices_2 = lerp(_tmpColorIndicesL_2, _tmpColorIndicesR_2, _nodeGridPosDecimalsRounded.x);
-				
-				
-				
-
-				// return fixed4(_chemStates.r / 3.0, 0, 0, 1);
-//				return fixed4(_chemAmountsAndTemperature.r * 1.0, 0, _chemAmountsAndTemperature.a * 1.0, 1);
-				// return fixed4(_chemColor_0.r, _chemColor_0.g, _chemColor_0.b, 1);
-
 				fixed _morphingPerlin;
 				fixed _staticPerlin;
 				GetMorphingPerlinSample(i.WorldPos, _morphingPerlin, _staticPerlin);
 				
-				fixed4 _pixelChem_0 = GetPixelForChem(_chemAmountsAndTemperature.r, _chemColorIndices_0, _chemStates.r, _morphingPerlin, _staticPerlin);
-				fixed4 _pixelChem_1 = GetPixelForChem(_chemAmountsAndTemperature.g, _chemColorIndices_1, _chemStates.g, _morphingPerlin, _staticPerlin);
-				fixed4 _pixelChem_2 = GetPixelForChem(_chemAmountsAndTemperature.b, _chemColorIndices_2, _chemStates.b, _morphingPerlin, _staticPerlin);
-
-                
-				// return fixed4(_chemAmountsAndTemperature.a * 100.0, 0, _chemStates.r / 3.0, _pixelChem_0.r);
-//                return fixed4(round(_chemStates.r) / 3.0, 0, 0, 1);
-//                return fixed4(_chemAmountsAndTemperature.a * 10.0, 0, 0, 1);
-//                return fixed4(_chemAmountsAndTemperature.a * 10.0, 0, 0, 1);
-                
+				fixed4 _pixelChem_0 = GetPixelForChem(_chemAmountsAndTemperature.r, _chemColor_0, _chemStates.r, _morphingPerlin, _staticPerlin);
+				fixed4 _pixelChem_1 = GetPixelForChem(_chemAmountsAndTemperature.g, _chemColor_1, _chemStates.g, _morphingPerlin, _staticPerlin);
+				fixed4 _pixelChem_2 = GetPixelForChem(_chemAmountsAndTemperature.b, _chemColor_2, _chemStates.b, _morphingPerlin, _staticPerlin);
+                return _pixelChem_0;
                 half _blending_01 = _chemAmountsAndTemperature.y / max(1.0, _chemAmountsAndTemperature.x);
                 fixed4 _blendedPixelChem_01 = lerp(_pixelChem_0, _pixelChem_1, _blending_01);
                 fixed _blendedState_01 = lerp(_chemStates.r, _chemStates.g, _blending_01);
@@ -460,31 +376,11 @@ Shader "Custom/Grid" {
 				_finalPixel.rgb *= GetColorToolColorToUse(floor(palTex.r * 10.0), i.ColorIndices0to2, i.ColorIndices3to5, i.ColorIndices6to8); // coloring 
 				_finalPixel.rgb = lerp(_finalPixel.rgb, _blendedPixelChem_012.rgb, _blendedPixelChem_012.a); // chems
 
-//                fixed3 _thermalColor = 0.0;
-//				fixed _incandescense = GetPixelIncadescense(_chemAmountsAndTemperature.a);
-//				_thermalColor = 
-//                    lerp(
-//                        _thermalColor, 
-//                        lerp(
-//                            fixed3(1.0, 0.0, 0.0), 
-//                            lerp(
-//                                fixed3(1.0, 1.0, 0.0), 
-//                                fixed3(1.0, 1.0, 1.0),
-//                                _incandescense * 3.0 - 2.0
-//                            ),
-//                            _incandescense * 3.0 - 1.0
-//                        ), 
-//                        _incandescense * 3.0 - 0.0
-//                    );
-                
-//                _finalPixel.rgb = lerp(_finalPixel.rgb * i.VColor.rgb * i.VColor.a, _finalPixel.rgb * _thermalColor * _incandescense, _incandescense - i.VColor.a);
-
-                _finalPixel.rgb *= i.VColor.rgb * i.VColor.a; // lighting
-//                _finalPixel.rgb = lerp(_finalPixel.rgb, _thermalColor.rgb, _incandescense); // incandescense
-				_finalPixel.rgb = lerp(_finalPixel.rgb, lerp(emTex.rgb, emTex.rgb * _blendedPixelChem_012.rgb, _blendedPixelChem_012.a), emTex.a); // emissive
-				
-				_finalPixel = clamp(_finalPixel, 0.0, 1.0);
-				_finalPixel.rgb = lerp(_finalPixel.rgb, 0.0, (1.0 - any(tex.rgb)) * 1.0);
+//                _finalPixel.rgb *= i.VColor.rgb * i.VColor.a; // lighting
+//				_finalPixel.rgb = lerp(_finalPixel.rgb, lerp(emTex.rgb, emTex.rgb * _blendedPixelChem_012.rgb, _blendedPixelChem_012.a), emTex.a); // emissive
+//				
+//				_finalPixel = clamp(_finalPixel, 0.0, 1.0);
+//				_finalPixel.rgb = lerp(_finalPixel.rgb, 0.0, (1.0 - any(tex.rgb)) * 1.0);
 
                 return _finalPixel;				
 			}

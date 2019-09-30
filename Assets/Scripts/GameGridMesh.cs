@@ -23,9 +23,7 @@ public class GameGridMesh {
 	// private const int UVCHANNEL_CHEMCOLORINDICES = 3;
 
 	private static readonly int PROPERTY_ID_CHEMAMOUNTSANDTEMPERATURETEX = Shader.PropertyToID("_ChemAmountsAndTemperatureTex");
-	private static readonly int PROPERTY_ID_CHEMCOLORSTEX_0 = Shader.PropertyToID("_ChemColorsTex_0");
-	private static readonly int PROPERTY_ID_CHEMCOLORSTEX_1 = Shader.PropertyToID("_ChemColorsTex_1");
-	private static readonly int PROPERTY_ID_CHEMCOLORSTEX_2 = Shader.PropertyToID("_ChemColorsTex_2");
+	private static readonly int PROPERTY_ID_CHEMCOLORSTEX = Shader.PropertyToID("_ChemColorsTex");
 	private static readonly int PROPERTY_ID_CHEMSTATESTEX = Shader.PropertyToID("_ChemStatesTex");
 
 	private List<Color32> lightingData;
@@ -36,16 +34,12 @@ public class GameGridMesh {
 	// private List<Vector3> chemStates;
 
 	private Texture2D chemAmountsAndTemperatureTex;
-	private Texture2D chemColorsTex_0;
-	private Texture2D chemColorsTex_1;
-	private Texture2D chemColorsTex_2;
+	private Texture2D chemColorsTex;
 	private Texture2D debugTex;
 	private Texture2D chemStatesTex;
 
 	private Color[] chemAmountsAndTemperature;
-	private Color[] chemColors_0;
-	private Color[] chemColors_1;
-	private Color[] chemColors_2;
+	private Color[] chemColorIndices;
 	private Color[] debugColors;
 	private Color[] chemStates;
 
@@ -87,18 +81,10 @@ public class GameGridMesh {
 		chemAmountsAndTemperatureTex.filterMode = FilterMode.Bilinear;
 		chemAmountsAndTemperatureTex.wrapMode = TextureWrapMode.Clamp;
 
-		chemColorsTex_0 = new Texture2D(GameGrid.SIZE.x, GameGrid.SIZE.y, TextureFormat.RGBA32, mipmap : false);
-		chemColorsTex_0.filterMode = FilterMode.Point;
-		chemColorsTex_0.wrapMode = TextureWrapMode.Clamp;
+		chemColorsTex = new Texture2D(GameGrid.SIZE.x, GameGrid.SIZE.y, TextureFormat.RGBA32, mipmap : false);
+		chemColorsTex.filterMode = FilterMode.Point;
+		chemColorsTex.wrapMode = TextureWrapMode.Clamp;
 
-		chemColorsTex_1 = new Texture2D(GameGrid.SIZE.x, GameGrid.SIZE.y, TextureFormat.RGBA32, mipmap : false);
-		chemColorsTex_1.filterMode = FilterMode.Point;
-		chemColorsTex_1.wrapMode = TextureWrapMode.Clamp;
-
-		chemColorsTex_2 = new Texture2D(GameGrid.SIZE.x, GameGrid.SIZE.y, TextureFormat.RGBA32, mipmap : false);
-		chemColorsTex_2.filterMode = FilterMode.Point;
-		chemColorsTex_2.wrapMode = TextureWrapMode.Clamp;
-		
 		debugTex= new Texture2D(GameGrid.SIZE.x, GameGrid.SIZE.y, TextureFormat.RGBA32, mipmap : false);
 		debugTex.filterMode = FilterMode.Point;
 		debugTex.wrapMode   = TextureWrapMode.Clamp;
@@ -109,9 +95,7 @@ public class GameGridMesh {
 
 		int _nodesPerGrid = GameGrid.SIZE.x * GameGrid.SIZE.y;
 		chemAmountsAndTemperature = new Color[_nodesPerGrid];
-		chemColors_0 = new Color[_nodesPerGrid];
-		chemColors_1 = new Color[_nodesPerGrid];
-		chemColors_2 = new Color[_nodesPerGrid];
+		chemColorIndices = new Color[_nodesPerGrid];
 		debugColors = new Color[_nodesPerGrid];
 		chemStates = new Color[_nodesPerGrid];
 
@@ -337,23 +321,17 @@ public class GameGridMesh {
 			// mesh.SetNormals(chemStates);
 
 			chemAmountsAndTemperatureTex.SetPixels(chemAmountsAndTemperature);
-			chemColorsTex_0.SetPixels(chemColors_0);
-			chemColorsTex_1.SetPixels(chemColors_1);
-			chemColorsTex_2.SetPixels(chemColors_2);
+			chemColorsTex.SetPixels(chemColorIndices);
 			debugTex.SetPixels(debugColors);
 			chemStatesTex.SetPixels(chemStates);
 
 			chemAmountsAndTemperatureTex.Apply();
-			chemColorsTex_0.Apply();
-			chemColorsTex_1.Apply();
-			chemColorsTex_2.Apply();
+			chemColorsTex.Apply();
 			debugTex.Apply();
 			chemStatesTex.Apply();
 
 			GridMaterial.SetTexture(PROPERTY_ID_CHEMAMOUNTSANDTEMPERATURETEX, chemAmountsAndTemperatureTex);
-			GridMaterial.SetTexture(PROPERTY_ID_CHEMCOLORSTEX_0, chemColorsTex_0);
-			GridMaterial.SetTexture(PROPERTY_ID_CHEMCOLORSTEX_1, chemColorsTex_1);
-			GridMaterial.SetTexture(PROPERTY_ID_CHEMCOLORSTEX_2, chemColorsTex_2);
+			GridMaterial.SetTexture(PROPERTY_ID_CHEMCOLORSTEX, chemColorsTex);
 			GridMaterial.SetTexture("_DebugTex", debugTex);
 			GridMaterial.SetTexture(PROPERTY_ID_CHEMSTATESTEX, chemStatesTex);
 		}
@@ -437,11 +415,11 @@ public class GameGridMesh {
 		// chemColorIndices[_vertexIndexBR] = new Vector3(_colorIndex_0, _colorIndex_1, _colorIndex_2);
 		// chemColorIndices[_vertexIndexTL] = new Vector3(_colorIndex_0, _colorIndex_1, _colorIndex_2);
 		// chemColorIndices[_vertexIndexTR] = new Vector3(_colorIndex_0, _colorIndex_1, _colorIndex_2);
-		chemColors_0[_nodeIndex] = _chem_0.GetColorIndicesForStates();
-		chemColors_1[_nodeIndex] = _chem_1.GetColorIndicesForStates();
-		chemColors_2[_nodeIndex] = _chem_2.GetColorIndicesForStates();
+		float _colorIndex_0 = _chem_0.Chemical.GetColorIndex() / (float)ColorManager.COLOR_COUNT;
+		float _colorIndex_1 = _chem_1.Chemical.GetColorIndex() / (float)ColorManager.COLOR_COUNT;
+		float _colorIndex_2 = _chem_2.Chemical.GetColorIndex() / (float)ColorManager.COLOR_COUNT;
+		chemColorIndices[_nodeIndex] = new Color(_colorIndex_0, _colorIndex_1, _colorIndex_2, 0.0f);
 		//
-
 		
 		// Texture data
 		int _stateCount = System.Enum.GetValues(typeof(Chemical.State)).Length;

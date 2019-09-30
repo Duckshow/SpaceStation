@@ -155,7 +155,7 @@ public partial class GameGrid : Singleton<GameGrid> {
 					// 	_temperature = 700;
 					// }
 					else {
-						_amount = 10000;
+						_amount = 5000;
 						_temperature = 0;
 					}
 				}

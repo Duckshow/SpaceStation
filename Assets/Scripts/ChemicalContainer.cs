@@ -42,13 +42,16 @@ public class ChemicalContainer : ICloneable<ChemicalContainer> {
 		Temperature = _temperature;
 		Contents[0].SetAmount(_amount);
 		return;
-		int _amount_2 = Random.Range(0, _amount);
-		int _amount_1 = Random.Range(0, _amount - _amount_2);
-		int _amount_0 = _amount - _amount_2 - _amount_1;
-		
-		Contents[0].SetAmount(_amount_0);
-		Contents[1].SetAmount(_amount_1);
-		Contents[2].SetAmount(_amount_2);
+		for (int i = 0; i < Contents.Length; i++) {
+			if (_amount <= 0) {
+				break;
+			}
+			
+			int _newAmount = Random.Range(0, _amount);
+			_amount -= _newAmount;
+			
+			Contents[i].SetAmount(_newAmount);
+		}
 	}
 
 	public Color32 GetColor() {

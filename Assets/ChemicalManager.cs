@@ -11,24 +11,18 @@ public class ChemicalManager : Singleton<ChemicalManager> {
 	public override void AwakeEarly() {
 		Chemical[] _allChemicals = chemicalsAsset.GetAllChemicals();
 
-		List<float> _allChemicalsColorIndexSolid = new List<float>(_allChemicals.Length);
-		List<float> _allChemicalsColorIndexLiquid = new List<float>(_allChemicals.Length);
-		List<float> _allChemicalsColorIndexGas = new List<float>(_allChemicals.Length);
+		List<float> _allChemicalsColorIndex = new List<float>(_allChemicals.Length);
 		List<float> _allChemicalsFreezingPoint = new List<float>(_allChemicals.Length);
 		List<float> _allChemicalsBoilingPoint = new List<float>(_allChemicals.Length);
 
 		for(int i = 0; i < _allChemicals.Length; i++) {
 			Chemical _chemical = _allChemicals[i];
-			_allChemicalsColorIndexSolid.Add(_chemical.GetColorIndexSolid());
-			_allChemicalsColorIndexLiquid.Add(_chemical.GetColorIndexLiquid());
-			_allChemicalsColorIndexGas.Add(_chemical.GetColorIndexGas());
+			_allChemicalsColorIndex.Add(_chemical.GetColorIndex());
 			_allChemicalsFreezingPoint.Add(_chemical.GetFreezingPoint());
 			_allChemicalsBoilingPoint.Add(_chemical.GetBoilingPoint());
 		}
 
-		gridMaterial.SetFloatArray("allChemicalsColorIndexSolid", _allChemicalsColorIndexSolid);
-		gridMaterial.SetFloatArray("allChemicalsColorIndexLiquid", _allChemicalsColorIndexLiquid);
-		gridMaterial.SetFloatArray("allChemicalsColorIndexGas", _allChemicalsColorIndexGas);
+		gridMaterial.SetFloatArray("allChemicalsColorIndex", _allChemicalsColorIndex);
 		gridMaterial.SetFloatArray("allChemicalsFreezingPoint", _allChemicalsFreezingPoint);
 		gridMaterial.SetFloatArray("allChemicalsBoilingPoint", _allChemicalsBoilingPoint);
 	}
